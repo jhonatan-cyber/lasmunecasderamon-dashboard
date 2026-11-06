@@ -1,6 +1,7 @@
 'use client';
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
+import { totalUnidadesAcompanamientoBotella } from '@/lib/sales/acompanamientoBotella';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
@@ -10,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import useRooms from '@/hooks/rooms/useRooms';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
-import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { appEventBus } from '@/lib/utils/eventBus';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { isChampagneProduct, getHostessLimit } from '@/components/orders/productModalRules';
@@ -86,9 +86,6 @@ export function useOrderForm({
   selectedCliente,
   setSelectedCliente,
   onAddProducto,
-  onUpdateCantidad,
-  onAssignHostess,
-  onToggleComision,
   onSubmit
 }: UseOrderFormProps) {
   const intent = useRef<{ signature: string; code: string; confirmed: boolean } | undefined>(
@@ -283,10 +280,10 @@ export function useOrderForm({
         p =>
           p.tipo_venta !== 'shot' &&
           bottleMixerUnits(p) > 0 &&
-          !p.acompanamiento_botella?.presentacion_id
+          totalUnidadesAcompanamientoBotella(p.acompanamiento_botella) !== bottleMixerUnits(p)
       )
     ) {
-      setError('Selecciona el acompa\u00f1amiento de botella');
+      setError('Reparte el acompa\u00f1amiento de botella entre sus sabores');
       return;
     }
     if (!metodoPago) {

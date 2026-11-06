@@ -61,6 +61,8 @@ export function parseSavedOptions(raw: unknown): SaleOption[] | undefined {
             o.ml_acompanamiento_anfitriona === undefined
               ? undefined
               : Number(o.ml_acompanamiento_anfitriona);
+          if (typeof o.acompanamiento_cliente === 'boolean')
+            option.acompanamiento_cliente = o.acompanamiento_cliente;
         }
         if (option.tipo === 'botella' && Number(o.precio_sin_anfitriona) > 0)
           option.precio_sin_anfitriona = Number(o.precio_sin_anfitriona);

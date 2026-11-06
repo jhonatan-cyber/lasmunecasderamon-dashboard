@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
-import { SearchableSelect } from '@/components/shared/SearchableSelect';
+import { AcompanamientoDistribuidor } from '@/components/shared/AcompanamientoDistribuidor';
+import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,7 @@ type Acompanamiento = {
   producto_nombre: string;
   nombre: string;
   stock_bar: number;
+  foto: string | null;
 };
 
 export type EntradaEntregable = {
@@ -124,7 +126,8 @@ function aAcompanamiento(valor: unknown): Acompanamiento | null {
     id,
     producto_nombre: texto(valor.producto_nombre),
     nombre: texto(valor.presentacion_nombre) || texto(valor.nombre),
-    stock_bar: numero(valor.stock_bar)
+    stock_bar: numero(valor.stock_bar),
+    foto: typeof valor.foto === 'string' && valor.foto ? valor.foto : null
   };
 }
 
@@ -135,7 +138,6 @@ const normalizar = (valor: string) =>
     .toLowerCase()
     .trim();
 
-/** Analcohólicas y cigarrillos no son cover de una entrada. */
 function categoriaFueraDeCortesia(categoria: string | null | undefined): boolean {
   const normalizada = normalizar(categoria || '');
   return normalizada.includes('analcohol') || normalizada.includes('cigarr');
@@ -147,7 +149,6 @@ function unidadesAcompanamiento(bebida: Bebida | null | undefined): number {
   return Number.isFinite(unidades) && unidades > 0 ? Math.floor(unidades) : 0;
 }
 
-/** Precio del corte (shot) para cliente; `null` si no se vende por corte. */
 function precioCorte(bebida: Bebida | null | undefined): number | null {
   const shot = bebida?.opciones_venta.find(opcion => opcion.tipo === 'shot');
   const precio = numero(shot?.precio);
@@ -162,15 +163,10 @@ function unidadesAcompanamientoFormato(bebida: Bebida, formato: Formato): number
   return formato === 'corte' ? 1 : unidadesAcompanamiento(bebida);
 }
 
-/** Un corte cliente siempre lleva una unidad; la botella, si está configurada. */
 function llevaAcompanamiento(bebida: Bebida, formato: Formato): boolean {
   return formato === 'corte' || unidadesAcompanamiento(bebida) > 0;
 }
 
-/**
- * Formato sugerido al elegir la bebida: corte si su shot entra en el tope de la
- * entrada; botella en caso contrario (ahí el adicional cubre la diferencia).
- */
 function formatoInicial(bebida: Bebida, umbral: number): Formato {
   const corte = precioCorte(bebida);
   return corte !== null && corte <= umbral ? 'corte' : 'botella';
@@ -193,7 +189,7 @@ function previsionDeCobro(
 export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   const [presentacionId, setPresentacionId] = useState('');
   const [formatoSeleccionado, setFormatoSeleccionado] = useState<Formato | null>(null);
-  const [acompanamientoId, setAcompanamientoId] = useState('');
+  const [reparto, setReparto] = useState<AcompanamientoBotellaItem[]>([]);
   const [productos, setProductos] = useState<Bebida[]>([]);
   const [productosLoading, setProductosLoading] = useState(false);
   const [productosError, setProductosError] = useState<string | null>(null);
@@ -213,7 +209,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     if (!dialogoAbierto) return;
     setPresentacionId('');
     setFormatoSeleccionado(null);
-    setAcompanamientoId('');
+    setReparto([]);
   }, [dialogoAbierto, entrada?.id]);
 
   useEffect(() => {
@@ -319,11 +315,9 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   const opcionesAcompanamiento = useMemo(
     () =>
       acompanamientos.filter(
-        opcion =>
-          opcion.id !== bebidaSeleccionada?.presentacion_id &&
-          opcion.stock_bar >= unidadesRequeridas
+        opcion => opcion.id !== bebidaSeleccionada?.presentacion_id && opcion.stock_bar >= 1
       ),
-    [acompanamientos, bebidaSeleccionada, unidadesRequeridas]
+    [acompanamientos, bebidaSeleccionada]
   );
 
   const faltaAcompanamiento = useMemo(() => {
@@ -336,20 +330,27 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     // El corte puede salir sin cover si el bar no tiene; la botella con
     // acompañamiento configurado no: el servidor la exige.
     if (opcionesAcompanamiento.length === 0) return formatoSeleccionado === 'botella';
-    return !opcionesAcompanamiento.some(opcion => opcion.id === acompanamientoId);
-  }, [bebidaSeleccionada, formatoSeleccionado, opcionesAcompanamiento, acompanamientoId]);
+    const asignado = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
+    return asignado !== unidadesRequeridas;
+  }, [
+    bebidaSeleccionada,
+    formatoSeleccionado,
+    opcionesAcompanamiento,
+    reparto,
+    unidadesRequeridas
+  ]);
 
   const seleccionarBebida = (bebida: Bebida) => {
     setPresentacionId(bebida.presentacion_id);
     setFormatoSeleccionado(formatoInicial(bebida, umbral));
-    setAcompanamientoId('');
+    setReparto([]);
   };
 
   const cambiarFormato = (formato: Formato) => {
     if (!bebidaSeleccionada) return;
     if (formato === 'corte' && precioCorte(bebidaSeleccionada) === null) return;
     setFormatoSeleccionado(formato);
-    setAcompanamientoId('');
+    setReparto([]);
   };
 
   const cerrar = useCallback(() => {
@@ -371,8 +372,13 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
         body: JSON.stringify({
           presentacion_id: bebidaSeleccionada.presentacion_id,
           tipo_entrega: formatoSeleccionado,
-          acompanamiento_presentacion_id:
-            requiereAcompanamiento && acompanamientoId ? acompanamientoId : null,
+          acompanamientos:
+            requiereAcompanamiento && reparto.length
+              ? reparto.map(sabor => ({
+                  presentacion_id: sabor.presentacion_id,
+                  unidades: sabor.unidades
+                }))
+              : null,
           monto_adicional: montoAdicionalNumero
         })
       });
@@ -394,7 +400,6 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
       setEntregando(false);
     }
   }, [
-    acompanamientoId,
     bebidaSeleccionada,
     entrada,
     faltaAcompanamiento,
@@ -402,6 +407,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     montoAdicionalNumero,
     onClose,
     onEntregada,
+    reparto,
     requiereAcompanamiento
   ]);
 
@@ -575,29 +581,15 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
                   : ''}
               </p>
             ) : (
-              <SearchableSelect
+              <AcompanamientoDistribuidor
                 id='entrega-entrada-acompanamiento'
-                value={acompanamientoId}
-                onChange={setAcompanamientoId}
-                placeholder='Seleccionar acompañamiento'
-                searchPlaceholder='Buscar bebida…'
-                options={[
-                  { value: '', label: 'Seleccionar acompañamiento' },
-                  ...opcionesAcompanamiento.map(bebida => ({
-                    value: bebida.id,
-                    label: `${bebida.producto_nombre} · ${bebida.nombre} · ${bebida.stock_bar} en bar`,
-                    keywords: [bebida.producto_nombre, bebida.nombre]
-                  }))
-                ]}
+                opciones={opcionesAcompanamiento}
+                requeridas={unidadesRequeridas}
+                valor={reparto}
+                onChange={setReparto}
+                disabled={entregando}
               />
             )}
-            <p className='text-xs text-muted-foreground'>
-              {formatoSeleccionado === 'corte'
-                ? 'Incluye 1 bebida analcohólica habilitada para cover por corte.'
-                : `Incluye ${unidadesRequeridas} bebida${
-                    unidadesRequeridas === 1 ? '' : 's'
-                  } por botella.`}
-            </p>
             {acompanamientosError ? (
               <p className='text-xs text-destructive' role='alert'>
                 {acompanamientosError}

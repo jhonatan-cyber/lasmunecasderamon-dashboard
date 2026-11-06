@@ -188,6 +188,7 @@ it('edita todos los precios de corto, sus ml y la bebida de botella sin perder c
         tipo: 'shot',
         precio: 3000,
         comision: 0,
+        acompanamiento_cliente: true,
         precio_anfitriona: 4000,
         ml_acompanamiento_anfitriona: 150,
         precios_anfitriona: [

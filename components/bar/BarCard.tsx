@@ -58,12 +58,12 @@ export function BarCard({ item, entranceIndex, dragHandle }: BarCardProps) {
         <div className='flex flex-wrap items-center justify-between gap-2 px-4 pt-4 pb-2'>
           {dragHandle && <div className='shrink-0'>{dragHandle}</div>}
           <div
-            className={`max-w-full rounded-full px-3 py-1 text-[11px] font-bold text-white break-words ${agotadoBar ? 'bg-red-600' : 'bg-green-500/90'}`}
+            className={`max-w-full rounded-full px-2 py-0.5 text-[10px] font-bold text-white break-words shadow-sm ${agotadoBar ? 'bg-red-600' : 'bg-green-500/90'}`}
           >
             Bar: {agotadoBar ? 'Agotado' : `${item.stock_bar} un.`}
           </div>
           <div
-            className={`ml-auto max-w-full rounded-full px-3 py-1 text-[11px] font-bold text-white break-words ${agotadoAlmacen ? 'bg-red-600' : 'bg-blue-500/90'}`}
+            className={`ml-auto max-w-full rounded-full px-2 py-0.5 text-[10px] font-bold text-white break-words shadow-sm ${agotadoAlmacen ? 'bg-red-600' : 'bg-blue-500/90'}`}
           >
             Bodega: {agotadoAlmacen ? 'Agotado' : item.stock}
           </div>

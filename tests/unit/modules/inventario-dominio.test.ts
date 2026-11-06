@@ -365,6 +365,49 @@ describe('listBarStock hereda precio/comisión', () => {
   });
 });
 
+describe('acompañamientos limitados por volumen', () => {
+  const presentacion = (id: string, ml_botella: number | null, nombre: string) => ({
+    id,
+    producto_id: `prod-${id}`,
+    nombre,
+    ml_botella,
+    codigo_barras: null,
+    precio_compra: 1000,
+    precio_venta: 1500,
+    comision: 0,
+    foto: null,
+    stock: 5,
+    stock_bar: 5,
+    producto_nombre: 'Coca-Cola',
+    producto_codigo: id,
+    producto_foto: null,
+    categoria_nombre: 'Bebidas sin alcohol'
+  });
+
+  const mockPresentaciones = () =>
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_presentaciones'))
+        return [
+          presentacion('pres-500', 500, 'Coca-Cola 500 ml'),
+          presentacion('pres-1000', 1000, 'Coca-Cola 1 litro'),
+          presentacion('pres-350', null, 'Sprite personal 350 ml')
+        ];
+      return [];
+    });
+
+  it('deja solo las presentaciones cuyo volumen no supera el máximo (500 ml por defecto)', async () => {
+    mockPresentaciones();
+    const rows = await listarStockBar(undefined, true);
+    expect(rows.map(r => r.id)).toEqual(['pres-500', 'pres-350']);
+  });
+
+  it('sin el flag de acompañamientos conserva todo el catálogo', async () => {
+    mockPresentaciones();
+    const rows = await listarStockBar();
+    expect(rows.map(r => r.id)).toEqual(['pres-500', 'pres-1000', 'pres-350']);
+  });
+});
+
 describe('listarTransferencias historial', () => {
   it('muestra quién recibió y conserva la comisión cero de la transferencia', async () => {
     (query as any).mockImplementation(async (sql: string) => {

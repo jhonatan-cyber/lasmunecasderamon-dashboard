@@ -22,7 +22,6 @@ export interface SettingsSaleOptionsHandle {
   };
 }
 
-/** Comparte el editor de transferencia; guardar ajustes no mueve inventario. */
 export function SettingsSaleOptionsEditor({
   options,
   categoria,
@@ -38,7 +37,6 @@ export function SettingsSaleOptionsEditor({
   ref
 }: {
   options: SaleOption[];
-  /** Nombre de la categoría: analcohólicas y cigarrillos usan el modo simple. */
   categoria?: string | null;
   precio: string;
   comision: string;
@@ -47,14 +45,12 @@ export function SettingsSaleOptionsEditor({
   saving: boolean;
   onPrecio: (value: string) => void;
   onComision: (value: string) => void;
-  /** Vacío = regla por defecto del producto. Mismo campo que en la transferencia. */
   maxAnfitrionas?: string;
   onMaxAnfitrionasChange?: (value: string) => void;
   ref: Ref<SettingsSaleOptionsHandle>;
 }) {
   const shot = options.find(o => o.tipo === 'shot');
   const bottle = options.find(o => o.tipo === 'botella');
-  // Cigarrillos comparten el modo simple; colación/cover solo en analcohólicas.
   const esCig = esCigarrillos(categoria);
   const esAnalcoholica = esBebidaAnalcoholica(categoria);
   const esVentaSimple = esCig || esAnalcoholica;
@@ -62,6 +58,7 @@ export function SettingsSaleOptionsEditor({
     bottle?.colacion_habilitada === true
   );
   const [coverHabilitado, setCoverHabilitado] = useState(bottle?.cover_habilitado === true);
+  const [enVenta, setEnVenta] = useState(bottle?.en_venta !== false);
   const [precioSinAnfitriona, setPrecioSinAnfitriona] = useState(
     bottle?.precio_sin_anfitriona ? String(bottle.precio_sin_anfitriona) : ''
   );
@@ -88,7 +85,9 @@ export function SettingsSaleOptionsEditor({
   const [ml, setMl] = useState(mlCliente ? String(mlCliente) : '');
   const [mlHost, setMlHost] = useState(mlAnfitriona ? String(mlAnfitriona) : '');
   const [mlMixHost, setMlMixHost] = useState(String(shot?.ml_acompanamiento_anfitriona ?? ''));
-  // Colación: mismos campos que al transferir; el estado nace con lo guardado.
+  const [acompanamientoCliente, setAcompanamientoCliente] = useState(
+    shot?.acompanamiento_cliente !== false
+  );
   const [mlColacion, setMlColacion] = useState(
     bottle?.ml_colacion !== undefined && bottle?.ml_colacion !== null
       ? String(bottle.ml_colacion)
@@ -101,9 +100,6 @@ export function SettingsSaleOptionsEditor({
       : ''
   );
   const shotMl = useConfigValue<number>('bar', 'shot_ml', 50);
-
-  // La colación hereda los ml del corto de anfitriona cuando ese tipo de venta
-  // está activo; mismos cálculos que el modal de transferencia.
   const shotActivo = !esVentaSimple && tipos.includes('shot');
   const mlPorShot = resolveShotMl(numeric(ml), shotMl);
   const mlPorShotAnfitriona = resolveShotMlAnfitriona(numeric(mlHost), mlPorShot);
@@ -111,13 +107,10 @@ export function SettingsSaleOptionsEditor({
   const mlAcompanamientoColacionSugerido =
     shotActivo && numeric(mlMixHost) > 0 ? numeric(mlMixHost) : null;
   const mostrarMlAcompanamiento = !esVentaSimple;
-  // Cigarrillos quedan fuera de la colación, igual que su check en settings.
   const mostrarSeccionColacion = colacionHabilitada && !esCig && tipos.includes('botella');
 
   useImperativeHandle(ref, () => ({
     getConfig() {
-      // Colación: mismo criterio que al transferir. Vacío = ml heredados del
-      // corto de anfitriona; sin herencia y vacío = sin ml configurados.
       const mlColacionTexto = mlColacion.replace(/\D/g, '');
       const mlColacionValor = mlColacionTexto !== '' ? Number(mlColacionTexto) : mlColacionSugerido;
       const mlAcompTexto = mlColacionAcomp.replace(/\D/g, '');
@@ -138,8 +131,6 @@ export function SettingsSaleOptionsEditor({
         )
           throw new Error('Los ml de acompañamiento deben estar entre 1 y 10000');
       }
-      // Con ml de acompañamiento la colación incluye al menos una bebida, aunque
-      // la botella no tenga bebidas incluidas (misma regla que al transferir).
       const acompanamientoColacion =
         colacionAplica && mlAcompanamientoValor !== null
           ? { unidades: Number(units || 0) || 1, ml: mlAcompanamientoValor }
@@ -150,6 +141,7 @@ export function SettingsSaleOptionsEditor({
         comision: numeric(comision),
         ...(esCig ? {} : { colacion_habilitada: colacionHabilitada }),
         ...(esAnalcoholica ? { cover_habilitado: coverHabilitado } : {}),
+        ...(esAnalcoholica ? { en_venta: enVenta } : {}),
         ...(colacionAplica && mlColacionValor !== null ? { ml_colacion: mlColacionValor } : {}),
         ...(colacionAplica && acompanamientoColacion
           ? { acompanamiento_colacion: acompanamientoColacion }
@@ -173,6 +165,7 @@ export function SettingsSaleOptionsEditor({
                 tipo,
                 precio: numeric(precioShot),
                 comision: 0,
+                acompanamiento_cliente: acompanamientoCliente,
                 ml_acompanamiento_anfitriona: Number(mlMixHost || 0),
                 precio_anfitriona: numeric(precioHost),
                 precios_anfitriona: [
@@ -226,6 +219,10 @@ export function SettingsSaleOptionsEditor({
         onColacionHabilitadaChange={esCig ? undefined : setColacionHabilitada}
         coverHabilitado={coverHabilitado}
         onCoverHabilitadoChange={esAnalcoholica ? setCoverHabilitado : undefined}
+        enVenta={enVenta}
+        onEnVentaChange={esAnalcoholica ? setEnVenta : undefined}
+        acompanamientoCliente={acompanamientoCliente}
+        onAcompanamientoClienteChange={setAcompanamientoCliente}
         maxAnfitrionas={maxAnfitrionas}
         onMaxAnfitrionasChange={onMaxAnfitrionasChange}
         tipos={tipos}

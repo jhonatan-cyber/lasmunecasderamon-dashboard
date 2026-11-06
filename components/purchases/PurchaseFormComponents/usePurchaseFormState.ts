@@ -95,9 +95,7 @@ export function usePurchaseFormState(
         toast.info('Esa presentación ya está en la compra');
         return;
       }
-      // La verificación también va dentro del setter: dos clics seguidos antes
-      // de re-renderizar comparten el mismo closure y agregarían la línea dos
-      // veces si solo se validara contra `lines`.
+
       setLines(prev => {
         if (prev.some(l => l.presentacion_id === item.id)) return prev;
         return [

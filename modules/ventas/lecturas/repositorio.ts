@@ -35,6 +35,25 @@ export function obtenerVentaParaAlerta(solicitudId: string) {
   );
 }
 
+/**
+ * Nombre del archivo del baucher de una venta con transferencia.
+ *
+ * Devuelve sólo el nombre (la foto vive en `public/img/sales`): el endpoint que
+ * la sirve lo lee de la fila, nunca del cliente.
+ */
+export async function obtenerBaucherFotoVenta(id: string): Promise<string | null> {
+  try {
+    const rows = await query<Array<{ baucher_foto: string | null }>>(
+      'SELECT baucher_foto FROM ventas WHERE id_venta = ?',
+      [id]
+    );
+    return rows[0]?.baucher_foto ?? null;
+  } catch (err) {
+    logger.error('[Ventas] Error en obtenerBaucherFotoVenta:', { id, err });
+    throw new DatabaseError(`Error al obtener el baucher de la venta ${id}`, err);
+  }
+}
+
 /** Habitación que una anfitriona tiene activa, si tiene. */
 export async function obtenerHabitacionActivaDeAnfitrionas(anfitrionasIds: unknown[]): Promise<
   {
@@ -224,8 +243,17 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
       >(
         `SELECT dv.id_detalle_venta as id, dv.venta_id, dv.producto_id, dv.presentacion_id, dv.precio, dv.comision, dv.cantidad, dv.sub_total,
                 dv.tipo_venta, dv.shot_anfitriona,
-                CASE WHEN dv.acompanamiento IS NOT NULL AND dv.acompanamiento <> 'null'::jsonb THEN
-                  dv.acompanamiento || jsonb_build_object('nombre', CONCAT_WS(' ', mp.nombre, mi.nombre), 'foto', COALESCE(mi.foto, mp.foto))
+                CASE
+                  WHEN dv.acompanamiento IS NULL OR dv.acompanamiento = 'null'::jsonb THEN NULL
+                  WHEN jsonb_typeof(dv.acompanamiento) = 'array' THEN (
+                    SELECT jsonb_agg(elem || jsonb_build_object(
+                      'nombre', CONCAT_WS(' ', mp2.nombre, mi2.nombre),
+                      'foto', COALESCE(mi2.foto, mp2.foto)))
+                    FROM jsonb_array_elements(dv.acompanamiento) elem
+                    LEFT JOIN inventario_presentaciones mi2 ON mi2.id = elem->>'presentacion_id'
+                    LEFT JOIN productos mp2 ON mp2.id_producto = mi2.producto_id
+                  )
+                  ELSE dv.acompanamiento || jsonb_build_object('nombre', CONCAT_WS(' ', mp.nombre, mi.nombre), 'foto', COALESCE(mi.foto, mp.foto))
                 END AS acompanamiento,
                 COALESCE(hu.nick, hu.nombre) AS anfitriona_nombre,
                 p.nombre as producto_nombre, p.precio as producto_precio,

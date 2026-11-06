@@ -24,7 +24,8 @@ export function registrarCabeceraVenta(
     'created_by',
     'estado',
     'fecha_crea',
-    'pagos_mixtos'
+    'pagos_mixtos',
+    'baucher_foto'
   ];
   const cabecera = Object.fromEntries(columnas.map(columna => [columna, datos[columna]]));
   return RegistroVenta.rawInsert(contexto, cabecera);

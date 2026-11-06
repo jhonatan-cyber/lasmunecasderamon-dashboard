@@ -1,11 +1,11 @@
 import { query, type TransactionQuery } from '@/lib/database/db';
 
 export type ConsultaInventario = TransactionQuery | typeof query;
-
 export const DEFAULT_SHOT_ML = 50;
 export const DEFAULT_BOTTLE_ML = 750;
 export const DEFAULT_SHOTS_ALERTA = 3;
 export const DEFAULT_MERMA_SHOTS_ML = 50;
+export const DEFAULT_ACOMPANAMIENTO_MAX_ML = 500;
 
 export async function getBarMlConfig(
   consultar: ConsultaInventario = query
@@ -35,6 +35,21 @@ export async function getBarMlConfig(
       shotsAlerta: DEFAULT_SHOTS_ALERTA,
       mermaShotsMl: DEFAULT_MERMA_SHOTS_ML
     };
+  }
+}
+
+export async function getAcompanamientoMaxMl(
+  consultar: ConsultaInventario = query
+): Promise<number> {
+  try {
+    const rows = await consultar<any[]>(
+      "SELECT valor FROM configuraciones WHERE clave = 'acompanamiento_max_ml' LIMIT 1",
+      []
+    );
+    const valor = Number(rows[0]?.valor);
+    return Number.isFinite(valor) && valor > 0 ? Math.floor(valor) : DEFAULT_ACOMPANAMIENTO_MAX_ML;
+  } catch {
+    return DEFAULT_ACOMPANAMIENTO_MAX_ML;
   }
 }
 

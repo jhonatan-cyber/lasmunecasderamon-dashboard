@@ -62,6 +62,17 @@ Los envíos, aprobaciones y cobros de las pruebas utilizaron respuestas
 simuladas. No se ejecutaron operaciones financieras reales para verificar la
 aplicación.
 
+## Módulos operativos adicionales
+
+| Rol    | Módulos adicionales en Expo                                         |
+| ------ | ------------------------------------------------------------------- |
+| Barman | Limpieza (consumo de insumos del bar)                               |
+| Cajero | Limpieza (consumo de insumos de caja), Colaciones (cortes de turno) |
+
+La limpieza sigue el mismo esquema de ubicaciones del dashboard: cada rol ve
+solo su ubicación y puede registrar consumos sin necesidad de permisos de
+gestión.
+
 ## Límites de la comprobación manual
 
 No había sesiones abiertas ni cuentas de prueba proporcionadas para entrar como

@@ -1,6 +1,7 @@
 'use client';
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
 import { requiresShortMixer, bottleMixerUnits } from '@/lib/sales/productConfiguration';
+import { totalUnidadesAcompanamientoBotella } from '@/lib/sales/acompanamientoBotella';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -48,6 +49,8 @@ export interface SaleFormState {
   setSelectedHabitacion: (v: string) => void;
   metodoPago: string;
   setMetodoPago: (v: string) => void;
+  baucherFoto: string | null;
+  setBaucherFoto: (v: string | null) => void;
   productos: any[];
   setProductos: React.Dispatch<React.SetStateAction<any[]>>;
   enableTip: boolean;
@@ -100,6 +103,8 @@ export function useSaleValidation({
   const [selectedSegundoCliente, setSelectedSegundoCliente] = useState('none');
   const [selectedHabitacion, setSelectedHabitacion] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
+  /** Foto del baucher en data URL; se exige con transferencia (ver `handleSubmit`). */
+  const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [productos, setProductos] = useState<any[]>([]);
   const [draftReady, setDraftReady] = useState(false);
   const [enableTip, setEnableTip] = useState(false);
@@ -326,6 +331,10 @@ export function useSaleValidation({
       toast.info('Completa todos los campos requeridos');
       return;
     }
+    if (metodoPago === 'transferencia' && !baucherFoto) {
+      toast.error('Adjunta la foto del baucher para el pago con transferencia');
+      return;
+    }
     let prepagoDestinos: { cliente_id: string; monto: number }[] = [];
     if (metodoPago === 'prepago') {
       const ids = [selectedCliente, selectedSegundoCliente].filter(id => id && id !== 'none');
@@ -389,10 +398,10 @@ export function useSaleValidation({
           p =>
             p.tipo_venta !== 'shot' &&
             bottleMixerUnits(p) > 0 &&
-            !p.acompanamiento_botella?.presentacion_id
+            totalUnidadesAcompanamientoBotella(p.acompanamiento_botella) !== bottleMixerUnits(p)
         )
       ) {
-        toast.warning('Selecciona la bebida para cada botella');
+        toast.warning('Reparte la bebida de cada botella entre sus sabores');
         return;
       }
 
@@ -409,7 +418,8 @@ export function useSaleValidation({
         selectedHabitacion,
         manualTime,
         selectedRoomInfo,
-        prepagoDestinos
+        prepagoDestinos,
+        baucherFoto
       });
 
       const res = await createVenta(ventaData);
@@ -504,6 +514,8 @@ export function useSaleValidation({
       setSelectedHabitacion,
       metodoPago,
       setMetodoPago,
+      baucherFoto,
+      setBaucherFoto,
       productos,
       setProductos,
       enableTip,

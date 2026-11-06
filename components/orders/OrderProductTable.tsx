@@ -7,6 +7,7 @@ import { Trash2, Plus, Minus } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { memo, useState } from 'react';
 import { etiquetaVentaDetalle } from '@/lib/sales/ventaDetalle';
+import { normalizarAcompanamientoBotella } from '@/lib/sales/acompanamientoBotella';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { SaleProductPhoto } from '@/components/sales/product-modal/SaleProductPhoto';
@@ -64,10 +65,11 @@ const ProductRow = memo(
     const shotMl = producto.shot_anfitriona
       ? resolveShotMlAnfitriona(producto.ml_shot_anfitriona, clientMl)
       : clientMl;
-    const mixer =
-      producto.tipo_venta === 'shot'
-        ? producto.acompanamiento_corto
-        : producto.acompanamiento_botella;
+    const esShotProducto = producto.tipo_venta === 'shot';
+    const saboresBotella = esShotProducto
+      ? []
+      : normalizarAcompanamientoBotella(producto.acompanamiento_botella);
+    const mixer = esShotProducto ? producto.acompanamiento_corto : null;
     const mixerAmount = Number(mixer?.ml_por_corto ?? mixer?.unidades ?? 0);
     const mixerUnit = mixer?.ml_por_corto !== undefined ? 'ml' : 'unidades';
     const badgeColors = [
@@ -177,7 +179,7 @@ const ProductRow = memo(
               {shotMl} ml por corto · {shotMl * producto.cantidad} ml de trago
             </p>
           )}
-          {mixer ? (
+          {esShotProducto && mixer ? (
             <div className='flex items-center gap-2 text-left'>
               <SaleProductPhoto
                 foto={mixer.foto}
@@ -190,13 +192,34 @@ const ProductRow = memo(
                   {mixer.nombre || mixer.presentacion_id}
                 </p>
                 <p>
-                  {mixerAmount} {mixerUnit} por{' '}
-                  {producto.tipo_venta === 'shot' ? 'corto' : 'botella'}
+                  {mixerAmount} {mixerUnit} por corto
                 </p>
                 <p className='text-muted-foreground'>
                   Consumo total: {mixerAmount * producto.cantidad} {mixerUnit}
                 </p>
               </div>
+            </div>
+          ) : saboresBotella.length ? (
+            <div className='space-y-2 text-left'>
+              {saboresBotella.map(sabor => (
+                <div key={sabor.presentacion_id} className='flex items-center gap-2'>
+                  <SaleProductPhoto
+                    foto={sabor.foto ?? undefined}
+                    name={sabor.nombre || 'Bebida'}
+                    large={false}
+                    compact
+                  />
+                  <div className='min-w-0 space-y-1 text-xs leading-relaxed'>
+                    <p className='text-sm font-medium leading-snug'>
+                      {sabor.nombre || sabor.presentacion_id}
+                    </p>
+                    <p>{sabor.unidades} unidades por botella</p>
+                    <p className='text-muted-foreground'>
+                      Consumo total: {sabor.unidades * producto.cantidad} unidades
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <span className='text-xs text-muted-foreground'>Sin bebida</span>

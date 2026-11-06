@@ -62,6 +62,15 @@ vi.mock('@/lib/utils/logger', () => ({
   default: mockLogger
 }));
 
+const baucher = vi.hoisted(() => ({
+  guardarFotoBaucher: vi.fn(),
+  eliminarFotoBaucher: vi.fn()
+}));
+vi.mock('@/lib/utils/image-utils', () => ({
+  guardarFotoBaucher: baucher.guardarFotoBaucher,
+  eliminarFotoBaucher: baucher.eliminarFotoBaucher
+}));
+
 vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-04-10 10:00:00',
   getSystemTimezone: () => 'America/Santiago'
@@ -623,5 +632,69 @@ describe('SaleService.createSale — inventario del bar', () => {
     ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
 
     expect(registrarMovimientoCobro).not.toHaveBeenCalled();
+  });
+});
+
+describe('SaleService.createSale — baucher de transferencia', () => {
+  const BAUCHER_DATA_URL = 'data:image/jpeg;base64,SG9sYSBidWFjaGVy';
+
+  it('guarda la foto y persiste sólo el nombre del archivo en la cabecera', async () => {
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+    baucher.guardarFotoBaucher.mockResolvedValue('sale_1718.webp');
+
+    await SaleService.createSale(
+      {
+        ...validSaleBody,
+        metodo_pago: 'transferencia',
+        codigo: 'V-200',
+        baucher_foto: BAUCHER_DATA_URL
+      },
+      'user-1'
+    );
+
+    expect(baucher.guardarFotoBaucher).toHaveBeenCalledWith(BAUCHER_DATA_URL, 'sale', {
+      codigo: 'V-200'
+    });
+    expect(RegistroVenta.rawInsert).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ baucher_foto: 'sale_1718.webp' })
+    );
+    expect(baucher.eliminarFotoBaucher).not.toHaveBeenCalled();
+  });
+
+  it('sin foto no escribe archivo y la cabecera queda sin baucher', async () => {
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+
+    await SaleService.createSale({ ...validSaleBody, codigo: 'V-201' }, 'user-1');
+
+    expect(baucher.guardarFotoBaucher).not.toHaveBeenCalled();
+    expect(RegistroVenta.rawInsert).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ baucher_foto: null })
+    );
+  });
+
+  it('si la venta no llega a crearse, borra el archivo huérfano', async () => {
+    vi.mocked(obtenerCajaActiva).mockResolvedValue('caja-1');
+    baucher.guardarFotoBaucher.mockResolvedValue('sale_1718.webp');
+    vi.mocked(consumirStockBar).mockRejectedValueOnce(
+      new BusinessError('Quedan 1 de 2 botellas', 'INSUFFICIENT_BAR_STOCK')
+    );
+
+    await expect(
+      SaleService.createSale(
+        {
+          ...validSaleBody,
+          metodo_pago: 'transferencia',
+          codigo: 'V-202',
+          baucher_foto: BAUCHER_DATA_URL
+        },
+        'user-1'
+      )
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
+
+    expect(baucher.eliminarFotoBaucher).toHaveBeenCalledWith('sale_1718.webp', 'sale', {
+      codigo: 'V-202'
+    });
   });
 });

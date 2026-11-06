@@ -244,6 +244,8 @@ export function TransferModal({
                       onVenderConAnfitrionaChange={form.setVenderConAnfitriona}
                       mlAcompanamientoAnfitriona={form.mlAcompanamientoAnfitriona}
                       onMlAcompanamientoAnfitrionaChange={form.setMlAcompanamientoAnfitriona}
+                      acompanamientoCliente={form.acompanamientoCliente}
+                      onAcompanamientoClienteChange={form.setAcompanamientoCliente}
 
                       maxAnfitrionas={form.maxAnfitrionas}
                       onMaxAnfitrionasChange={form.setMaxAnfitrionas}
@@ -293,6 +295,23 @@ export function TransferModal({
                           <span className='block text-sm font-medium'>Habilitar colación</span>
                           <span className='block text-xs text-muted-foreground'>
                             Aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                          </span>
+                        </span>
+                      </Label>
+                    )}
+                    {esAnalcoholica && (
+                      <Label className='flex cursor-pointer items-start gap-2'>
+                        <Checkbox
+                          checked={form.enVenta}
+                          onCheckedChange={checked => form.setEnVenta(checked === true)}
+                          disabled={saving}
+                          aria-label='Poner la bebida a la venta'
+                        />
+                        <span>
+                          <span className='block text-sm font-medium'>A la venta</span>
+                          <span className='block text-xs text-muted-foreground'>
+                            Si la desactivas, la bebida no se ofrece en el catálogo de venta; solo
+                            se usa para cortos, covers o colación.
                           </span>
                         </span>
                       </Label>

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import { ORIGENES_VENTA } from '@/lib/business/ventasOrigen';
+import { BAUCHER_FOTO_MAX_CHARS, esBaucherDataUrlValido } from '@/lib/business/baucher';
+import { acompanamientoBotellaSchema, saboresAcompanamientoValidos } from './acompanamiento';
 
 export const SaleSchema = z.object({
   id: z.string().optional(),
@@ -9,7 +11,6 @@ export const SaleSchema = z.object({
   pedido_id: z.string().nullable().optional(),
   servicio_id: z.string().min(1).nullable().optional(),
   entrada_id: z.string().min(1).nullable().optional(),
-  /** De dónde nació la venta; lo decide el servidor, nunca el cliente. */
   origen: z.enum(ORIGENES_VENTA).nullable().optional(),
   habitacion_id: z.string().nullable().optional(),
   metodo_pago: z
@@ -35,7 +36,8 @@ export const SaleSchema = z.object({
   habitacion_nombre: z.string().nullable().optional(),
   item_count: z.number().optional().default(0),
   anfitrionas_nicks: z.string().nullable().optional(),
-  pagos_mixtos: z.any().optional()
+  pagos_mixtos: z.any().optional(),
+  baucher_foto: z.string().nullable().optional()
 });
 
 export const SaleCreateSchema = z.object({
@@ -58,8 +60,11 @@ export const SaleCreateSchema = z.object({
   monto_prepago: z.number().optional().default(0),
   monto_adicional: z.number().optional().default(0),
   pagos_mixtos: z.any().optional(),
-  // Reparto explícito del prepago entre clientes: cada entrada descuenta su
-  // monto del saldo de ese cliente (permite pagar entre dos).
+  baucher_foto: z
+    .string()
+    .max(BAUCHER_FOTO_MAX_CHARS, 'La foto del baucher supera el tamaño máximo')
+    .refine(esBaucherDataUrlValido, 'La foto del baucher no es una imagen válida')
+    .optional(),
   prepago_destinos: z
     .array(
       z.object({
@@ -79,16 +84,9 @@ export const SaleCreateSchema = z.object({
         .object({
           producto_id: z.string(),
           presentacion_id: z.string().nullable().optional(),
-          // 'shot' descuenta ml de la botella abierta en el bar; por defecto, botella entera.
           tipo_venta: z.enum(['botella', 'shot']).optional(),
-          // El shot puede cobrarse a precio de cliente (default) o de anfitriona.
           botella_anfitriona: z.boolean().optional(),
-          acompanamiento_botella: z
-            .object({
-              presentacion_id: z.string().min(1),
-              unidades: z.number().int().min(1).max(1000)
-            })
-            .optional(),
+          acompanamiento_botella: acompanamientoBotellaSchema.optional(),
           acompanamiento_corto: z
             .object({
               presentacion_id: z.string().min(1),
@@ -113,8 +111,10 @@ export const SaleCreateSchema = z.object({
           detail =>
             (!detail.acompanamiento_botella ||
               (detail.tipo_venta !== 'shot' &&
-                Boolean(detail.presentacion_id) &&
-                detail.presentacion_id !== detail.acompanamiento_botella.presentacion_id)) &&
+                saboresAcompanamientoValidos(
+                  detail.presentacion_id,
+                  detail.acompanamiento_botella
+                ))) &&
             (!detail.acompanamiento_corto ||
               (detail.tipo_venta === 'shot' &&
                 Boolean(detail.presentacion_id) &&

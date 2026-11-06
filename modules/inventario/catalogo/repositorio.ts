@@ -1,8 +1,3 @@
-/**
- * Qué se puede vender ahora mismo: las presentaciones con stock activo, con su
- * precio ya resuelto por niveles. Infraestructura privada del módulo (§5).
- * SQL movido 1:1 desde `lib/repositories/inventory/CatalogoQueries.ts`.
- */
 import { query } from '@/lib/database/db';
 import { CATEGORIA_BEBIDAS_ANALCOHOLICAS } from '@/lib/business/colacionRoles';
 import { hoyDelNegocio } from '@/lib/business/vencimiento';
@@ -20,12 +15,7 @@ export interface FiltrosParaVenta {
 
 export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]> {
   const params: any[] = [];
-  // Día del negocio: un lote que venció hoy todavía se puede servir, uno que
-  // venció ayer no. Se pasa como parámetro para no depender de la zona horaria
-  // del servidor de PostgreSQL.
   const hoy = hoyDelNegocio();
-  // El orden sigue el de los `?` en la consulta: primero los dos contadores de
-  // la lista y después el `EXISTS` del `WHERE`.
   params.push(hoy, hoy, hoy);
   const whereColacion = filters?.solo_colaciones
     ? `AND EXISTS (
@@ -39,15 +29,23 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
         WHERE opcion->>'tipo' = 'botella' AND opcion->>'cover_habilitado' = 'true'
       )`
     : '';
-  // Bebidas analcohólicas habilitadas para colación: la categoría protegida
-  // compartida con la regla de roles, con una opción botella marcada para
-  // colación. Reutiliza el flag `colacion_habilitada` que valida el servidor.
+
   const whereColacionAnalcoholica = filters?.solo_colaciones_analcoholicas
     ? `AND c.system_key = ? AND EXISTS (
         SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
         WHERE opcion->>'tipo' = 'botella' AND opcion->>'colacion_habilitada' = 'true'
       )`
     : '';
+
+  const filtrandoEspecial = Boolean(
+    filters?.solo_colaciones || filters?.solo_cover || filters?.solo_colaciones_analcoholicas
+  );
+  const whereEnVenta = filtrandoEspecial
+    ? ''
+    : `AND NOT EXISTS (
+        SELECT 1 FROM jsonb_array_elements(COALESCE(p.opciones_venta::jsonb, '[]'::jsonb)) opcion
+        WHERE opcion->>'tipo' = 'botella' AND opcion->>'en_venta' = 'false'
+      )`;
   let whereCategoria = '';
   if (filters?.category_id) {
     whereCategoria = 'AND pr.categoria_id = ?';
@@ -81,7 +79,7 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
          AND (COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL
               OR COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?)
      )
-      ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover} ${whereColacionAnalcoholica}
+      ${whereCategoria} ${whereTerm} ${whereColacion} ${whereCover} ${whereColacionAnalcoholica} ${whereEnVenta}
      ORDER BY pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     params
   );
@@ -106,7 +104,6 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
         ? null
         : Number(row.max_anfitrionas),
     ml_abierta: Number(row.ml_abierta ?? 0),
-    // Precio de shot guardado (si existe) para el selector Botella/Shot de la venta.
     opciones_venta:
       completarOpciones(
         row.opciones_venta,

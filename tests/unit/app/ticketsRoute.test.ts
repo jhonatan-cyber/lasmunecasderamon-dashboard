@@ -250,6 +250,7 @@ describe('entrega en la barra', () => {
       entradaId: 'e1',
       presentacionId: 'pres-1',
       acompanamientoPresentacionId: null,
+      acompanamientos: null,
       montoAdicional: null,
       // La web sin `tipo_entrega` conserva la entrega por botella.
       tipoEntrega: 'botella',

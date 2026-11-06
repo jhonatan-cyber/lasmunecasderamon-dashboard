@@ -1,11 +1,11 @@
 import { z } from 'zod';
+import { acompanamientoBotellaSchema, saboresAcompanamientoValidos } from './acompanamiento';
+
 const inventoryFields = {
   presentacion_id: z.string().nullable().optional(),
   tipo_venta: z.enum(['botella', 'shot']).optional(),
   shot_anfitriona: z.boolean().optional(),
-  acompanamiento_botella: z
-    .object({ presentacion_id: z.string().min(1), unidades: z.number().int().min(1).max(1000) })
-    .optional(),
+  acompanamiento_botella: acompanamientoBotellaSchema.optional(),
   acompanamiento_corto: z
     .object({
       presentacion_id: z.string().min(1),
@@ -43,8 +43,7 @@ export const DetalleCuentaSchema = z
     d =>
       !d.acompanamiento_botella ||
       (d.tipo_venta !== 'shot' &&
-        Boolean(d.presentacion_id) &&
-        d.presentacion_id !== d.acompanamiento_botella.presentacion_id),
+        saboresAcompanamientoValidos(d.presentacion_id, d.acompanamiento_botella)),
     'Acompa\u00f1amiento de botella inv\u00e1lido'
   )
   .transform(d =>

@@ -29,7 +29,15 @@ export function OrderProducts({ detail, propina, recargoAnfitrionas }: OrderProd
             ? resolveShotMlAnfitriona(item.ml_shot_anfitriona, mlCliente)
             : mlCliente;
           const mixer =
-            line.tipo_venta === 'shot' ? line.acompanamiento_corto : line.acompanamiento_botella;
+            line.tipo_venta === 'shot'
+              ? line.acompanamiento_corto
+                ? {
+                    ...line.acompanamiento_corto,
+                    nombre: item.acompanamiento_nombre || line.acompanamiento_corto.nombre,
+                    foto: item.acompanamiento_foto
+                  }
+                : undefined
+              : (item.acompanamiento_botella ?? line.acompanamiento_botella);
           return (
             <SalesProductDetail
               consumoProducto={
@@ -50,13 +58,15 @@ export function OrderProducts({ detail, propina, recargoAnfitrionas }: OrderProd
                     ?.split(',')
                     .map((name: string) => name.trim()) ?? line.hostesses,
                 acompanamiento: mixer
-                  ? {
-                      ...mixer,
-                      nombre:
-                        item.acompanamiento_nombre ||
-                        ('nombre' in mixer ? mixer.nombre : undefined),
-                      foto: item.acompanamiento_foto
-                    }
+                  ? Array.isArray(mixer)
+                    ? mixer
+                    : {
+                        ...mixer,
+                        nombre:
+                          item.acompanamiento_nombre ||
+                          ('nombre' in mixer ? mixer.nombre : undefined),
+                        foto: item.acompanamiento_foto
+                      }
                   : undefined
               }}
             />

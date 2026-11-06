@@ -54,7 +54,6 @@ export default function PurchasesPage() {
       const savedSort = window.localStorage.getItem(SORT_STORAGE_KEY);
       if (PAGE_SIZES.includes(savedPageSize)) setPageSize(savedPageSize);
       if (savedSort) {
-        // Preferencias del formato anterior sin dirección ('supplier', 'folio').
         const token =
           savedSort.endsWith('-asc') || savedSort.endsWith('-desc')
             ? savedSort
@@ -62,7 +61,6 @@ export default function PurchasesPage() {
         if (SORT_OPTIONS.some(option => option.value === token.split('-')[0])) setSortBy(token);
       }
     } catch {
-      // El listado funciona también cuando el navegador bloquea el almacenamiento.
     } finally {
       setPreferencesLoaded(true);
     }
@@ -73,9 +71,7 @@ export default function PurchasesPage() {
     try {
       window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize));
       window.localStorage.setItem(SORT_STORAGE_KEY, sortBy);
-    } catch {
-      // Con almacenamiento bloqueado, las preferencias duran mientras se muestra el módulo.
-    }
+    } catch {}
   }, [pageSize, sortBy, preferencesLoaded]);
 
   const fetchHistory = useCallback(async () => {

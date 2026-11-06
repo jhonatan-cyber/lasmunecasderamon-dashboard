@@ -292,6 +292,7 @@ describe('tipos de venta al transferir', () => {
           tipo: 'shot',
           precio: 3000,
           comision: 0,
+          acompanamiento_cliente: true,
           precios_anfitriona: []
         }
       ]
@@ -345,6 +346,7 @@ describe('tipos de venta al transferir', () => {
           tipo: 'shot',
           precio: 3000,
           comision: 0,
+          acompanamiento_cliente: true,
           precios_anfitriona: []
         }
       ]
@@ -408,6 +410,7 @@ describe('tipos de venta al transferir', () => {
           tipo: 'shot',
           precio: 3000,
           comision: 0,
+          acompanamiento_cliente: true,
           precio_anfitriona: 5000,
           precios_anfitriona: [{ precio: 5000, comision: 0 }]
         }
@@ -440,6 +443,7 @@ describe('tipos de venta al transferir', () => {
       tipo: 'shot',
       precio: 3000,
       comision: 0,
+      acompanamiento_cliente: true,
       precios_anfitriona: []
     });
     const putCall = request.mock.calls.find(

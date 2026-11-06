@@ -1100,10 +1100,12 @@ it('entrega 3 entradas de una compra con productos y cover distintos, y verifica
       typeof detallesVenta[0].acompanamiento === 'string'
         ? JSON.parse(detallesVenta[0].acompanamiento)
         : detallesVenta[0].acompanamiento;
-    expect(acompanamientoVenta).toMatchObject({
-      presentacion_id: covers[2].presentacionId,
-      unidades: 1
-    });
+    expect(acompanamientoVenta).toEqual([
+      {
+        presentacion_id: covers[2].presentacionId,
+        unidades: 1
+      }
+    ]);
 
     // Dos cortesías postean la entrada (20.000) y la venta el precio completo
     // (25.000): la caja sube 45.000 y la columna de ventas 25.000.

@@ -52,22 +52,19 @@ export async function registrarVenta(
   createdBy: string,
   contexto: ContextoOperacion,
   aplazar: (task: () => void | Promise<void>) => void,
-  options: { desdeCuenta?: boolean; ventaId?: string; entradaId?: string } = {}
+  options: {
+    desdeCuenta?: boolean;
+    ventaId?: string;
+    entradaId?: string;
+    baucherFilename?: string | null;
+  } = {}
 ) {
   const requestedOrder = body.pedido_id || body.id_pedido;
   if (requestedOrder && !options.desdeCuenta) {
-    // Lo vendido lo fija el pedido; el pago lo elige quien cobra. Antes se
-    // descartaba el método del cajero y el pedido se cobraba siempre con el que
-    // guardó el garzón, aunque en caja se hubiera cobrado con tarjeta o
-    // prepago.
     body = await prepararVentaPedido(requestedOrder, Number(body.tiempo || 0), contexto, body);
   }
   const validated = SaleCreateSchema.parse(body);
   validarCambioAnfitrionasVenta(validated);
-  // La UI ya no deja agregar champaña sin tabla de precios; esto cierra la API,
-  // que aceptaba cualquier precio para un producto sin configurar. El cobro de
-  // una cuenta (`desdeCuenta`) factura un consumo ya registrado, no una venta
-  // nueva: bloquearlo ahí dejaría cuentas abiertas sin poder cerrarse.
   if (!options.desdeCuenta) {
     await validarChampanaConfigurada(validated.detalles, contexto);
   }
@@ -88,13 +85,7 @@ export async function registrarVenta(
   const codigo = validated.codigo || Math.random().toString(36).substring(2, 10).toUpperCase();
   const now = getNowInBusinessTimezone(validated.device_date);
   const pagosMixtos: MixedPayment[] = parsePagosMixtos(validated.pagos_mixtos);
-
   const cajaId = await obtenerCajaActiva(contexto);
-  // Validación server-side de caja abierta (paridad con el bloqueo de UI en
-  // las 3 apps): sin caja la venta se registraba con `caja_id` null,
-  // descontaba inventario y no dejaba rastro en caja. Los cobros con
-  // `origen: 'cuenta'` no postulan saldos a caja (skipCashRegisterPosting),
-  // así que sí se permiten sin caja.
   validarCajaVenta(cajaId, skipCashRegisterPosting);
   const totalComision = calcularTotalComisionVenta(validated);
 
@@ -105,8 +96,6 @@ export async function registrarVenta(
     pagosMixtos
   );
 
-  // El reparto explícito permite pagar la misma venta con el saldo de dos
-  // clientes: cada destino se descuenta con su propia validación de saldo.
   const destinosPrepago = skipClientPrepago
     ? []
     : normalizarDestinosPrepago(validated.prepago_destinos, Number(validated.total || 0));
@@ -159,10 +148,6 @@ export async function registrarVenta(
   }
 
   const estado = validated.habitacion_id && validated.tiempo > 0 ? 2 : 1;
-
-  // De dónde nació el cobro. Se decide acá, en el servidor, y viaja persistido:
-  // el cliente HTTP no puede etiquetar su propia venta (S5 de
-  // `odd/tasks/ventas-origen.md`).
   const origen = resolverOrigenVenta({
     entradaId: options.entradaId,
     servicioId: validated.servicio_id,
@@ -170,7 +155,6 @@ export async function registrarVenta(
     pedidoId
   });
 
-  // === INSERT VENTA PRINCIPAL ===
   await registrarCabeceraVenta(contexto, {
     id_venta: ventaId,
     codigo,
@@ -190,7 +174,8 @@ export async function registrarVenta(
     created_by: createdBy,
     estado,
     fecha_crea: now,
-    pagos_mixtos: validated.pagos_mixtos ? JSON.stringify(validated.pagos_mixtos) : null
+    pagos_mixtos: validated.pagos_mixtos ? JSON.stringify(validated.pagos_mixtos) : null,
+    baucher_foto: options.baucherFilename || null
   });
 
   if (validated.habitacion_id && estado === 2 && !esLibreIngreso) {
@@ -215,7 +200,6 @@ export async function registrarVenta(
     );
   }
 
-  // === VALIDACIÓN DE USUARIOS PRINCIPALES + RELACIONES ===
   if (validated.usuarios?.length) {
     const mainHostessIds = validated.usuarios.filter((id: string) => validatedHostessSet.has(id));
 
@@ -223,7 +207,6 @@ export async function registrarVenta(
       await pausarConflictosVenta(mainHostessIds, ventaId, contexto);
     }
 
-    // BATCH INSERT ventas_usuarios
     await asignarAnfitrionasVenta(contexto, ventaId, mainHostessIds, now);
 
     await actualizarDisponibilidadTrasVenta(mainHostessIds, ventaId, contexto);
@@ -237,30 +220,19 @@ export async function registrarVenta(
     generateUUID
   );
 
-  // BATCH INSERT detalles
   if (detailRows.length > 0) {
     await registrarDetallesVenta(contexto, detailRows);
   }
-
-  // === INVENTARIO DEL BAR ===
-  // Descuenta las botellas de las presentaciones vinculadas. Los detalles con
-  // tipo_venta 'shot' descuentan ml de la botella abierta (y la abren si hace falta)
-  // en lugar de gastar una unidad completa. Si no alcanza,
-  // INSUFFICIENT_BAR_STOCK revierte la transacción entera: venta, caja, comisiones y
-  // detalles. Cubre también el cobro de cuenta, que entra por este mismo método con
-  // origen 'cuenta'. Los detalles sin presentación (catálogo anterior) no se tocan.
   const alertasShots = await consumirStockBar(
     validated.detalles,
     { usuarioId: createdBy, fecha: now, ventaId },
     contexto
   );
 
-  // BATCH INSERT comisiones + detalle_comisiones
   if (commissionMainRows.length > 0) {
     await registrarComisionesVenta(commissionMainRows, commissionDetailRows, contexto);
   }
 
-  // === ACTUALIZACIÓN CAJA ===
   if (cajaId && !skipCashRegisterPosting) {
     await registrarMovimientoCobro(
       cajaId,
@@ -269,7 +241,6 @@ export async function registrarVenta(
     );
   }
 
-  // === AUDITORÍA ===
   await AuditService.log(
     {
       user_id: createdBy,
@@ -285,7 +256,6 @@ export async function registrarVenta(
     await cerrarPedidoFacturado(pedidoId, contexto);
   }
 
-  // === PROPI NAS ===
   if (validated.propina && validated.propina > 0) {
     await registrarPropinaVenta({ venta_id: ventaId, monto: validated.propina }, contexto);
   }
@@ -300,19 +270,10 @@ export async function registrarVenta(
   };
 
   const notificar = async () => {
-    // SSE notification (no bloquea — broadcast es síncrono en memoria)
     sendNotificationToAll('timers_updated', { timestamp: now });
     if (validated.servicio_id && validated.servicio_anfitrionas !== undefined)
       sendNotificationToAll('service_changed', { action: 'hostesses', id: validated.servicio_id });
-
-    // Al crear una venta se notifica al staff: antes solo lo hacía el cron de
-    // timers (y `sale_cancelled` al anular), así que las apps no veían ventas
-    // nuevas hasta el siguiente refetch manual. Los suscriptores (Expo
-    // SalesContext, Flutter refresh_bus 'sales') hacen refetch con este evento;
-    // payload informativo, misma forma `{ id, type }` que usa el cron.
     sendNotificationToAll('updateSales', { id: result.id_venta, type: 'venta' });
-
-    // Aviso al barman: una botella abierta bajó del umbral configurado de shots.
     await notifyBarShotAlerts(alertasShots);
   };
 

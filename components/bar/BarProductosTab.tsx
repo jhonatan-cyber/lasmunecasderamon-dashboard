@@ -225,7 +225,7 @@ export function BarProductosTab({
                             </TableCell>
                             <TableCell className='sm:px-4 text-center'>
                               <Badge
-                                className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock_bar ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                                className={`rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs ${Number(item.stock_bar ?? 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} border ${Number(item.stock_bar ?? 0) > 0 ? 'border-green-200' : 'border-red-200'}`}
                               >
                                 {Number(item.stock_bar ?? 0) > 0 ? item.stock_bar : 'Agotado'}
                               </Badge>
@@ -251,7 +251,7 @@ export function BarProductosTab({
                             </TableCell>
                             <TableCell className='sm:px-4 text-center'>
                               <Badge
-                                className={`rounded-full px-2 sm:px-3 py-1 text-xs sm:text-sm ${Number(item.stock ?? 0) > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}
+                                className={`rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs ${Number(item.stock ?? 0) > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'} border ${Number(item.stock ?? 0) > 0 ? 'border-blue-200' : 'border-red-200'}`}
                               >
                                 {Number(item.stock ?? 0) > 0 ? item.stock : 'Agotado'}
                               </Badge>

@@ -7,10 +7,16 @@ import {
   solicitarAnulacionVenta,
   procesarAnulacionVenta
 } from '@/workflows/anulaciones-venta';
-import { listarVentas, obtenerVenta, obtenerVentaParaAlerta } from '@/modules/ventas';
+import {
+  listarVentas,
+  obtenerVenta,
+  obtenerVentaParaAlerta,
+  obtenerBaucherFotoVenta
+} from '@/modules/ventas';
 import type { EntradaRegistroVenta } from '@/modules/ventas/contracts';
 import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
 import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
+import { eliminarFotoBaucher, guardarFotoBaucher } from '@/lib/utils/image-utils';
 export interface CreateSaleOptions {
   contexto?: ContextoOperacion;
   onAfterCommit?: (task: () => void | Promise<void>) => void;
@@ -27,13 +33,27 @@ export class SaleService {
       options.onAfterCommit ?? ((tarea: () => void | Promise<void>) => tareas.push(tarea));
     if (options.contexto && !options.onAfterCommit)
       throw new Error('Una transacción ajena requiere onAfterCommit');
-    const ejecutar = (contexto: ContextoOperacion) =>
-      registrarVenta(body, createdBy, contexto, aplazar, { entradaId: options.entradaId });
-    const resultado = options.contexto
-      ? await ejecutar(options.contexto)
-      : await enUnaUnidad(unidad => unidad.ejecutar(ejecutar));
-    await ejecutarEfectosConfirmados(tareas);
-    return resultado;
+    const baucherFilename = body.baucher_foto
+      ? await guardarFotoBaucher(body.baucher_foto, 'sale', { codigo: body.codigo })
+      : null;
+    let ventaCreada = false;
+    try {
+      const ejecutar = (contexto: ContextoOperacion) =>
+        registrarVenta(body, createdBy, contexto, aplazar, {
+          entradaId: options.entradaId,
+          baucherFilename
+        });
+      const resultado = options.contexto
+        ? await ejecutar(options.contexto)
+        : await enUnaUnidad(unidad => unidad.ejecutar(ejecutar));
+      ventaCreada = true;
+      await ejecutarEfectosConfirmados(tareas);
+      return resultado;
+    } catch (error) {
+      if (baucherFilename && !ventaCreada)
+        await eliminarFotoBaucher(baucherFilename, 'sale', { codigo: body.codigo });
+      throw error;
+    }
   }
 
   static async approveAnulacion(ventaId: string, approvedBy: string, requestedAmount: number) {
@@ -49,6 +69,10 @@ export class SaleService {
     return await obtenerVenta(id.toString());
   }
 
+  static async getBaucherFoto(id: string | number) {
+    return await obtenerBaucherFotoVenta(id.toString());
+  }
+
   static async updateStatus(id: string, estado: number, userId?: string) {
     await actualizarEstadoVenta(id, estado, userId);
     return await obtenerVenta(id);
@@ -56,7 +80,6 @@ export class SaleService {
 
   static async processAnulacion(requestId: string, approvedBy: string, status: string) {
     const ventaId = await procesarAnulacionVenta(requestId, approvedBy, status);
-    // 🔒 Verificar anulaciones masivas
     try {
       const saleInfo = await obtenerVentaParaAlerta(requestId);
       if (saleInfo.length > 0) {

@@ -18,6 +18,10 @@ import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { sincronizarStockTotal } from '../unidades/repositorio';
 import { parseOpcionesVenta } from '../helpers';
+import {
+  normalizarAcompanamientoBotella,
+  type AcompanamientoBotella
+} from '@/lib/sales/acompanamientoBotella';
 
 interface PedidoPresentacion {
   botellas: number;
@@ -36,44 +40,22 @@ interface PresentacionConsumo {
   ml_botella: number | null;
   ml_shot: number | null;
   ml_shot_anfitriona: number | null;
-  /** Estado del producto: 0 = desactivado, no se consume del bar. */
   estado: number | null;
-  /**
-   * Vencimiento de la presentación: el respaldo de las unidades sin fecha de
-   * lote propia (las anteriores a la migración 111).
-   */
   fecha_vencimiento: string | null;
 }
 
 interface UnidadConsumo {
   id: string;
   ml_restante: number | null;
-  /** Vencimiento del lote de esta botella; null = hereda el de la presentación. */
   fecha_vencimiento: string | null;
 }
 
-/**
- * Sobrescribe lo que el movimiento de inventario registra. La cortesía por
- * corte consume igual que una venta (ml de la botella, unidades del
- * acompañamiento) pero no es una venta: queda como `cortesia` y a precio 0.
- */
 export interface OpcionesConsumoStock {
   tipo?: 'venta' | 'cortesia';
-  /** Importe a registrar; 0 para una cortesía. */
   precio?: number;
-  /** Comisión a registrar; 0 para una cortesía. */
   comision?: number;
 }
 
-/**
- * Separa las botellas que se pueden vender de las que ya vencieron. Manda la
- * fecha del lote de la unidad; si no la tiene, se aplica la de la presentación
- * (las unidades anteriores a la migración 111 sólo conocen esa).
- *
- * Vencido no significa "no existe": la botella sigue occupying stock hasta que
- * se le da de baja. Por eso el consumo la aparta del grupo y el resto de los
- * flujos (merma, reposición) son los que la sacan del inventario.
- */
 function separarVencidas(
   unidades: UnidadConsumo[],
   fechaPresentacion: string | null,
@@ -92,7 +74,6 @@ export async function consumirStock(
   soloValidar = false,
   opciones?: OpcionesConsumoStock
 ): Promise<ShotAlert[]> {
-  // El producto incluido consume una unidad completa sin reglas de precio de venta.
   const presentacionesBloqueadas = contextoVenta.servicioId
     ? undefined
     : await bloquearYValidarConfiguracionVenta(trx, detalles);
@@ -100,8 +81,7 @@ export async function consumirStock(
   const requerido = new Map<string, PedidoPresentacion>();
 
   for (const detalle of detalles) {
-    if (detalle.acompanamiento_botella) {
-      const mixer = detalle.acompanamiento_botella;
+    for (const mixer of normalizarAcompanamientoBotella(detalle.acompanamiento_botella)) {
       const cantidad = Number(detalle.cantidad);
       if (
         detalle.tipo_venta === 'shot' ||
@@ -190,11 +170,7 @@ export async function consumirStock(
         shotsAlerta: DEFAULT_SHOTS_ALERTA
       };
 
-  // Orden estable de bloqueo para ventas concurrentes que comparten bebidas.
   for (const [presentacionId, pedido] of [...requerido].sort(([a], [b]) => a.localeCompare(b))) {
-    // Para botellas completas los volúmenes de shot del producto no intervienen.
-    // La presentación ya está bloqueada por la validación; no hay otra lectura ni
-    // un bloqueo nuevo. Shots, acompañamientos e incluidos conservan su consulta.
     const bloqueada = !pedido.tieneShots
       ? presentacionesBloqueadas?.get(presentacionId)
       : undefined;
@@ -215,13 +191,15 @@ export async function consumirStock(
       if (contextoVenta.servicioId) throw new BusinessError('El producto incluido ya no existe');
       if (
         pedido.mlAcompanamiento > 0 ||
-        detalles.some(d => d.acompanamiento_botella?.presentacion_id === presentacionId)
+        detalles.some(d =>
+          normalizarAcompanamientoBotella(d.acompanamiento_botella).some(
+            sabor => sabor.presentacion_id === presentacionId
+          )
+        )
       )
         throw new BusinessError('El producto de acompa\u00f1amiento ya no existe');
       continue;
     }
-    // Un producto desactivado a mano no se consume del bar, aunque conserve
-    // stock: la misma regla aplica al corto y a la botella.
     if (productoDesactivado(presentacion.estado)) {
       if (contextoVenta.servicioId)
         throw new BusinessError('El producto incluido ya no esta disponible');
@@ -236,10 +214,6 @@ export async function consumirStock(
     );
     const umbralAlertaPresentacion = shotMlPresentacion * shotsAlerta;
 
-    // Las botellas vencidas salen del grupo: el pedido se resuelve con las que
-    // siguen vigentes y el consumo no toca un lote vencido. El orden prioriza
-    // las abiertas (para no dejar una botella a medias) y, dentro de cada
-    // grupo, la que vence antes.
     const unidades = await trx<UnidadConsumo[]>(
       `SELECT id, ml_restante, fecha_vencimiento FROM inventario_unidades
         WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
@@ -251,9 +225,6 @@ export async function consumirStock(
     const hoy = hoyDelNegocio();
     const { vigentes, vencidas } = separarVencidas(unidades, presentacion.fecha_vencimiento, hoy);
 
-    // Todo el stock del bar está vencido: no hay nada vendible para esta
-    // presentación. Se dice con su propio mensaje para que quede claro que el
-    // problema es la fecha y no el stock.
     if (vigentes.length === 0 && vencidas > 0) {
       throw new BusinessError(
         `"${presentacion.nombre}" está vencido: no se puede vender`,
@@ -262,9 +233,6 @@ export async function consumirStock(
       );
     }
 
-    // `ml_consumido` es lo que este movimiento le quitó a la unidad, no la
-    // diferencia con lo que tenía: si la venta abrió una botella cerrada, la
-    // diferencia con su `ml_restante` (0) no diría nada de los ml que salieron.
     const plan: { id: string; ml_restante: number; ml_consumido: number }[] = [];
     let mlPendiente =
       pedido.shotsCliente * shotMlPresentacion +
@@ -291,7 +259,6 @@ export async function consumirStock(
       }
       if (botellasPendientes > 0) {
         botellasPendientes -= 1;
-        // Botella vendida entera: no sale ml de ella, sale la botella.
         plan.push({ id: unidad.id, ml_restante: 0, ml_consumido: 0 });
         continue;
       }
@@ -330,7 +297,6 @@ export async function consumirStock(
       });
     }
 
-    // El pedido comprueba el mismo plan, sin consumir, abrir botellas ni registrar movimientos.
     if (soloValidar) continue;
 
     const vendidas: string[] = [];
@@ -421,9 +387,6 @@ export async function consumirStock(
       Object.values(movimiento)
     );
 
-    // Qué unidades tocó este consumo y cuánta ml les quitó (migración 058). Sin
-    // esta trazabilidad la anulación de la venta no puede devolver lo que salió:
-    // solo sabría cuántas botellas vender, no cuáles ni cuánto les queda.
     const tocadas = plan.map(item => [movimiento.id, item.id, item.ml_consumido]);
     if (tocadas.length > 0) {
       const valores = tocadas.flat();
@@ -439,7 +402,6 @@ export async function consumirStock(
   return alertas;
 }
 
-/** Valida botellas, cortos y bebidas acumulados sin reservar ni modificar existencias. */
 export async function validarStockPedido(
   trx: TransactionQuery,
   detalles: ConsumoInventarioDetalle[]
@@ -449,22 +411,10 @@ export async function validarStockPedido(
 
 export interface ConsumoColacionDetalle {
   presentacion_id: string;
-  /** Ml que se descuentan de la bebida servida (0 = no se descuenta ml). */
   ml?: number;
-  /** Unidades completas que se descuentan del acompañamiento. */
   unidades?: number;
 }
 
-/**
- * Descuenta del bar lo que entregó una colación: los ml de la bebida servida y
- * el acompañamiento (unidades completas o sus ml, según la configuración).
- *
- * Usa la misma mecánica que la venta —primero lo que queda en botellas
- * abiertas, después abrir una cerrada y marcar vendida la que quedó vacía—,
- * pero registra el movimiento como `colacion` y con precio 0, para que no
- * cuente como venta ni como shot servido. Sin esto la colación solo dejaba una
- * fila en `colaciones`: la botella seguía llena y el ml abierto nunca bajaba.
- */
 export async function consumirColacion(
   detalles: ConsumoColacionDetalle[],
   usuarioId: string,
@@ -483,8 +433,6 @@ export async function consumirColacion(
 
   const { botellaMl } = await getBarMlConfig(trx);
 
-  // Orden estable de bloqueo: dos colaciones simultáneas que comparten la misma
-  // botella de acompañamiento no pueden planificar sobre las mismas unidades.
   for (const pedido of [...pedidos].sort((a, b) =>
     a.presentacionId.localeCompare(b.presentacionId)
   )) {
@@ -519,7 +467,6 @@ export async function consumirColacion(
       presentacion.fecha_vencimiento,
       hoyDelNegocio()
     );
-    // Una colación tampoco se sirve con un lote vencido.
     if (vigentes.length === 0 && vencidas > 0) {
       throw new BusinessError(
         `"${presentacion.nombre}" está vencido: no se puede servir`,
@@ -551,8 +498,6 @@ export async function consumirColacion(
       }
       if (unidadesPendientes > 0) {
         unidadesPendientes -= 1;
-        // La unidad entera sale del bar: esos ml también salen, y hay que
-        // registrarlos o el stock desaparece del resumen.
         plan.push({ id: unidad.id, ml_restante: 0, ml_consumido: capacidadMl });
         continue;
       }
@@ -631,7 +576,6 @@ export async function consumirColacion(
   }
 }
 
-/** Descuenta del bar una botella analcohólica entregada como cover. */
 export async function consumirCover(
   presentacionId: string,
   usuarioId: string,
@@ -659,11 +603,8 @@ export async function consumirCover(
   );
   const presentacion = presentaciones[0];
   if (!presentacion) throw new BusinessError('La bebida no está habilitada para cover');
-  // Un producto desactivado a mano no se consume del bar.
   if (productoDesactivado(presentacion.estado))
     throw new BusinessError('La bebida del cover no esta disponible');
-  // El cover entrega una botella: no se entrega un lote vencido. La botella que
-  // caduca primero es la primera que sale.
   const unidades = await trx<{ id: string }[]>(
     `SELECT id FROM inventario_unidades
       WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
@@ -699,14 +640,13 @@ export async function consumirCover(
   await sincronizarStockTotal(trx, presentacion.producto_id);
 }
 
-/** Descuenta una unidad de un producto elegido como cortesía en el registro de entradas. */
 export async function consumirProductoCortesia(
   presentacionId: string,
   usuarioId: string,
   fecha: string,
   contexto: ContextoOperacion,
   montoMaximo?: number,
-  acompanamientoPresentacionId?: string | null
+  acompanamientos?: AcompanamientoBotella | null
 ): Promise<void> {
   const trx = resolverTransaccion(contexto);
   const configs = await trx<{ valor: string }[]>(
@@ -739,38 +679,45 @@ export async function consumirProductoCortesia(
   const presentacion = presentaciones[0];
   if (!presentacion)
     throw new BusinessError('El precio de la bebida supera el monto de entrada más el adicional');
-  // Un producto desactivado a mano no se consume del bar.
   if (productoDesactivado(presentacion.estado))
     throw new BusinessError('La bebida de cortesia no esta disponible');
   const opciones = parseOpcionesVenta(presentacion.opciones_venta) ?? [];
   const unidadesIncluidas = Number(
     opciones.find(opcion => opcion.tipo === 'botella')?.acompanamiento?.unidades ?? 0
   );
-  if (unidadesIncluidas > 0 && !acompanamientoPresentacionId)
+  const reparto = normalizarAcompanamientoBotella(acompanamientos);
+  const totalReparto = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
+  if (unidadesIncluidas > 0 && reparto.length === 0)
     throw new BusinessError('Selecciona el acompañamiento incluido en esta bebida');
-  if (unidadesIncluidas <= 0 && acompanamientoPresentacionId)
+  if (unidadesIncluidas <= 0 && reparto.length > 0)
     throw new BusinessError('La bebida seleccionada no tiene acompañamiento configurado');
-  if (acompanamientoPresentacionId === presentacionId)
+  if (reparto.some(sabor => sabor.presentacion_id === presentacionId))
     throw new BusinessError('La bebida y su acompañamiento deben ser distintos');
+  if (reparto.length > 0 && totalReparto !== unidadesIncluidas)
+    throw new BusinessError('Reparte el acompañamiento entre los sabores incluidos');
 
-  let productoAcompanamientoId: string | null = null;
-  let vencimientoAcompanamiento: string | null = null;
-  if (acompanamientoPresentacionId) {
-    const acompanamientos = await trx<
+  const sabores = new Map<string, { producto_id: string; fecha_vencimiento: string | null }>();
+  if (reparto.length > 0) {
+    const ids = reparto.map(sabor => sabor.presentacion_id);
+    const filas = await trx<
       { id: string; producto_id: string; fecha_vencimiento: string | null }[]
     >(
       `SELECT p.id, p.producto_id, p.fecha_vencimiento
          FROM inventario_presentaciones p
          JOIN productos pr ON pr.id_producto = p.producto_id
          JOIN categorias c ON c.id_categoria = pr.categoria_id
-        WHERE p.id = ? AND c.system_key = 'bebidas_analcoholicas' AND pr.estado = 1
+        WHERE p.id IN (${ids.map(() => '?').join(',')})
+          AND c.system_key = 'bebidas_analcoholicas' AND pr.estado = 1
         FOR UPDATE OF p`,
-      [acompanamientoPresentacionId]
+      ids
     );
-    if (!acompanamientos.length)
+    if (filas.length !== ids.length)
       throw new BusinessError('Selecciona una bebida analcohólica válida como acompañamiento');
-    productoAcompanamientoId = acompanamientos[0].producto_id;
-    vencimientoAcompanamiento = acompanamientos[0].fecha_vencimiento;
+    for (const fila of filas)
+      sabores.set(fila.id, {
+        producto_id: fila.producto_id,
+        fecha_vencimiento: fila.fecha_vencimiento
+      });
   }
 
   const consumirUnidades = async (
@@ -779,8 +726,6 @@ export async function consumirProductoCortesia(
     cantidad: number,
     fechaPresentacion: string | null
   ) => {
-    // La cortesía tampoco entrega un lote vencido: se sirven las botellas
-    // vigentes, empezando por la que caduca antes.
     const unidades = await trx<{ id: string }[]>(
       `SELECT id FROM inventario_unidades
         WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
@@ -824,46 +769,44 @@ export async function consumirProductoCortesia(
     1,
     presentacion.fecha_vencimiento
   );
-  if (acompanamientoPresentacionId && productoAcompanamientoId)
+  for (const sabor of reparto) {
+    const fila = sabores.get(sabor.presentacion_id);
+    if (!fila) continue;
     await consumirUnidades(
-      acompanamientoPresentacionId,
-      productoAcompanamientoId,
-      unidadesIncluidas,
-      vencimientoAcompanamiento
+      sabor.presentacion_id,
+      fila.producto_id,
+      sabor.unidades,
+      fila.fecha_vencimiento
     );
+  }
 }
 
-/**
- * Descuenta del bar la cortesía servida como corte (trago), no como botella.
- *
- * Un corte cliente sale con una unidad completa de bebida analcohólica, igual
- * que en una venta (`shortMixerConsumption`): por eso el acompañamiento viaja
- * como `acompanamiento_corto` y no como `acompanamiento_botella`. Se reutiliza
- * `consumirStock` para que el plan de ml (botellas abiertas primero, abrir una
- * cerrada si hace falta) y la trazabilidad por unidad sean idénticos a los de
- * una venta; solo cambia el tipo y el precio del movimiento, que quedan en 0.
- */
 export async function consumirCorteCortesia(
   presentacionId: string,
   usuarioId: string,
   fecha: string,
   contexto: ContextoOperacion,
-  acompanamientoPresentacionId?: string | null
+  acompanamientos?: AcompanamientoBotella | null
 ): Promise<void> {
   if (!presentacionId) throw new BusinessError('Selecciona la bebida a entregar');
-  if (acompanamientoPresentacionId === presentacionId)
+  const reparto = normalizarAcompanamientoBotella(acompanamientos);
+  if (reparto.length > 1)
+    throw new BusinessError('El corte lleva una sola bebida de acompañamiento');
+  if (reparto.some(sabor => sabor.presentacion_id === presentacionId))
     throw new BusinessError('La bebida y su acompañamiento deben ser distintos');
   const trx = resolverTransaccion(contexto);
-  if (acompanamientoPresentacionId) {
-    const acompanamientos = await trx<{ id: string }[]>(
+  if (reparto.length) {
+    const ids = reparto.map(sabor => sabor.presentacion_id);
+    const filas = await trx<{ id: string }[]>(
       `SELECT p.id
          FROM inventario_presentaciones p
          JOIN productos pr ON pr.id_producto = p.producto_id
          JOIN categorias c ON c.id_categoria = pr.categoria_id
-        WHERE p.id = ? AND c.system_key = 'bebidas_analcoholicas' AND pr.estado = 1`,
-      [acompanamientoPresentacionId]
+        WHERE p.id IN (${ids.map(() => '?').join(',')})
+          AND c.system_key = 'bebidas_analcoholicas' AND pr.estado = 1`,
+      ids
     );
-    if (!acompanamientos.length)
+    if (filas.length !== ids.length)
       throw new BusinessError('Selecciona una bebida analcohólica válida como acompañamiento');
   }
   await consumirStock(
@@ -873,10 +816,10 @@ export async function consumirCorteCortesia(
         presentacion_id: presentacionId,
         tipo_venta: 'shot',
         cantidad: 1,
-        ...(acompanamientoPresentacionId
+        ...(reparto.length
           ? {
               acompanamiento_corto: {
-                presentacion_id: acompanamientoPresentacionId,
+                presentacion_id: reparto[0].presentacion_id,
                 unidades: 1
               }
             }
@@ -887,10 +830,9 @@ export async function consumirCorteCortesia(
     false,
     { tipo: 'cortesia', precio: 0, comision: 0 }
   );
-  // El stock total del producto se recalcula como en la cortesía por botella:
-  // `consumirStock` mueve unidades, no el contador agregado de `productos`.
-  const ids = [presentacionId, acompanamientoPresentacionId].filter((id): id is string =>
-    Boolean(id)
+
+  const ids = [presentacionId, ...reparto.map(sabor => sabor.presentacion_id)].filter(
+    (id): id is string => Boolean(id)
   );
   const productos = await trx<{ producto_id: string }[]>(
     `SELECT DISTINCT producto_id FROM inventario_presentaciones

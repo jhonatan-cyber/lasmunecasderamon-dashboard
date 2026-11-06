@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { useState } from 'react';
+import { Minus, Plus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -11,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
 import type { SaleProductItem, SaleProductMixer } from './saleProductItems';
 import { SaleProductPhoto } from './SaleProductPhoto';
 
@@ -111,6 +113,196 @@ function MixerSelect({
   );
 }
 
+/**
+ * Reparto del acompañamiento de una botella entre varios sabores: se elige la
+ * cantidad requerida y se reparte por sabor (2 fantas, 1 cocacola, 1 agua) hasta
+ * sumar exactamente el total antes de poder agregar el producto.
+ */
+function MixerDistribute({
+  mixer,
+  item,
+  showLabel
+}: {
+  mixer: SaleProductMixer;
+  item: SaleProductItem;
+  showLabel: boolean;
+}) {
+  const [search, setSearch] = useState('');
+  const sabores: AcompanamientoBotellaItem[] = Array.isArray(mixer.selected) ? mixer.selected : [];
+  const requerido = Number(mixer.unidades ?? 0);
+  const asignado = sabores.reduce((sum, sabor) => sum + (Number(sabor.unidades) || 0), 0);
+  const restante = Math.max(0, requerido - asignado);
+  const chosen = new Set(sabores.map(sabor => String(sabor.presentacion_id)));
+  const botellas = Math.max(1, Number(mixer.cantidad) || 1);
+  const stockOf = (sabor: AcompanamientoBotellaItem) =>
+    Number(
+      (sabor as { stock_bar?: number }).stock_bar ??
+        mixer.choices.find(choice => String(choice.id) === String(sabor.presentacion_id))
+          ?.stock_bar ??
+        0
+    );
+  const maxFor = (sabor: AcompanamientoBotellaItem) => {
+    const otros = asignado - Number(sabor.unidades);
+    return Math.max(1, Math.min(requerido - otros, Math.floor(stockOf(sabor) / botellas)));
+  };
+  const apply = (next: AcompanamientoBotellaItem[]) => mixer.onDistribute?.(next);
+  const addFlavor = (presentacionId: string) => {
+    const choice = mixer.choices.find(c => String(c.id) === presentacionId);
+    if (!choice || restante < 1) return;
+    apply([
+      ...sabores,
+      {
+        presentacion_id: String(presentacionId),
+        unidades: 1,
+        nombre: `${choice.producto_nombre} ${choice.nombre}`,
+        foto: choice.foto && choice.foto !== 'default.png' ? choice.foto : choice.producto_foto,
+        stock_bar: Number(choice.stock_bar) || 0
+      } as AcompanamientoBotellaItem
+    ]);
+  };
+  const choices = mixer.choices
+    .filter(choice => !chosen.has(String(choice.id)))
+    .filter(choice => matchesProductSearch(choice, search));
+  return (
+    <div className='space-y-2 text-xs'>
+      {showLabel && <p>{mixer.label}</p>}
+      <p className='text-muted-foreground'>
+        {restante > 0
+          ? `Reparte ${requerido} unidades por botella · asignado ${asignado}/${requerido}`
+          : `Reparto completo · ${requerido} unidades por botella`}
+      </p>
+      <Select
+        value=''
+        onValueChange={(value: string) => addFlavor(value)}
+        onOpenChange={() => setSearch('')}
+        disabled={
+          item.mixerLoading ||
+          !!item.mixerError ||
+          mixer.needsConfiguration ||
+          restante < 1 ||
+          !choices.length
+        }
+      >
+        <SelectTrigger
+          aria-label={`Agregar sabor de bebida para ${item.name} ${mixer.label}`}
+          className='h-14 min-h-14 w-full py-2 [&>span]:line-clamp-none'
+        >
+          <SelectValue placeholder='Agregar sabor…' />
+        </SelectTrigger>
+        <SelectContent position='popper' className='w-[var(--radix-select-trigger-width)] min-w-56'>
+          <div className='sticky top-0 z-10 bg-popover p-2'>
+            <Input
+              aria-label={`Buscar sabor de bebida para ${item.name} ${mixer.label}`}
+              placeholder='Buscar bebida o presentación…'
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              onKeyDown={event => {
+                if (event.key !== 'Escape' && event.key !== 'Tab') event.stopPropagation();
+              }}
+            />
+          </div>
+          <div
+            className='max-h-56 overflow-y-auto overscroll-contain'
+            onWheel={event => event.stopPropagation()}
+          >
+            {choices.map(choice => (
+              <SelectItem
+                key={choice.id}
+                value={String(choice.id)}
+                textValue={`${choice.producto_nombre} ${choice.nombre}`}
+              >
+                <MixerChoice choice={choice} />
+              </SelectItem>
+            ))}
+            {!choices.length && (
+              <p className='px-3 py-2 text-sm text-muted-foreground'>No se encontraron bebidas.</p>
+            )}
+          </div>
+        </SelectContent>
+      </Select>
+      {sabores.length > 0 && (
+        <ul className='space-y-2'>
+          {sabores.map(sabor => {
+            const max = maxFor(sabor);
+            const nombre = sabor.nombre || sabor.presentacion_id;
+            return (
+              <li key={sabor.presentacion_id} className='flex items-center gap-2'>
+                <SaleProductPhoto
+                  foto={sabor.foto && sabor.foto !== 'default.png' ? sabor.foto : undefined}
+                  name={nombre}
+                  large={false}
+                  compact
+                />
+                <div className='min-w-0 flex-1'>
+                  <p className='truncate text-sm font-medium'>{nombre}</p>
+                  <p className='text-xs text-muted-foreground'>
+                    Stock: {stockOf(sabor)} · máx {max}
+                  </p>
+                </div>
+                <div className='flex items-center gap-1'>
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    aria-label={`Quitar una unidad de ${nombre}`}
+                    disabled={Number(sabor.unidades) <= 1}
+                    onClick={() =>
+                      apply(
+                        sabores.map(item0 =>
+                          item0.presentacion_id === sabor.presentacion_id
+                            ? { ...item0, unidades: Number(item0.unidades) - 1 }
+                            : item0
+                        )
+                      )
+                    }
+                    className='h-7 w-7 rounded-full p-0'
+                  >
+                    <Minus className='h-3 w-3' />
+                  </Button>
+                  <span className='w-6 text-center font-bold'>{sabor.unidades}</span>
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    aria-label={`Agregar una unidad de ${nombre}`}
+                    disabled={Number(sabor.unidades) >= max}
+                    onClick={() =>
+                      apply(
+                        sabores.map(item0 =>
+                          item0.presentacion_id === sabor.presentacion_id
+                            ? { ...item0, unidades: Number(item0.unidades) + 1 }
+                            : item0
+                        )
+                      )
+                    }
+                    className='h-7 w-7 rounded-full p-0'
+                  >
+                    <Plus className='h-3 w-3' />
+                  </Button>
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='ghost'
+                    aria-label={`Quitar ${nombre}`}
+                    onClick={() =>
+                      apply(
+                        sabores.filter(item0 => item0.presentacion_id !== sabor.presentacion_id)
+                      )
+                    }
+                    className='h-7 w-7 rounded-full p-0'
+                  >
+                    <X className='h-3 w-3' />
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function SaleProductMixers({
   item,
   showLabels = true
@@ -139,14 +331,23 @@ export function SaleProductMixers({
           </Button>
         </p>
       )}
-      {item.mixers.map(mixer => (
-        <MixerSelect
-          key={`${mixer.value}:${mixer.unitIndex ?? 0}`}
-          mixer={mixer}
-          item={item}
-          showLabel={showLabels}
-        />
-      ))}
+      {item.mixers.map(mixer =>
+        mixer.bottle ? (
+          <MixerDistribute
+            key={`${mixer.value}:${mixer.unitIndex ?? 0}`}
+            mixer={mixer}
+            item={item}
+            showLabel={showLabels}
+          />
+        ) : (
+          <MixerSelect
+            key={`${mixer.value}:${mixer.unitIndex ?? 0}`}
+            mixer={mixer}
+            item={item}
+            showLabel={showLabels}
+          />
+        )
+      )}
     </div>
   );
 }

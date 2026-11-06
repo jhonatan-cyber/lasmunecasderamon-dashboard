@@ -1,3 +1,5 @@
+import type { AcompanamientoBotella } from '@/types/venta';
+
 export interface SaleInventoryFields {
   presentacion_id?: string | null;
   tipo_venta?: 'botella' | 'shot';
@@ -5,7 +7,7 @@ export interface SaleInventoryFields {
   botella_anfitriona?: boolean;
   precio_botella_anfitriona?: number;
   precio_botella_sin_anfitriona?: number;
-  acompanamiento_botella?: { presentacion_id: string; unidades: number };
+  acompanamiento_botella?: AcompanamientoBotella;
   acompanamiento_corto?: {
     presentacion_id: string;
     unidades?: number;

@@ -230,23 +230,23 @@ const ProductCard: React.FC<ProductCardProps> = ({
             containerClassName='relative w-full aspect-4/3 overflow-hidden bg-gray-100 dark:bg-slate-800'
             photoClassName='object-contain p-4'
           >
-            <div className='pointer-events-none absolute bottom-3 left-3 z-10 flex gap-2'>
+            <div className='pointer-events-none absolute bottom-3 left-3 z-10 flex gap-1.5'>
               {categoriaLabel && (
                 <Badge
                   variant='outline'
-                  className='inline-flex items-center gap-1.5 rounded-full bg-white/90 text-gray-700 dark:bg-slate-900/90 dark:text-gray-200 border border-gray-200 dark:border-slate-700 px-3 py-1 text-[10px] font-bold uppercase tracking-wider shadow-lg'
+                  className='inline-flex items-center gap-1.5 rounded-full bg-white/90 text-gray-700 dark:bg-slate-900/90 dark:text-gray-200 border border-gray-200 dark:border-slate-700 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shadow-md'
                 >
-                  <TagIcon className='h-3 w-3' />
+                  <TagIcon className='h-2.5 w-2.5' />
                   {categoriaLabel}
                 </Badge>
               )}
               {product.status === 1 ? (
-                <div className='flex items-center gap-1.5 px-3 py-1 bg-green-500/90 backdrop-blur-md text-white rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg'>
-                  <div className='w-1.5 h-1.5 rounded-full bg-white animate-pulse' />
+                <div className='flex items-center gap-1.5 px-2 py-0.5 bg-green-500/90 backdrop-blur-md text-white rounded-full text-[9px] font-bold uppercase tracking-wider shadow-md'>
+                  <div className='w-1 h-1 rounded-full bg-white animate-pulse' />
                   Activo
                 </div>
               ) : (
-                <div className='flex items-center gap-1.5 px-3 py-1 bg-red-500/90 backdrop-blur-md text-white rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg'>
+                <div className='flex items-center gap-1.5 px-2 py-0.5 bg-red-500/90 backdrop-blur-md text-white rounded-full text-[9px] font-bold uppercase tracking-wider shadow-md'>
                   Inactivo
                 </div>
               )}

@@ -37,6 +37,9 @@ describe('Pedido listo para vender', () => {
     const sale = SaleCreateSchema.parse({ total: 40000, detalles: [detail] });
     expect(sale.detalles[0]).toMatchObject({
       ...config,
+      ...(config.tipo_venta === 'botella'
+        ? { acompanamiento_botella: [{ presentacion_id: 'sprite', unidades: 4 }] }
+        : {}),
       presentacion_id: 'whisky-750',
       cantidad: 2,
       sub_total: 40000,

@@ -8,9 +8,10 @@
  */
 
 import type { SaleOption } from '@/types/sale-options';
+import type { AcompanamientoBotella } from '@/types/venta';
 
 export interface ConsumoInventarioDetalle {
-  acompanamiento_botella?: { presentacion_id: string; unidades: number };
+  acompanamiento_botella?: AcompanamientoBotella;
   acompanamiento_corto?: { presentacion_id: string; unidades?: number; ml_por_corto?: number };
   presentacion_id?: string | null;
   cantidad?: number | null;

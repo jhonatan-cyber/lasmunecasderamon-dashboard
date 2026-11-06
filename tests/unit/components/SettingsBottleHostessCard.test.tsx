@@ -57,6 +57,7 @@ beforeEach(() => {
                   tipo: 'shot',
                   precio: 2500,
                   comision: 0,
+                  acompanamiento_cliente: true,
                   precio_anfitriona: 3000,
                   precios_anfitriona: [{ precio: 3000, comision: 0 }]
                 }
@@ -151,6 +152,7 @@ describe('comisiones por presentación', () => {
           tipo: 'shot',
           precio: 2500,
           comision: 0,
+          acompanamiento_cliente: true,
           precio_anfitriona: 3000,
           ml_acompanamiento_anfitriona: 0,
           precios_anfitriona: [{ precio: 3000, comision: 0 }]

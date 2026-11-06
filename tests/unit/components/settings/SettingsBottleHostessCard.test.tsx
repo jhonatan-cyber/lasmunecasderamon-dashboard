@@ -120,6 +120,7 @@ describe('SettingsBottleHostessCard', () => {
                     tipo: 'shot',
                     precio: 5000,
                     comision: 0,
+                    acompanamiento_cliente: true,
                     precio_anfitriona: 5000,
                     ml_acompanamiento_anfitriona: 150,
                     precios_anfitriona: [{ precio: 5000, comision: 1000 }]
@@ -186,6 +187,7 @@ describe('SettingsBottleHostessCard', () => {
             tipo: 'shot',
             precio: 5000,
             comision: 0,
+            acompanamiento_cliente: true,
             precio_anfitriona: 5000,
             ml_acompanamiento_anfitriona: 150,
             precios_anfitriona: [{ precio: 5000, comision: 1000 }]

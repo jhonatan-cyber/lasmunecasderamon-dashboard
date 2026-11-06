@@ -103,6 +103,7 @@ export function mapSaleFromDB(row: VentaRawRow | VentaGetByIdRow | null): SaleTy
       habitacion_nombre: row.habitacion_nombre,
       item_count: Number(row.item_count || 0),
       anfitrionas_nicks: row.anfitrionas_nicks || null,
+      baucher_foto: row.baucher_foto ?? null,
       pagos_mixtos: row.pagos_mixtos ? parseMixedPayments(row.pagos_mixtos) : []
     });
   } catch (err) {

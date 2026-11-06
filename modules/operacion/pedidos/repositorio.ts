@@ -108,8 +108,6 @@ export class OrderRepository {
   }
 
   static async create(body: OrderCreateInput): Promise<any> {
-    // Nombre de la foto del baucher y si el pedido llegó a la base: sirven en el
-    // `catch` para borrar la imagen cuando el alta quedó sin pedido.
     let baucherFilename: string | null = null;
     let pedidoCreado = false;
     try {
@@ -127,19 +125,13 @@ export class OrderRepository {
         device_date
       } = data;
 
-      // Los identificadores de anfitrionas son UUID; conservarlos como strings.
       let detalles: Array<
-        SaleInventoryFields & {
-          productoId: string;
-          precio: number;
-          comision: number;
-          generaComision: number;
-          cantidad: number;
-          subtotal: number;
-          hostessId: string | null;
-          roomId: string | null;
-          selectedHostesses: string[];
-        }
+        Omit<SaleInventoryFields, 'acompanamiento_botella'> &
+          OrderCreateType['detalles'][number] & {
+            hostessId: string | null;
+            roomId: string | null;
+            selectedHostesses: string[];
+          }
       > = rawDetalles.map(d => ({
         ...d,
         hostessId: d.hostessId ?? null,
@@ -167,7 +159,6 @@ export class OrderRepository {
 
       if (tieneProductosEspeciales && usuarios && usuarios.length > 0) {
         const userIds = usuarios.map(u => String(u.usuarioId));
-        // OPTIMIZACIÓN: Single query con IN + subquery (antes N queries en loop)
         const ventasActivas = await OrderRepository.buscarVentasActivasConHabitacion(userIds);
         if (ventasActivas.length > 0) {
           const ventasMap = new Map(ventasActivas.map(v => [v.usuario_id, v]));
@@ -194,11 +185,6 @@ export class OrderRepository {
 
       const pedidoId = generateUUID();
       const fechaCrea = getNowInBusinessTimezone(device_date || undefined);
-
-      // El pago con transferencia viaja con la foto del baucher: se guarda como
-      // archivo (misma rutina que usuarios y productos) y en la fila solo queda
-      // el nombre. Si no se puede guardar, el pedido no se crea: perder la foto
-      // significaría perder la constancia del pago.
       baucherFilename = data.baucher_foto
         ? await guardarFotoBaucher(data.baucher_foto, 'order', { codigo })
         : null;
@@ -245,7 +231,6 @@ export class OrderRepository {
             fecha_crea: fechaCrea
           });
 
-          // OPTIMIZACIÓN: Batch coletor para detalle_pedidos_anfitrionas
           const detalleAnfitrionaRows: Array<Record<string, unknown>> = [];
 
           for (const d of detalles) {
@@ -279,7 +264,6 @@ export class OrderRepository {
             }
           }
 
-          // Batch insert detalle_pedidos_anfitrionas (antes D×H queries)
           if (detalleAnfitrionaRows.length > 0) {
             const columns = [
               'id_detalle_anfitriona',
@@ -296,8 +280,6 @@ export class OrderRepository {
               values
             );
           }
-
-          // OPTIMIZACIÓN: Batch insert pedidos_usuarios (antes U queries)
           if (usuarios.length > 0) {
             const cols = ['id_pedido_usuario', 'usuario_id', 'pedido_id'];
             const usuarioRows = usuarios.map(u => ({
@@ -336,10 +318,6 @@ export class OrderRepository {
         tiempo_auto_seleccionado: tiempoAutoSeleccionado
       };
     } catch (err) {
-      // La foto se escribe antes de la transacción (la fila guarda su nombre):
-      // si el pedido no llegó a la base, el archivo queda huérfano y hay que
-      // borrarlo. Con el pedido creado se conserva, aunque falle la notificación:
-      // el archivo sí tiene fila que lo referencie desde la UI.
       if (baucherFilename && !pedidoCreado)
         await eliminarFotoBaucher(baucherFilename, 'order', { codigo: body.codigo });
       if (err instanceof z.ZodError || err instanceof BusinessError) throw err;
@@ -417,6 +395,14 @@ export class OrderRepository {
         IP.nombre AS presentacion_nombre, COALESCE(IP.foto, PROD.foto) AS producto_foto,
         PROD.ml_shot, PROD.ml_shot_anfitriona,
         CONCAT_WS(' ', MP.nombre, MI.nombre) AS acompanamiento_nombre, COALESCE(MI.foto, MP.foto) AS acompanamiento_foto,
+        CASE WHEN jsonb_typeof(DP.configuracion_venta->'acompanamiento_botella') = 'array' THEN (
+          SELECT jsonb_agg(elem || jsonb_build_object(
+            'nombre', CONCAT_WS(' ', MP2.nombre, MI2.nombre),
+            'foto', COALESCE(MI2.foto, MP2.foto)))
+          FROM jsonb_array_elements(DP.configuracion_venta->'acompanamiento_botella') elem
+          LEFT JOIN inventario_presentaciones MI2 ON MI2.id = elem->>'presentacion_id'
+          LEFT JOIN productos MP2 ON MP2.id_producto = MI2.producto_id
+        ) END AS acompanamiento_botella_enriquecido,
         DP.genera_comision, PROD.nombre AS producto_nombre, C.nombre AS categoria, DP.hostess_id, DP.habitacion_id,
         (SELECT STRING_AGG(DPA.anfitriona_id, ',') FROM detalle_pedidos_anfitrionas DPA
          WHERE DPA.detalle_pedido_id = DP.id_detalle_pedido) AS anfitrionas_asignadas_ids,
@@ -449,7 +435,8 @@ export class OrderRepository {
           ...row,
           ...fields,
           acompanamiento_corto: enrich(fields.acompanamiento_corto),
-          acompanamiento_botella: enrich(fields.acompanamiento_botella)
+          acompanamiento_botella:
+            row.acompanamiento_botella_enriquecido ?? enrich(fields.acompanamiento_botella)
         };
       });
     } catch (err) {
@@ -484,8 +471,7 @@ export class OrderRepository {
 
       if (results.length > 0) {
         const actualizado = this.mapOrderFromDB(results[0]);
-        // La comanda cambio de estado (servido, entregado...): los tableros y la cola
-        // de pedidos pendientes se refrescan sin esperar el proximo polling.
+
         sendNotificationToAll('order_updated', {
           orderId: id,
           estado,
@@ -501,7 +487,6 @@ export class OrderRepository {
     }
   }
 
-  // OPTIMIZACIÓN: Single query con IN + subquery (antes N queries en loop)
   private static async buscarVentasActivasConHabitacion(anfitrionasIds: string[]): Promise<any[]> {
     try {
       if (!anfitrionasIds.length) return [];

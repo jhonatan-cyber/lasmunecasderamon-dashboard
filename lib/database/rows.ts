@@ -332,6 +332,8 @@ export interface VentaRow {
   caja_id: string | null;
   created_by: string | null;
   tiempo: number | null;
+  /** Nombre del archivo del baucher (migración 112); solo con transferencia. */
+  baucher_foto?: string | null;
 }
 
 export interface DetalleVentaCompletoRow {

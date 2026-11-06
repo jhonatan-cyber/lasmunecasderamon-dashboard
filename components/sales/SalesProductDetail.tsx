@@ -3,6 +3,7 @@
 import type { VentaDetalle } from '@/types/venta';
 import { SaleProductPhoto } from './product-modal/SaleProductPhoto';
 import { etiquetaVentaDetalle } from '@/lib/sales/ventaDetalle';
+import { normalizarAcompanamientoBotella } from '@/lib/sales/acompanamientoBotella';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 
 export function SalesProductDetail({
@@ -12,7 +13,18 @@ export function SalesProductDetail({
   detail: VentaDetalle;
   consumoProducto?: string;
 }) {
-  const mixer = detail.acompanamiento;
+  const raw = detail.acompanamiento;
+  const sabores = Array.isArray(raw) ? normalizarAcompanamientoBotella(raw) : [];
+  const mixer =
+    !Array.isArray(raw) && raw
+      ? (raw as {
+          presentacion_id: string;
+          unidades?: number;
+          ml_por_corto?: number;
+          nombre?: string;
+          foto?: string | null;
+        })
+      : null;
   const perUnit = Number(mixer?.ml_por_corto ?? mixer?.unidades ?? 0);
   const unit = mixer?.ml_por_corto !== undefined ? 'ml' : 'unidades';
   return (
@@ -46,26 +58,50 @@ export function SalesProductDetail({
           </p>
         </div>
       </div>
-      {mixer && (
+      {(mixer || sabores.length > 0) && (
         <div className='space-y-2 text-sm sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1'>
           <p className='text-xs font-semibold text-muted-foreground'>Bebida</p>
-          <div className='flex items-start gap-2'>
-            <SaleProductPhoto
-              foto={mixer.foto ?? undefined}
-              name={mixer.nombre || 'Bebida'}
-              large={false}
-              compact
-            />
-            <div className='space-y-1'>
-              <p className='font-medium'>{mixer.nombre || mixer.presentacion_id}</p>
-              <p className='text-xs text-muted-foreground'>
-                {perUnit} {unit} por {detail.tipo_venta === 'shot' ? 'corto' : 'botella'}
-              </p>
-              <p className='text-xs font-medium'>
-                Consumo total: {perUnit * detail.cantidad} {unit}
-              </p>
+          {mixer ? (
+            <div className='flex items-start gap-2'>
+              <SaleProductPhoto
+                foto={mixer.foto ?? undefined}
+                name={mixer.nombre || 'Bebida'}
+                large={false}
+                compact
+              />
+              <div className='space-y-1'>
+                <p className='font-medium'>{mixer.nombre || mixer.presentacion_id}</p>
+                <p className='text-xs text-muted-foreground'>
+                  {perUnit} {unit} por {detail.tipo_venta === 'shot' ? 'corto' : 'botella'}
+                </p>
+                <p className='text-xs font-medium'>
+                  Consumo total: {perUnit * detail.cantidad} {unit}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className='space-y-2'>
+              {sabores.map(sabor => (
+                <div key={sabor.presentacion_id} className='flex items-start gap-2'>
+                  <SaleProductPhoto
+                    foto={sabor.foto ?? undefined}
+                    name={sabor.nombre || 'Bebida'}
+                    large={false}
+                    compact
+                  />
+                  <div className='space-y-1'>
+                    <p className='font-medium'>{sabor.nombre || sabor.presentacion_id}</p>
+                    <p className='text-xs text-muted-foreground'>
+                      {sabor.unidades} unidades por botella
+                    </p>
+                    <p className='text-xs font-medium'>
+                      Consumo total: {sabor.unidades * detail.cantidad} unidades
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div className='text-left sm:col-start-2 sm:row-start-1 sm:text-right lg:col-start-3'>

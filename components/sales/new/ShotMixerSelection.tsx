@@ -4,6 +4,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import {
+  clienteShortSinAcompanamiento,
   hostessMixerMl,
   requiresShortMixer,
   shortMixerConsumption
@@ -14,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import type { Dispatch, SetStateAction } from 'react';
 import { Label } from '@/components/ui/label';
 
-/** La bebida se incluye en el corto y conserva su propio consumo en ml. */
 export function ShotMixerSelection({
   productos,
   setProductos
@@ -51,7 +51,8 @@ export function ShotMixerSelection({
     setProductos(prev =>
       prev.map((p, i) => (i === index ? { ...p, acompanamiento_corto: value } : p))
     );
-  if (!productos.some(p => p.tipo_venta === 'shot')) return null;
+  if (!productos.some(p => p.tipo_venta === 'shot' && !clienteShortSinAcompanamiento(p)))
+    return null;
   return (
     <section className='space-y-3 rounded-xl border p-4'>
       <h2 className='font-semibold'>Bebida para los cortos</h2>
@@ -69,7 +70,8 @@ export function ShotMixerSelection({
       {error && <ErrorState message={error} onRetry={() => setReload(n => n + 1)} />}
       {productos.map(
         (p, index) =>
-          p.tipo_venta === 'shot' && (
+          p.tipo_venta === 'shot' &&
+          !clienteShortSinAcompanamiento(p) && (
             <div key={index} className='grid gap-3 rounded-lg border p-3 sm:grid-cols-2'>
               <p className='sm:col-span-2 font-medium'>
                 {p.nombre} · {p.cantidad} cortos

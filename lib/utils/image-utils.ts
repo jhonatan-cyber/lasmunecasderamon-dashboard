@@ -8,6 +8,7 @@ const PRODUCT_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'products')
 const USER_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'users');
 const ORDER_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'orders');
 const TICKET_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'tickets');
+const SALE_UPLOAD_DIR = path.join(process.cwd(), 'public', 'img', 'sales');
 
 type ImageProcessingOptions = {
   width?: number;
@@ -15,28 +16,19 @@ type ImageProcessingOptions = {
   fit?: 'cover' | 'inside' | 'outside' | 'fill' | 'contain';
   position?: string;
   quality?: number;
-  /** Override upload directory. Default depends on baseName: 'user' → users dir, else products dir. */
   uploadDir?: string;
 };
 
 function resolveUploadDir(baseName: string, options?: ImageProcessingOptions): string {
   if (options?.uploadDir) return options.uploadDir;
-  // La ruta de usuarios guarda con baseName 'user' (no 'user_'): si se pide el
-  // prefijo exacto 'user_', las fotos de las personas caían en products/ y la
-  // UI (que lee /img/users/) las rompía — y también el alta en el lector.
-  // Las fotos de baucher usan baseName 'order' o 'ticket' y caen en su propia
-  // carpeta: cada constancia de pago queda separada del catálogo y de las
-  // personas.
   if (baseName.startsWith('order')) return ORDER_UPLOAD_DIR;
   if (baseName.startsWith('ticket')) return TICKET_UPLOAD_DIR;
+  if (baseName.startsWith('sale')) return SALE_UPLOAD_DIR;
   return baseName.startsWith('user') ? USER_UPLOAD_DIR : PRODUCT_UPLOAD_DIR;
 }
 
-// Exportadas para que los tests puedan calcular los límites sin duplicarlos.
 export const IMAGE_FETCH_TIMEOUT_MS = 10_000;
 export const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
-
-/** URL sin query ni fragmento: es lo que se registra al fallar (evita filtrar tokens por query). */
 function loggableUrl(url: string): string {
   try {
     const parsed = new URL(url);
@@ -46,14 +38,6 @@ function loggableUrl(url: string): string {
   }
 }
 
-/**
- * Descarga una imagen remota referenciada por URL.
- *
- * El fallo se devuelve como `BusinessError`, y su mensaje llega tal cual al toast del
- * formulario, así que tiene que explicar qué salió mal: estado HTTP, content-type o
- * tiempo de espera agotado. También impone tiempo límite y tamaño máximo porque el
- * origen lo pone un usuario en un campo de texto.
- */
 async function fetchImageFromUrl(url: string): Promise<Buffer> {
   let response: Response;
   try {
@@ -62,9 +46,6 @@ async function fetchImageFromUrl(url: string): Promise<Buffer> {
       headers: { accept: 'image/*' }
     });
   } catch (error) {
-    // Se compara por `name` y no por `instanceof Error`: DOMException cruza realms y en
-    // algunos entornos no es instanceof Error, con lo que un timeout real acabaría
-    // clasificado como fallo de conexión.
     const name =
       typeof error === 'object' && error !== null ? (error as { name?: unknown }).name : undefined;
     const timedOut = name === 'TimeoutError' || name === 'AbortError';
@@ -114,8 +95,6 @@ async function fetchImageFromUrl(url: string): Promise<Buffer> {
     );
   }
 
-  // Se lee en streaming: sin esto un origen sin Content-Length agotaría la memoria
-  // antes de poder aplicar el límite.
   const chunks: Buffer[] = [];
   let total = 0;
   const reader = response.body?.getReader();
@@ -146,16 +125,6 @@ async function fetchImageFromUrl(url: string): Promise<Buffer> {
   return Buffer.from(arrayBuffer);
 }
 
-/**
- * Lee una imagen ya guardada por `processAndSaveImage` y la devuelve en JPEG base64.
- *
- * El motor facial del lector extrae su vector de una foto JPEG, mientras que el
- * sistema guarda en WebP: acá se convierte para poder usar la foto como plantilla
- * maestra de enrolamiento. Acepta también una URL (se descarga igual que al subir).
- *
- * Devuelve null cuando no hay una foto propia que convertir (imagen por defecto,
- * archivo inexistente o descarga fallida): el llamador decide cómo informarlo.
- */
 export async function imagenGuardadaABase64Jpeg(
   filename: string,
   dir: string = USER_UPLOAD_DIR
@@ -218,16 +187,10 @@ export async function processAndSaveImage(
   return fileName;
 }
 
-/**
- * Guarda la foto del baucher de un pago con transferencia y devuelve el nombre
- * del archivo (lo único que se guarda en la fila de la operación).
- *
- * Es la constancia del pago: quien llama debe abortar si esto falla, porque un
- * pago sin comprobante no se puede auditar después.
- */
+export type TipoBaucher = 'order' | 'ticket' | 'sale';
 export async function guardarFotoBaucher(
   dataUrl: string,
-  tipo: 'order' | 'ticket',
+  tipo: TipoBaucher,
   contexto: Record<string, unknown> = {}
 ): Promise<string> {
   try {
@@ -242,31 +205,19 @@ export async function guardarFotoBaucher(
     throw new BusinessError('No se pudo guardar la foto del baucher', 'BAUCHER_SAVE_FAILED');
   }
 }
-
-/**
- * Borra un baucher que ya no tiene dueño.
- *
- * La foto se escribe **antes** de la transacción del pedido (la fila guarda su
- * nombre), y un archivo no se revierte con el `ROLLBACK`: si el alta falla, la
- * imagen queda huérfana y nadie puede verla desde la UI, porque no hay fila que
- * la referencie. La limpia el `catch` del repositorio, que sabe si el pedido
- * llegó a crearse.
- */
 export async function eliminarFotoBaucher(
   filename: string,
-  tipo: 'order' | 'ticket',
+  tipo: TipoBaucher,
   contexto: Record<string, unknown> = {}
 ): Promise<void> {
   if (!filename || path.basename(filename) !== filename) return;
   try {
     await fs.rm(path.join(resolveUploadDir(tipo), filename), { force: true });
   } catch (error) {
-    // Fallar acá no debe tapar el error real que trajo hasta acá.
     logger.warn(`[ImageUtils] No se pudo borrar el baucher (${tipo}):`, { ...contexto, error });
   }
 }
 
-// ponytail: convenience for product images (keeps existing defaults)
 export async function processAndSaveProductImage(
   imageSource: Buffer | string,
   baseName: string = 'product'
