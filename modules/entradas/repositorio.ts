@@ -395,6 +395,8 @@ export async function entregarEntrada(
       if (totalReparto > 1)
         throw new ValidationError('El corte lleva una sola bebida de acompañamiento');
     } else {
+      if (unidades > 0 && reparto.length === 0)
+        throw new ValidationError('Selecciona el acompañamiento incluido en esta bebida');
       if (unidades > 0 && totalReparto !== unidades)
         throw new ValidationError('Reparte el acompañamiento entre los sabores incluidos');
       if (unidades <= 0 && reparto.length > 0)
