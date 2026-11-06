@@ -12,10 +12,13 @@ import {
 } from '@/components/ui/tooltip';
 import { formatNumber } from '@/components/bar/transfer/transferOptions';
 import { optionPanelClass, optionPanelHeadingClass } from '@/components/bar/transfer/panelStyles';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
 interface ShortSaleEditorProps {
   hideHelp?: boolean;
+  acompanamientoCliente: boolean;
+  onAcompanamientoClienteChange: (value: boolean) => void;
   mlAcompanamientoAnfitriona: string;
   onMlAcompanamientoAnfitrionaChange: (value: string) => void;
   precioShot: string;
@@ -91,6 +94,20 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
             String(props.shotMl),
             true
           )}
+          <Label className='flex cursor-pointer items-start gap-2'>
+            <Checkbox
+              checked={props.acompanamientoCliente}
+              onCheckedChange={checked => props.onAcompanamientoClienteChange(checked === true)}
+              disabled={saving}
+              aria-label='Corto cliente con acompañamiento'
+            />
+            <span>
+              <span className='block text-sm font-medium'>Con acompañamiento</span>
+              <span className='block text-xs text-muted-foreground'>
+                Si lo desactivas, el corto al cliente no pide ni descuenta bebida analcohólica.
+              </span>
+            </span>
+          </Label>
 
           {!props.hideHelp && (
             <p className='text-xs text-muted-foreground'>

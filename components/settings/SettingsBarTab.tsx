@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
-import { Save, GlassWater, Wine, AlertTriangle } from 'lucide-react';
+import { Save, GlassWater, Wine, AlertTriangle, CupSoda } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -11,8 +11,6 @@ import { categoriaDeClave, defaultDeClave } from '@/modules/configuracion/contra
 import { refrescarConfiguraciones } from '@/hooks/shared/useConfigValue';
 import { Label } from '@/components/ui/label';
 
-// Defaults y categoría salen del registro de claves: la misma lista que valida el endpoint,
-// así el formulario y el servidor no pueden discrepar sobre 50/750/3.
 const CATEGORIA_BAR = categoriaDeClave('shot_ml');
 const defaultDe = (clave: string) => String(defaultDeClave(clave));
 
@@ -21,6 +19,9 @@ export function SettingsBarTab() {
   const [botellaMl, setBotellaMl] = useState(() => defaultDe('botella_ml'));
   const [shotsAlerta, setShotsAlerta] = useState(() => defaultDe('shots_alerta'));
   const [mermaShotsMl, setMermaShotsMl] = useState(() => defaultDe('merma_shots_ml'));
+  const [acompanamientoMaxMl, setAcompanamientoMaxMl] = useState(() =>
+    defaultDe('acompanamiento_max_ml')
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -36,6 +37,7 @@ export function SettingsBarTab() {
           const guardadoBotella = bar.botella_ml;
           const guardadoAlerta = bar.shots_alerta;
           const guardadaMerma = bar.merma_shots_ml;
+          const guardadoAcompanamiento = bar.acompanamiento_max_ml;
           if (guardadoShot !== undefined && guardadoShot !== null && String(guardadoShot).trim()) {
             setShotMl(String(guardadoShot));
           }
@@ -59,6 +61,13 @@ export function SettingsBarTab() {
             String(guardadaMerma).trim()
           ) {
             setMermaShotsMl(String(guardadaMerma));
+          }
+          if (
+            guardadoAcompanamiento !== undefined &&
+            guardadoAcompanamiento !== null &&
+            String(guardadoAcompanamiento).trim()
+          ) {
+            setAcompanamientoMaxMl(String(guardadoAcompanamiento));
           }
         }
       } catch (error) {
@@ -97,6 +106,15 @@ export function SettingsBarTab() {
       toast.error('La merma permitida debe ser un número entero entre 0 y 250 ml');
       return;
     }
+    const maxAcompanamiento = Number(String(acompanamientoMaxMl).trim());
+    if (
+      !Number.isInteger(maxAcompanamiento) ||
+      maxAcompanamiento < 1 ||
+      maxAcompanamiento > 10000
+    ) {
+      toast.error('El máximo de acompañamiento debe ser un número entero entre 1 y 10000 ml');
+      return;
+    }
     try {
       setSaving(true);
       const response = await fetch('/api/configurations', {
@@ -107,7 +125,8 @@ export function SettingsBarTab() {
             { clave: 'shot_ml', valor: String(shot) },
             { clave: 'botella_ml', valor: String(botella) },
             { clave: 'shots_alerta', valor: String(alerta) },
-            { clave: 'merma_shots_ml', valor: String(merma) }
+            { clave: 'merma_shots_ml', valor: String(merma) },
+            { clave: 'acompanamiento_max_ml', valor: String(maxAcompanamiento) }
           ]
         })
       });
@@ -119,8 +138,7 @@ export function SettingsBarTab() {
       setBotellaMl(String(botella));
       setShotsAlerta(String(alerta));
       setMermaShotsMl(String(merma));
-      // El resto de la pestaña lee la configuración de la caché compartida: sin esto, el bar
-      // y los formularios seguirían mostrando el valor viejo hasta recargar.
+      setAcompanamientoMaxMl(String(maxAcompanamiento));
       await refrescarConfiguraciones();
       toast.success('Tragos y cortos actualizados');
     } catch (error) {
@@ -183,6 +201,19 @@ export function SettingsBarTab() {
       max: 250,
       unit: 'ml',
       tone: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+    },
+    {
+      id: 'bar-acompanamiento-max-ml',
+      title: 'Máximo de acompañamiento',
+      icon: CupSoda,
+      description: 'Volumen máximo de una bebida analcohólica de acompañamiento.',
+      hint: 'Solo se ofrecen bebidas de este tamaño o menos en los acompañamientos.',
+      value: acompanamientoMaxMl,
+      onChange: setAcompanamientoMaxMl,
+      min: 1,
+      max: 10000,
+      unit: 'ml',
+      tone: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
     }
   ];
 

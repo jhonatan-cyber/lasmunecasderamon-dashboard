@@ -80,6 +80,7 @@ export function useTransferSubmit({
         if (option.tipo === 'botella') {
           reutilizada.colacion_habilitada = form.colacionHabilitada;
           reutilizada.cover_habilitado = form.coverHabilitado;
+          if (form.esBebidaAnalcoholicaItem) reutilizada.en_venta = form.enVenta;
           if (form.colacionHabilitada && mlColacion !== null) reutilizada.ml_colacion = mlColacion;
           if (form.colacionHabilitada && acompanamientoColacion)
             reutilizada.acompanamiento_colacion = acompanamientoColacion;
@@ -90,6 +91,7 @@ export function useTransferSubmit({
         }
         if (option.tipo === 'shot') {
           reutilizada.ml_acompanamiento_anfitriona = option.ml_acompanamiento_anfitriona;
+          reutilizada.acompanamiento_cliente = option.acompanamiento_cliente;
           reutilizada.precio_anfitriona = Number(option.precio_anfitriona ?? 0);
           reutilizada.precios_anfitriona = preciosCortoAnfitriona(option);
           reutilizada.comision = 0;
@@ -117,6 +119,7 @@ export function useTransferSubmit({
             comision: comBottle,
             colacion_habilitada: form.colacionHabilitada,
             cover_habilitado: form.coverHabilitado,
+            ...(form.esBebidaAnalcoholicaItem ? { en_venta: form.enVenta } : {}),
             ...(form.colacionHabilitada && mlColacion !== null ? { ml_colacion: mlColacion } : {}),
             ...(form.colacionHabilitada && acompanamientoColacion
               ? { acompanamiento_colacion: acompanamientoColacion }
@@ -126,6 +129,7 @@ export function useTransferSubmit({
         const option: SaleOption = {
           tipo,
           precio: pvShot,
+          acompanamiento_cliente: form.acompanamientoCliente,
           ml_acompanamiento_anfitriona:
             form.mlAcompanamientoAnfitriona === ''
               ? undefined

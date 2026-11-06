@@ -32,3 +32,7 @@ import { obtenerVentaParaAlerta as obtenerVentaParaAlertaInterna } from './repos
 export function obtenerVentaParaAlerta(solicitudId: string) {
   return obtenerVentaParaAlertaInterna(solicitudId);
 }
+import { obtenerBaucherFotoVenta as obtenerBaucherFotoVentaInterna } from './repositorio';
+export function obtenerBaucherFotoVenta(id: string) {
+  return obtenerBaucherFotoVentaInterna(id);
+}

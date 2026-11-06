@@ -1,10 +1,6 @@
-/**
- * Lecturas de la barra: stock abierto y resumen del turno. Infraestructura
- * privada del módulo (§5): nada fuera de `modules/inventario` importa este
- * archivo. SQL movido 1:1 desde `lib/repositories/inventory/BarQueries.ts`.
- */
 import { query, withTransaction } from '@/lib/database/db';
-import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
+import { getAcompanamientoMaxMl, getBarMlConfig, getTopeSimple } from '../bar/configuracion';
+import { resolveBotellaMl } from '@/lib/business/shotMl';
 import { mapPresentacion } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import type { MlServidoPorProductoHoy, ShotsSummary } from '../contracts';
@@ -13,10 +9,6 @@ import { listarColacionesServidasHoy } from './colacionesRepositorio';
 import type { PresentacionRow } from '../tipos';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
-/**
- * `productos.max_anfitrionas` puede no existir si falta la migración 017: se
- * carga aparte y tolerante para no romper el listado del bar.
- */
 export async function obtenerMaxAnfitrionasPorProducto(
   productoIds: string[]
 ): Promise<Record<string, number | null>> {
@@ -57,8 +49,9 @@ export async function listarStockBar(
     botellas_por_devolver: NonNullable<PresentacionRow['botellas_por_devolver']>;
   })[]
 > {
-  const { mermaShotsMl } = await getBarMlConfig();
-  const rows = await query<any[]>(
+  const { mermaShotsMl, botellaMl } = await getBarMlConfig();
+  const maxAcompanamientoMl = soloAcompanamientos ? await getAcompanamientoMaxMl() : 0;
+  let rows = await query<any[]>(
     `SELECT p.*,
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock,
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar') AS stock_bar,
@@ -85,6 +78,12 @@ export async function listarStockBar(
               p.bar_display_order ASC, pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     productoId ? [mermaShotsMl, productoId] : [mermaShotsMl]
   );
+
+  if (soloAcompanamientos) {
+    rows = rows.filter(
+      row => resolveBotellaMl(row.ml_botella, row.nombre, botellaMl) <= maxAcompanamientoMl
+    );
+  }
   const maxMap = await obtenerMaxAnfitrionasPorProducto([
     ...new Set(rows.map(r => String(r.producto_id)).filter(Boolean))
   ]);
@@ -161,12 +160,6 @@ export async function listarStockBar(
   }));
 }
 
-/**
- * Guarda el orden manual del listado del bar. Se escribe completo y dentro de
- * una transacción: si se cortara a mitad, cada puesto vería una barra distinta.
- * El último valor de un id repetido gana, así una petición con duplicados no
- * deja filas a medio mover.
- */
 export async function reordenarStockBar(
   presentaciones: { id: string; orden: number }[]
 ): Promise<void> {
@@ -182,16 +175,6 @@ export async function reordenarStockBar(
   });
 }
 
-/**
- * Ml servidos hoy por producto: lo que salió por ventas (incluye los ml del
- * acompañamiento) más las colaciones, menos lo que volvió al bar por una
- * anulación. La reversión se imputa al producto de su movimiento de origen
- * (`movimiento_origen`) y solo si esa venta es de hoy: una venta anulada de
- * ayer no toca el resumen de hoy.
- *
- * Esta consulta es la fuente de `mlServidosHoy`, así que la suma del desglose
- * por producto coincide siempre con el total que muestra la tarjeta.
- */
 export async function listarMlServidoPorProductoHoy(): Promise<MlServidoPorProductoHoy[]> {
   const inicioDia = `${getNowInBusinessTimezone().slice(0, 10)} 00:00:00`;
   const rows = await query<any[]>(
@@ -229,18 +212,8 @@ export async function listarMlServidoPorProductoHoy(): Promise<MlServidoPorProdu
   }));
 }
 
-/**
- * Resumen para el panel de shots del bar: lo servido hoy, los ml que quedan en las
- * botellas abiertas y cuántas están por agotarse (≤ `shots_alerta` shots restantes).
- *
- * Los ml servidos salen de los movimientos (incluyen el acompañamiento), pero los
- * cortos se cuentan desde `detalle_ventas`: dividir los ml por el shot no distingue
- * un corto de una botella con bebida y además suma los ml del acompañamiento.
- * `shotsServidosHoy` se deriva de `cortosHoy` para que el stat y su detalle coincidan.
- */
 export async function obtenerResumenShots(): Promise<ShotsSummary> {
   const { shotMl, shotsAlerta } = await getBarMlConfig();
-  // La suma de este desglose es, por construcción, `mlServidosHoy`.
   const mlPorProductoHoy = await listarMlServidoPorProductoHoy();
   const mlServidosHoy = mlPorProductoHoy.reduce((total, producto) => total + producto.ml, 0);
   const [abiertas] = await query<any[]>(
@@ -255,9 +228,6 @@ export async function obtenerResumenShots(): Promise<ShotsSummary> {
   );
 
   const cortosHoy = await listarCortosServidosHoy(shotMl);
-  // Las colaciones salen de la misma fuente que sus ml: el detalle del stat
-  // explica exactamente los ml que muestra la tarjeta, sin cruzar el módulo
-  // Colaciones (que registra la colación, no el consumo de stock).
   const colacionesHoy = await listarColacionesServidasHoy();
   const mlColacionHoy = colacionesHoy.reduce((total, colacion) => total + colacion.ml, 0);
   return {

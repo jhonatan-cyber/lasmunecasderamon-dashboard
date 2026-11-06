@@ -48,6 +48,8 @@ export function parseOpcionesVenta(
             option.ml_acompanamiento_cliente = Number(o.ml_acompanamiento_cliente);
           if (o.ml_acompanamiento_anfitriona !== undefined)
             option.ml_acompanamiento_anfitriona = Number(o.ml_acompanamiento_anfitriona);
+          if (typeof o.acompanamiento_cliente === 'boolean')
+            option.acompanamiento_cliente = o.acompanamiento_cliente;
         }
         if (o.tipo === 'shot' && Number.isFinite(anfitriona) && anfitriona > 0) {
           option.precio_anfitriona = anfitriona;

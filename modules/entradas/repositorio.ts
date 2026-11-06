@@ -9,6 +9,10 @@ import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { defaultDeClave } from '@/modules/configuracion/contracts';
 import { esBaucherDataUrlValido } from '@/lib/business/baucher';
 import { eliminarFotoBaucher, guardarFotoBaucher } from '@/lib/utils/image-utils';
+import {
+  normalizarAcompanamientoBotella,
+  type AcompanamientoBotellaItem
+} from '@/lib/sales/acompanamientoBotella';
 
 export type MetodoPagoEntrada = 'efectivo' | 'tarjeta' | 'transferencia';
 export type EstadoCortesia = 'pendiente' | 'entregada' | 'anulada';
@@ -288,13 +292,9 @@ export interface EntregaEntradaInput {
   entradaId: string;
   presentacionId: string;
   acompanamientoPresentacionId?: string | null;
+  acompanamientos?: AcompanamientoBotellaItem[] | null;
   usuarioId: string;
   montoAdicional?: number | null;
-  /**
-   * Formato con el que sale la cortesía: la botella completa (comportamiento
-   * histórico) o un corte. El corte se cobra/valida con el precio del shot de
-   * `opciones_venta` y consume ml en vez de una botella entera.
-   */
   tipoEntrega?: 'botella' | 'corte';
 }
 
@@ -313,8 +313,6 @@ export async function entregarEntrada(
   if (!input.entradaId) throw new ValidationError('Indica la entrada a entregar');
   if (!input.presentacionId) throw new ValidationError('Selecciona la bebida a entregar');
   if (!input.usuarioId) throw new ValidationError('No se pudo identificar al usuario');
-  if (input.acompanamientoPresentacionId === input.presentacionId)
-    throw new ValidationError('La bebida y su acompañamiento deben ser distintos');
 
   const fechaHora = getNowInBusinessTimezone();
   const tope = await leerTopeCortesia();
@@ -376,14 +374,34 @@ export async function entregarEntrada(
     const adicionalPorPrecio = precio <= umbral ? 0 : precio - montoEntrada;
     const montoAdicional = normalizarMontoAdicional(input.montoAdicional, adicionalPorPrecio);
     const esCortesia = montoAdicional <= 0;
-
     const unidades = esCorte ? 0 : unidadesAcompanamiento(opciones);
-    if (!esCorte) {
-      if (unidades > 0 && !input.acompanamientoPresentacionId)
-        throw new ValidationError('Selecciona el acompañamiento incluido en esta bebida');
-      if (unidades <= 0 && input.acompanamientoPresentacionId)
+    const reparto = input.acompanamientos?.length
+      ? normalizarAcompanamientoBotella(input.acompanamientos)
+      : input.acompanamientoPresentacionId
+        ? [
+            {
+              presentacion_id: input.acompanamientoPresentacionId,
+              unidades: esCorte ? 1 : Math.max(1, unidades)
+            }
+          ]
+        : [];
+    const idsReparto = reparto.map(sabor => sabor.presentacion_id);
+    const totalReparto = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
+    if (new Set(idsReparto).size !== idsReparto.length)
+      throw new ValidationError('Cada sabor del acompañamiento se elige una sola vez');
+    if (idsReparto.includes(input.presentacionId))
+      throw new ValidationError('La bebida y su acompañamiento deben ser distintos');
+    if (esCorte) {
+      if (totalReparto > 1)
+        throw new ValidationError('El corte lleva una sola bebida de acompañamiento');
+    } else {
+      if (unidades > 0 && totalReparto !== unidades)
+        throw new ValidationError('Reparte el acompañamiento entre los sabores incluidos');
+      if (unidades <= 0 && reparto.length > 0)
         throw new ValidationError('La bebida seleccionada no tiene acompañamiento configurado');
     }
+    const acompanamientoJson = reparto.length ? JSON.stringify(reparto) : null;
+    const acompanamientoPrincipalId = reparto[0]?.presentacion_id ?? null;
 
     const caja = await trx<{ id_caja: string }[]>(
       'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
@@ -399,7 +417,7 @@ export async function entregarEntrada(
           input.usuarioId,
           fechaHora,
           { id: unidad.id },
-          input.acompanamientoPresentacionId || null
+          reparto.length ? reparto : null
         );
       } else {
         await consumirProductoCortesiaBar(
@@ -408,7 +426,7 @@ export async function entregarEntrada(
           fechaHora,
           { id: unidad.id },
           umbral,
-          input.acompanamientoPresentacionId || null
+          reparto.length ? reparto : null
         );
       }
       const pagos = { efectivo: 0, tarjeta: 0, transferencia: 0 };
@@ -427,16 +445,12 @@ export async function entregarEntrada(
         cantidad: 1,
         sub_total: totalVenta
       };
-      if (esCorte && input.acompanamientoPresentacionId)
+      if (esCorte && reparto.length > 0)
         detalle.acompanamiento_corto = {
-          presentacion_id: input.acompanamientoPresentacionId,
+          presentacion_id: reparto[0].presentacion_id,
           unidades: 1
         };
-      if (!esCorte && unidades > 0 && input.acompanamientoPresentacionId)
-        detalle.acompanamiento_botella = {
-          presentacion_id: input.acompanamientoPresentacionId,
-          unidades
-        };
+      if (!esCorte && unidades > 0 && reparto.length > 0) detalle.acompanamiento_botella = reparto;
       const creada = await onVenta(
         {
           totalVenta,
@@ -458,23 +472,25 @@ export async function entregarEntrada(
               cortesia_entregada_at = ?,
               cover_presentacion_id = ?,
               bebida_acompanamiento_presentacion_id = ?,
-              monto_bebida_adicional = ?
+              monto_bebida_adicional = ?,
+              acompanamientos = ?
         WHERE id = ?`,
       [
         input.usuarioId,
         fechaHora,
         input.presentacionId,
-        input.acompanamientoPresentacionId || null,
+        acompanamientoPrincipalId,
         montoAdicional,
+        acompanamientoJson,
         entrada.id
       ]
     );
     if (esCortesia) {
       await trx(
         `INSERT INTO entradas_clientes_productos
-          (entrada_id, presentacion_id, cantidad, acompanamiento_presentacion_id)
-         VALUES (?, ?, 1, ?) ON CONFLICT DO NOTHING`,
-        [entrada.id, input.presentacionId, input.acompanamientoPresentacionId || null]
+          (entrada_id, presentacion_id, cantidad, acompanamiento_presentacion_id, acompanamientos)
+         VALUES (?, ?, 1, ?, ?) ON CONFLICT DO NOTHING`,
+        [entrada.id, input.presentacionId, acompanamientoPrincipalId, acompanamientoJson]
       );
     }
 

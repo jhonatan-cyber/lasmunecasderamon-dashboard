@@ -66,6 +66,23 @@ export async function selectMixer() {
   }
 }
 
+/**
+ * Reparto del acompañamiento de una botella: agrega un sabor y sube sus
+ * unidades hasta cubrir todo lo requerido (el botón + se deshabilita al llegar
+ * al máximo permitido).
+ */
+export async function distributeMixer(flavor: RegExp = /Sprite/) {
+  const trigger = await screen.findByRole('combobox', { name: /Agregar sabor/ });
+  await waitFor(() => expect(trigger).toBeEnabled());
+  fireEvent.click(trigger);
+  fireEvent.click(await screen.findByRole('option', { name: flavor }));
+  for (;;) {
+    const plus = screen.queryByRole('button', { name: /Agregar una unidad de/ });
+    if (!plus || (plus as HTMLButtonElement).disabled) break;
+    fireEvent.click(plus);
+  }
+}
+
 export function Harness({
   productos,
   onAdd,

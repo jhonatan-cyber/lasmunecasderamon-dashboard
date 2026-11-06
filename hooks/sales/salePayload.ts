@@ -55,6 +55,7 @@ export interface VentaPayloadInput {
   manualTime: string;
   selectedRoomInfo: any;
   prepagoDestinos?: { cliente_id: string; monto: number }[];
+  baucherFoto?: string | null;
 }
 
 export function buildVentaPayload({
@@ -70,7 +71,8 @@ export function buildVentaPayload({
   selectedHabitacion,
   manualTime,
   selectedRoomInfo,
-  prepagoDestinos
+  prepagoDestinos,
+  baucherFoto
 }: VentaPayloadInput): VentaCreate {
   return {
     cliente_id: selectedCliente !== 'none' ? selectedCliente : null,
@@ -94,6 +96,7 @@ export function buildVentaPayload({
       }),
     ...(metodoPago === 'prepago' && prepagoDestinos?.length
       ? { prepago_destinos: prepagoDestinos }
-      : {})
+      : {}),
+    ...(metodoPago === 'transferencia' && baucherFoto ? { baucher_foto: baucherFoto } : {})
   };
 }

@@ -37,6 +37,9 @@ export function copiarOpcionesDeBotella(option: SaleOption, origen: unknown): vo
   if (typeof origen.cover_habilitado === 'boolean') {
     option.cover_habilitado = origen.cover_habilitado;
   }
+  if (typeof origen.en_venta === 'boolean') {
+    option.en_venta = origen.en_venta;
+  }
 
   if (origen.ml_colacion !== undefined && origen.ml_colacion !== null) {
     const ml = Number(origen.ml_colacion);

@@ -1,9 +1,9 @@
 {
   "resumen": {
-    "commit": "4b712cfe5b6457a9058a5dd39713cd73c41738ae",
-    "generado": "2026-11-01T14:15:45.599Z",
-    "archivos": 2226,
-    "rutas": 233,
+    "commit": "a8f105b7128802a03c4f907587ca34534c4215ae",
+    "generado": "2026-11-04T17:59:30.111Z",
+    "archivos": 2231,
+    "rutas": 234,
     "sqlFueraDeRepositorio": 64,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
@@ -13,6 +13,15 @@
     "rutasSinWrapper": 20
   },
   "rutas": [
+    {
+      "ruta": "/api/sales/:id/baucher",
+      "archivo": "app/api/sales/[id]/baucher/route.ts",
+      "metodos": [],
+      "nivel": "sales.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -3066,6 +3075,31 @@
   ],
   "ciclos": [],
   "matriz": {
+    "app/api": {
+      "lib/api": 277,
+      "workflows": 23,
+      "lib/otros": 84,
+      "lib/identidad": 15,
+      "lib/business": 36,
+      "modules/aplicacion": 1,
+      "lib/database": 3,
+      "lib/integrations": 4
+    },
+    "lib/business": {
+      "raiz": 4,
+      "lib/api": 3,
+      "lib/otros": 15,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "components": 1
+    },
+    "lib/otros": {
+      "raiz": 8,
+      "lib/database": 4,
+      "lib/api": 2,
+      "lib/business": 7,
+      "components": 2
+    },
     "app/ui": {
       "hooks": 65,
       "lib/otros": 55,
@@ -3075,19 +3109,9 @@
       "modules/aplicacion": 3,
       "raiz": 14
     },
-    "app/api": {
-      "lib/api": 276,
-      "workflows": 22,
-      "lib/otros": 83,
-      "lib/identidad": 15,
-      "lib/business": 36,
-      "modules/aplicacion": 1,
-      "lib/database": 3,
-      "lib/integrations": 4
-    },
     "components": {
       "hooks": 151,
-      "lib/otros": 376,
+      "lib/otros": 381,
       "raiz": 91,
       "lib/business": 53,
       "lib/api": 3,
@@ -3103,7 +3127,7 @@
     },
     "hooks": {
       "raiz": 40,
-      "lib/otros": 100,
+      "lib/otros": 101,
       "lib/api": 8,
       "components": 20,
       "lib/business": 19,
@@ -3119,21 +3143,6 @@
     "lib/identidad": {
       "lib/otros": 5
     },
-    "lib/business": {
-      "lib/api": 3,
-      "lib/otros": 15,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "raiz": 3,
-      "components": 1
-    },
-    "lib/otros": {
-      "lib/database": 4,
-      "lib/api": 2,
-      "lib/business": 7,
-      "raiz": 6,
-      "components": 2
-    },
     "lib/database": {
       "lib/otros": 4,
       "lib/business": 1
@@ -3143,8 +3152,8 @@
     },
     "modules/infraestructura": {
       "lib/database": 111,
-      "lib/otros": 166,
-      "lib/business": 75,
+      "lib/otros": 167,
+      "lib/business": 76,
       "modules/aplicacion": 27,
       "lib/api": 9,
       "lib/identidad": 2,
@@ -3152,17 +3161,17 @@
     },
     "modules/aplicacion": {
       "modules/infraestructura": 23,
-      "lib/otros": 105,
+      "lib/otros": 106,
       "lib/database": 47,
       "lib/business": 46,
       "lib/api": 11,
       "lib/identidad": 3,
-      "raiz": 7
+      "raiz": 8
     },
     "scripts": {},
     "workflows": {
       "lib/business": 11,
-      "lib/otros": 21,
+      "lib/otros": 22,
       "lib/api": 4,
       "modules/aplicacion": 4
     }

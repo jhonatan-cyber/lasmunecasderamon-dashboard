@@ -203,18 +203,18 @@ const SortableRow: React.FC<SortableRowProps> = React.memo(
             {categoriaLabel && (
               <Badge
                 variant='outline'
-                className='text-xs gap-1 bg-white/90 text-gray-700 border-gray-200 dark:bg-slate-800/90 dark:text-gray-200 dark:border-slate-700 rounded-full px-2 sm:px-3 py-1 font-mono'
+                className='text-[10px] gap-1 bg-white/90 text-gray-700 border-gray-200 dark:bg-slate-800/90 dark:text-gray-200 dark:border-slate-700 rounded-full px-1.5 sm:px-2 py-0.5 font-mono'
               >
-                <Tag className='h-3 w-3' />
+                <Tag className='h-2.5 w-2.5' />
                 {categoriaLabel}
               </Badge>
             )}
             {product.status === 1 ? (
-              <Badge className='bg-green-100 text-green-700 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
+              <Badge className='bg-green-100 text-green-700 rounded-full px-1.5 sm:px-2 py-0.5 font-mono text-[10px] sm:text-xs border border-green-200'>
                 Activo
               </Badge>
             ) : (
-              <Badge className='bg-red-200 text-red-600 rounded-full px-2 sm:px-3 py-1 font-mono text-xs sm:text-sm'>
+              <Badge className='bg-red-200 text-red-600 rounded-full px-1.5 sm:px-2 py-0.5 font-mono text-[10px] sm:text-xs border border-red-300'>
                 Inactivo
               </Badge>
             )}

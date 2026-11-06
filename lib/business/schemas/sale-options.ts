@@ -8,8 +8,8 @@ export const SaleOptionsSchema = z
         tipo: z.enum(['botella', 'shot']),
         colacion_habilitada: z.boolean().optional(),
         cover_habilitado: z.boolean().optional(),
+        en_venta: z.boolean().optional(),
         ml_colacion: z.number().int().min(1).max(10000).optional(),
-        // Acompañamiento propio de la colación: unidades 0 = sin acompañamiento.
         acompanamiento_colacion: z
           .object({
             unidades: z.number().int().min(0).max(1000),
@@ -24,10 +24,10 @@ export const SaleOptionsSchema = z
           .optional(),
         ml_acompanamiento_cliente: z.number().int().min(0).max(10000).optional(),
         ml_acompanamiento_anfitriona: z.number().int().min(0).max(10000).optional(),
+        acompanamiento_cliente: z.boolean().optional(),
         precio: amount,
         precio_sin_anfitriona: amount.min(1).optional(),
         comision: amount.optional().default(0),
-        // Precio independiente del corto para anfitrionas; sin precio no se ofrece.
         precio_anfitriona: amount.optional(),
         precios_anfitriona: z
           .array(z.object({ precio: amount.min(1), comision: amount }))
@@ -50,6 +50,10 @@ export const SaleOptionsSchema = z
         'Los ml de bebida solo corresponden a cortos'
       )
       .refine(
+        option => option.tipo === 'shot' || option.acompanamiento_cliente === undefined,
+        'El acompañamiento del corto solo corresponde a cortos'
+      )
+      .refine(
         option => option.tipo === 'shot' || option.precios_anfitriona === undefined,
         'Los precios de anfitriona solo corresponden a cortos'
       )
@@ -68,6 +72,10 @@ export const SaleOptionsSchema = z
       .refine(
         option => option.tipo === 'botella' || option.cover_habilitado === undefined,
         'El cover solo puede habilitarse para bebidas por botella'
+      )
+      .refine(
+        option => option.tipo === 'botella' || option.en_venta === undefined,
+        'Poner a la venta solo corresponde a bebidas por botella'
       )
       .refine(
         option => option.tipo === 'botella' || option.ml_colacion === undefined,
@@ -93,7 +101,6 @@ export const SaleOptionsSchema = z
     'No se puede repetir un tipo de venta'
   );
 
-/** Configuración nueva o editada; la lectura conserva configuraciones históricas. */
 export const ConfiguredSaleOptionsSchema = SaleOptionsSchema.refine(
   options =>
     options.every(

@@ -34,6 +34,11 @@ export interface TransferForm {
   mlAcompanamientoColacionSugerido: number | null;
   coverHabilitado: boolean;
   setCoverHabilitado: (value: boolean) => void;
+  enVenta: boolean;
+  setEnVenta: (value: boolean) => void;
+  /** El corto al cliente incluye bebida analcohólica (solo cortos). */
+  acompanamientoCliente: boolean;
+  setAcompanamientoCliente: (value: boolean) => void;
   acompanamientoBotella: 'ninguno' | 'gaseosa' | 'soda';
   setAcompanamientoBotella: (value: 'ninguno' | 'gaseosa' | 'soda') => void;
   unidadesAcompanamiento: string;
@@ -72,6 +77,8 @@ export interface TransferForm {
   etiquetaShot: string;
   esChampagneItem: boolean;
   esAnalcoholicaItem: boolean;
+  /** Solo analcohólicas (sin cigarrillos): habilita el flag «a la venta». */
+  esBebidaAnalcoholicaItem: boolean;
   opcionesGuardadas: SaleOption[];
   tieneConfig: boolean;
   usarConfigGuardada: boolean;
@@ -93,6 +100,8 @@ export function useTransferForm({
   const [mlColacion, setMlColacion] = useState('');
   const [mlAcompanamientoColacion, setMlAcompanamientoColacion] = useState('');
   const [coverHabilitado, setCoverHabilitado] = useState(false);
+  const [enVenta, setEnVenta] = useState(true);
+  const [acompanamientoCliente, setAcompanamientoCliente] = useState(true);
   const [acompanamientoBotella, setAcompanamientoBotella] = useState<
     'ninguno' | 'gaseosa' | 'soda'
   >('ninguno');
@@ -125,8 +134,8 @@ export function useTransferForm({
   const etiquetaShot = etiquetaCorto(mlPorShot, mlPorShotAnfitriona);
 
   const esChampagneItem = esChampagne(item?.categoria_nombre);
-  const esAnalcoholicaItem =
-    esBebidaAnalcoholica(item?.categoria_nombre) || esCigarrillos(item?.categoria_nombre);
+  const esBebidaAnalcoholicaItem = esBebidaAnalcoholica(item?.categoria_nombre);
+  const esAnalcoholicaItem = esBebidaAnalcoholicaItem || esCigarrillos(item?.categoria_nombre);
   const opcionesGuardadas: SaleOption[] = (
     parseSavedOptions(item?.opciones_venta) ?? [
       { tipo: 'botella', precio: item?.precio_venta ?? 0, comision: item?.comision ?? 0 }
@@ -164,6 +173,7 @@ export function useTransferForm({
           : ''
       );
       setCoverHabilitado(bottle?.cover_habilitado === true);
+      setEnVenta(bottle?.en_venta !== false);
       setAcompanamientoBotella(
         (bottle?.acompanamiento?.unidades ?? 0) > 0
           ? (bottle?.acompanamiento?.tipo ?? 'gaseosa')
@@ -174,6 +184,7 @@ export function useTransferForm({
       );
       const shot = options.find(option => option.tipo === 'shot');
       setMlAcompanamientoAnfitriona(String(shot?.ml_acompanamiento_anfitriona ?? ''));
+      setAcompanamientoCliente(shot?.acompanamiento_cliente !== false);
       const preciosAnfitriona = preciosCortoAnfitriona(shot);
       setPreciosAnfitrionaExtra(
         preciosAnfitriona.slice(1).map(row => ({
@@ -279,6 +290,8 @@ export function useTransferForm({
     setMlColacion('');
     setMlAcompanamientoColacion('');
     setCoverHabilitado(false);
+    setEnVenta(true);
+    setAcompanamientoCliente(true);
     setAcompanamientoBotella('ninguno');
     setUnidadesAcompanamiento('');
     setCantidad('');
@@ -311,6 +324,7 @@ export function useTransferForm({
 
   return {
     esAnalcoholicaItem,
+    esBebidaAnalcoholicaItem,
     mlAcompanamientoAnfitriona,
     setMlAcompanamientoAnfitriona,
     maxAnfitrionas,
@@ -325,6 +339,10 @@ export function useTransferForm({
     mlAcompanamientoColacionSugerido,
     coverHabilitado,
     setCoverHabilitado,
+    enVenta,
+    setEnVenta,
+    acompanamientoCliente,
+    setAcompanamientoCliente,
     acompanamientoBotella,
     setAcompanamientoBotella,
     unidadesAcompanamiento,

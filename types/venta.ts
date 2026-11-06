@@ -14,16 +14,24 @@ export interface Venta {
   estado: number;
   tiempo?: number;
   anfitrionas_nicks?: string | null;
+  baucher_foto?: string | null;
 }
 
+export interface AcompanamientoBotellaItem {
+  presentacion_id: string;
+  unidades: number;
+  nombre?: string;
+  foto?: string | null;
+}
+
+export type AcompanamientoBotella = AcompanamientoBotellaItem | AcompanamientoBotellaItem[];
+export type AcompanamientoVenta =
+  | AcompanamientoBotella
+  | { presentacion_id: string; unidades?: number; ml_por_corto?: number; nombre?: string }
+  | null;
+
 export interface VentaDetalle {
-  acompanamiento?: {
-    presentacion_id: string;
-    unidades?: number;
-    ml_por_corto?: number;
-    nombre?: string;
-    foto?: string | null;
-  } | null;
+  acompanamiento?: AcompanamientoVenta;
   anfitrionas?: string[];
   presentacion_id?: string | null;
   id?: string | number;
@@ -39,9 +47,7 @@ export interface VentaDetalle {
   producto_foto?: string | null;
   producto_etiqueta?: string;
   producto_precio?: number;
-  /** 'botella' | 'shot'. Ausente en ventas anteriores a la migración 039. */
   tipo_venta?: 'botella' | 'shot' | null;
-  /** Shot cobrado a precio de anfitriona. */
   shot_anfitriona?: boolean | null;
 }
 
@@ -93,10 +99,11 @@ export interface VentaCreate {
   detalles: VentaDetalleCreate[];
   usuarios?: Array<string | number>;
   tiempo?: number;
+  baucher_foto?: string | null;
 }
 
 export interface VentaDetalleCreate {
-  acompanamiento_botella?: { presentacion_id: string; unidades: number };
+  acompanamiento_botella?: AcompanamientoBotella;
   producto_id: string | number;
   presentacion_id?: string | null;
   precio: number;
@@ -106,9 +113,7 @@ export interface VentaDetalleCreate {
   hostess_id?: string | number | null;
   hostesses?: Array<string | number>;
   isChampagne?: boolean;
-  /** 'shot' descuenta ml de la botella abierta; sin valor, botella entera. */
   tipo_venta?: 'botella' | 'shot';
-  /** El shot se cobró al precio de anfitriona (solo con tipo_venta 'shot'). */
   shot_anfitriona?: boolean;
 }
 

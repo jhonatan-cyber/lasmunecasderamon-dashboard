@@ -27,6 +27,7 @@ import {
 } from '@/components/accounts/tables/cuentaTableStyles';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { esShot, etiquetaVentaDetalle } from '@/lib/sales/ventaDetalle';
+import { normalizarAcompanamientoBotella } from '@/lib/sales/acompanamientoBotella';
 
 interface NewSaleCartProps {
   productos: any[];
@@ -82,8 +83,11 @@ export const NewSaleCart = ({
               )
                 ? p.selectedHostesses || []
                 : [];
-              const mixer =
-                p.tipo_venta === 'shot' ? p.acompanamiento_corto : p.acompanamiento_botella;
+              const esShotItem = esShot(p);
+              const saboresBotella = esShotItem
+                ? []
+                : normalizarAcompanamientoBotella(p.acompanamiento_botella);
+              const mixerCorto = esShotItem ? p.acompanamiento_corto : undefined;
               const quantity = Number(p.cantidad) || 0;
               const shotMl = p.shot_anfitriona
                 ? resolveShotMlAnfitriona(
@@ -91,8 +95,8 @@ export const NewSaleCart = ({
                     resolveShotMl(p.ml_shot, defaultShotMl)
                   )
                 : resolveShotMl(p.ml_shot, defaultShotMl);
-              const mixerPerUnit = Number(mixer?.ml_por_corto ?? mixer?.unidades ?? 0);
-              const mixerUnit = mixer?.ml_por_corto !== undefined ? 'ml' : 'unidades';
+              const mixerPerUnit = Number(mixerCorto?.ml_por_corto ?? mixerCorto?.unidades ?? 0);
+              const mixerUnit = mixerCorto?.ml_por_corto !== undefined ? 'ml' : 'unidades';
               return (
                 <TableRow key={i} className={CUENTA_TABLE_ROW_CLASS}>
                   <TableCell
@@ -136,23 +140,47 @@ export const NewSaleCart = ({
                   <TableCell
                     className={`${CUENTA_TABLE_CELL_CLASS} min-w-[220px] text-left align-top`}
                   >
-                    {mixer ? (
+                    {esShotItem && mixerCorto ? (
                       <div className='flex items-start gap-2'>
                         <SaleProductPhoto
-                          foto={mixer.foto}
-                          name={mixer.nombre || 'Bebida'}
+                          foto={mixerCorto.foto}
+                          name={mixerCorto.nombre || 'Bebida'}
                           large={false}
                           compact
                         />
                         <div className='space-y-1'>
-                          <p className='font-medium'>{mixer.nombre || mixer.presentacion_id}</p>
+                          <p className='font-medium'>
+                            {mixerCorto.nombre || mixerCorto.presentacion_id}
+                          </p>
                           <p className='text-xs text-muted-foreground'>
-                            {mixerPerUnit} {mixerUnit} por {esShot(p) ? 'corto' : 'botella'}
+                            {mixerPerUnit} {mixerUnit} por corto
                           </p>
                           <p className='text-xs font-medium'>
                             Total: {mixerPerUnit * quantity} {mixerUnit}
                           </p>
                         </div>
+                      </div>
+                    ) : saboresBotella.length > 0 ? (
+                      <div className='space-y-2'>
+                        {saboresBotella.map(sabor => (
+                          <div key={sabor.presentacion_id} className='flex items-start gap-2'>
+                            <SaleProductPhoto
+                              foto={sabor.foto ?? undefined}
+                              name={sabor.nombre || 'Bebida'}
+                              large={false}
+                              compact
+                            />
+                            <div className='space-y-1'>
+                              <p className='font-medium'>{sabor.nombre || sabor.presentacion_id}</p>
+                              <p className='text-xs text-muted-foreground'>
+                                {sabor.unidades} unidades por botella
+                              </p>
+                              <p className='text-xs font-medium'>
+                                Total: {sabor.unidades * quantity} unidades
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <span className='text-xs text-muted-foreground'>Sin bebida</span>

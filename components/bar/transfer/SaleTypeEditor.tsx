@@ -16,10 +16,6 @@ import type { ChampagneTierRow } from '@/components/bar/transfer/transferOptions
 import type { SaleType } from '@/types/sale-options';
 import { Label } from '@/components/ui/label';
 
-/**
- * Modo «editar precios»: toggle de tipos de venta (botella/shot), campos de
- * precio y comisión por tipo, ml por shot y la tabla champagne editable.
- */
 export const SaleTypeEditor = memo(function SaleTypeEditor({
   context = 'transfer',
   precioSinAnfitriona = '',
@@ -33,6 +29,10 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onColacionHabilitadaChange,
   coverHabilitado = false,
   onCoverHabilitadoChange,
+  enVenta = true,
+  onEnVentaChange,
+  acompanamientoCliente = true,
+  onAcompanamientoClienteChange,
   mostrarBebidasIncluidas = true,
   mostrarAnfitrionas = true,
   mostrarCortos = true,
@@ -77,6 +77,10 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onColacionHabilitadaChange?: (value: boolean) => void;
   coverHabilitado?: boolean;
   onCoverHabilitadoChange?: (value: boolean) => void;
+  enVenta?: boolean;
+  onEnVentaChange?: (value: boolean) => void;
+  acompanamientoCliente?: boolean;
+  onAcompanamientoClienteChange?: (value: boolean) => void;
   mostrarBebidasIncluidas?: boolean;
   mostrarAnfitrionas?: boolean;
   mostrarCortos?: boolean;
@@ -165,6 +169,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
             {tipo === 'shot' ? (
               <ShortSaleEditor
                 hideHelp={context === 'transfer'}
+                acompanamientoCliente={acompanamientoCliente}
+                onAcompanamientoClienteChange={onAcompanamientoClienteChange ?? (() => {})}
                 mlAcompanamientoAnfitriona={mlAcompanamientoAnfitriona}
                 onMlAcompanamientoAnfitrionaChange={onMlAcompanamientoAnfitrionaChange}
 
@@ -368,6 +374,23 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                 )}
                 {context === 'settings' && !mostrarAnfitrionas && !esCigarrillos && (
                   <div className='flex flex-wrap items-start gap-x-8 gap-y-3'>
+                    {onEnVentaChange && (
+                      <Label className='flex cursor-pointer items-start gap-2'>
+                        <Checkbox
+                          checked={enVenta}
+                          onCheckedChange={checked => onEnVentaChange(checked === true)}
+                          disabled={saving}
+                          aria-label='Poner la bebida a la venta'
+                        />
+                        <span>
+                          <span className='block text-sm font-medium'>A la venta</span>
+                          <span className='block text-xs text-muted-foreground'>
+                            Si la desactivas, la bebida no se ofrece en el catálogo de venta; solo
+                            se usa para cortos, covers o colación.
+                          </span>
+                        </span>
+                      </Label>
+                    )}
                     {onColacionHabilitadaChange && (
                       <Label className='flex cursor-pointer items-start gap-2'>
                         <Checkbox

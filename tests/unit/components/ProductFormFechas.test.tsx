@@ -5,8 +5,6 @@ import { ProductForm } from '@/components/products/ProductForm';
 import type { Product } from '@/types/product';
 import { fechaCorta, seleccionarFecha } from '../helpers/datePicker';
 
-// El mock global de react-query devuelve un cliente nuevo en cada llamada; con
-// `useProductForm` eso re-dispara su efecto en bucle. Acá se fija uno solo.
 const queryClient = vi.hoisted(() => ({
   fetchQuery: vi.fn().mockResolvedValue(null),
   setQueryData: vi.fn(),
@@ -29,9 +27,6 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
 
-// Hoy fijo (2026-05-05): las fechas de este archivo son de 2026 y la validación
-// rechaza una elaboración futura o un vencimiento ya pasado. Se falsifica solo
-// `Date` para no romper `waitFor`/`findBy*` (usan setTimeout real).
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-05-05T15:00:00.000Z'));
@@ -57,7 +52,6 @@ const mount = (onSubmit: (form: FormData) => void, initialValues?: Product) =>
     />
   );
 
-/** Producto válido para que el submit pase la validación (código + presentación). */
 const completarProducto = () => {
   fireEvent.change(screen.getByLabelText('Nombre del Producto'), {
     target: { value: 'Ron Habana' }
@@ -77,12 +71,8 @@ it('calcula el vencimiento por presentación con elaboración y duración', () =
 
   seleccionarFecha('Fecha de elaboración', '2026-01-31');
   fireEvent.change(screen.getByLabelText('Duración (meses)'), { target: { value: '6' } });
-
-  // El vencimiento se completa solo (el día se recorta al fin del mes).
   expect(screen.getByLabelText('Fecha de vencimiento')).toHaveTextContent(fechaCorta('2026-07-31'));
-
   fireEvent.submit(document.getElementById('product-form')!);
-
   expect(onSubmit).toHaveBeenCalledTimes(1);
   const form = onSubmit.mock.calls[0][0] as FormData;
   const [presentacion] = presentacionesEnviadas(form);
@@ -95,10 +85,8 @@ it('no manda fechas en el payload del producto', () => {
   const onSubmit = vi.fn();
   mount(onSubmit);
   completarProducto();
-
   seleccionarFecha('Fecha de vencimiento', '2026-11-20');
   fireEvent.submit(document.getElementById('product-form')!);
-
   const form = onSubmit.mock.calls[0][0] as FormData;
   expect(form.get('fecha_elaboracion')).toBeNull();
   expect(form.get('duracion_meses')).toBeNull();
@@ -109,14 +97,11 @@ it('acepta solo la fecha de vencimiento en la presentación', () => {
   const onSubmit = vi.fn();
   mount(onSubmit);
   completarProducto();
-
   seleccionarFecha('Fecha de vencimiento', '2026-11-20');
   expect(screen.getByLabelText('Fecha de elaboración')).toHaveTextContent('dd/mm/aaaa');
   expect(screen.getByLabelText('Duración (meses)')).toHaveValue('');
   expect(screen.getByLabelText('Fecha de vencimiento')).toHaveTextContent(fechaCorta('2026-11-20'));
-
   fireEvent.submit(document.getElementById('product-form')!);
-
   expect(onSubmit).toHaveBeenCalledTimes(1);
   const [presentacion] = presentacionesEnviadas(onSubmit.mock.calls[0][0] as FormData);
   expect(presentacion.fecha_elaboracion).toBeNull();
@@ -128,12 +113,9 @@ it('rechaza un vencimiento anterior a la elaboración de la presentación', () =
   const onSubmit = vi.fn();
   mount(onSubmit);
   completarProducto();
-
   seleccionarFecha('Fecha de elaboración', '2026-05-01');
   seleccionarFecha('Fecha de vencimiento', '2026-04-01');
-
   fireEvent.submit(document.getElementById('product-form')!);
-
   expect(screen.getByRole('alert')).toHaveTextContent(
     'El vencimiento no puede ser anterior a la elaboración'
   );

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
-import { SearchableSelect } from '@/components/shared/SearchableSelect';
+import { AcompanamientoDistribuidor } from '@/components/shared/AcompanamientoDistribuidor';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { urlProductosParaVenta } from '@/lib/constants/api-endpoints';
+import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { productImageUrl } from '@/lib/utils/productImage';
 import { cn } from '@/lib/utils/utils';
@@ -50,16 +51,15 @@ type Acompanamiento = {
   producto_nombre: string;
   nombre: string;
   stock_bar: number;
+  foto: string | null;
 };
 
-/** Entrada que todavía espera su bebida; solo se necesitan estos datos para entregarla. */
 export type CortesiaPendiente = {
   id: string;
   monto_entrada: number;
   hora: string;
 };
 
-/** Compra con una o más cortesías pendientes. */
 export type GrupoCortesia = {
   id: string;
   cliente: string | null;
@@ -74,12 +74,11 @@ export type GrupoCortesia = {
 
 type LineaSeleccion = {
   cantidad: number;
-  acompanamientoId: string;
+  reparto: AcompanamientoBotellaItem[];
 };
 
 type Props = {
   grupo: GrupoCortesia | null;
-  /** Tope de la cortesía (`monto_base_trago_cortesia_cliente`). */
   tope: number;
   onClose: () => void;
   onEntregado: () => void | Promise<void>;
@@ -114,7 +113,6 @@ const normalizar = (valor: string) =>
     .toLowerCase()
     .trim();
 
-/** Analcohólicas y cigarrillos no son cover de una entrada. */
 function categoriaFueraDeCortesia(categoria: string | null | undefined): boolean {
   const normalizada = normalizar(categoria || '');
   return normalizada.includes('analcohol') || normalizada.includes('cigarr');
@@ -164,7 +162,8 @@ function aAcompanamiento(valor: unknown): Acompanamiento | null {
     id,
     producto_nombre: texto(valor.producto_nombre),
     nombre: texto(valor.presentacion_nombre) || texto(valor.nombre),
-    stock_bar: numero(valor.stock_bar)
+    stock_bar: numero(valor.stock_bar),
+    foto: typeof valor.foto === 'string' && valor.foto ? valor.foto : null
   };
 }
 
@@ -181,10 +180,6 @@ function precioCorte(bebida: Bebida): number | null {
   return precio > 0 ? precio : null;
 }
 
-/**
- * Formato con el que la entrada se puede servir dentro del tope. Se prefiere el
- * corte; la botella queda para lo que no se vende por corte.
- */
 function formatoCortesia(bebida: Bebida, umbral: number): Formato | null {
   const corte = precioCorte(bebida);
   if (corte !== null && corte <= umbral) return 'corte';
@@ -200,20 +195,13 @@ function unidadesAcompanamientoFormato(bebida: Bebida, formato: Formato): number
   return formato === 'corte' ? 1 : unidadesAcompanamiento(bebida);
 }
 
-/** Un corte cliente siempre lleva una unidad; la botella, si está configurada. */
 function requiereAcompanamiento(bebida: Bebida, formato: Formato): boolean {
   return formato === 'corte' || unidadesAcompanamiento(bebida) > 0;
 }
 
-function opcionesCoverPara(
-  acompanamientos: Acompanamiento[],
-  bebida: Bebida,
-  formato: Formato,
-  cantidad: number
-): Acompanamiento[] {
-  const necesarias = unidadesAcompanamientoFormato(bebida, formato) * cantidad;
+function opcionesCoverPara(acompanamientos: Acompanamiento[], bebida: Bebida): Acompanamiento[] {
   return acompanamientos.filter(
-    opcion => opcion.id !== bebida.presentacion_id && opcion.stock_bar >= necesarias
+    opcion => opcion.id !== bebida.presentacion_id && opcion.stock_bar >= 1
   );
 }
 
@@ -319,16 +307,11 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
     () =>
       lineas.some(linea => {
         if (!requiereAcompanamiento(linea.bebida, linea.formato)) return false;
-        const opciones = opcionesCoverPara(
-          acompanamientos,
-          linea.bebida,
-          linea.formato,
-          linea.cantidad
-        );
-        // El corte puede salir sin cover si el bar no tiene; la botella con
-        // acompañamiento configurado no: el servidor la exige.
+        const opciones = opcionesCoverPara(acompanamientos, linea.bebida);
         if (opciones.length === 0) return linea.formato === 'botella';
-        return !opciones.some(opcion => opcion.id === linea.acompanamientoId);
+        const requeridas = unidadesAcompanamientoFormato(linea.bebida, linea.formato);
+        const asignado = linea.reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
+        return asignado !== requeridas;
       }),
     [acompanamientos, lineas]
   );
@@ -343,7 +326,7 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
           ...previo,
           [clave]: {
             cantidad: (previo[clave]?.cantidad ?? 0) + 1,
-            acompanamientoId: previo[clave]?.acompanamientoId ?? ''
+            reparto: previo[clave]?.reparto ?? []
           }
         };
       });
@@ -373,9 +356,9 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
     });
   }, []);
 
-  const cambiarAcompanamiento = useCallback((clave: string, acompanamientoId: string) => {
+  const cambiarReparto = useCallback((clave: string, reparto: AcompanamientoBotellaItem[]) => {
     setSeleccion(previo =>
-      previo[clave] ? { ...previo, [clave]: { ...previo[clave], acompanamientoId } } : previo
+      previo[clave] ? { ...previo, [clave]: { ...previo[clave], reparto } } : previo
     );
   }, []);
 
@@ -412,7 +395,13 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
             body: JSON.stringify({
               presentacion_id: linea.bebida.presentacion_id,
               tipo_entrega: linea.formato,
-              acompanamiento_presentacion_id: linea.acompanamientoId || null
+              acompanamientos:
+                requiereAcompanamiento(linea.bebida, linea.formato) && linea.reparto.length
+                  ? linea.reparto.map(sabor => ({
+                      presentacion_id: sabor.presentacion_id,
+                      unidades: sabor.unidades
+                    }))
+                  : null
             })
           });
           const json: unknown = await respuesta.json().catch(() => null);
@@ -573,19 +562,14 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
               </span>
             </div>
             {lineas.map(linea => {
-              const opciones = opcionesCoverPara(
-                acompanamientos,
-                linea.bebida,
-                linea.formato,
-                linea.cantidad
-              );
+              const opciones = opcionesCoverPara(acompanamientos, linea.bebida);
               const necesitaCover = requiereAcompanamiento(linea.bebida, linea.formato);
               const unidades = unidadesAcompanamientoFormato(linea.bebida, linea.formato);
-              const necesarias = unidades * linea.cantidad;
+              const asignado = linea.reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
               const falta = necesitaCover
                 ? opciones.length === 0
                   ? linea.formato === 'botella'
-                  : !opciones.some(opcion => opcion.id === linea.acompanamientoId)
+                  : asignado !== unidades
                 : false;
               return (
                 <div key={linea.clave} className='rounded-xl border p-3'>
@@ -658,34 +642,19 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
                             : 'Sin bebidas cover con stock; el corte se puede entregar sin acompañamiento.'}
                         </p>
                       ) : (
-                        <SearchableSelect
+                        <AcompanamientoDistribuidor
                           id={`cover-${linea.clave}`}
-                          value={linea.acompanamientoId}
-                          onChange={id => cambiarAcompanamiento(linea.clave, id)}
-                          placeholder='Seleccionar acompañamiento'
-                          searchPlaceholder='Buscar bebida…'
-                          options={[
-                            { value: '', label: 'Seleccionar acompañamiento' },
-                            ...opciones.map(opcion => ({
-                              value: opcion.id,
-                              label: `${opcion.producto_nombre} · ${opcion.nombre} · ${opcion.stock_bar} en bar`,
-                              keywords: [opcion.producto_nombre, opcion.nombre]
-                            }))
-                          ]}
+                          opciones={opciones}
+                          requeridas={unidades}
+                          valor={linea.reparto}
+                          onChange={reparto => cambiarReparto(linea.clave, reparto)}
+                          repeticiones={linea.cantidad}
+                          disabled={entregando}
                         />
                       )}
-                      <p className='text-[11px] text-muted-foreground'>
-                        {linea.formato === 'corte'
-                          ? `Una unidad de cover por corte${
-                              linea.cantidad > 1 ? ` (${linea.cantidad} en total)` : ''
-                            }.`
-                          : `Incluye ${necesarias} unidad${necesarias === 1 ? '' : 'es'} para ${
-                              linea.cantidad
-                            } botella${linea.cantidad === 1 ? '' : 's'}.`}
-                      </p>
                       {falta && opciones.length > 0 ? (
                         <p className='text-xs text-amber-600 dark:text-amber-400'>
-                          Elige la bebida del cover para continuar.
+                          Reparte el cover para continuar.
                         </p>
                       ) : null}
                     </div>

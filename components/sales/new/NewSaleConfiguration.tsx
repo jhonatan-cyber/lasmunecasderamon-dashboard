@@ -1,18 +1,26 @@
-﻿import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { CustomerSelect } from '@/components/shared/selects';
 import { RoomSelect } from '@/components/shared/selects';
 import { PaymentMethodSelect } from '@/components/shared/selects';
-import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { BaucherFileInput } from '@/components/shared/BaucherFileInput';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { TipToggle } from '@/components/shared/TipToggle';
+
+const TIEMPOS_VENTA = [10, 15, 20, 25, 30] as const;
 
 interface NewSaleConfigurationProps {
   clientes: any[];
   selectedCliente: string;
   setSelectedCliente: (val: string) => void;
-  /** Segundo cliente con saldo para repartir el prepago (opcional). */
   selectedSegundoCliente: string;
   setSelectedSegundoCliente: (val: string) => void;
   clientesConSaldo: any[];
@@ -24,6 +32,8 @@ interface NewSaleConfigurationProps {
   setManualTime: (val: string) => void;
   metodoPago: string;
   setMetodoPago: (val: string) => void;
+  baucherFoto: string | null;
+  setBaucherFoto: (val: string | null) => void;
   propina: number;
   enableTip: boolean;
   setEnableTip: (val: boolean) => void;
@@ -48,6 +58,8 @@ export const NewSaleConfiguration = ({
   setManualTime,
   metodoPago,
   setMetodoPago,
+  baucherFoto,
+  setBaucherFoto,
   propina,
   enableTip,
   setEnableTip
@@ -73,17 +85,18 @@ export const NewSaleConfiguration = ({
               <Label htmlFor='sale-room-minutes' className={fieldLabelClass}>
                 Tiempo (minutos)
               </Label>
-              <Input
-                id='sale-room-minutes'
-                type='number'
-                min={1}
-                step={1}
-                inputMode='numeric'
-                value={manualTime}
-                onChange={event => setManualTime(event.target.value)}
-                placeholder='Escribe los minutos'
-                className='rounded-full'
-              />
+              <Select value={manualTime} onValueChange={setManualTime}>
+                <SelectTrigger id='sale-room-minutes' className='rounded-full'>
+                  <SelectValue placeholder='Selecciona el tiempo' />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIEMPOS_VENTA.map(minutos => (
+                    <SelectItem key={minutos} value={String(minutos)}>
+                      {minutos} min
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
         </>
@@ -100,6 +113,18 @@ export const NewSaleConfiguration = ({
           )}
         />
       </div>
+
+      {metodoPago === 'transferencia' && (
+        <div className='sm:col-span-2 lg:col-span-4'>
+          <BaucherFileInput
+            id='sale-baucher'
+            value={baucherFoto}
+            onChange={setBaucherFoto}
+            label='Foto del baucher (transferencia)'
+            hint='Adjunta la captura o foto del comprobante de la transferencia.'
+          />
+        </div>
+      )}
 
       {clientesConSaldo.length > 0 && (
         <div className='flex flex-col gap-1.5 sm:col-span-2 lg:col-span-4'>

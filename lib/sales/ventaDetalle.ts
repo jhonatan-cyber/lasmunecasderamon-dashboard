@@ -14,9 +14,7 @@ export function agruparProductosVenta(detalles: VentaDetalle[]): VentaDetalle[] 
       Number(detalle.precio),
       detalle.tipo_venta ?? 'botella',
       Boolean(detalle.shot_anfitriona),
-      detalle.acompanamiento?.presentacion_id ?? null,
-      detalle.acompanamiento?.unidades ?? null,
-      detalle.acompanamiento?.ml_por_corto ?? null
+      JSON.stringify(detalle.acompanamiento ?? null)
     ]);
     const grupo = grupos.get(key);
     if (!grupo) grupos.set(key, { ...detalle });

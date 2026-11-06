@@ -6,7 +6,6 @@ import { UnitLabelSelector } from '@/components/products/UnitLabelSelector';
 import type { LabelUnit } from '@/lib/utils/unitLabelGroups';
 import type { PurchaseGeneratedCode } from '@/types/purchase';
 
-/** Adapta los códigos devueltos por la compra al formato de etiquetas imprimibles. */
 export function purchaseCodesToLabelUnits(
   codes: PurchaseGeneratedCode[],
   fechaCrea?: string | null

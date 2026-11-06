@@ -1,13 +1,12 @@
 import { z } from 'zod';
 import { BAUCHER_FOTO_MAX_CHARS, esBaucherDataUrlValido } from '@/lib/business/baucher';
+import { acompanamientoBotellaSchema, saboresAcompanamientoValidos } from './acompanamiento';
 
 const inventoryFields = {
   presentacion_id: z.string().nullable().optional(),
   tipo_venta: z.enum(['botella', 'shot']).optional(),
   shot_anfitriona: z.boolean().optional(),
-  acompanamiento_botella: z
-    .object({ presentacion_id: z.string().min(1), unidades: z.number().int().min(1).max(1000) })
-    .optional(),
+  acompanamiento_botella: acompanamientoBotellaSchema.optional(),
   acompanamiento_corto: z
     .object({
       presentacion_id: z.string().min(1),
@@ -32,7 +31,6 @@ export const OrderSchema = z.object({
   total_comision: z.number().optional().default(0),
   propina: z.number().optional().default(0),
   metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia']).nullable().optional(),
-  /** Nombre del archivo del baucher guardado en `public/img/orders`. */
   baucher_foto: z.string().nullable().optional(),
   estado: z.number().optional().default(1),
   fecha_crea: z.string().or(z.date()).optional(),
@@ -54,17 +52,6 @@ export const OrderCreateSchema = z
     totalComision: z.number().min(0).optional().default(0),
     propina: z.number().min(0).optional().default(0),
     metodoPago: z.enum(['efectivo', 'tarjeta', 'transferencia']),
-    /**
-     * Foto del baucher en data URL (`data:image/jpeg;base64,…`): única constancia
-     * del pago cuando el pedido es con transferencia. La app del garzón la saca
-     * con la cámara y el formulario del dashboard la adjunta con el mismo campo
-     * compartido; el servidor la guarda en `public/img/orders` y en
-     * `pedidos.baucher_foto` solo queda el nombre del archivo.
-     *
-     * Es obligatoria con transferencia: el `superRefine` de abajo rechaza el
-     * pedido sin ella, así ningún cliente (app, dashboard u otro) deja un pago
-     * con transferencia sin constancia.
-     */
     baucher_foto: z
       .string()
       .max(BAUCHER_FOTO_MAX_CHARS, 'La foto del baucher supera el tamaño máximo')
@@ -103,8 +90,7 @@ export const OrderCreateSchema = z
             d =>
               !d.acompanamiento_botella ||
               (d.tipo_venta !== 'shot' &&
-                Boolean(d.presentacion_id) &&
-                d.presentacion_id !== d.acompanamiento_botella.presentacion_id),
+                saboresAcompanamientoValidos(d.presentacion_id, d.acompanamiento_botella)),
             'Acompa\u00f1amiento de botella inv\u00e1lido'
           )
           .transform(d =>

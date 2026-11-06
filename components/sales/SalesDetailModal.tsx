@@ -16,6 +16,7 @@ import { formatCurrency, statusColors, statusLabels } from '@/lib/business/sales
 import { agruparProductosVenta } from '@/lib/sales/ventaDetalle';
 import { SalesProductDetail } from './SalesProductDetail';
 import { SaleProductPhoto } from './product-modal/SaleProductPhoto';
+import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { ShoppingBag, User, Home, CreditCard, Users, Clock, Receipt, Hash } from 'lucide-react';
 
 interface SalesDetailModalProps {
@@ -269,6 +270,12 @@ export function SalesDetailModal({
               </div>
             )}
           </div>
+          {selectedVenta.metodo_pago === 'transferencia' && selectedVenta.baucher_foto && (
+            <BaucherFoto
+              src={`/api/sales/${String(selectedVenta.id)}/baucher`}
+              descripcion={`Venta ${selectedVenta.codigo}`}
+            />
+          )}
           {!!selectedVenta.consumos_inventario?.length && (
             <section className='space-y-3'>
               <h4 className='text-sm font-semibold'>Consumo de inventario registrado</h4>

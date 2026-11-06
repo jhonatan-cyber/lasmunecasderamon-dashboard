@@ -32,6 +32,7 @@ export { listarVentasEnCurso, obtenerHabitacionActivaDeAnfitrionas } from './lec
 
 export { listarVentas, obtenerVenta } from './lecturas/servicio';
 export { obtenerVentaParaAlerta } from './lecturas/servicio';
+export { obtenerBaucherFotoVenta } from './lecturas/servicio';
 
 export {
   registrarCabeceraVenta,

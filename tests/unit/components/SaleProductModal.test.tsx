@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   Harness,
+  distributeMixer,
   presentacionesDePrueba,
   product,
   selectMixer
@@ -67,8 +68,9 @@ it('vende botella sin anfitriona al precio adicional con las bebidas configurada
   fireEvent.click(
     screen.getByRole('button', { name: /Botella sin anfitriona.*aumentar cantidad/ })
   );
-  expect(screen.getByText('Consumo: 6 unidades')).toBeInTheDocument();
-  await selectMixer();
+  expect(screen.getByText('Reparte 3 unidades por botella · asignado 0/3')).toBeInTheDocument();
+  await distributeMixer();
+  expect(screen.getByText('Reparto completo · 3 unidades por botella')).toBeInTheDocument();
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
   });
@@ -79,7 +81,9 @@ it('vende botella sin anfitriona al precio adicional con las bebidas configurada
       precio: 35000,
       comision: 0,
       selectedHostesses: [],
-      acompanamiento_botella: expect.objectContaining({ presentacion_id: 'sprite', unidades: 3 }),
+      acompanamiento_botella: expect.arrayContaining([
+        expect.objectContaining({ presentacion_id: 'sprite', unidades: 3 })
+      ]),
       acompanamiento_corto: undefined
     })
   );
@@ -254,12 +258,18 @@ it('muestra las unidades en carrito junto a los contadores independientes de for
 // La bebida elegida viaja en el payload: lo que importa aquí es el campo de
 // acompañamiento resultante, no la vista del selector.
 it.each([
-  ['Botella · 3 bebidas', 'acompanamiento_botella', { unidades: 3 }, '6 unidades'],
-  ['Corto cliente · 50 ml', 'acompanamiento_corto', { unidades: 1 }, '2 unidades'],
-  ['Corto anfitriona · 50 ml', 'acompanamiento_corto', { ml_por_corto: 150 }, '300 ml']
+  [
+    'Botella · 3 bebidas',
+    'acompanamiento_botella',
+    { unidades: 3 },
+    'Reparto completo · 3 unidades por botella',
+    1
+  ],
+  ['Corto cliente · 50 ml', 'acompanamiento_corto', { unidades: 1 }, 'Consumo: 1 unidades', 2],
+  ['Corto anfitriona · 50 ml', 'acompanamiento_corto', { ml_por_corto: 150 }, 'Consumo: 150 ml', 2]
 ])(
   'elige la bebida de %s dentro del modal antes de agregar',
-  async (label, field, consumption, total) => {
+  async (label, field, consumption, expectedText, expectedCount) => {
     const add = vi.fn();
     render(
       <Harness
@@ -284,22 +294,20 @@ it.each([
     fireEvent.click(screen.getByRole('button', { name: `${label}: aumentar cantidad` }));
     fireEvent.click(screen.getByRole('button', { name: `${label}: aumentar cantidad` }));
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
-    await selectMixer();
-    expect(
-      screen.getAllByText(
-        `Consumo: ${label.startsWith('Botella') ? total : label.startsWith('Corto cliente') ? '1 unidades' : '150 ml'}`
-      )
-    ).toHaveLength(label.startsWith('Botella') ? 1 : 2);
+    if (String(field) === 'acompanamiento_botella') await distributeMixer();
+    else await selectMixer();
+    expect(screen.getAllByText(String(expectedText))).toHaveLength(Number(expectedCount));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Agregar producto' }));
     });
+    const saborEsperado = { presentacion_id: 'sprite', ...(consumption as object) };
     expect(add).toHaveBeenCalledWith(
       expect.objectContaining({
         cantidad: label.startsWith('Botella') ? 2 : 1,
-        [String(field)]: expect.objectContaining({
-          presentacion_id: 'sprite',
-          ...(consumption as object)
-        })
+        [String(field)]:
+          String(field) === 'acompanamiento_botella'
+            ? expect.arrayContaining([expect.objectContaining(saborEsperado)])
+            : expect.objectContaining(saborEsperado)
       })
     );
   }

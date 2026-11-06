@@ -99,10 +99,13 @@ export default function ProductCategoryCard({ category, onClick }: CategoryCardP
         <div className='space-y-3 sm:space-y-4'>
           {}
           <div className='flex items-center justify-between'>
-            <Badge variant='secondary' className='bg-green-100 text-green-800 text-xs sm:text-sm'>
+            <Badge
+              variant='secondary'
+              className='bg-green-100 text-green-800 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-green-200'
+            >
               Activa
             </Badge>
-            <div className='flex items-center gap-1 text-green-600 text-xs sm:text-sm'>
+            <div className='flex items-center gap-1 text-green-600 text-[10px] sm:text-xs font-medium'>
               <Package className='h-3 w-3' />
               Disponible
             </div>

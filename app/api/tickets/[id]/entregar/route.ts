@@ -27,6 +27,17 @@ export const POST = withRoute(
       const montoAdicional = body.monto_adicional == null ? null : Number(body.monto_adicional);
       if (montoAdicional !== null && !Number.isFinite(montoAdicional))
         throw new ValidationError('Indica un monto adicional válido');
+      // Reparto del acompañamiento por sabor; el id suelto se mantiene para los
+      // clientes que todavía no envían la lista.
+      const acompanamientos = Array.isArray(body.acompanamientos)
+        ? body.acompanamientos
+            .filter((item): item is JsonRecord => typeof item === 'object' && item !== null)
+            .map(item => ({
+              presentacion_id: String(item.presentacion_id || ''),
+              unidades: Number(item.unidades || 0)
+            }))
+            .filter(item => item.presentacion_id && item.unidades > 0)
+        : null;
       const data = await entregarEntrada(
         {
           entradaId: id,
@@ -34,6 +45,7 @@ export const POST = withRoute(
           acompanamientoPresentacionId: body.acompanamiento_presentacion_id
             ? String(body.acompanamiento_presentacion_id)
             : null,
+          acompanamientos,
           montoAdicional,
           // El cliente Expo entrega cortes; la web mantiene la botella histórica.
           tipoEntrega: body.tipo_entrega === 'corte' ? 'corte' : 'botella',

@@ -30,6 +30,8 @@ export default function NewSale() {
     selectedHabitacion,
     metodoPago,
     setMetodoPago,
+    baucherFoto,
+    setBaucherFoto,
     productos,
     setProductos,
     enableTip,
@@ -147,8 +149,6 @@ export default function NewSale() {
     }
   };
 
-  // Misma cantidad compartida por el buscador rápido y el modal de categoría: al agregar,
-  // el carro recibe las unidades pedidas para esa presentación.
   const handleCantidadChange = (id: string, val: string) =>
     setCantidades(prev => ({ ...prev, [id]: parseInt(val) || 1 }));
 
@@ -250,6 +250,8 @@ export default function NewSale() {
           setManualTime={setManualTime}
           metodoPago={metodoPago}
           setMetodoPago={setMetodoPago}
+          baucherFoto={baucherFoto}
+          setBaucherFoto={setBaucherFoto}
           propina={totals.propina}
           enableTip={enableTip}
           setEnableTip={setEnableTip}
