@@ -389,7 +389,7 @@ describe('entrega como cortesía', () => {
       'user-1',
       '2026-10-19 12:00:00',
       { id: 'unidad-1' },
-      'mix-1'
+      [{ presentacion_id: 'mix-1', unidades: 1 }]
     );
     expect(estado.updates[0].params[3]).toBe('mix-1');
   });
