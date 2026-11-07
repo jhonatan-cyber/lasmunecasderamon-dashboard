@@ -16,8 +16,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { BaucherFileInput } from '@/components/shared/BaucherFileInput';
-import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import { TipToggle } from '@/components/shared/TipToggle';
 
 const TIEMPOS_VENTA = [10, 15, 20, 25, 30] as const;
 
@@ -38,9 +36,6 @@ interface NewSaleConfigurationProps {
   setMetodoPago: (val: string) => void;
   baucherFoto: string | null;
   setBaucherFoto: (val: string | null) => void;
-  propina: number;
-  enableTip: boolean;
-  setEnableTip: (val: boolean) => void;
 }
 
 const fieldWrapperClass = 'flex flex-col gap-1.5';
@@ -63,12 +58,8 @@ export const NewSaleConfiguration = ({
   metodoPago,
   setMetodoPago,
   baucherFoto,
-  setBaucherFoto,
-  propina,
-  enableTip,
-  setEnableTip
+  setBaucherFoto
 }: NewSaleConfigurationProps) => {
-  const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const [mostrarSegundoCliente, setMostrarSegundoCliente] = useState(
     selectedSegundoCliente !== 'none'
   );
@@ -83,7 +74,7 @@ export const NewSaleConfiguration = ({
   }, [metodoPago, selectedSegundoCliente, setSelectedSegundoCliente]);
 
   return (
-    <div className='grid grid-cols-1 items-end gap-6 px-2 sm:grid-cols-2 lg:grid-cols-4'>
+    <div className='grid min-w-0 grid-cols-1 items-start gap-4 px-2'>
       <div className={fieldWrapperClass}>
         <CustomerSelect clientes={clientes} value={selectedCliente} onChange={setSelectedCliente} />
       </div>
@@ -132,7 +123,7 @@ export const NewSaleConfiguration = ({
       </div>
 
       {metodoPago === 'transferencia' && (
-        <div className='sm:col-span-2 lg:col-span-4'>
+        <div className='min-w-0'>
           <BaucherFileInput
             id='sale-baucher'
             value={baucherFoto}
@@ -144,7 +135,7 @@ export const NewSaleConfiguration = ({
       )}
 
       {metodoPago === 'prepago' && clientesConSaldo.length > 0 && (
-        <div className='flex flex-col gap-1.5 sm:col-span-2 lg:col-span-4'>
+        <div className='flex min-w-0 flex-col gap-1.5'>
           <div className='flex items-center gap-2'>
             <Checkbox
               id='split-prepaid-sale'
@@ -198,10 +189,6 @@ export const NewSaleConfiguration = ({
           )}
         </div>
       )}
-      <div className={fieldWrapperClass}>
-        <Label className={fieldLabelClass}>Propina Sugerida ({propinaPct}%)</Label>
-        <TipToggle amount={propina} enabled={enableTip} onToggle={setEnableTip} showCheckbox />
-      </div>
     </div>
   );
 };

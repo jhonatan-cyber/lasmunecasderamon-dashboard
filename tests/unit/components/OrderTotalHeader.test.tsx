@@ -13,3 +13,20 @@ it('bloquea generar un pedido vacío y habilita el botón al agregar productos',
   fireEvent.click(button);
   expect(onSubmit).toHaveBeenCalledTimes(1);
 });
+
+it('presenta subtotal, propina y total en el resumen compartido', () => {
+  render(
+    <OrderTotalHeader
+      subtotal={10000}
+      total={11000}
+      tipEnabled
+      tipPercentage={10}
+      disabled={false}
+    />
+  );
+
+  expect(screen.getByText('Subtotal')).toBeInTheDocument();
+  expect(screen.getByText('Propina')).toBeInTheDocument();
+  expect(screen.getByText('$10.000')).toBeInTheDocument();
+  expect(screen.getByText('$11.000')).toBeInTheDocument();
+});

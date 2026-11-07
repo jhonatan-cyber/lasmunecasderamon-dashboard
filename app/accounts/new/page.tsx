@@ -123,6 +123,7 @@ export default function NewCuentaPage() {
           onSelect={handleOpenCategoria}
           center={true}
           filter={cat => cat?.estado === 1 && (cat?.productCount ?? 0) > 0}
+          variant='catalog'
         />
 
         <AccountFormData

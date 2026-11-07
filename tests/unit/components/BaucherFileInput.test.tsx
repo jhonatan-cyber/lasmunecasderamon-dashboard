@@ -22,6 +22,18 @@ describe('BaucherFileInput', () => {
     expect(String(onChange.mock.calls[0][0])).toMatch(/^data:image\/jpeg;base64,/);
   });
 
+  it('acepta arrastrar una imagen al área de carga', async () => {
+    const onChange = vi.fn();
+    render(<BaucherFileInput id='baucher' value={null} onChange={onChange} />);
+
+    fireEvent.drop(screen.getByText('Sube el comprobante'), {
+      dataTransfer: { files: [archivo('baucher.png', 'image/png')] }
+    });
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    expect(String(onChange.mock.calls[0][0])).toMatch(/^data:image\/png;base64,/);
+  });
+
   it('rechaza un archivo que no es imagen', async () => {
     const onChange = vi.fn();
     render(<BaucherFileInput id='baucher' value={null} onChange={onChange} />);

@@ -353,6 +353,7 @@ export default function AgregarProductosModal({
                 onSelect={handleOpenCategoria}
                 center={true}
                 filter={c => c.estado === 1 && (c.productCount || 0) > 0}
+                variant='catalog'
               />
 
               <div className='grid grid-cols-2 gap-4'>

@@ -109,8 +109,12 @@ export default function OrderForm({
   return (
     <div className='space-y-8'>
       <CategoryCardList
-        categorias={categorias}
+        categorias={categorias.map(categoria => ({
+          ...categoria,
+          total_products: categoria.total_products ?? undefined
+        }))}
         onSelect={handleOpenCategoria}
+        variant='catalog'
         filter={(c: OrderCategory) => c.status === 1 && (c.total_products || 0) > 0}
       />
 
