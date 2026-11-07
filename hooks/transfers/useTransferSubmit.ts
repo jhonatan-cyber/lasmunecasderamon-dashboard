@@ -34,7 +34,7 @@ export function useTransferSubmit({
     const mlAcompTexto = form.mlAcompanamientoColacion.replace(/\D/g, '');
     const mlAcompanamientoColacion =
       mlAcompTexto !== '' ? Number(mlAcompTexto) : (form.mlAcompanamientoColacionSugerido ?? null);
-    if (form.colacionHabilitada && !form.esAnalcoholicaItem) {
+    if (form.colacionHabilitada && !form.esCigarrillosItem) {
       if (
         mlColacion !== null &&
         (!Number.isInteger(mlColacion) || mlColacion < 1 || mlColacion > 10000)
@@ -87,7 +87,7 @@ export function useTransferSubmit({
           reutilizada.colacion_habilitada = form.colacionHabilitada;
           reutilizada.cover_habilitado = form.coverHabilitado;
           if (form.esBebidaAnalcoholicaItem) reutilizada.en_venta = form.enVenta;
-          if (!form.esAnalcoholicaItem && form.colacionHabilitada && mlColacion !== null)
+          if (form.colacionHabilitada && !form.esCigarrillosItem && mlColacion !== null)
             reutilizada.ml_colacion = mlColacion;
           if (!form.esAnalcoholicaItem && form.colacionHabilitada && acompanamientoColacion)
             reutilizada.acompanamiento_colacion = acompanamientoColacion;
@@ -135,7 +135,7 @@ export function useTransferSubmit({
             colacion_habilitada: form.colacionHabilitada,
             cover_habilitado: form.coverHabilitado,
             ...(form.esBebidaAnalcoholicaItem ? { en_venta: form.enVenta } : {}),
-            ...(!form.esAnalcoholicaItem && form.colacionHabilitada && mlColacion !== null
+            ...(form.colacionHabilitada && !form.esCigarrillosItem && mlColacion !== null
               ? { ml_colacion: mlColacion }
               : {}),
             ...(!form.esAnalcoholicaItem && form.colacionHabilitada && acompanamientoColacion

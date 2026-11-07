@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
-import { query } from '@/lib/database/db';
 import { ValidationError } from '@/lib/errors/errors';
-import { entregarEntrada } from '@/modules/entradas';
+import {
+  aprobarSolicitudCortesia,
+  entregarEntrada,
+  obtenerSolicitudCortesia
+} from '@/modules/entradas';
 import { SaleService } from '@/workflows/ventas';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { notificarEntradaActualizada } from '@/lib/notifications/entradaNotificationUtils';
 
 export const PATCH = withRoute(
   { auth: true, audit: true, module: 'entradas', action: 'deliver' },
   async (_request, { params, user }) => {
     const { id } = await params;
-    const filas = await query<any[]>(
-      `SELECT * FROM solicitudes_entrega_cortesias WHERE id = ? FOR UPDATE`,
-      [id]
-    );
-    const solicitud = filas[0];
+    const solicitud = await obtenerSolicitudCortesia(id);
     if (!solicitud) throw new ValidationError('La solicitud ya no existe');
     if (solicitud.estado !== 'pendiente')
       throw new ValidationError('La solicitud ya fue respondida');
@@ -62,12 +60,7 @@ export const PATCH = withRoute(
       });
     }
 
-    await query(
-      `UPDATE solicitudes_entrega_cortesias
-          SET estado = 'aprobada', autorizado_por = ?, fecha_respuesta = ?
-        WHERE id = ?`,
-      [user.id, getNowInBusinessTimezone(), id]
-    );
+    await aprobarSolicitudCortesia(id, user.id);
     return NextResponse.json({ success: true, data: { entregadas: unidades.length } });
   }
 );

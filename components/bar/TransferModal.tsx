@@ -337,7 +337,7 @@ export function TransferModal({
                       </Label>
                     )}
                   </div>
-                  {form.colacionHabilitada && guardarBotella && !esVentaSimple && (
+                  {form.colacionHabilitada && guardarBotella && !esCig && (
                     <ColacionFields
                       idPrefix='transfer'
                       mlColacion={form.mlColacion}

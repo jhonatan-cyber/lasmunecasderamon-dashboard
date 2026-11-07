@@ -46,7 +46,8 @@ it('traspasa guardando el precio sin anfitriona y las bebidas por botella', asyn
     target: { value: '15000' }
   });
 
-  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+  fireEvent.click(screen.getByLabelText('Incluir bebidas o acompañamiento'));
+  fireEvent.change(screen.getByLabelText('Cantidad por botella'), {
     target: { value: '2' }
   });
   fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
@@ -86,7 +87,8 @@ it('actualiza la ficha al editar y al volver a la configuración guardada', asyn
   const summary = screen.getByLabelText('Resumen de configuración');
   expect(summary).toHaveTextContent('35.000');
 
-  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+  fireEvent.click(screen.getByLabelText('Incluir bebidas o acompañamiento'));
+  fireEvent.change(screen.getByLabelText('Cantidad por botella'), {
     target: { value: '2' }
   });
   expect(summary).toHaveTextContent('2 unidades por botella');
@@ -108,6 +110,12 @@ it('guarda el máximo de anfitrionas del producto antes de transferir', async ()
   await screen.findByLabelText('Precio con 3 anfitrionas');
   fireEvent.change(screen.getByLabelText('Precio con 3 anfitrionas'), {
     target: { value: '50000' }
+  });
+  fireEvent.change(screen.getByLabelText('Precio con 2 anfitrionas'), {
+    target: { value: '40000' }
+  });
+  fireEvent.change(screen.getByLabelText('Comisión con 3 anfitrionas'), {
+    target: { value: '5000' }
   });
   fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
@@ -253,7 +261,8 @@ describe('tipos de venta al transferir', () => {
           comision: 0,
           colacion_habilitada: false,
           cover_habilitado: false,
-          acompanamiento: { unidades: 0 }
+          acompanamiento: { unidades: 0 },
+          vender_con_anfitriona: true
         }
       ]
     });
@@ -286,7 +295,8 @@ describe('tipos de venta al transferir', () => {
           comision: 0,
           colacion_habilitada: false,
           cover_habilitado: false,
-          acompanamiento: { unidades: 0 }
+          acompanamiento: { unidades: 0 },
+          vender_con_anfitriona: true
         },
         {
           tipo: 'shot',
@@ -340,7 +350,8 @@ describe('tipos de venta al transferir', () => {
           comision: 0,
           colacion_habilitada: false,
           cover_habilitado: false,
-          acompanamiento: { unidades: 0 }
+          acompanamiento: { unidades: 0 },
+          vender_con_anfitriona: true
         },
         {
           tipo: 'shot',
@@ -404,7 +415,8 @@ describe('tipos de venta al transferir', () => {
           comision: 0,
           colacion_habilitada: false,
           cover_habilitado: false,
-          acompanamiento: { unidades: 0 }
+          acompanamiento: { unidades: 0 },
+          vender_con_anfitriona: true
         },
         {
           tipo: 'shot',
@@ -465,7 +477,8 @@ describe('tipos de venta al transferir', () => {
           comision: 0,
           colacion_habilitada: false,
           cover_habilitado: false,
-          acompanamiento: { unidades: 0 }
+          acompanamiento: { unidades: 0 },
+          vender_con_anfitriona: true
         },
         {
           tipo: 'shot',
@@ -721,7 +734,8 @@ it('guarda y reutiliza unidades de bebida por botella', async () => {
   const view = render(<TransferModal open item={item} onOpenChange={vi.fn()} onDone={done} />);
   fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
 
-  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+  fireEvent.click(screen.getByLabelText('Incluir bebidas o acompañamiento'));
+  fireEvent.change(screen.getByLabelText('Cantidad por botella'), {
     target: { value: '3' }
   });
   fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
@@ -819,7 +833,8 @@ it('ignora el limite anterior al quitar la comision de botella', async () => {
       comision: 0,
       colacion_habilitada: false,
       cover_habilitado: false,
-      acompanamiento: { unidades: 0 }
+      acompanamiento: { unidades: 0 },
+      vender_con_anfitriona: true
     }
   ]);
   expect(request.mock.calls.some((args: any[]) => args[1]?.method === 'PUT')).toBe(false);

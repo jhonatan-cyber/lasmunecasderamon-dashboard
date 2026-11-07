@@ -93,7 +93,8 @@ describe('listarLotesVencidos', () => {
         unidades_vencidas: 4,
         unidades_bodega: 3,
         unidades_bar: 1,
-        ml_abiertos: 120
+        ml_abiertos: 120,
+        codigos: []
       }
     ]);
   });

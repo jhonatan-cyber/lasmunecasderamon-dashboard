@@ -117,7 +117,7 @@ export function completarOpciones(
   if (!parsed) return undefined;
   return parsed.map(o =>
     o.tipo === 'botella'
-      ? o.vender_con_anfitriona === false || Number(o.precio ?? 0) === 0
+      ? o.vender_con_anfitriona === false
         ? {
             ...o,
             precio: 0,

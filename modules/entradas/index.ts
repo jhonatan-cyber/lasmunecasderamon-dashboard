@@ -10,6 +10,14 @@ export {
   registrarEntrada
 } from './servicio';
 
+export {
+  listarSolicitudesCortesia,
+  crearSolicitudCortesia,
+  obtenerSolicitudCortesia,
+  aprobarSolicitudCortesia,
+  rechazarSolicitudCortesia
+} from './cortesias/servicio';
+
 export type {
   EntradaCliente,
   EntradaPendiente,

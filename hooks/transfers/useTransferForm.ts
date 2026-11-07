@@ -77,6 +77,7 @@ export interface TransferForm {
   etiquetaShot: string;
   esChampagneItem: boolean;
   esAnalcoholicaItem: boolean;
+  esCigarrillosItem: boolean;
   /** Solo analcohólicas (sin cigarrillos): habilita el flag «a la venta». */
   esBebidaAnalcoholicaItem: boolean;
   opcionesGuardadas: SaleOption[];
@@ -134,8 +135,9 @@ export function useTransferForm({
   const etiquetaShot = etiquetaCorto(mlPorShot, mlPorShotAnfitriona);
 
   const esChampagneItem = esChampagne(item?.categoria_nombre);
+  const esCigarrillosItem = esCigarrillos(item?.categoria_nombre);
   const esBebidaAnalcoholicaItem = esBebidaAnalcoholica(item?.categoria_nombre);
-  const esAnalcoholicaItem = esBebidaAnalcoholicaItem || esCigarrillos(item?.categoria_nombre);
+  const esAnalcoholicaItem = esBebidaAnalcoholicaItem || esCigarrillosItem;
   const opcionesGuardadas: SaleOption[] = (
     parseSavedOptions(item?.opciones_venta) ?? [
       { tipo: 'botella', precio: item?.precio_venta ?? 0, comision: item?.comision ?? 0 }
@@ -335,6 +337,7 @@ export function useTransferForm({
 
   return {
     esAnalcoholicaItem,
+    esCigarrillosItem,
     esBebidaAnalcoholicaItem,
     mlAcompanamientoAnfitriona,
     setMlAcompanamientoAnfitriona,
