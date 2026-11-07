@@ -358,14 +358,24 @@ export function SettingsBottleHostessCard() {
     <CollapsibleCard
       defaultOpen
       aria-label='Precios y comisiones por producto'
+      className='rounded-2xl border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900'
       title={
-        <>
-          <Users className='h-5 w-5 text-neutral-500' />
-          Precios y comisiones por producto
-        </>
+        <div className='flex items-center gap-3'>
+          <span className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-sky-100 text-indigo-700 dark:from-indigo-950 dark:to-sky-950 dark:text-sky-300'>
+            <Users className='h-5 w-5' aria-hidden='true' />
+          </span>
+          <span className='min-w-0'>
+            <span className='block text-base font-semibold leading-tight text-neutral-900 dark:text-neutral-100'>
+              Precios y comisiones por producto
+            </span>
+            <span className='mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400'>
+              Configura precios y usos para cada presentación del bar.
+            </span>
+          </span>
+        </div>
       }
-      headerClassName='gap-2'
-      contentClassName='space-y-4'
+      headerClassName='gap-3 border-b border-indigo-100/80 bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/70 p-4 sm:px-5 sm:py-4 dark:border-neutral-800 dark:from-indigo-950/30 dark:via-neutral-900 dark:to-sky-950/20'
+      contentClassName='space-y-5 px-4 pb-4 sm:px-5 sm:pb-5'
     >
       {productsError && (
         <ErrorState className='mb-4' message={productsError} onRetry={() => void refresh()} />
@@ -396,13 +406,13 @@ export function SettingsBottleHostessCard() {
           No hay presentaciones del bar para configurar.
         </p>
       ) : (
-        <div className='space-y-6'>
-          <div className='space-y-1'>
+        <div className='space-y-5'>
+          <div className='space-y-2 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-3 dark:border-neutral-800 dark:bg-neutral-950/40'>
             <Label
               htmlFor='botella-producto'
-              className='block text-xs font-bold uppercase tracking-wider text-neutral-500 ml-1'
+              className='block text-xs font-semibold text-neutral-600 dark:text-neutral-400'
             >
-              Producto y presentación
+              Elige un producto y presentación
             </Label>
             <Popover open={productSelectorOpen} onOpenChange={setProductSelectorOpen}>
               <PopoverTrigger asChild>
@@ -414,7 +424,7 @@ export function SettingsBottleHostessCard() {
                   aria-expanded={productSelectorOpen}
                   aria-controls='botella-productos-lista'
                   disabled={saving}
-                  className='h-auto min-h-12 w-full justify-between rounded-full font-normal'
+                  className='h-auto min-h-12 w-full justify-between rounded-xl bg-white text-left shadow-sm dark:bg-neutral-900'
                 >
                   <span className='flex min-w-0 items-center gap-2'>
                     {seleccionado && <ProductSelectorPhoto foto={seleccionado.foto} />}
@@ -494,14 +504,14 @@ export function SettingsBottleHostessCard() {
               />
             )}
 
-          <div className='flex flex-wrap justify-end gap-2 pt-2'>
+          <div className='flex flex-col-reverse gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-800'>
             {vigente !== null && !esVentaSimple && (
               <Button
                 variant='unstyled'
                 type='button'
                 onClick={() => guardarMaximo(null)}
                 disabled={saving}
-                className='flex items-center gap-2 px-6 py-2.5 rounded-full font-bold border-2 border-neutral-300 dark:border-neutral-700 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 text-sm'
+                className='inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-medium transition hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
               >
                 <RotateCcw className='h-4 w-4' />
                 Volver al default
@@ -512,7 +522,7 @@ export function SettingsBottleHostessCard() {
               type='button'
               onClick={handleSave}
               disabled={saving}
-              className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
+              className='inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-400 dark:text-neutral-950 dark:hover:bg-indigo-300'
             >
               <Save className='h-4 w-4' />
               {saving ? 'Guardando...' : 'Guardar Cambios'}

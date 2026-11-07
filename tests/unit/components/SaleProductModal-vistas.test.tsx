@@ -76,7 +76,12 @@ describe('vistas de productos en nueva venta', () => {
     const amount = screen.getByText('$2.000');
     const button = screen.getByRole('button', { name: 'Agregar producto' });
     expect(amount.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: `Ocultar detalles de ${product.nombre}` }));
+    const collapseButton = screen.getByRole('button', {
+      name: `Ocultar detalles de ${product.nombre}`
+    });
+    fireEvent.pointerMove(collapseButton, { pointerType: 'mouse' });
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Ocultar detalles');
+    fireEvent.click(collapseButton);
     expect(screen.getByText('Licores')).toBeInTheDocument();
     expect(screen.getByText('Whisky')).toBeInTheDocument();
     expect(screen.getByText('750 ml')).toBeInTheDocument();
@@ -119,7 +124,7 @@ describe('vistas de productos en nueva venta', () => {
     );
     expect(screen.getByText('Formato y cantidad')).toBeInTheDocument();
     expect(screen.getByText('Bebida')).toBeInTheDocument();
-    expect(screen.getByText('Anfitrionas')).toBeInTheDocument();
+    expect(screen.queryByText('Anfitrionas')).not.toBeInTheDocument();
   });
   it('incluye bebidas con stock cero y ml abiertos suficientes para corto anfitriona', async () => {
     render(
@@ -207,5 +212,72 @@ describe('vistas de productos en nueva venta', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Ver como tabla' }));
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
+  });
+
+  it('adapta las columnas al espacio disponible y expande productos con bebida o anfitriona', async () => {
+    const simpleBottle = {
+      ...product,
+      id: 'simple',
+      nombre: 'Botella simple',
+      opciones_venta: [{ tipo: 'botella', precio: 4000, comision: 0 }]
+    };
+    render(<Harness productos={[simpleBottle, product]} onAdd={vi.fn()} />);
+    const controls = screen.getByTestId('product-search-view-controls');
+    expect(controls).toContainElement(
+      screen.getByRole('textbox', { name: 'Buscar producto en esta categoría' })
+    );
+    expect(controls).toContainElement(screen.getByRole('radio', { name: 'Ver como tabla' }));
+    const table = screen.getByRole('table', { name: 'Productos en bar' });
+    expect(
+      table.classList.contains('grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))]')
+    ).toBe(true);
+    const rows = screen.getAllByRole('row');
+    expect(rows[0].classList.contains('col-span-full')).toBe(false);
+    expect(rows[1].classList.contains('col-span-full')).toBe(true);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('radio', { name: 'Ver como tarjetas' }));
+    });
+    const cardsGrid = Array.from(document.querySelectorAll('[class]')).find(element => {
+      const className = element.getAttribute('class') || '';
+      return className.includes('grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))]');
+    });
+    expect(
+      cardsGrid?.classList.contains('grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))]')
+    ).toBe(true);
+    const cards = Array.from(cardsGrid?.children ?? []);
+    expect(cards[0].classList.contains('col-span-full')).toBe(false);
+    expect(cards[1].classList.contains('col-span-full')).toBe(true);
+    expect(screen.getByRole('img', { name: 'Botella simple' })).toBeInTheDocument();
+  });
+
+  it('muestra todos los productos disponibles sin limitar la lista a cinco', () => {
+    const products = Array.from({ length: 7 }, (_, index) => ({
+      ...product,
+      id: `simple-${index}`,
+      nombre: `Producto simple ${index + 1}`,
+      opciones_venta: [{ tipo: 'botella', precio: 4000, comision: 0 }]
+    }));
+
+    render(<Harness productos={products} onAdd={vi.fn()} />);
+
+    expect(screen.getAllByRole('row')).toHaveLength(7);
+    expect(screen.getByRole('img', { name: 'Producto simple 7' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'pagination' })).not.toBeInTheDocument();
+  });
+
+  it('limpia la búsqueda con el botón de icono dentro del campo', () => {
+    render(<Harness productos={[product]} onAdd={vi.fn()} />);
+    const search = screen.getByRole('textbox', {
+      name: 'Buscar producto en esta categoría'
+    });
+
+    fireEvent.change(search, { target: { value: 'cerveza' } });
+    const clearButton = screen.getByRole('button', { name: 'Limpiar búsqueda' });
+
+    expect(search).toHaveValue('cerveza');
+    expect(clearButton.parentElement).toContainElement(clearButton);
+    fireEvent.click(clearButton);
+    expect(search).toHaveValue('');
   });
 });

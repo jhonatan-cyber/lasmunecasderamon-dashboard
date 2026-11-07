@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import type { Dispatch, SetStateAction } from 'react';
 import { Label } from '@/components/ui/label';
+import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 
 export function ShotMixerSelection({
   productos,
@@ -104,6 +105,13 @@ export function ShotMixerSelection({
                     .filter(
                       b =>
                         b.id !== (p.presentacion_id || p.id) &&
+                        (p.shot_anfitriona
+                          ? parseSavedOptions(b.opciones_venta)?.find(
+                              option => option.tipo === 'botella'
+                            )?.corto_anfitriona_habilitado !== false
+                          : parseSavedOptions(b.opciones_venta)?.find(
+                              option => option.tipo === 'botella'
+                            )?.cover_habilitado === true) &&
                         ('ml_por_corto' in shortMixerConsumption(p) ||
                           Number(b.stock_bar) >= Number(p.cantidad)) &&
                         (b.id === p.acompanamiento_corto?.presentacion_id ||

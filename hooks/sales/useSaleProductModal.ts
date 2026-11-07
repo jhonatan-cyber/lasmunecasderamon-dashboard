@@ -13,8 +13,6 @@ import {
 
 export type SaleProductViewMode = 'table' | 'cards';
 
-const ITEMS_PER_PAGE = 5;
-
 export interface UseSaleProductModalOptions {
   open: boolean;
   productos: any[];
@@ -36,9 +34,6 @@ export interface SaleProductModalState {
   queryNorm: string;
   handleQueryChange: (value: string) => void;
   clearQuery: () => void;
-  currentPage: number;
-  setCurrentPage: Dispatch<SetStateAction<number>>;
-  totalPages: number;
   filteredCount: number;
   availableHostesses: any[];
   items: SaleProductItem[];
@@ -60,7 +55,6 @@ export function useSaleProductModal({
   productosEnCarrito
 }: UseSaleProductModalOptions): SaleProductModalState {
   const [viewMode, setViewMode] = useState<SaleProductViewMode>('table');
-  const [currentPage, setCurrentPage] = useState(1);
   const [query, setQuery] = useState('');
   const [hostessSearchValues, setHostessSearchValues] = useState<{ [key: string]: string }>({});
   const [cantidadesPorTipo, setCantidadesPorTipo] = useState<{ [key: string]: number }>({});
@@ -92,7 +86,6 @@ export function useSaleProductModal({
   }, [open, mixerReload]);
 
   useEffect(() => {
-    setCurrentPage(1);
     setQuery('');
     if (open && productos.some(product => product.modalCantidades)) {
       setCantidadesPorTipo(
@@ -114,10 +107,6 @@ export function useSaleProductModal({
   const filteredProductos = queryNorm
     ? (productos || []).filter(p => matchesProductSearch(p, queryNorm))
     : productos || [];
-  const totalPages = Math.ceil((filteredProductos?.length || 0) / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentProductos = filteredProductos?.slice(startIndex, startIndex + ITEMS_PER_PAGE) || [];
-
   const context: SaleProductItemContext = {
     mixers,
     bar,
@@ -157,7 +146,6 @@ export function useSaleProductModal({
       setMixers({});
       setHostessSearchValues({});
       setQuery('');
-      setCurrentPage(1);
       Object.keys(cantidades).forEach(id => handleCantidadChange(id, '0'));
       Object.keys(champagneHostessSelections).forEach(id => onChampagneHostessChange(id, []));
       Object.keys(otherProductHostessSelections).forEach(id => onOtherProductHostessChange(id, []));
@@ -168,17 +156,13 @@ export function useSaleProductModal({
     queryNorm,
     handleQueryChange: value => {
       setQuery(value);
-      setCurrentPage(1);
     },
     clearQuery: () => setQuery(''),
-    currentPage,
-    setCurrentPage,
-    totalPages,
     filteredCount: filteredProductos?.length || 0,
     availableHostesses,
     selectedItems: productos
       .map(p => buildSaleProductItem(p, context))
       .filter(item => item.cantidadActual > 0),
-    items: currentProductos.map(p => buildSaleProductItem(p, context))
+    items: filteredProductos.map(p => buildSaleProductItem(p, context))
   };
 }

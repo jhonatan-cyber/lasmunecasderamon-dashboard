@@ -43,6 +43,9 @@ export function copiarOpcionesDeBotella(option: SaleOption, origen: unknown): vo
   if (typeof origen.en_venta === 'boolean') {
     option.en_venta = origen.en_venta;
   }
+  if (typeof origen.corto_anfitriona_habilitado === 'boolean') {
+    option.corto_anfitriona_habilitado = origen.corto_anfitriona_habilitado;
+  }
 
   if (origen.ml_colacion !== undefined && origen.ml_colacion !== null) {
     const ml = Number(origen.ml_colacion);

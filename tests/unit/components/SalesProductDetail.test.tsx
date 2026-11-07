@@ -34,3 +34,25 @@ it.each([
   expect(screen.getByText(`Consumo total: ${total}`)).toBeInTheDocument();
   expect(screen.getByText('$12.000')).toBeInTheDocument();
 });
+
+it('oculta los campos opcionales que no tienen datos', () => {
+  render(
+    <SalesProductDetail
+      detail={{
+        venta_id: 'v',
+        producto_id: 'p',
+        producto_nombre: 'Whisky',
+        precio: 6000,
+        sub_total: 6000,
+        comision: 0,
+        cantidad: 1,
+        anfitrionas: []
+      }}
+    />
+  );
+
+  expect(screen.queryByText('Anfitrionas:')).not.toBeInTheDocument();
+  expect(screen.queryByText('Comisión total:')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Precio por unidad:/)).toBeInTheDocument();
+  expect(screen.queryByText('undefined')).not.toBeInTheDocument();
+});

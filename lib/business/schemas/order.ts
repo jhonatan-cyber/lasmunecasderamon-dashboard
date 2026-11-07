@@ -6,6 +6,7 @@ const inventoryFields = {
   presentacion_id: z.string().nullable().optional(),
   tipo_venta: z.enum(['botella', 'shot']).optional(),
   shot_anfitriona: z.boolean().optional(),
+  botella_anfitriona: z.boolean().optional(),
   acompanamiento_botella: acompanamientoBotellaSchema.optional(),
   acompanamiento_corto: z
     .object({

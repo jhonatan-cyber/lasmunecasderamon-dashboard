@@ -115,20 +115,28 @@ export function completarOpciones(
 ): SaleOption[] | undefined {
   const parsed = parseOpcionesVenta(raw);
   if (!parsed) return undefined;
-  return parsed.map(o =>
-    o.tipo === 'botella'
-      ? o.vender_con_anfitriona === false
-        ? {
-            ...o,
-            precio: 0,
-            comision: 0
-          }
-        : {
-            ...o,
-            ...resolverBotella({ precio: o.precio, comision: o.comision }, niveles, topeSimple)
-          }
-      : o
-  );
+  return parsed.map(o => {
+    if (o.tipo !== 'botella') return o;
+    if (o.en_venta === false) {
+      return {
+        ...o,
+        precio: 0,
+        comision: 0,
+        precio_sin_anfitriona: 0,
+        acompanamiento: { unidades: 0 }
+      };
+    }
+    return o.vender_con_anfitriona === false
+      ? {
+          ...o,
+          precio: 0,
+          comision: 0
+        }
+      : {
+          ...o,
+          ...resolverBotella({ precio: o.precio, comision: o.comision }, niveles, topeSimple)
+        };
+  });
 }
 
 export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow => {

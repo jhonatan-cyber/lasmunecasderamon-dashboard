@@ -31,6 +31,11 @@ import { construirComprobantesDeConsumo } from '@/lib/business/comprobantePrepag
 import { imprimirComprobantesPrepago } from '@/components/shared/printComprobantePrepago';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
+  closeSaleReceiptWindow,
+  openSaleReceiptWindow,
+  printSaleReceipt
+} from '@/lib/utils/printSaleReceipt';
+import {
   clearSaleDraft,
   persistSaleDraft,
   readServicioIdFromUrl,
@@ -361,6 +366,8 @@ export function useSaleValidation({
       prepagoDestinos = distribucion.destinos;
     }
 
+    const receiptWindow = openSaleReceiptWindow();
+    let receiptPrinted = false;
     submitting.current = true;
     setLoading(true);
     try {
@@ -425,6 +432,44 @@ export function useSaleValidation({
       const res = await createVenta(ventaData);
       if (res && (res.success || res.data)) {
         const data = res.data || res;
+        if (receiptWindow) {
+          const cliente = clientes.find(
+            item => String(item.id || item.id_cliente) === String(selectedCliente)
+          );
+          const customerName = cliente
+            ? `${cliente.name ?? cliente.nombre ?? ''} ${cliente.lastName ?? cliente.apellido ?? ''}`.trim()
+            : '';
+          printSaleReceipt(receiptWindow, {
+            code: data.codigo,
+            date: data.fecha_crea || new Date(),
+            customer: customerName,
+            location: servicioId
+              ? servicioNombre
+              : selectedHabitacion
+                ? selectedRoomInfo?.name || selectedRoomInfo?.nombre || 'Habitación'
+                : undefined,
+            paymentMethod: metodoPago,
+            origin: servicioId ? 'Servicio' : requiresRoom ? 'Habitación' : 'Barra',
+            subtotal: totals.subtotal,
+            tip: totals.propina,
+            total: totals.total,
+            lines: productos.map(producto => ({
+              name: producto.nombre || producto.name || 'Producto',
+              quantity: Number(producto.cantidad ?? 0),
+              unitPrice: Number(producto.precio ?? producto.price ?? 0),
+              subtotal: Number(
+                producto.subtotal ??
+                  Number(producto.precio ?? producto.price ?? 0) * Number(producto.cantidad ?? 0)
+              ),
+              detail:
+                producto.presentacion_nombre ||
+                (producto.tipo_venta === 'shot' ? 'Corto' : 'Botella')
+            }))
+          });
+          receiptPrinted = true;
+        } else {
+          toast.warning('Venta registrada. Permite ventanas emergentes para imprimir el ticket.');
+        }
 
         if (prepagoDestinos.length > 0) {
           imprimirComprobantesPrepago(
@@ -493,9 +538,11 @@ export function useSaleValidation({
         router.push(servicioId ? '/private-rooms' : '/sales');
       }
     } catch (error) {
+      closeSaleReceiptWindow(receiptPrinted ? null : receiptWindow);
       logger.captureException(error, { context: 'useSaleValidation:createSale' });
       toast.error('Error al generar la venta');
     } finally {
+      if (!receiptPrinted) closeSaleReceiptWindow(receiptWindow);
       submitting.current = false;
       setLoading(false);
     }

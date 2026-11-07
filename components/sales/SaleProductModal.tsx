@@ -13,7 +13,6 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import Paginate from '@/components/shared/Paginate';
 import { useSaleProductModal } from '@/hooks/sales/useSaleProductModal';
 import { SaleProductViewToggle } from '@/components/sales/product-modal/SaleProductViewToggle';
 import { SaleProductSearch } from '@/components/sales/product-modal/SaleProductSearch';
@@ -114,8 +113,8 @@ export default function SaleProductModal({
     >
       <DialogContent className='flex max-h-[94dvh] w-[calc(100vw-1rem)] max-w-[1480px] flex-col gap-0 overflow-hidden p-0 sm:w-[calc(100vw-3rem)] sm:rounded-2xl'>
         <DialogHeader className='shrink-0 border-b bg-muted/30 px-4 pb-4 pt-5 sm:px-6'>
-          <div className='flex flex-wrap items-start justify-between gap-3'>
-            <div>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            <div className='min-w-0'>
               <DialogTitle className='text-lg'>
                 {categoria
                   ? `Productos en bar · ${categoria.nombre || categoria.name}`
@@ -129,7 +128,15 @@ export default function SaleProductModal({
                     : 'Sin productos con stock en bar'}
               </p>
             </div>
-            <div className='mr-7'>
+            <div
+              data-testid='product-search-view-controls'
+              className='mr-7 flex min-w-0 flex-1 items-center gap-3 lg:max-w-[720px]'
+            >
+              <SaleProductSearch
+                value={modal.query}
+                onChange={modal.handleQueryChange}
+                onClear={modal.clearQuery}
+              />
               <SaleProductViewToggle viewMode={modal.viewMode} onValueChange={modal.setViewMode} />
             </div>
           </div>
@@ -141,11 +148,6 @@ export default function SaleProductModal({
             </div>
           ) : (
             <div className='w-full'>
-              <SaleProductSearch
-                value={modal.query}
-                onChange={modal.handleQueryChange}
-                onClear={modal.clearQuery}
-              />
               {!Array.isArray(productos) || productos.length === 0 ? (
                 <EmptyState
                   variant='text'
@@ -174,16 +176,6 @@ export default function SaleProductModal({
                       items={modal.items}
                       availableHostesses={modal.availableHostesses}
                     />
-                  )}
-
-                  {modal.totalPages > 1 && (
-                    <div className='flex justify-center mt-4'>
-                      <Paginate
-                        page={modal.currentPage}
-                        totalPages={modal.totalPages}
-                        setPage={modal.setCurrentPage}
-                      />
-                    </div>
                   )}
                 </>
               )}

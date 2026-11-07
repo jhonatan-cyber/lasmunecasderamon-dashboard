@@ -62,7 +62,7 @@ describe('SettingsServiceLevelsCard · colaciones por rol', () => {
     render(<SettingsServiceLevelsCard />);
     const input = await screen.findByLabelText('Colaciones por turno de caja para Cajero');
     fireEvent.change(input, { target: { value: '2' } });
-    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/i }));
 
     await waitFor(() => {
       const put = request.mock.calls.find(args => args[1]?.method === 'PUT');

@@ -51,17 +51,24 @@ export async function validarConfiguracionPedido(
           : [];
     } else {
       const bottle = options.find(o => o.tipo === 'botella');
-      const tier = tiers.find(
-        t => t.producto_id === d.productoId && Number(t.anfitrionas) === hosts.length
-      );
-      prices = [
-        tier && hosts.length
-          ? tier
-          : {
-              precio: Number(bottle?.precio ?? presentation?.precio_venta ?? product.precio),
-              comision: Number(bottle?.comision ?? presentation?.comision ?? product.comision)
-            }
-      ];
+      if (bottle?.en_venta === false) {
+        prices = [];
+      } else if (d.botella_anfitriona === false) {
+        const price = Number(bottle?.precio_sin_anfitriona ?? 0);
+        prices = price > 0 ? [{ precio: price, comision: 0 }] : [];
+      } else {
+        const tier = tiers.find(
+          t => t.producto_id === d.productoId && Number(t.anfitrionas) === hosts.length
+        );
+        prices = [
+          tier && hosts.length
+            ? tier
+            : {
+                precio: Number(bottle?.precio ?? presentation?.precio_venta ?? product.precio),
+                comision: Number(bottle?.comision ?? presentation?.comision ?? product.comision)
+              }
+        ];
+      }
     }
     const price = prices.find(
       p => Number(p.precio) === d.precio && Number(p.comision) * d.cantidad === d.comision

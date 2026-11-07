@@ -58,6 +58,23 @@ export interface SaleProductItem {
   onHostessSearchChange: (value: string) => void;
 }
 
+export function getSaleProductFormatColumns(item: SaleProductItem) {
+  return {
+    hasDrink: item.opcionesTipo.some(option =>
+      esBotella(option.value)
+        ? bottleMixerUnits(item.product ?? {}) > 0
+        : !clienteShortSinAcompanamiento({
+            ...item.product,
+            tipo_venta: 'shot',
+            shot_anfitriona: esCortoAnfitriona(option.value)
+          })
+    ),
+    hasHostess: item.opcionesTipo.some(option =>
+      permiteAnfitrionaConComision(option.value, option.comision, esCortoAnfitriona(option.value))
+    )
+  };
+}
+
 export interface SaleProductMixer {
   unitIndex?: number;
   value: SaleChoice;
@@ -192,6 +209,14 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
         const selected = bottle ? (Array.isArray(rawSelected) ? rawSelected : []) : rawSelected;
         const choices = (ctx.bar ?? []).filter(b => {
           if (String(b.id) === id) return false;
+          const bottleOption = parseSavedOptions(b.opciones_venta)?.find(
+            option => option.tipo === 'botella'
+          );
+          if (!bottle && esCortoAnfitriona(opcion.value)) {
+            if (bottleOption?.corto_anfitriona_habilitado === false) return false;
+          } else if (!bottle && bottleOption?.cover_habilitado !== true) {
+            return false;
+          }
           if (bottle) return Number(b.stock_bar) >= Math.max(1, quantity);
           if ('unidades' in consumption)
             return (
@@ -329,6 +354,9 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
             : undefined,
           tipo_venta: esBotella(opcion.value) ? 'botella' : 'shot',
           shot_anfitriona: esCortoAnfitriona(opcion.value),
+          botella_anfitriona: esBotella(opcion.value)
+            ? opcion.value !== 'botella_sin_anfitriona'
+            : undefined,
           precio: opcion.precio,
           comision: opcion.comision,
           cantidad: esBotella(opcion.value) ? opcion.cantidad : 1,

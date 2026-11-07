@@ -316,6 +316,7 @@ export interface VentaRow {
   codigo: string;
   cliente_id: string | null;
   pedido_id: string | null;
+  servicio_id?: string | null;
   entrada_id?: string | null;
   /** De dónde nació la venta (migración 098). */
   origen?: string | null;

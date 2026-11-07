@@ -118,6 +118,23 @@ it('conserva cero bebidas en configuración y no pide bebida al vender', () => {
   expect(resolverVentaProducto({ opciones_venta: options }).opciones[0].nombre).toBe('Botella');
 });
 
+it('conserva el flag que habilita una bebida para corto anfitriona', () => {
+  const options = SaleOptionsSchema.parse([
+    {
+      tipo: 'botella',
+      precio: 2000,
+      corto_anfitriona_habilitado: false
+    }
+  ]);
+  expect(parseSavedOptions(options)?.[0].corto_anfitriona_habilitado).toBe(false);
+  expect(parseOpcionesVenta(JSON.stringify(options))?.[0].corto_anfitriona_habilitado).toBe(false);
+  expect(
+    SaleOptionsSchema.safeParse([
+      { tipo: 'shot', precio: 1000, corto_anfitriona_habilitado: false }
+    ]).success
+  ).toBe(false);
+});
+
 it('no vuelve a activar anfitrionas al completar una botella deshabilitada', () => {
   const options = [
     {
@@ -133,5 +150,26 @@ it('no vuelve a activar anfitrionas al completar una botella deshabilitada', () 
     precio: 0,
     comision: 0,
     vender_con_anfitriona: false
+  });
+});
+
+it('no recupera precios de botella ni acompañamientos si la venta está desactivada', () => {
+  const options = [
+    {
+      tipo: 'botella' as const,
+      precio: 0,
+      comision: 0,
+      precio_sin_anfitriona: 2900,
+      en_venta: false,
+      acompanamiento: { tipo: 'soda' as const, unidades: 2 }
+    }
+  ];
+  const loaded = completarOpciones(JSON.stringify(options), [{ precio: 2900, comision: 500 }]);
+  expect(loaded?.[0]).toMatchObject({
+    precio: 0,
+    comision: 0,
+    precio_sin_anfitriona: 0,
+    en_venta: false,
+    acompanamiento: { unidades: 0 }
   });
 });

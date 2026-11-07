@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { validarConfiguracionPedido } from '@/modules/inventario/bar/validarPedido';
+import { OrderCreateSchema } from '@/lib/business/schemas/order';
 import type { TransactionQuery } from '@/lib/database/db';
 const options = [
   { tipo: 'botella', precio: 60000, comision: 0 },
@@ -71,6 +72,61 @@ describe('Configuracion del pedido verificada en servidor', () => {
     await expect(
       validarConfiguracionPedido(trx(), [{ ...bottle, selectedHostesses: ['ana'] }])
     ).rejects.toThrow('sin comision'));
+  it('valida la botella sin anfitriona contra su precio alternativo', async () => {
+    const config = trx({
+      opciones: [
+        {
+          tipo: 'botella',
+          precio: 60000,
+          comision: 12000,
+          precio_sin_anfitriona: 45000
+        }
+      ]
+    });
+    const request = OrderCreateSchema.parse({
+      codigo: 'pedido-test',
+      meseroId: 'mesero',
+      subtotal: 45000,
+      total: 45000,
+      metodoPago: 'efectivo',
+      detalles: [
+        {
+          ...bottle,
+          precio: 45000,
+          subtotal: 45000,
+          botella_anfitriona: false
+        }
+      ]
+    });
+    expect(request.detalles[0].botella_anfitriona).toBe(false);
+    await expect(validarConfiguracionPedido(config, request.detalles)).resolves.toBeUndefined();
+    await expect(
+      validarConfiguracionPedido(config, [{ ...request.detalles[0], precio: 1, subtotal: 1 }])
+    ).rejects.toThrow('precio o la comision no coincide');
+  });
+  it('rechaza la botella sin anfitriona si la venta está deshabilitada aunque tenga precio guardado', async () => {
+    const config = trx({
+      opciones: [
+        {
+          tipo: 'botella',
+          precio: 0,
+          comision: 0,
+          precio_sin_anfitriona: 2900,
+          en_venta: false
+        }
+      ]
+    });
+    await expect(
+      validarConfiguracionPedido(config, [
+        {
+          ...bottle,
+          precio: 2900,
+          subtotal: 2900,
+          botella_anfitriona: false
+        }
+      ])
+    ).rejects.toThrow('precio o la comision no coincide');
+  });
   it.each([
     { precio: 20000, comision: 7000 },
     { precio: 30000, comision: 10000 }

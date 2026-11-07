@@ -59,6 +59,9 @@ export function SettingsSaleOptionsEditor({
   );
   const [coverHabilitado, setCoverHabilitado] = useState(bottle?.cover_habilitado === true);
   const [enVenta, setEnVenta] = useState(bottle?.en_venta !== false);
+  const [cortoAnfitrionaHabilitado, setCortoAnfitrionaHabilitado] = useState(
+    bottle?.corto_anfitriona_habilitado !== false
+  );
   const [precioSinAnfitriona, setPrecioSinAnfitriona] = useState(
     bottle?.precio_sin_anfitriona ? String(bottle.precio_sin_anfitriona) : ''
   );
@@ -135,13 +138,15 @@ export function SettingsSaleOptionsEditor({
         colacionAplica && mlAcompanamientoValor !== null
           ? { unidades: Number(units || 0) || 1, ml: mlAcompanamientoValor }
           : undefined;
+      const ventaBotellaHabilitada = !esAnalcoholica || enVenta;
       const baseBotella = {
         tipo: 'botella' as const,
-        precio: numeric(precio),
-        comision: numeric(comision),
+        precio: ventaBotellaHabilitada ? numeric(precio) : 0,
+        comision: ventaBotellaHabilitada ? numeric(comision) : 0,
         ...(esCig ? {} : { colacion_habilitada: colacionHabilitada }),
         ...(esAnalcoholica ? { cover_habilitado: coverHabilitado } : {}),
         ...(esAnalcoholica ? { en_venta: enVenta } : {}),
+        ...(esAnalcoholica ? { corto_anfitriona_habilitado: cortoAnfitrionaHabilitado } : {}),
         ...(colacionAplica && mlColacionValor !== null ? { ml_colacion: mlColacionValor } : {}),
         ...(colacionAplica && acompanamientoColacion
           ? { acompanamiento_colacion: acompanamientoColacion }
@@ -154,7 +159,9 @@ export function SettingsSaleOptionsEditor({
               acompanamiento: { unidades: Number(units || 0) }
             }
           : bottle?.acompanamiento
-            ? { acompanamiento: bottle.acompanamiento }
+            ? {
+                acompanamiento: ventaBotellaHabilitada ? bottle.acompanamiento : { unidades: 0 }
+              }
             : {})
       };
       const parsed = (esVentaSimple ? SaleOptionsSchema : ConfiguredSaleOptionsSchema).safeParse(
@@ -219,6 +226,10 @@ export function SettingsSaleOptionsEditor({
         onColacionHabilitadaChange={esCig ? undefined : setColacionHabilitada}
         coverHabilitado={coverHabilitado}
         onCoverHabilitadoChange={esAnalcoholica ? setCoverHabilitado : undefined}
+        cortoAnfitrionaHabilitado={cortoAnfitrionaHabilitado}
+        onCortoAnfitrionaHabilitadoChange={
+          esAnalcoholica ? setCortoAnfitrionaHabilitado : undefined
+        }
         enVenta={enVenta}
         onEnVentaChange={esAnalcoholica ? setEnVenta : undefined}
         acompanamientoCliente={acompanamientoCliente}

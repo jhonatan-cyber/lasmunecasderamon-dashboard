@@ -2,8 +2,11 @@ import { render } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { SaleProductFormatRows } from '@/components/sales/product-modal/SaleProductFormatRows';
 vi.mock('@/components/sales/SaleFormatQuantities', () => ({
-  SaleFormatQuantities: ({ options }: any) => (
-    <div>{options[0].displayLabel ?? options[0].label}</div>
+  SaleFormatQuantities: ({ options, compact, hideLabel }: any) => (
+    <div>
+      {!hideLabel && (options[0].displayLabel ?? options[0].label)}
+      <span>{options[0].precio}</span>
+    </div>
   )
 }));
 vi.mock('@/components/sales/product-modal/SaleProductMixers', () => ({
@@ -67,4 +70,63 @@ it.each([
     `20 ml y ${ml} ml de bebida`
   );
   unmount();
+});
+
+it('oculta las columnas de bebida y anfitrionas cuando el formato no las necesita', () => {
+  const item = {
+    product: {
+      opciones_venta: [{ tipo: 'botella', precio: 50000, comision: 0 }]
+    },
+    opcionesTipo: [
+      {
+        value: 'botella_sin_anfitriona',
+        label: 'Botella sin anfitriona',
+        precio: 45000,
+        cantidad: 0,
+        comision: 0
+      }
+    ],
+    mixers: [],
+    hostessFormats: []
+  } as any;
+  const { container, queryByText } = render(
+    <SaleProductFormatRows item={item} availableHostesses={[]} />
+  );
+  const row = container.querySelector('[data-sale-format="botella_sin_anfitriona"]');
+
+  expect(queryByText('Bebida')).not.toBeInTheDocument();
+  expect(queryByText('Anfitrionas')).not.toBeInTheDocument();
+  expect(queryByText('Trago')).not.toBeInTheDocument();
+  expect(queryByText('Botella sin anfitriona')).not.toBeInTheDocument();
+  expect(queryByText('Formato y cantidad')).not.toBeInTheDocument();
+  expect(row).toHaveTextContent('45000');
+  expect(row?.children).toHaveLength(1);
+  expect(container.querySelector('.border-t')).not.toBeInTheDocument();
+  expect(container.querySelector('.bg-muted')).not.toBeInTheDocument();
+});
+
+it('muestra la columna de bebida cuando está configurada y oculta anfitrionas sin comisión', () => {
+  const item = {
+    product: {
+      opciones_venta: [
+        {
+          tipo: 'botella',
+          precio: 50000,
+          comision: 0,
+          acompanamiento: { unidades: 3 }
+        }
+      ]
+    },
+    opcionesTipo: [{ value: 'botella', label: 'Botella', cantidad: 0, comision: 0 }],
+    mixers: [],
+    hostessFormats: []
+  } as any;
+  const { container, getByText, queryByText } = render(
+    <SaleProductFormatRows item={item} availableHostesses={[]} />
+  );
+  const row = container.querySelector('[data-sale-format="botella"]');
+
+  expect(getByText('Bebida')).toBeInTheDocument();
+  expect(queryByText('Anfitrionas')).not.toBeInTheDocument();
+  expect(row?.children).toHaveLength(2);
 });
