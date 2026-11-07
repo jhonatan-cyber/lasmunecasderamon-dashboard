@@ -233,40 +233,42 @@ export default function NewSale() {
           onSelect={handleOpenCategoria}
           center={true}
           loading={loadingCategorias}
+          variant='catalog'
         />
 
-        <NewSaleConfiguration
-          clientes={clientes}
-          selectedCliente={selectedCliente}
-          setSelectedCliente={setSelectedCliente}
-          selectedSegundoCliente={selectedSegundoCliente}
-          setSelectedSegundoCliente={setSelectedSegundoCliente}
-          clientesConSaldo={clientesConSaldo}
-          requiresRoom={requiresRoom}
-          habitaciones={habitaciones}
-          selectedHabitacion={selectedHabitacion}
-          handleHabitacionChange={handleHabitacionChange}
-          manualTime={manualTime}
-          setManualTime={setManualTime}
-          metodoPago={metodoPago}
-          setMetodoPago={setMetodoPago}
-          baucherFoto={baucherFoto}
-          setBaucherFoto={setBaucherFoto}
-          propina={totals.propina}
-          enableTip={enableTip}
-          setEnableTip={setEnableTip}
-        />
+        <div className='grid min-w-0 items-start gap-5 lg:grid-cols-2 lg:gap-6'>
+          <NewSaleConfiguration
+            clientes={clientes}
+            selectedCliente={selectedCliente}
+            setSelectedCliente={setSelectedCliente}
+            selectedSegundoCliente={selectedSegundoCliente}
+            setSelectedSegundoCliente={setSelectedSegundoCliente}
+            clientesConSaldo={clientesConSaldo}
+            requiresRoom={requiresRoom}
+            habitaciones={habitaciones}
+            selectedHabitacion={selectedHabitacion}
+            handleHabitacionChange={handleHabitacionChange}
+            manualTime={manualTime}
+            setManualTime={setManualTime}
+            metodoPago={metodoPago}
+            setMetodoPago={setMetodoPago}
+            baucherFoto={baucherFoto}
+            setBaucherFoto={setBaucherFoto}
+          />
 
-        <NewSaleSummary
-          subtotal={totals.subtotal}
-          propina={totals.propina}
-          metodoPago={metodoPago}
-          total={totals.total}
-          loading={loading}
-          disabled={loading || !productos.length || !metodoPago || hasOpenCaja === false}
-          onSubmit={handleHandleSubmit}
-          saldo={selectedClienteSaldo}
-        />
+          <NewSaleSummary
+            subtotal={totals.subtotal}
+            propina={totals.propina}
+            metodoPago={metodoPago}
+            total={totals.total}
+            loading={loading}
+            disabled={loading || !productos.length || !metodoPago || hasOpenCaja === false}
+            onSubmit={handleHandleSubmit}
+            saldo={selectedClienteSaldo}
+            enableTip={enableTip}
+            onTipToggle={setEnableTip}
+          />
+        </div>
 
         <NewSaleCart
           productos={productos}

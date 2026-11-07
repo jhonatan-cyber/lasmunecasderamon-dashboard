@@ -61,6 +61,88 @@ it('con colación deshabilitada guarda cero si la cantidad queda vacía', () => 
   expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 0 });
 });
 
+it('guarda precio, comisión y acompañamiento en cero si la venta de bebida analcohólica está desactivada', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  render(
+    <SettingsSaleOptionsEditor
+      ref={ref}
+      options={[
+        {
+          tipo: 'botella',
+          precio: 2900,
+          comision: 500,
+          en_venta: false,
+          acompanamiento: { tipo: 'soda', unidades: 2 }
+        }
+      ]}
+      categoria='Bebidas analcohólicas'
+      precio='2900'
+      comision='500'
+      onPrecio={vi.fn()}
+      onComision={vi.fn()}
+      saving={false}
+    />
+  );
+
+  expect(ref.current!.getConfig().opciones_venta[0]).toMatchObject({
+    precio: 0,
+    comision: 0,
+    en_venta: false,
+    acompanamiento: { unidades: 0 }
+  });
+});
+
+it('permite habilitar usos de bebidas analcohólicas desde Bar y comisiones', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  render(
+    <SettingsSaleOptionsEditor
+      ref={ref}
+      options={[
+        {
+          tipo: 'botella',
+          precio: 2900,
+          comision: 0,
+          en_venta: true,
+          cover_habilitado: true,
+          colacion_habilitada: true,
+          corto_anfitriona_habilitado: false
+        }
+      ]}
+      categoria='Bebidas analcohólicas'
+      precio='2900'
+      comision='0'
+      onPrecio={vi.fn()}
+      onComision={vi.fn()}
+      saving={false}
+    />
+  );
+
+  const sale = screen.getByLabelText('Poner la bebida a la venta');
+  const cover = screen.getByLabelText('Habilitar bebida para cover de clientes');
+  const colacion = screen.getByLabelText('Habilitar bebida para colación');
+  const hostess = screen.getByLabelText('Habilitar bebida para corto anfitriona');
+  expect(sale).toBeChecked();
+  expect(cover).toBeChecked();
+  expect(colacion).toBeChecked();
+  expect(hostess).not.toBeChecked();
+
+  fireEvent.click(hostess);
+  expect(ref.current!.getConfig().opciones_venta[0]).toMatchObject({
+    en_venta: true,
+    cover_habilitado: true,
+    colacion_habilitada: true,
+    corto_anfitriona_habilitado: true
+  });
+  fireEvent.click(sale);
+  expect(ref.current!.getConfig().opciones_venta[0]).toMatchObject({
+    en_venta: false,
+    precio: 0,
+    cover_habilitado: true,
+    colacion_habilitada: true,
+    corto_anfitriona_habilitado: true
+  });
+});
+
 it('guarda el precio adicional sin anfitriona y la cantidad de bebidas por botella', () => {
   const ref = createRef<SettingsSaleOptionsHandle>();
   render(

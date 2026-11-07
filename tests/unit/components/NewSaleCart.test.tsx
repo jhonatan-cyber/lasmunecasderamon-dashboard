@@ -42,6 +42,10 @@ describe('anfitrionas en el carrito de nueva venta', () => {
           handleRemoveProducto={vi.fn()}
         />
       );
+      expect(screen.getByText('Detalles de la venta')).toBeInTheDocument();
+      expect(
+        screen.getByText('Revisa cantidades, bebidas y comisiones antes de generar la venta')
+      ).toBeInTheDocument();
       expect(screen.getByText('Whisky')).toBeInTheDocument();
       expect(screen.getByText('750 ml')).toBeInTheDocument();
       expect(screen.getByText('Licores')).toBeInTheDocument();
@@ -51,9 +55,7 @@ describe('anfitrionas en el carrito de nueva venta', () => {
         expect(screen.getByText('Ana')).toBeInTheDocument();
         expect(screen.getByText('Comisión total: $2.000')).toBeInTheDocument();
       } else {
-        expect(screen.queryByText('Ana')).not.toBeInTheDocument();
-        expect(screen.getByText('Sin asignación')).toBeInTheDocument();
-        expect(screen.getByText('Comisión total: $0')).toBeInTheDocument();
+        expect(screen.queryByText('Comisión total: $0')).not.toBeInTheDocument();
       }
       if (tipo === 'shot')
         expect(screen.getByText(`Consumo total: ${hostess ? 80 : 100} ml`)).toBeInTheDocument();
@@ -106,7 +108,7 @@ describe('anfitrionas en el carrito de nueva venta', () => {
     expect(screen.getByText('María')).toBeInTheDocument();
     expect(screen.queryByText('N/A')).not.toBeInTheDocument();
   });
-  it('muestra Sin asignación cuando no se han seleccionado anfitrionas', () => {
+  it('oculta las columnas de bebida y anfitrionas cuando no tienen datos', () => {
     render(
       <NewSaleCart
         productos={[{ nombre: 'Agua', precio: 3000, cantidad: 1, subtotal: 3000 }]}
@@ -115,6 +117,69 @@ describe('anfitrionas en el carrito de nueva venta', () => {
         handleRemoveProducto={vi.fn()}
       />
     );
-    expect(screen.getByText('Sin asignación')).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader')).not.toBeInTheDocument();
+    expect(screen.getByText('Agua')).toBeInTheDocument();
+  });
+
+  it('mantiene los controles de cantidad y eliminación en la tarjeta adaptable', () => {
+    const handleCantidadChangeTable = vi.fn();
+    const handleRemoveProducto = vi.fn();
+    render(
+      <NewSaleCart
+        productos={[{ nombre: 'Agua', precio: 3000, cantidad: 1, subtotal: 3000 }]}
+        anfitrionas={[]}
+        handleCantidadChangeTable={handleCantidadChangeTable}
+        handleRemoveProducto={handleRemoveProducto}
+      />
+    );
+
+    screen.getByRole('button', { name: 'Aumentar cantidad de Agua' }).click();
+    screen.getByRole('button', { name: 'Eliminar Agua' }).click();
+
+    expect(handleCantidadChangeTable).toHaveBeenCalledWith(0, 2);
+    expect(handleRemoveProducto).toHaveBeenCalledWith(0);
+  });
+
+  it('usa la tabla cuando el ancho del contenedor alcanza para mostrarla completa', () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'clientWidth'
+    );
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => 2000
+    });
+
+    const { unmount } = render(
+      <NewSaleCart
+        productos={[
+          {
+            nombre: 'Whisky',
+            precio: 10000,
+            cantidad: 1,
+            subtotal: 10000,
+            comision: 1000,
+            selectedHostesses: ['ana'],
+            acompanamiento_botella: [{ presentacion_id: 'mixer', nombre: 'Bebida', unidades: 1 }]
+          }
+        ]}
+        anfitrionas={[{ id: 'ana', nick: 'Ana' }]}
+        handleCantidadChangeTable={vi.fn()}
+        handleRemoveProducto={vi.fn()}
+      />
+    );
+
+    try {
+      expect(screen.getByRole('columnheader', { name: 'PRODUCTO' })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: 'BEBIDA' })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: 'ANFITRIONAS' })).toBeInTheDocument();
+    } finally {
+      unmount();
+      if (originalDescriptor) {
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalDescriptor);
+      } else {
+        delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+      }
+    }
   });
 });

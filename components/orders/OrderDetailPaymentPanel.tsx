@@ -49,14 +49,11 @@ export function OrderDetailPaymentPanel({
   const prepagoSinSaldo = metodoPago === 'prepago' && !tieneSaldoPrepago;
   return (
     <div className='space-y-4'>
-      <p className='text-xs text-muted-foreground'>
-        Productos y comisiones son los del pedido. El método de pago y la propina los eliges tú al
-        cobrar.
-      </p>
       <PaymentMethodSelect
         value={metodoPago}
         onChange={setMetodoPago}
         required
+        disabled
         showPrepago={Boolean(clienteId)}
         clientes={tieneSaldoPrepago ? [{ id: clienteId, saldo: Number(clienteSaldo) }] : []}
         selectedClienteId={clienteId}
@@ -80,7 +77,8 @@ export function OrderDetailPaymentPanel({
       )}
       {prepagoSinSaldo && (
         <div role='alert' className='text-xs text-red-500'>
-          El cliente del pedido no tiene saldo prepago disponible. Elige otro método de pago.
+          El cliente del pedido no tiene saldo prepago disponible. No se puede registrar el cobro
+          con este método.
         </div>
       )}
       {habitacionId && (
@@ -152,17 +150,19 @@ export function OrderDetailPaymentPanel({
           </>
         )}
       </div>
-      <div>
-        <Label htmlFor='order-total-comision' className={ORDER_FIELD_LABEL_CLASS}>
-          Total Comisión
-        </Label>
-        <Input
-          id='order-total-comision'
-          className={ORDER_FIELD_INPUT_CLASS}
-          value={formatCurrencyCLP(orderTotalCommission)}
-          readOnly
-        />
-      </div>
+      {orderTotalCommission > 0 && (
+        <div>
+          <Label htmlFor='order-total-comision' className={ORDER_FIELD_LABEL_CLASS}>
+            Total Comisión
+          </Label>
+          <Input
+            id='order-total-comision'
+            className={ORDER_FIELD_INPUT_CLASS}
+            value={formatCurrencyCLP(orderTotalCommission)}
+            readOnly
+          />
+        </div>
+      )}
       <Separator />
     </div>
   );

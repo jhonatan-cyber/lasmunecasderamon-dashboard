@@ -79,6 +79,7 @@ export function mapSaleFromDB(row: VentaRawRow | VentaGetByIdRow | null): SaleTy
       codigo: row.codigo,
       cliente_id: row.cliente_id,
       pedido_id: row.pedido_id,
+      servicio_id: row.servicio_id ?? null,
       entrada_id: row.entrada_id ?? null,
       origen: row.origen ?? null,
       habitacion_id: row.habitacion_id,

@@ -42,9 +42,28 @@ export const presentacionesDePrueba = {
         producto_nombre: 'Sprite',
         nombre: '350 ml',
         stock_bar: 20,
-        foto: 'sprite.webp'
+        foto: 'sprite.webp',
+        opciones_venta: [
+          {
+            tipo: 'botella',
+            cover_habilitado: true,
+            corto_anfitriona_habilitado: true
+          }
+        ]
       },
-      { id: 'cola', producto_nombre: 'Coca-Cola', nombre: '350 ml', stock_bar: 20 },
+      {
+        id: 'cola',
+        producto_nombre: 'Coca-Cola',
+        nombre: '350 ml',
+        stock_bar: 20,
+        opciones_venta: [
+          {
+            tipo: 'botella',
+            cover_habilitado: true,
+            corto_anfitriona_habilitado: true
+          }
+        ]
+      },
       {
         id: 'sin-stock',
         producto_nombre: 'Sin stock',

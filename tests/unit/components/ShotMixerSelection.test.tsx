@@ -21,9 +21,22 @@ it('selecciona el sabor disponible y actualiza las unidades al cambiar la cantid
             producto_nombre: 'Soda limón',
             nombre: '500 ml',
             stock_bar: 3,
-            ml_abierta: 300
+            ml_abierta: 300,
+            opciones_venta: [
+              {
+                tipo: 'botella',
+                cover_habilitado: true,
+                corto_anfitriona_habilitado: true
+              }
+            ]
           },
-          { id: 'sin-stock', producto_nombre: 'Cola', nombre: '500 ml', stock_bar: 0 }
+          {
+            id: 'sin-stock',
+            producto_nombre: 'Cola',
+            nombre: '500 ml',
+            stock_bar: 0,
+            opciones_venta: [{ tipo: 'botella', cover_habilitado: true }]
+          }
         ]
       })
     })
@@ -66,8 +79,20 @@ it('descuenta los ml configurados al elegir Coca-Cola o Sprite para cortos de an
       json: async () => ({
         success: true,
         data: [
-          { id: 'cola', producto_nombre: 'Coca-Cola', nombre: '350 ml', stock_bar: 3 },
-          { id: 'sprite', producto_nombre: 'Sprite', nombre: '350 ml', stock_bar: 3 }
+          {
+            id: 'cola',
+            producto_nombre: 'Coca-Cola',
+            nombre: '350 ml',
+            stock_bar: 3,
+            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true }]
+          },
+          {
+            id: 'sprite',
+            producto_nombre: 'Sprite',
+            nombre: '350 ml',
+            stock_bar: 3,
+            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true }]
+          }
         ]
       })
     })

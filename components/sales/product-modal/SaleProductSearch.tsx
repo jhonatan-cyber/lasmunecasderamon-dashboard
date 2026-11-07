@@ -15,22 +15,26 @@ export function SaleProductSearch({
   onClear: () => void;
 }) {
   return (
-    <div className='mb-3 flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 transition-colors focus-within:border-neutral-400 dark:border-white/10 dark:bg-white/5 dark:focus-within:border-white/30'>
-      <Search className='size-4 shrink-0 text-muted-foreground' aria-hidden='true' />
+    <div className='relative min-w-0 flex-1'>
+      <Search
+        className='pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
+        aria-hidden='true'
+      />
       <Input
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder='Buscar en esta categoría…'
         aria-label='Buscar producto en esta categoría'
-        className='w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground'
+        className='w-full rounded-full bg-background pl-11 pr-11 text-sm placeholder:text-muted-foreground'
       />
       {value && (
         <Button
-          variant='unstyled'
+          variant='ghost'
+          size='icon'
           type='button'
           onClick={onClear}
           aria-label='Limpiar búsqueda'
-          className='rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground'
+          className='absolute right-1 top-1/2 size-9 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground'
         >
           <X className='size-4' aria-hidden='true' />
         </Button>

@@ -11,6 +11,11 @@ import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { getOrderRoomId, getOrderRoomName } from '@/components/orders/detail';
 import { extractHostessIds } from '@/components/orders/orderDetailUtils';
 import { isChampagneProduct, isExpensiveDrink } from '@/components/orders/productModalRules';
+import {
+  closeSaleReceiptWindow,
+  openSaleReceiptWindow,
+  printSaleReceipt
+} from '@/lib/utils/printSaleReceipt';
 
 interface OrderDetailModalState {
   isRegistering: boolean;
@@ -186,6 +191,8 @@ export function useOrderDetailModal({
       if (registeringSale.current) return;
       registeringSale.current = true;
       setIsRegistering(true);
+      let receiptWindow: Window | null = null;
+      let receiptPrinted = false;
       try {
         const pedido = detail[0];
         if (!pedido || !orderId || !metodoPago) throw new Error('Pedido incompleto');
@@ -217,8 +224,39 @@ export function useOrderDetailModal({
           tiempo: shouldShowRoomSelector && habitacionId ? tiempoHabitacion : 0
         };
 
+        receiptWindow = openSaleReceiptWindow();
         const resultado = await createVenta(ventaData);
         if (resultado && resultado.success) {
+          if (receiptWindow) {
+            printSaleReceipt(receiptWindow, {
+              code: resultado.data?.codigo || pedido.codigo,
+              date: resultado.data?.fecha_crea || new Date(),
+              customer: pedido.cliente || '',
+              location: habitacionId
+                ? getOrderRoomName(
+                    rooms.find((room: any) => getOrderRoomId(room) === String(habitacionId)) || {}
+                  )
+                : undefined,
+              paymentMethod: metodoPago,
+              origin: 'Pedido',
+              subtotal: sub_total,
+              tip: propina,
+              total: sub_total + propina,
+              lines: detail.map(item => ({
+                name: item.producto_nombre || item.nombre || item.name || 'Producto',
+                quantity: Number(item.cantidad ?? 0),
+                unitPrice: Number(item.precio ?? 0),
+                subtotal: Number(
+                  item.sub_total ?? Number(item.precio ?? 0) * Number(item.cantidad ?? 0)
+                ),
+                detail:
+                  item.presentacion_nombre || (item.tipo_venta === 'shot' ? 'Corto' : 'Botella')
+              }))
+            });
+            receiptPrinted = true;
+          } else {
+            toast.warning('Venta registrada. Permite ventanas emergentes para imprimir el ticket.');
+          }
           if (propina > 0) {
             toast.success(
               `Venta registrada con propina de ${formatCurrencyCLP(propina)} distribuida entre los cajeros y garzones`
@@ -254,8 +292,10 @@ export function useOrderDetailModal({
           onVentaRegistrada?.();
         }
       } catch {
+        closeSaleReceiptWindow(receiptPrinted ? null : receiptWindow);
         toast.error('Error al registrar la venta');
       } finally {
+        if (!receiptPrinted) closeSaleReceiptWindow(receiptWindow);
         registeringSale.current = false;
         setIsRegistering(false);
         setConfirmVentaModalOpen(false);

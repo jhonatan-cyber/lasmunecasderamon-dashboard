@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
@@ -21,36 +22,36 @@ export function OrderDetailInfoPanel({
   clientName,
   garzonName
 }: OrderDetailInfoPanelProps) {
-  return (
-    <div className='space-y-3'>
-      <div className='flex justify-between items-center'>
-        <span className='text-xs sm:text-sm text-muted-foreground'>Fecha y Hora:</span>
-        <div className='text-xs sm:text-sm font-medium'>
-          <div>{createdAt}</div>
-        </div>
-      </div>
-      <Separator />
-      <div className='flex justify-between items-center'>
-        <span className='text-xs sm:text-sm text-muted-foreground'>Código:</span>
+  const rows: { label: string; value: ReactNode }[] = [];
+  if (createdAt?.trim())
+    rows.push({
+      label: 'Fecha y Hora:',
+      value: <div className='text-xs font-medium sm:text-sm'>{createdAt}</div>
+    });
+  if (code?.trim())
+    rows.push({
+      label: 'Código:',
+      value: (
         <Badge variant='outline' className='text-xs'>
           {code}
         </Badge>
-      </div>
-      <Separator />
-      <div className='flex justify-between items-center'>
-        <span className='text-xs sm:text-sm text-muted-foreground'>Anfitriona(s):</span>
-        <span className='text-xs sm:text-sm font-medium'>{hostessName || '-'}</span>
-      </div>
-      <Separator />
-      <div className='flex justify-between items-center'>
-        <span className='text-xs sm:text-sm text-muted-foreground'>Cliente:</span>
-        <span className='text-xs sm:text-sm font-medium'>{clientName || '-'}</span>
-      </div>
-      <Separator />
-      <div className='flex justify-between items-center'>
-        <span className='text-xs sm:text-sm text-muted-foreground'>Garzón:</span>
-        <span className='text-xs sm:text-sm font-medium'>{garzonName || '-'}</span>
-      </div>
+      )
+    });
+  if (hostessName?.trim()) rows.push({ label: 'Anfitriona(s):', value: hostessName });
+  if (clientName?.trim()) rows.push({ label: 'Cliente:', value: clientName });
+  if (garzonName?.trim()) rows.push({ label: 'Garzón:', value: garzonName });
+
+  return (
+    <div className='space-y-3'>
+      {rows.map((row, index) => (
+        <div key={row.label}>
+          {index > 0 && <Separator />}
+          <div className='flex items-center justify-between'>
+            <span className='text-xs text-muted-foreground sm:text-sm'>{row.label}</span>
+            <span className='text-xs font-medium sm:text-sm'>{row.value}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

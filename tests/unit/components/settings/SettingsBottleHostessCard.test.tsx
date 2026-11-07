@@ -145,7 +145,7 @@ describe('SettingsBottleHostessCard', () => {
 
     render(<SettingsBottleHostessCard />);
     await waitFor(() =>
-      expect(screen.getByLabelText('Producto y presentación')).toBeInTheDocument()
+      expect(screen.getByLabelText('Elige un producto y presentación')).toBeInTheDocument()
     );
     // Solo botella del bar; el solo-shot y el solo-almacén no se listan.
     expect(screen.getAllByText(/Solo shot/).length).toBeGreaterThan(0);
@@ -241,7 +241,7 @@ describe('SettingsBottleHostessCard', () => {
     vi.stubGlobal('fetch', request);
 
     render(<SettingsBottleHostessCard />);
-    await screen.findByLabelText('Producto y presentación');
+    await screen.findByLabelText('Elige un producto y presentación');
     fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
     // El campo vive dentro del editor de configuración de venta, como en la transferencia.
     const max = await screen.findByLabelText('Máximo de anfitrionas');
@@ -292,7 +292,7 @@ describe('SettingsBottleHostessCard', () => {
     vi.stubGlobal('fetch', request);
 
     render(<SettingsBottleHostessCard />);
-    await screen.findByLabelText('Producto y presentación');
+    await screen.findByLabelText('Elige un producto y presentación');
     fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
 
     const max = await screen.findByLabelText('Máximo de anfitrionas');

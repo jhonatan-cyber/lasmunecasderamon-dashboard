@@ -25,7 +25,7 @@ function renderPanel(overrides: Partial<typeof baseProps> = {}) {
   return render(<OrderDetailPaymentPanel {...baseProps} {...overrides} />);
 }
 
-describe('Cobro de pedido: el cajero elige pago y propina', () => {
+describe('Cobro de pedido', () => {
   it('conserva la propina que trae el pedido y sigue ajustando la habitación', () => {
     renderPanel();
     expect(screen.getByLabelText('Propina incluida (la eligió el garzón)')).toHaveAttribute(
@@ -41,11 +41,17 @@ describe('Cobro de pedido: el cajero elige pago y propina', () => {
     expect(baseProps.setTiempoHabitacion).toHaveBeenCalledWith(120);
   });
 
-  it('permite cambiar el método de pago en el selector', () => {
+  it('mantiene el método de pago del pedido y no permite cambiarlo', () => {
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: /método de pago/i }));
-    fireEvent.click(screen.getByRole('button', { name: /efectivo/i }));
-    expect(baseProps.setMetodoPago).toHaveBeenCalledWith('efectivo');
+    const paymentMethod = screen.getByRole('button', { name: /método de pago/i });
+    expect(paymentMethod).toBeDisabled();
+    expect(
+      screen.queryByText(
+        'Productos y comisiones son los del pedido. El método de pago y la propina los eliges tú al cobrar.'
+      )
+    ).not.toBeInTheDocument();
+    fireEvent.click(paymentMethod);
+    expect(baseProps.setMetodoPago).not.toHaveBeenCalled();
   });
 
   it('sin propina del pedido, el cajero la activa con el porcentaje configurado', () => {
@@ -86,9 +92,9 @@ describe('Cobro de pedido: el cajero elige pago y propina', () => {
     expect(screen.queryByText(/prepago/i)).toBeNull();
   });
 
-  it('un pedido prepago sin saldo avisa al cajero que elija otro método', () => {
+  it('un pedido prepago sin saldo avisa que no se puede registrar el cobro', () => {
     renderPanel({ metodoPago: 'prepago', clienteId: 'c1', clienteSaldo: 0 });
-    expect(screen.getByRole('alert')).toHaveTextContent(/no tiene saldo prepago/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/no se puede registrar el cobro/i);
   });
 
   it('sin habitacion no ofrece agregarla ni editar tiempo', () => {

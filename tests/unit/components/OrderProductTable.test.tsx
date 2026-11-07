@@ -1,6 +1,10 @@
-import { render, screen } from '@testing-library/react';
-import { expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
 import OrderProductTable from '@/components/orders/OrderProductTable';
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 vi.mock('@/hooks/shared/useConfigValue', () => ({ useConfigValue: () => 50 }));
 vi.mock('@/components/sales/product-modal/SaleProductPhoto', () => ({
   SaleProductPhoto: () => null
@@ -30,10 +34,80 @@ it('muestra formato y consumo de la bebida del corto configurado', () => {
       ]}
     />
   );
-  expect(screen.getByRole('columnheader', { name: 'Bebida y consumo' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Corto anfitriona' })).toBeInTheDocument();
   expect(screen.getByText('Sprite 350 ml')).toBeInTheDocument();
-  expect(screen.getByText('150 ml por corto')).toBeInTheDocument();
-  expect(screen.getByText('Consumo total: 300 ml')).toBeInTheDocument();
-  expect(screen.getByText('20 ml por corto \u00b7 40 ml de trago')).toBeInTheDocument();
+  expect(screen.getByText(/150 ml por corto/)).toBeInTheDocument();
+  expect(screen.getByText(/Total 300/)).toBeInTheDocument();
+  expect(screen.getByText('Trago: 20 ml por corto · 40 ml en total')).toBeInTheDocument();
+  expect(screen.queryByRole('columnheader')).not.toBeInTheDocument();
+});
+
+it('oculta las columnas opcionales cuando ningún producto tiene datos para ellas', () => {
+  render(
+    <OrderProductTable
+      anfitrionas={[]}
+      productos={[
+        {
+          nombre: 'Botella',
+          precio: 10000,
+          cantidad: 1,
+          subtotal: 10000,
+          tipo_venta: 'botella',
+          generaComision: 0,
+          comision: 0,
+          selectedHostesses: [],
+          selectedRoom: null,
+          acompanamiento_botella: []
+        }
+      ]}
+    />
+  );
+
+  expect(screen.queryByRole('columnheader')).not.toBeInTheDocument();
+  expect(screen.getAllByText('Botella').length).toBeGreaterThan(0);
+});
+
+it('conserva habitación cuando algún producto la requiere aunque aún no esté asignada', () => {
+  render(
+    <OrderProductTable
+      anfitrionas={[]}
+      productos={[
+        {
+          nombre: 'Botella',
+          precio: 10000,
+          cantidad: 1,
+          subtotal: 10000,
+          tipo_venta: 'botella',
+          generaComision: 0,
+          comision: 0,
+          requiresRoom: true
+        }
+      ]}
+    />
+  );
+
+  expect(screen.getByText('Habitación')).toBeInTheDocument();
+});
+
+it('usa la tabla cuando el ancho del carrito permite ver todas las columnas', () => {
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(2000);
+  render(
+    <OrderProductTable
+      anfitrionas={[]}
+      productos={[
+        {
+          nombre: 'Botella',
+          precio: 10000,
+          cantidad: 1,
+          subtotal: 10000,
+          tipo_venta: 'botella',
+          generaComision: 0,
+          comision: 0
+        }
+      ]}
+    />
+  );
+
+  expect(screen.getByRole('columnheader', { name: 'Producto' })).toBeInTheDocument();
+  expect(screen.getByRole('columnheader', { name: 'Cantidad' })).toBeInTheDocument();
 });

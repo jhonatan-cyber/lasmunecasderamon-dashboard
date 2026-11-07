@@ -18,6 +18,7 @@ interface SalesListProps {
   anfitrionaColors: string[];
   formatCurrency: (value: number) => string;
   onVerDetalles: (ventaId: string | number) => void;
+  onImprimir: (venta: VentaWithDetails) => void;
   onAnularVenta: (ventaId: string | number, motivo: string, monto: number) => void;
   page: number;
   setPage: (value: number) => void;
@@ -35,6 +36,7 @@ export function SalesList({
   anfitrionaColors,
   formatCurrency,
   onVerDetalles,
+  onImprimir,
   onAnularVenta
 }: SalesListProps) {
   const hasFilters = !!(searchTerm || filterStatus !== 'all' || filterMetodoPago !== 'all');
@@ -70,6 +72,7 @@ export function SalesList({
                 canAnular={canAnular}
                 hasAnyAction={hasAnyAction}
                 onVerDetalles={onVerDetalles}
+                onImprimir={onImprimir}
                 onAnularClick={handleAnularClick}
               />
             </div>

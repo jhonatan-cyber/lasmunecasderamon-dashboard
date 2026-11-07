@@ -38,6 +38,11 @@ import SalesWithRoomTab from '@/components/sales/SalesWithRoomTab';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import dynamic from 'next/dynamic';
 import { useRefreshOnFocus } from '@/hooks/shared';
+import {
+  closeSaleReceiptWindow,
+  openSaleReceiptWindow,
+  printSaleReceipt
+} from '@/lib/utils/printSaleReceipt';
 
 const SalesDetailModal = dynamic(
   () => import('@/components/sales/SalesDetailModal').then(mod => mod.SalesDetailModal),
@@ -115,6 +120,65 @@ export default function Sales() {
       setIsModalOpen(true);
     } catch (error) {
       showErrorToast('Error al cargar los detalles de la venta');
+    }
+  };
+
+  const handlePrintSale = async (venta: VentaWithDetails) => {
+    const printWindow = openSaleReceiptWindow();
+    if (!printWindow) {
+      showErrorToast(
+        'El navegador bloqueó la ventana de impresión. Permite ventanas emergentes e inténtalo nuevamente.'
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/sales/${encodeURIComponent(String(venta.id))}`);
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.message || 'No se pudo cargar el detalle de la venta');
+      }
+
+      const detail = result.data as VentaWithDetails;
+      const origin =
+        detail.origen ||
+        (detail.entrada_id
+          ? 'entrada'
+          : detail.servicio_id
+            ? 'servicio'
+            : detail.habitacion_id
+              ? 'habitacion'
+              : detail.pedido_id
+                ? 'pedido'
+                : 'barra');
+      const originLabels: Record<string, string> = {
+        entrada: 'Entrada',
+        servicio: 'Servicio',
+        habitacion: 'Habitación',
+        pedido: 'Pedido',
+        barra: 'Barra'
+      };
+      printSaleReceipt(printWindow, {
+        code: detail.codigo,
+        date: detail.fecha_crea,
+        customer: detail.cliente_nombre,
+        location: detail.habitacion_numero || detail.habitacion_nombre,
+        paymentMethod: metodoPagoLabels[detail.metodo_pago] || detail.metodo_pago,
+        origin: originLabels[origin] || origin,
+        subtotal: Number(detail.sub_total ?? 0),
+        tip: Number(detail.propina ?? 0),
+        total: Number(detail.total ?? 0),
+        lines: (detail.detalles ?? []).map(item => ({
+          name: item.producto_nombre || item.producto_etiqueta || 'Producto',
+          quantity: Number(item.cantidad ?? 0),
+          unitPrice: Number(item.precio ?? 0),
+          subtotal: Number(item.sub_total ?? Number(item.precio ?? 0) * Number(item.cantidad ?? 0)),
+          detail: item.presentacion_nombre || undefined
+        }))
+      });
+    } catch (error) {
+      closeSaleReceiptWindow(printWindow);
+      showErrorToast(error instanceof Error ? error.message : 'No se pudo imprimir el ticket');
     }
   };
 
@@ -223,6 +287,7 @@ export default function Sales() {
                   anfitrionaColors={anfitrionaColors}
                   formatCurrency={formatCurrency}
                   onVerDetalles={handleViewDetails}
+                  onImprimir={handlePrintSale}
                   onAnularVenta={handleAnularVenta}
                   page={page}
                   setPage={setPage}

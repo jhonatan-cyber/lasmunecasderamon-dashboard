@@ -218,180 +218,139 @@ export function SettingsServiceLevelsCard() {
     Number.isInteger(costoEntrada) &&
     topeCortesia !== costoEntrada;
 
+  const reglas = [
+    {
+      id: 'service-simple',
+      title: 'Venta simple hasta',
+      description: 'Sin comisión ni anfitriona hasta este precio.',
+      icon: ShoppingCart,
+      value: simpleValue,
+      onChange: setSimpleValue,
+      tone: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
+    },
+    {
+      id: 'service-hostess',
+      title: 'Anfitriona desde',
+      description: 'Precio mínimo para asignar anfitriona.',
+      icon: Users,
+      value: hostessValue,
+      onChange: setHostessValue,
+      tone: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300'
+    },
+    {
+      id: 'service-habitacion',
+      title: 'Habitación desde',
+      description: 'Precio mínimo para exigir habitación.',
+      icon: BedDouble,
+      value: habitacionValue,
+      onChange: setHabitacionValue,
+      tone: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+    },
+    {
+      id: 'service-trago-cortesia-cliente',
+      title: 'Covers de entradas',
+      description: 'El cliente puede elegir una bebida de este precio o menos.',
+      icon: GlassWater,
+      value: tragoCortesiaValue,
+      onChange: setTragoCortesiaValue,
+      tone: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+    },
+    {
+      id: 'service-costo-entrada',
+      title: 'Costo de entrada',
+      description: 'Monto predeterminado al registrar una entrada.',
+      icon: Ticket,
+      value: costoEntradaValue,
+      onChange: setCostoEntradaValue,
+      tone: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+    }
+  ];
+
   return (
     <CollapsibleCard
       defaultOpen
       aria-label='Reglas de venta'
+      className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='space-y-4 px-4 pb-4 sm:px-5 sm:pb-5'
       title={
-        <>
-          <Users className='h-5 w-5 text-neutral-500' />
-          Reglas de venta
-        </>
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300'>
+            <Users className='h-4 w-4' aria-hidden='true' />
+          </div>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+            Reglas de venta
+          </span>
+        </div>
       }
-      contentClassName='space-y-4'
+      description='Define los umbrales de precios y las condiciones de atención.'
     >
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-4'>
-        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-          <div className='flex items-center gap-3'>
-            <ShoppingCart className='h-5 w-5 text-neutral-500 shrink-0' />
-            <div className='flex-1'>
-              <Label
-                htmlFor='service-simple'
-                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
+      <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3'>
+        {reglas.map(({ id, title, description, icon: Icon, value, onChange, tone }) => (
+          <div
+            key={id}
+            className='flex min-w-0 flex-col rounded-xl border border-neutral-200/70 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-950/40'
+          >
+            <div className='flex items-center gap-2'>
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}
               >
-                Venta simple hasta
+                <Icon className='h-4 w-4' aria-hidden='true' />
+              </span>
+              <Label
+                htmlFor={id}
+                className='min-w-0 text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100'
+              >
+                {title}
               </Label>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                Sin comisión ni anfitriona hasta este precio.
-              </p>
             </div>
-            <div className='flex items-center gap-2 shrink-0'>
-              <span className='text-sm text-neutral-500'>$</span>
+            <p className='mt-2 min-h-8 text-xs leading-4 text-neutral-600 dark:text-neutral-400'>
+              {description}
+            </p>
+            <div className='mt-3 flex items-center gap-2'>
+              <span className='shrink-0 rounded-md bg-white px-2 py-1.5 text-xs font-semibold text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400'>
+                $
+              </span>
               <Input
-                id='service-simple'
+                id={id}
                 type='number'
                 min='0'
-                value={simpleValue}
-                onChange={e => setSimpleValue(e.target.value)}
-                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+                value={value}
+                onChange={event => onChange(event.target.value)}
+                className='h-10 min-w-0 flex-1 rounded-lg border-neutral-300 bg-white text-right text-sm font-semibold tabular-nums dark:border-neutral-700 dark:bg-neutral-900'
               />
             </div>
           </div>
-        </div>
-
-        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-          <div className='flex items-center gap-3'>
-            <Users className='h-5 w-5 text-neutral-500 shrink-0' />
-            <div className='flex-1'>
-              <Label
-                htmlFor='service-hostess'
-                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-              >
-                Anfitriona desde
-              </Label>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                Precio mínimo para asignar anfitriona.
-              </p>
-            </div>
-            <div className='flex items-center gap-2 shrink-0'>
-              <span className='text-sm text-neutral-500'>$</span>
-              <Input
-                id='service-hostess'
-                type='number'
-                min='0'
-                value={hostessValue}
-                onChange={e => setHostessValue(e.target.value)}
-                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-          <div className='flex items-center gap-3'>
-            <BedDouble className='h-5 w-5 text-neutral-500 shrink-0' />
-            <div className='flex-1'>
-              <Label
-                htmlFor='service-habitacion'
-                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-              >
-                Habitación desde
-              </Label>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                Precio mínimo para exigir habitación.
-              </p>
-            </div>
-            <div className='flex items-center gap-2 shrink-0'>
-              <span className='text-sm text-neutral-500'>$</span>
-              <Input
-                id='service-habitacion'
-                type='number'
-                min='0'
-                value={habitacionValue}
-                onChange={e => setHabitacionValue(e.target.value)}
-                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-          <div className='flex items-center gap-3'>
-            <GlassWater className='h-5 w-5 text-neutral-500 shrink-0' />
-            <div className='flex-1'>
-              <Label
-                htmlFor='service-trago-cortesia-cliente'
-                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-              >
-                Covers de entradas
-              </Label>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                En Entradas, el cliente puede elegir como cover una bebida de este precio o menos.
-              </p>
-            </div>
-            <div className='flex items-center gap-2 shrink-0'>
-              <span className='text-sm text-neutral-500'>$</span>
-              <Input
-                id='service-trago-cortesia-cliente'
-                type='number'
-                min='0'
-                value={tragoCortesiaValue}
-                onChange={e => setTragoCortesiaValue(e.target.value)}
-                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
-          <div className='flex items-center gap-3'>
-            <Ticket className='h-5 w-5 text-neutral-500 shrink-0' />
-            <div className='flex-1'>
-              <Label
-                htmlFor='service-costo-entrada'
-                className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
-              >
-                Costo de entrada
-              </Label>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
-                Monto predeterminado al registrar una entrada.
-              </p>
-            </div>
-            <div className='flex items-center gap-2 shrink-0'>
-              <span className='text-sm text-neutral-500'>$</span>
-              <Input
-                id='service-costo-entrada'
-                type='number'
-                min='0'
-                value={costoEntradaValue}
-                onChange={e => setCostoEntradaValue(e.target.value)}
-                className='w-28 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
-              />
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Colaciones por rol: cada trabajador del rol tiene un tope de colaciones por turno de caja. */}
-      <div className='p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl space-y-3'>
+      <section
+        aria-labelledby='role-meal-limits-title'
+        className='border-t border-neutral-200 pt-4 dark:border-neutral-800'
+      >
         <div className='flex items-center gap-3'>
-          <UserCog className='h-5 w-5 text-neutral-500 shrink-0' />
-          <div className='flex-1'>
-            <p className='text-sm font-bold text-neutral-700 dark:text-neutral-300'>
-              Colaciones por rol y turno de caja
+          <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300'>
+            <UserCog className='h-4 w-4' aria-hidden='true' />
+          </span>
+          <div className='min-w-0 flex-1'>
+            <p
+              id='role-meal-limits-title'
+              className='text-sm font-semibold text-neutral-900 dark:text-neutral-100'
+            >
+              Colaciones por rol y turno
             </p>
-            <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+            <p className='mt-0.5 text-xs leading-4 text-neutral-500 dark:text-neutral-400'>
               Colaciones que puede recibir cada trabajador del rol durante un turno de caja. Vacío =
               1 (regla vigente); 0 = sin colación para ese rol.
             </p>
           </div>
         </div>
         {rolesActivos.length > 0 ? (
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+          <div className='mt-3 grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-2'>
             {rolesActivos.map(rol => (
               <div
                 key={rol.id}
-                className='flex items-center gap-3 px-3 py-1.5 bg-neutral-50 dark:bg-neutral-800/30 rounded-full'
+                className='flex min-w-0 items-center gap-3 rounded-lg bg-neutral-50/70 px-3 py-2 dark:bg-neutral-800/40'
               >
                 <span className='text-sm font-medium text-neutral-700 dark:text-neutral-300 flex-1 truncate'>
                   {rol.nombre}
@@ -408,7 +367,7 @@ export function SettingsServiceLevelsCard() {
                         [String(rol.id)]: e.target.value
                       }))
                     }
-                    className='w-24 px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-full focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent text-neutral-900 dark:text-white text-sm text-center'
+                    className='h-9 w-20 rounded-lg border-neutral-300 bg-neutral-50 text-center text-sm tabular-nums dark:border-neutral-700 dark:bg-neutral-950'
                   />
                 </div>
               </div>
@@ -419,7 +378,7 @@ export function SettingsServiceLevelsCard() {
             No hay roles activos para configurar.
           </p>
         )}
-      </div>
+      </section>
 
       {avisoTopeDistinto && (
         <div
@@ -437,15 +396,15 @@ export function SettingsServiceLevelsCard() {
         </div>
       )}
 
-      <div className='flex justify-end pt-4'>
+      <div className='flex justify-end border-t border-neutral-200 pt-4 dark:border-neutral-800'>
         <Button
           variant='unstyled'
           onClick={handleSave}
           disabled={saving}
-          className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
+          className='inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:bg-white dark:text-black dark:hover:bg-neutral-200'
         >
-          <Save className='h-4 w-4' />
-          {saving ? 'Guardando...' : 'Guardar Cambios'}
+          <Save className='h-4 w-4' aria-hidden='true' />
+          {saving ? 'Guardando...' : 'Guardar cambios'}
         </Button>
       </div>
     </CollapsibleCard>

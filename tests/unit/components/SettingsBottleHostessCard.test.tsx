@@ -98,9 +98,7 @@ describe('comisiones por presentación', () => {
     await screen.findByRole('button', { name: /Vodka Absolut 1000ml/ });
     // Espera a que el efecto elija la presentación inicial: si se hace clic antes de ese
     // commit, la selección automática pisa lo elegido y la aserción lee el estado viejo.
-    await waitFor(() =>
-      expect(screen.getByLabelText('Producto y presentación')).toHaveTextContent(/Vodka Absolut/)
-    );
+    await waitFor(() => expect(screen.getByRole('combobox')).toHaveTextContent(/Vodka Absolut/));
     const botella750 = screen.getByRole('button', { name: /Vodka Absolut 750ml/ });
     expect(botella750).toHaveTextContent('20.000');
     fireEvent.click(botella750);
@@ -114,9 +112,7 @@ describe('comisiones por presentación', () => {
 
   it('guarda únicamente la presentación seleccionada y conserva los precios por shot', async () => {
     render(<SettingsBottleHostessCard />);
-    await waitFor(() =>
-      expect(screen.getByLabelText('Producto y presentación')).toHaveTextContent(/Vodka Absolut/)
-    );
+    await waitFor(() => expect(screen.getByRole('combobox')).toHaveTextContent(/Vodka Absolut/));
     fireEvent.click(await screen.findByRole('button', { name: /Vodka Absolut 750ml/ }));
     await screen.findByLabelText('Precio para 2 anfitrionas');
     expect(screen.queryByRole('button', { name: 'Guardar precios' })).not.toBeInTheDocument();

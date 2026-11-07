@@ -45,6 +45,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
     | 'preciosAnfitrionaExtra'
     | 'tiers'
     | 'maxAnfitrionas'
+    | 'enVenta'
     | 'acompanamientoBotella'
     | 'unidadesAcompanamiento'
     | 'mlPorShot'
@@ -60,7 +61,11 @@ export const TransferItemSummary = memo(function TransferItemSummary({
   const amount = (value: string) => Number(value.replace(/\./g, '')) || 0;
   const options: SaleOption[] = configuration
     ? configuration.usarConfigGuardada
-      ? configuration.opcionesGuardadas
+      ? configuration.opcionesGuardadas.map(option =>
+          esAnalcoholica && !configuration.enVenta && option.tipo === 'botella'
+            ? { ...option, precio: 0, comision: 0 }
+            : option
+        )
       : configuration.tipos.map(tipo => ({
           tipo,
           vender_con_anfitriona: tipo === 'botella' ? configuration.venderConAnfitriona : undefined,

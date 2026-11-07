@@ -27,6 +27,18 @@ interface SalesDetailModalProps {
   metodoPagoLabels: Record<string, string>;
 }
 
+function formatSaleDate(fecha: string) {
+  const date = new Date(fecha.replace(' ', 'T'));
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('es-CL', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 export function SalesDetailModal({
   open,
   onOpenChange,
@@ -51,22 +63,35 @@ export function SalesDetailModal({
   const statusColor = statusColors[selectedVenta.estado] || 'bg-gray-100 text-gray-800';
   const statusLabel = statusLabels[selectedVenta.estado] || 'Desconocido';
   const metodoPagoLabel = metodoPagoLabels[selectedVenta.metodo_pago] || selectedVenta.metodo_pago;
-
-  const formatFecha = (fecha: string) => {
-    try {
-      const date = new Date(fecha.replace(' ', 'T'));
-      if (isNaN(date.getTime())) return '-';
-      return date.toLocaleDateString('es-CL', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return '-';
-    }
-  };
+  const cajeroNombre = [selectedVenta.cajero_nombre, selectedVenta.cajero_apellido]
+    .filter(Boolean)
+    .join(' ');
+  const cajero = [cajeroNombre, selectedVenta.cajero_nick && `(@${selectedVenta.cajero_nick})`]
+    .filter(Boolean)
+    .join(' ');
+  const habitacion = selectedVenta.habitacion_numero || selectedVenta.habitacion_nombre;
+  const fechaFormateada = selectedVenta.fecha_crea ? formatSaleDate(selectedVenta.fecha_crea) : '';
+  const fechaDisponible = Boolean(fechaFormateada && fechaFormateada !== '-');
+  const clienteDisponible = Boolean(
+    selectedVenta.cliente_nombre && selectedVenta.cliente_nombre.toLowerCase() !== 'sin cliente'
+  );
+  const pedidoPor =
+    selectedVenta.garzon_nombre || selectedVenta.garzon_nick
+      ? [
+          selectedVenta.garzon_nombre,
+          selectedVenta.garzon_nick && `(@${selectedVenta.garzon_nick})`
+        ]
+          .filter(Boolean)
+          .join(' ')
+      : '';
+  const hasMetadata = Boolean(
+    fechaDisponible ||
+    habitacion ||
+    clienteDisponible ||
+    cajero ||
+    (selectedVenta.pedido_id && pedidoPor) ||
+    hostesses.length
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,10 +106,12 @@ export function SalesDetailModal({
                 <DialogTitle className='text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight'>
                   Detalle de Venta
                 </DialogTitle>
-                <div className='flex items-center gap-2 text-sm text-gray-500 font-medium'>
-                  <Hash className='h-3.5 w-3.5' />
-                  {selectedVenta.codigo}
-                </div>
+                {selectedVenta.codigo && (
+                  <div className='flex items-center gap-2 text-sm text-gray-500 font-medium'>
+                    <Hash className='h-3.5 w-3.5' />
+                    {selectedVenta.codigo}
+                  </div>
+                )}
               </div>
             </div>
             <Badge
@@ -103,121 +130,120 @@ export function SalesDetailModal({
                 ${formatCurrency(selectedVenta.total)}
               </p>
             </div>
-            <div>
-              <p className='flex items-center gap-2 text-xs text-muted-foreground'>
-                <CreditCard className='h-4 w-4' />
-                Método de pago
-              </p>
-              <p className='mt-2 text-sm font-semibold capitalize'>{metodoPagoLabel}</p>
-            </div>
-            <div>
-              <p className='text-xs text-muted-foreground'>Propina</p>
-              <p className='mt-2 text-sm font-semibold tabular-nums'>
-                ${formatCurrency(selectedVenta.propina)}
-              </p>
-            </div>
-          </div>
-
-          <div className='grid grid-cols-1 gap-x-6 gap-y-5 border-b pb-6 sm:grid-cols-2 lg:grid-cols-3'>
-            <div className='flex items-center gap-3'>
-              <Clock className='w-4 h-4 text-gray-400 shrink-0' />
+            {selectedVenta.metodo_pago && (
               <div>
-                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                  Fecha
-                </span>
-                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                  {formatFecha(selectedVenta.fecha_crea)}
-                </span>
-              </div>
-            </div>
-
-            <div className='flex items-center gap-3'>
-              <Home className='w-4 h-4 text-indigo-500 shrink-0' />
-              <div>
-                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                  Habitación
-                </span>
-                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                  {selectedVenta.habitacion_numero ||
-                    selectedVenta.habitacion_nombre ||
-                    'Sin habitación'}
-                  {selectedVenta.tiempo ? ` · ${selectedVenta.tiempo} min` : ''}
-                </span>
-              </div>
-            </div>
-
-            <div className='flex items-center gap-3'>
-              <User className='w-4 h-4 text-blue-500 shrink-0' />
-              <div>
-                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                  Cliente
-                </span>
-                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                  {selectedVenta.cliente_nombre?.toLowerCase() === 'sin cliente' ||
-                  !selectedVenta.cliente_nombre
-                    ? 'Cliente sin registrar'
-                    : selectedVenta.cliente_nombre}
-                </span>
-              </div>
-            </div>
-
-            <div className='flex items-center gap-3'>
-              <User className='w-4 h-4 text-green-500 shrink-0' />
-              <div>
-                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                  Vendido por
-                </span>
-                <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                  {[selectedVenta.cajero_nombre, selectedVenta.cajero_apellido]
-                    .filter(Boolean)
-                    .join(' ') ||
-                    selectedVenta.cajero_nick ||
-                    '—'}
-                  {selectedVenta.cajero_nick ? ` (@${selectedVenta.cajero_nick})` : ''}
-                </span>
-              </div>
-            </div>
-
-            {selectedVenta.pedido_id && (
-              <div className='flex items-center gap-3'>
-                <Receipt className='w-4 h-4 text-amber-500 shrink-0' />
-                <div>
-                  <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                    Pedido por
-                  </span>
-                  <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
-                    {selectedVenta.garzon_nombre || selectedVenta.garzon_nick || '—'}
-                    {selectedVenta.garzon_nick ? ` (@${selectedVenta.garzon_nick})` : ''}
-                  </span>
-                </div>
+                <p className='flex items-center gap-2 text-xs text-muted-foreground'>
+                  <CreditCard className='h-4 w-4' />
+                  Método de pago
+                </p>
+                <p className='mt-2 text-sm font-semibold capitalize'>{metodoPagoLabel}</p>
               </div>
             )}
-
-            <div className='flex items-start gap-3'>
-              <Users className='w-4 h-4 text-purple-500 shrink-0 mt-1' />
-              <div className='flex-1'>
-                <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
-                  Anfitrionas
-                </span>
-                <div className='flex flex-wrap gap-1.5 mt-1'>
-                  {hostesses.length > 0 ? (
-                    hostesses.map((nick, idx) => (
-                      <Badge
-                        key={idx}
-                        className={`rounded-full px-3 py-1 border-none font-bold text-[10px] uppercase tracking-tighter ${anfitrionaColors[idx % anfitrionaColors.length]}`}
-                      >
-                        {nick}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className='text-xs text-gray-400 dark:text-gray-500 italic'>
-                      Sin anfitrionas
-                    </span>
-                  )}
-                </div>
+            {Number(selectedVenta.propina) > 0 && (
+              <div>
+                <p className='text-xs text-muted-foreground'>Propina</p>
+                <p className='mt-2 text-sm font-semibold tabular-nums'>
+                  ${formatCurrency(selectedVenta.propina)}
+                </p>
               </div>
-            </div>
+            )}
           </div>
+
+          {hasMetadata && (
+            <div className='grid grid-cols-1 gap-x-6 gap-y-5 border-b pb-6 sm:grid-cols-2 lg:grid-cols-3'>
+              {fechaDisponible && (
+                <div className='flex items-center gap-3'>
+                  <Clock className='w-4 h-4 text-gray-400 shrink-0' />
+                  <div>
+                    <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                      Fecha
+                    </span>
+                    <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                      {fechaFormateada}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {habitacion && (
+                <div className='flex items-center gap-3'>
+                  <Home className='w-4 h-4 text-indigo-500 shrink-0' />
+                  <div>
+                    <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                      Habitación
+                    </span>
+                    <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                      {habitacion}
+                      {selectedVenta.tiempo ? ` · ${selectedVenta.tiempo} min` : ''}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {clienteDisponible && (
+                <div className='flex items-center gap-3'>
+                  <User className='w-4 h-4 text-blue-500 shrink-0' />
+                  <div>
+                    <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                      Cliente
+                    </span>
+                    <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                      {selectedVenta.cliente_nombre}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {cajero && (
+                <div className='flex items-center gap-3'>
+                  <User className='w-4 h-4 text-green-500 shrink-0' />
+                  <div>
+                    <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                      Vendido por
+                    </span>
+                    <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                      {cajero}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {selectedVenta.pedido_id && pedidoPor && (
+                <div className='flex items-center gap-3'>
+                  <Receipt className='w-4 h-4 text-amber-500 shrink-0' />
+                  <div>
+                    <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                      Pedido por
+                    </span>
+                    <span className='text-sm font-medium text-gray-900 dark:text-neutral-100'>
+                      {pedidoPor}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {hostesses.length > 0 && (
+                <div className='flex items-start gap-3'>
+                  <Users className='w-4 h-4 text-purple-500 shrink-0 mt-1' />
+                  <div className='flex-1'>
+                    <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
+                      Anfitrionas
+                    </span>
+                    <div className='flex flex-wrap gap-1.5 mt-1'>
+                      {hostesses.map((nick, idx) => (
+                        <Badge
+                          key={idx}
+                          className={`rounded-full px-3 py-1 border-none font-bold text-[10px] uppercase tracking-tighter ${anfitrionaColors[idx % anfitrionaColors.length]}`}
+                        >
+                          {nick}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <div className='flex items-center gap-2 mb-3'>
@@ -300,17 +326,21 @@ export function SalesDetailModal({
               </div>
             </section>
           )}
-          <SalesDistribution
-            flat
-            title='Distribución de comisión entre anfitrionas'
-            rows={selectedVenta.comisiones_detalle ?? []}
-            defaultRole='Anfitriona'
-          />
-          <SalesDistribution
-            flat
-            title='Distribución de propina entre garzones, cajeros y barman'
-            rows={selectedVenta.propinas_detalle ?? []}
-          />
+          {!!selectedVenta.comisiones_detalle?.length && (
+            <SalesDistribution
+              flat
+              title='Distribución de comisión entre anfitrionas'
+              rows={selectedVenta.comisiones_detalle}
+              defaultRole='Anfitriona'
+            />
+          )}
+          {!!selectedVenta.propinas_detalle?.length && (
+            <SalesDistribution
+              flat
+              title='Distribución de propina entre garzones, cajeros y barman'
+              rows={selectedVenta.propinas_detalle}
+            />
+          )}
         </div>
 
         <DialogFooter className='px-8 py-4 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center sm:justify-center'>

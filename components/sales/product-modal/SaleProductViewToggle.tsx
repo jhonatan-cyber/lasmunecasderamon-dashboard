@@ -22,12 +22,12 @@ export function SaleProductViewToggle({
       variant='default'
       size='sm'
       aria-label='Vista de productos'
-      className='justify-start gap-4'
+      className='shrink-0 justify-start gap-2'
     >
       <ToggleGroupItem
         value='table'
         aria-label='Ver como tabla'
-        className='rounded-none px-1 text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:bg-transparent data-[state=on]:text-foreground data-[state=on]:underline data-[state=on]:decoration-2 data-[state=on]:underline-offset-[6px]'
+        className='h-10 rounded-full border border-input bg-background px-4 text-foreground transition-all duration-200 hover:scale-105 hover:bg-accent data-[state=on]:border-black data-[state=on]:bg-black data-[state=on]:text-white data-[state=on]:hover:bg-black/80 dark:data-[state=on]:border-white dark:data-[state=on]:bg-white dark:data-[state=on]:text-black dark:data-[state=on]:hover:bg-white/90'
       >
         <List className='size-4' aria-hidden='true' />
         Tabla
@@ -35,7 +35,7 @@ export function SaleProductViewToggle({
       <ToggleGroupItem
         value='cards'
         aria-label='Ver como tarjetas'
-        className='rounded-none px-1 text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:bg-transparent data-[state=on]:text-foreground data-[state=on]:underline data-[state=on]:decoration-2 data-[state=on]:underline-offset-[6px]'
+        className='h-10 rounded-full border border-input bg-background px-4 text-foreground transition-all duration-200 hover:scale-105 hover:bg-accent data-[state=on]:border-black data-[state=on]:bg-black data-[state=on]:text-white data-[state=on]:hover:bg-black/80 dark:data-[state=on]:border-white dark:data-[state=on]:bg-white dark:data-[state=on]:text-black dark:data-[state=on]:hover:bg-white/90'
       >
         <LayoutGrid className='size-4' aria-hidden='true' />
         Tarjetas

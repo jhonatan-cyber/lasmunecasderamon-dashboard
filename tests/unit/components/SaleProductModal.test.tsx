@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   Harness,
@@ -109,6 +109,7 @@ it('vende botella sin anfitriona al precio adicional con las bebidas configurada
   expect(add).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({
       tipo_venta: 'botella',
+      botella_anfitriona: false,
       cantidad: 2,
       precio: 35000,
       comision: 0,
@@ -282,7 +283,10 @@ it('muestra las unidades en carrito junto a los contadores independientes de for
   );
 
   // La cantidad en carrito es un total del producto, independiente del formato.
-  expect(screen.getByText('En carrito · 2')).toBeInTheDocument();
+  expect(screen.getByText('En carrito')).toBeInTheDocument();
+  const cartCount = screen.getByText('2');
+  expect(cartCount).toHaveClass('rounded-full');
+  expect(cartCount.parentElement).toHaveClass('whitespace-nowrap');
 
   expect(screen.getByText('Corto cliente · 50 ml y 1 unidad de bebida')).toBeInTheDocument();
 });
@@ -344,3 +348,124 @@ it.each([
     );
   }
 );
+
+it('excluye del corto anfitriona bebidas que no están habilitadas para ese uso', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: [
+          {
+            id: 'disabled-mixer',
+            producto_nombre: 'Bebida deshabilitada',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [
+              {
+                tipo: 'botella',
+                precio: 2000,
+                comision: 0,
+                cover_habilitado: false,
+                corto_anfitriona_habilitado: false
+              }
+            ]
+          },
+          {
+            id: 'enabled-mixer',
+            producto_nombre: 'Bebida habilitada',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [
+              {
+                tipo: 'botella',
+                precio: 2000,
+                comision: 0,
+                cover_habilitado: true,
+                corto_anfitriona_habilitado: true
+              }
+            ]
+          }
+        ]
+      })
+    })
+  );
+  render(
+    <Harness
+      productos={[
+        {
+          ...product,
+          opciones_venta: [
+            {
+              tipo: 'shot',
+              precio: 1000,
+              comision: 0,
+              precio_anfitriona: 800,
+              ml_acompanamiento_anfitriona: 150
+            }
+          ]
+        }
+      ]}
+      onAdd={vi.fn()}
+    />
+  );
+
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Corto anfitriona · 50 ml: aumentar cantidad' })
+  );
+  const mixer = await screen.findByRole('combobox', {
+    name: /Corto anfitriona/
+  });
+  await waitFor(() => expect(mixer).toBeEnabled());
+  fireEvent.click(mixer);
+
+  expect(await screen.findByRole('option', { name: /Bebida habilitada/ })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /Bebida deshabilitada/ })).not.toBeInTheDocument();
+});
+
+it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: [
+          {
+            id: 'cover-disabled',
+            producto_nombre: 'Sin cover',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [{ tipo: 'botella', cover_habilitado: false }]
+          },
+          {
+            id: 'cover-enabled',
+            producto_nombre: 'Con cover',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [{ tipo: 'botella', cover_habilitado: true }]
+          }
+        ]
+      })
+    })
+  );
+  render(
+    <Harness
+      productos={[
+        {
+          ...product,
+          opciones_venta: [{ tipo: 'shot', precio: 1000, comision: 0 }]
+        }
+      ]}
+      onAdd={vi.fn()}
+    />
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: /Corto.*aumentar cantidad/ }));
+  const mixer = await screen.findByRole('combobox', { name: /Corto/ });
+  fireEvent.click(mixer);
+
+  expect(await screen.findByRole('option', { name: /Con cover/ })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /Sin cover/ })).not.toBeInTheDocument();
+});

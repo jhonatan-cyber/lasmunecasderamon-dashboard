@@ -27,6 +27,9 @@ export function SalesProductDetail({
       : null;
   const perUnit = Number(mixer?.ml_por_corto ?? mixer?.unidades ?? 0);
   const unit = mixer?.ml_por_corto !== undefined ? 'ml' : 'unidades';
+  const anfitrionas = detail.anfitrionas?.filter(Boolean) ?? [];
+  const categoria = detail.categoria_nombre?.trim();
+  const presentacion = detail.presentacion_nombre?.trim();
   return (
     <div className='grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_auto]'>
       <div className='flex items-start gap-3'>
@@ -36,26 +39,32 @@ export function SalesProductDetail({
           large={false}
         />
         <div className='min-w-0 space-y-1 text-sm'>
-          <p className='text-xs text-muted-foreground'>{detail.categoria_nombre}</p>
+          {categoria && <p className='text-xs text-muted-foreground'>{categoria}</p>}
           <p className='font-semibold'>
             {detail.producto_nombre || detail.producto_etiqueta || 'Producto'}
           </p>
-          <p className='text-xs text-muted-foreground'>{detail.presentacion_nombre}</p>
+          {presentacion && <p className='text-xs text-muted-foreground'>{presentacion}</p>}
           <p className='text-xs font-medium'>
             {etiquetaVentaDetalle(detail)} · {detail.cantidad} unidades
           </p>
           {consumoProducto && (
             <p className='text-xs text-muted-foreground'>Consumo previsto: {consumoProducto}</p>
           )}
-          <p className='text-xs text-muted-foreground'>
-            Precio por unidad: {formatCurrencyNoDecimals(detail.precio)}
-          </p>
-          <p className='text-xs text-muted-foreground'>
-            Comisión total: {formatCurrencyNoDecimals(detail.comision)}
-          </p>
-          <p className='text-xs'>
-            Anfitrionas: {detail.anfitrionas?.join(', ') || 'Sin asignación'}
-          </p>
+          {detail.precio !== null &&
+            detail.precio !== undefined &&
+            Number.isFinite(Number(detail.precio)) && (
+              <p className='text-xs text-muted-foreground'>
+                Precio por unidad: {formatCurrencyNoDecimals(detail.precio)}
+              </p>
+            )}
+          {Number(detail.comision) > 0 && (
+            <p className='text-xs text-muted-foreground'>
+              Comisión total: {formatCurrencyNoDecimals(detail.comision)}
+            </p>
+          )}
+          {anfitrionas.length > 0 && (
+            <p className='text-xs'>Anfitrionas: {anfitrionas.join(', ')}</p>
+          )}
         </div>
       </div>
       {(mixer || sabores.length > 0) && (

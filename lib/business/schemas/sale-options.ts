@@ -10,6 +10,7 @@ export const SaleOptionsSchema = z
         colacion_habilitada: z.boolean().optional(),
         cover_habilitado: z.boolean().optional(),
         en_venta: z.boolean().optional(),
+        corto_anfitriona_habilitado: z.boolean().optional(),
         ml_colacion: z.number().int().min(1).max(10000).optional(),
         acompanamiento_colacion: z
           .object({
@@ -81,6 +82,10 @@ export const SaleOptionsSchema = z
       .refine(
         option => option.tipo === 'botella' || option.en_venta === undefined,
         'Poner a la venta solo corresponde a bebidas por botella'
+      )
+      .refine(
+        option => option.tipo === 'botella' || option.corto_anfitriona_habilitado === undefined,
+        'La disponibilidad para corto anfitriona solo corresponde a bebidas por botella'
       )
       .refine(
         option => option.tipo === 'botella' || option.ml_colacion === undefined,

@@ -1,8 +1,7 @@
 'use client';
 
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { SaleProductPhoto } from './SaleProductPhoto';
+import { SaleProductCollapseButton } from './SaleProductCollapseButton';
 import type { SaleProductItem } from './saleProductItems';
 
 export function SaleProductSummary({
@@ -29,16 +28,7 @@ export function SaleProductSummary({
           <p className='text-xs text-muted-foreground'>{product.presentacion_nombre}</p>
         )}
       </div>
-      <Button
-        type='button'
-        size='icon'
-        variant='ghost'
-        aria-expanded={!collapsed}
-        aria-label={`${collapsed ? 'Mostrar' : 'Ocultar'} detalles de ${item.name}`}
-        onClick={onToggle}
-      >
-        {collapsed ? <ChevronDown className='size-4' /> : <ChevronUp className='size-4' />}
-      </Button>
+      <SaleProductCollapseButton productName={item.name} collapsed={collapsed} onClick={onToggle} />
     </div>
   );
 }

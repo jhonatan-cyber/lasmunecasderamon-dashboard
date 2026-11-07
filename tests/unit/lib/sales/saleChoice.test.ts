@@ -85,7 +85,15 @@ describe('resolverVentaProducto', () => {
   it('oculta todas las opciones cuando la botella está fuera de venta y no tiene alternativa', () => {
     const fueraDeVenta = resolverVentaProducto({
       stock_bar: 10,
-      opciones_venta: [{ tipo: 'botella', precio: 15000, comision: 0, en_venta: false }]
+      opciones_venta: [
+        {
+          tipo: 'botella',
+          precio: 15000,
+          comision: 0,
+          precio_sin_anfitriona: 10000,
+          en_venta: false
+        }
+      ]
     });
 
     expect(fueraDeVenta.opciones).toEqual([]);

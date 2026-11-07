@@ -20,7 +20,7 @@ export function OrderProducts({ detail, propina, recargoAnfitrionas }: OrderProd
     0
   );
   return (
-    <div className='overflow-hidden rounded-2xl border bg-background shadow-sm'>
+    <div className='space-y-4'>
       <div className='divide-y'>
         {detail.map((item, index) => {
           const line = orderLineToSaleDetail(item);

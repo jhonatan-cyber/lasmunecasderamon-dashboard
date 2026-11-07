@@ -18,29 +18,43 @@ export interface SaleFormatQuantityOption {
 export function SaleFormatQuantities({
   options,
   onChange,
-  dense = false
+  dense = false,
+  compact = false,
+  hideLabel = false
 }: {
   options: SaleFormatQuantityOption[];
   onChange: (value: SaleChoice, cantidad: number) => void;
   dense?: boolean;
+  compact?: boolean;
+  hideLabel?: boolean;
 }) {
   return (
-    <div className='mt-2 space-y-1.5'>
+    <div className={compact ? 'space-y-1.5' : 'mt-2 space-y-1.5'}>
       {options.map(option => {
         const sinStock = option.maxCantidad < 1;
         const alMaximo = option.cantidad >= option.maxCantidad;
         return (
           <div
             key={option.value}
-            className={`flex items-center justify-between gap-2 rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950 ${dense ? 'h-14 min-h-14 py-2' : 'py-2'}`}
+            className={`flex items-center justify-between gap-2 ${
+              compact
+                ? 'min-h-12 border-0 bg-transparent px-0 py-1 dark:bg-transparent'
+                : 'rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950'
+            } ${dense && !compact ? 'h-14 min-h-14 py-2' : ''} ${!dense && !compact ? 'py-2' : ''}`}
           >
             <div className='min-w-0 flex-1'>
-              <p className='text-xs font-bold leading-tight'>
-                {option.displayLabel ?? option.label}
-              </p>
-              <p className='text-xs text-muted-foreground'>
-                {formatCurrencyNoDecimals(option.precio)} · comisión{' '}
-                {formatCurrencyNoDecimals(option.comision)}
+              {!hideLabel && (
+                <p className='text-xs font-bold leading-tight'>
+                  {option.displayLabel ?? option.label}
+                </p>
+              )}
+              <p
+                className={
+                  compact ? 'text-sm font-bold tabular-nums' : 'text-xs text-muted-foreground'
+                }
+              >
+                {formatCurrencyNoDecimals(option.precio)}
+                {!compact && <> · comisión {formatCurrencyNoDecimals(option.comision)}</>}
               </p>
             </div>
             <div className='flex shrink-0 items-center gap-1.5'>

@@ -5,6 +5,14 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 const configValues = vi.hoisted(() => new Map<string, string>());
 const createVentaMock = vi.hoisted(() => vi.fn());
 const imprimirMock = vi.hoisted(() => vi.fn());
+const openSaleReceiptMock = vi.hoisted(() => vi.fn(() => null));
+const printSaleReceiptMock = vi.hoisted(() => vi.fn());
+const closeSaleReceiptMock = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/utils/printSaleReceipt', () => ({
+  openSaleReceiptWindow: openSaleReceiptMock,
+  printSaleReceipt: printSaleReceiptMock,
+  closeSaleReceiptWindow: closeSaleReceiptMock
+}));
 vi.mock('@/components/shared/printComprobantePrepago', () => ({
   imprimirComprobantesPrepago: imprimirMock
 }));

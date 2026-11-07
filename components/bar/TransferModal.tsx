@@ -65,6 +65,7 @@ export function TransferModal({
   const esAnalcoholica = esBebidaAnalcoholica(item?.categoria_nombre);
   const esCig = esCigarrillos(item?.categoria_nombre);
   const esVentaSimple = esAnalcoholica || esCig;
+  const ventaDeshabilitada = esAnalcoholica && !form.enVenta;
   const mostrarMlAcompanamiento = !esVentaSimple;
   const guardarBotella = form.usarConfigGuardada
     ? form.opcionesGuardadas.some(option => option.tipo === 'botella')
@@ -72,7 +73,9 @@ export function TransferModal({
 
   const unidades = Number(form.cantidad.replace(/\./g, '')) || 0;
   const precioBotella = form.usarConfigGuardada
-    ? Number(form.opcionesGuardadas.find(option => option.tipo === 'botella')?.precio ?? 0)
+    ? ventaDeshabilitada
+      ? 0
+      : Number(form.opcionesGuardadas.find(option => option.tipo === 'botella')?.precio ?? 0)
     : form.venderConAnfitriona
       ? Number(form.precioVenta.replace(/\./g, '')) || 0
       : 0;
@@ -172,7 +175,7 @@ export function TransferModal({
                         Usar todo
                       </Button>
                     </div>
-                    {form.tieneConfig && !form.usarConfigGuardada && (
+                    {form.tieneConfig && !form.usarConfigGuardada && !ventaDeshabilitada && (
                       <Button
                         type='button'
                         variant='outline'
@@ -185,156 +188,204 @@ export function TransferModal({
                     )}
                   </div>
                 </section>
-                <section className='min-w-0 space-y-4'>
-                  <h2 className='text-sm font-semibold'>Configuración de venta</h2>
+                <section aria-label='Configuración de venta' className='min-w-0 space-y-4'>
+                  {!ventaDeshabilitada && (
+                    <>
+                      {!esAnalcoholica && (
+                        <h2 className='text-sm font-semibold'>Configuración de venta</h2>
+                      )}
 
-                  {form.usarConfigGuardada ? (
-                    <SavedConfigPanel
-                      esCigarrillos={esCig}
-                      mostrarBebidasIncluidas={!esVentaSimple}
-                      mostrarAnfitrionas={!esVentaSimple}
-                      mostrarCortos={!esVentaSimple}
-                      maxAnfitrionas={form.maxAnfitrionas}
-                      onMaxAnfitrionasChange={form.setMaxAnfitrionas}
-                      bottleExtras={
-                        <BottleExtras
-                          commission={form.comision}
-                          checked={form.acompanamientoBotella !== 'ninguno'}
-                          onAccompaniment={checked => {
-                            form.setAcompanamientoBotella(checked ? 'gaseosa' : 'ninguno');
-                            form.setEditarPrecios(true);
-                          }}
-                          units={form.unidadesAcompanamiento}
-                          onUnits={value => {
-                            form.setUnidadesAcompanamiento(value);
-                            form.setEditarPrecios(true);
-                          }}
-                          disabled={saving}
+                      {form.usarConfigGuardada ? (
+                        <SavedConfigPanel
+                          esCigarrillos={esCig}
+                          ocultarTitulosVenta={esAnalcoholica}
+                          mostrarBebidasIncluidas={!esVentaSimple}
+                          mostrarAnfitrionas={!esVentaSimple}
+                          mostrarCortos={!esVentaSimple}
+                          maxAnfitrionas={form.maxAnfitrionas}
+                          onMaxAnfitrionasChange={form.setMaxAnfitrionas}
+                          bottleExtras={
+                            <BottleExtras
+                              commission={form.comision}
+                              checked={form.acompanamientoBotella !== 'ninguno'}
+                              onAccompaniment={checked => {
+                                form.setAcompanamientoBotella(checked ? 'gaseosa' : 'ninguno');
+                                form.setEditarPrecios(true);
+                              }}
+                              units={form.unidadesAcompanamiento}
+                              onUnits={value => {
+                                form.setUnidadesAcompanamiento(value);
+                                form.setEditarPrecios(true);
+                              }}
+                              disabled={saving}
+                            />
+                          }
+                          colacionHabilitada={form.colacionHabilitada}
+                          bottleTiers={
+                            Number(form.comision.replace(/\./g, '')) > 0 &&
+                            Number(form.maxAnfitrionas || 1) >= 2 ? (
+                              <ChampagneTiersEditor
+                                tiers={form.tiers}
+                                saving={saving}
+                                onTierChange={handleTierChange}
+                              />
+                            ) : null
+                          }
+                          opciones={form.opcionesGuardadas}
+                          esChampagne={false}
+                          tiers={form.tiers}
+                          saving={saving}
+                          shotMl={form.shotMl}
+                          mlShotCliente={form.mlShotCliente}
+                          mlShotAnfitriona={form.mlShotAnfitriona}
+                          onMlShotClienteChange={form.setMlShotCliente}
+                          onMlShotAnfitrionaChange={form.setMlShotAnfitriona}
+                          onEditPrices={() => form.setEditarPrecios(true)}
                         />
-                      }
-                      colacionHabilitada={form.colacionHabilitada}
-                      bottleTiers={
-                        Number(form.comision.replace(/\./g, '')) > 0 &&
-                        Number(form.maxAnfitrionas || 1) >= 2 ? (
-                          <ChampagneTiersEditor
-                            tiers={form.tiers}
-                            saving={saving}
-                            onTierChange={handleTierChange}
-                          />
-                        ) : null
-                      }
-                      opciones={form.opcionesGuardadas}
-                      esChampagne={false}
-                      tiers={form.tiers}
-                      saving={saving}
-                      shotMl={form.shotMl}
-                      mlShotCliente={form.mlShotCliente}
-                      mlShotAnfitriona={form.mlShotAnfitriona}
-                      onMlShotClienteChange={form.setMlShotCliente}
-                      onMlShotAnfitrionaChange={form.setMlShotAnfitriona}
-                      onEditPrices={() => form.setEditarPrecios(true)}
-                    />
-                  ) : (
-                    <SaleTypeEditor
-                      esCigarrillos={esCig}
-                      mostrarBebidasIncluidas={!esVentaSimple}
-                      mostrarAnfitrionas={!esVentaSimple}
-                      mostrarCortos={!esVentaSimple}
-                      enVenta={form.enVenta}
-                      onEnVentaChange={form.setEnVenta}
-                      venderConAnfitriona={form.venderConAnfitriona}
-                      onVenderConAnfitrionaChange={form.setVenderConAnfitriona}
-                      mlAcompanamientoAnfitriona={form.mlAcompanamientoAnfitriona}
-                      onMlAcompanamientoAnfitrionaChange={form.setMlAcompanamientoAnfitriona}
-                      acompanamientoCliente={form.acompanamientoCliente}
-                      onAcompanamientoClienteChange={form.setAcompanamientoCliente}
-
-                      maxAnfitrionas={form.maxAnfitrionas}
-                      onMaxAnfitrionasChange={form.setMaxAnfitrionas}
-                      colacionHabilitada={form.colacionHabilitada}
-                      acompanamientoBotella={form.acompanamientoBotella}
-                      unidadesAcompanamiento={form.unidadesAcompanamiento}
-                      onAcompanamientoBotellaChange={form.setAcompanamientoBotella}
-                      onUnidadesAcompanamientoChange={form.setUnidadesAcompanamiento}
-                      tipos={form.tipos}
-                      etiquetaShot={form.etiquetaShot}
-                      precioSinAnfitriona={form.precioSinAnfitriona}
-                      onPrecioSinAnfitrionaChange={form.setPrecioSinAnfitriona}
-                      precioVenta={form.precioVenta}
-                      comision={form.comision}
-                      precioShot={form.precioShot}
-                      precioShotAnfitriona={form.precioShotAnfitriona}
-                      comisionShot={form.comisionShot}
-                      shotMl={form.shotMl}
-                      mlShotCliente={form.mlShotCliente}
-                      mlShotAnfitriona={form.mlShotAnfitriona}
-                      esChampagne={false}
-                      tiers={form.tiers}
-                      saving={saving}
-                      onTiposChange={form.setTipos}
-                      onPrecioVentaChange={form.setPrecioVenta}
-                      onComisionChange={form.setComision}
-                      onPrecioShotChange={form.setPrecioShot}
-                      onPrecioShotAnfitrionaChange={form.setPrecioShotAnfitriona}
-                      onComisionShotChange={form.setComisionShot}
-                      preciosAnfitrionaExtra={form.preciosAnfitrionaExtra}
-                      onPreciosAnfitrionaExtraChange={form.setPreciosAnfitrionaExtra}
-                      onMlShotClienteChange={form.setMlShotCliente}
-                      onMlShotAnfitrionaChange={form.setMlShotAnfitriona}
-                      onTierChange={handleTierChange}
-                    />
+                      ) : (
+                        <SaleTypeEditor
+                          esCigarrillos={esCig}
+                          ocultarTitulosVenta={esAnalcoholica}
+                          mostrarBebidasIncluidas={!esVentaSimple}
+                          mostrarAnfitrionas={!esVentaSimple}
+                          mostrarCortos={!esVentaSimple}
+                          enVenta={form.enVenta}
+                          onEnVentaChange={form.setEnVenta}
+                          venderConAnfitriona={form.venderConAnfitriona}
+                          onVenderConAnfitrionaChange={form.setVenderConAnfitriona}
+                          mlAcompanamientoAnfitriona={form.mlAcompanamientoAnfitriona}
+                          onMlAcompanamientoAnfitrionaChange={form.setMlAcompanamientoAnfitriona}
+                          acompanamientoCliente={form.acompanamientoCliente}
+                          onAcompanamientoClienteChange={form.setAcompanamientoCliente}
+                          maxAnfitrionas={form.maxAnfitrionas}
+                          onMaxAnfitrionasChange={form.setMaxAnfitrionas}
+                          colacionHabilitada={form.colacionHabilitada}
+                          acompanamientoBotella={form.acompanamientoBotella}
+                          unidadesAcompanamiento={form.unidadesAcompanamiento}
+                          onAcompanamientoBotellaChange={form.setAcompanamientoBotella}
+                          onUnidadesAcompanamientoChange={form.setUnidadesAcompanamiento}
+                          tipos={form.tipos}
+                          etiquetaShot={form.etiquetaShot}
+                          precioSinAnfitriona={form.precioSinAnfitriona}
+                          onPrecioSinAnfitrionaChange={form.setPrecioSinAnfitriona}
+                          precioVenta={form.precioVenta}
+                          comision={form.comision}
+                          precioShot={form.precioShot}
+                          precioShotAnfitriona={form.precioShotAnfitriona}
+                          comisionShot={form.comisionShot}
+                          shotMl={form.shotMl}
+                          mlShotCliente={form.mlShotCliente}
+                          mlShotAnfitriona={form.mlShotAnfitriona}
+                          esChampagne={false}
+                          tiers={form.tiers}
+                          saving={saving}
+                          onTiposChange={form.setTipos}
+                          onPrecioVentaChange={form.setPrecioVenta}
+                          onComisionChange={form.setComision}
+                          onPrecioShotChange={form.setPrecioShot}
+                          onPrecioShotAnfitrionaChange={form.setPrecioShotAnfitriona}
+                          onComisionShotChange={form.setComisionShot}
+                          preciosAnfitrionaExtra={form.preciosAnfitrionaExtra}
+                          onPreciosAnfitrionaExtraChange={form.setPreciosAnfitrionaExtra}
+                          onMlShotClienteChange={form.setMlShotCliente}
+                          onMlShotAnfitrionaChange={form.setMlShotAnfitriona}
+                          onTierChange={handleTierChange}
+                        />
+                      )}
+                    </>
                   )}
                   <div className='mt-5 flex flex-wrap items-start gap-x-8 gap-y-3 border-t pt-4'>
-                    {!esCig && guardarBotella && (
-                      <Label className='flex cursor-pointer items-start gap-2'>
-                        <Checkbox
-                          checked={form.colacionHabilitada}
-                          onCheckedChange={checked => form.setColacionHabilitada(checked === true)}
-                          disabled={saving}
-                          aria-label='Habilitar bebida para colación'
-                        />
-                        <span>
-                          <span className='block text-sm font-medium'>Habilitar colación</span>
-                          <span className='block text-xs text-muted-foreground'>
-                            Aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                    {esAnalcoholica ? (
+                      <section
+                        aria-label='Usos adicionales de la bebida'
+                        className='w-full rounded-xl border bg-muted/20 p-4'
+                      >
+                        <h3 className='text-sm font-semibold'>Habilitar para</h3>
+                        <div className='mt-3 grid gap-4 sm:grid-cols-2'>
+                          <Label className='flex cursor-pointer items-start gap-2'>
+                            <Checkbox
+                              checked={form.enVenta}
+                              onCheckedChange={checked => form.setEnVenta(checked === true)}
+                              disabled={saving}
+                              aria-label='Poner la bebida a la venta'
+                            />
+                            <span>
+                              <span className='block text-sm font-medium'>Venta</span>
+                              <span className='block text-xs text-muted-foreground'>
+                                Ofrece esta bebida en el catálogo.
+                              </span>
+                            </span>
+                          </Label>
+                          <Label className='flex cursor-pointer items-start gap-2'>
+                            <Checkbox
+                              checked={form.coverHabilitado}
+                              onCheckedChange={checked => form.setCoverHabilitado(checked === true)}
+                              disabled={saving}
+                              aria-label='Habilitar bebida para cover de clientes'
+                            />
+                            <span>
+                              <span className='block text-sm font-medium'>Cover cliente</span>
+                              <span className='block text-xs text-muted-foreground'>
+                                Aparecerá como opción al registrar entradas de clientes.
+                              </span>
+                            </span>
+                          </Label>
+                          {!esCig && guardarBotella && (
+                            <Label className='flex cursor-pointer items-start gap-2'>
+                              <Checkbox
+                                checked={form.colacionHabilitada}
+                                onCheckedChange={checked =>
+                                  form.setColacionHabilitada(checked === true)
+                                }
+                                disabled={saving}
+                                aria-label='Habilitar bebida para colación'
+                              />
+                              <span>
+                                <span className='block text-sm font-medium'>Colación</span>
+                                <span className='block text-xs text-muted-foreground'>
+                                  Aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                                </span>
+                              </span>
+                            </Label>
+                          )}
+                          <Label className='flex cursor-pointer items-start gap-2'>
+                            <Checkbox
+                              checked={form.cortoAnfitrionaHabilitado}
+                              onCheckedChange={checked =>
+                                form.setCortoAnfitrionaHabilitado(checked === true)
+                              }
+                              disabled={saving}
+                              aria-label='Habilitar bebida para corto anfitriona'
+                            />
+                            <span>
+                              <span className='block text-sm font-medium'>Corto anfitriona</span>
+                              <span className='block text-xs text-muted-foreground'>
+                                Permite usarla como acompañamiento en cortos para anfitrionas.
+                              </span>
+                            </span>
+                          </Label>
+                        </div>
+                      </section>
+                    ) : (
+                      !esCig &&
+                      guardarBotella && (
+                        <Label className='flex cursor-pointer items-start gap-2'>
+                          <Checkbox
+                            checked={form.colacionHabilitada}
+                            onCheckedChange={checked =>
+                              form.setColacionHabilitada(checked === true)
+                            }
+                            disabled={saving}
+                            aria-label='Habilitar bebida para colación'
+                          />
+                          <span>
+                            <span className='block text-sm font-medium'>Habilitar colación</span>
+                            <span className='block text-xs text-muted-foreground'>
+                              Aparecerá en el módulo Colaciones para cobrarla al trabajador.
+                            </span>
                           </span>
-                        </span>
-                      </Label>
-                    )}
-                    {esAnalcoholica && (
-                      <Label className='flex cursor-pointer items-start gap-2'>
-                        <Checkbox
-                          checked={form.enVenta}
-                          onCheckedChange={checked => form.setEnVenta(checked === true)}
-                          disabled={saving}
-                          aria-label='Poner la bebida a la venta'
-                        />
-                        <span>
-                          <span className='block text-sm font-medium'>A la venta</span>
-                          <span className='block text-xs text-muted-foreground'>
-                            Si la desactivas, la bebida no se ofrece en el catálogo de venta; solo
-                            se usa para cortos, covers o colación.
-                          </span>
-                        </span>
-                      </Label>
-                    )}
-                    {esAnalcoholica && (
-                      <Label className='flex cursor-pointer items-start gap-2'>
-                        <Checkbox
-                          checked={form.coverHabilitado}
-                          onCheckedChange={checked => form.setCoverHabilitado(checked === true)}
-                          disabled={saving}
-                          aria-label='Habilitar bebida para cover de clientes'
-                        />
-                        <span>
-                          <span className='block text-sm font-medium'>
-                            Habilitar cover para clientes
-                          </span>
-                          <span className='block text-xs text-muted-foreground'>
-                            Aparecerá como opción al registrar entradas de clientes.
-                          </span>
-                        </span>
-                      </Label>
+                        </Label>
+                      )
                     )}
                   </div>
                   {form.colacionHabilitada && guardarBotella && !esCig && (
@@ -372,10 +423,12 @@ export function TransferModal({
                             ? `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}`
                             : 'Sin unidades seleccionadas'}
                         </p>
-                        {precioBotella > 0 && <p>{formatCurrencyCLP(precioBotella)} c/u</p>}
+                        {(precioBotella > 0 || ventaDeshabilitada) && (
+                          <p>{formatCurrencyCLP(precioBotella)} c/u</p>
+                        )}
                         <p className='mt-1'>{`Quedarán ${stockBodegaFinal} en bodega · ${stockBarFinal} en el bar`}</p>
                       </div>
-                      {precioBotella > 0 && unidades > 0 && (
+                      {(precioBotella > 0 || ventaDeshabilitada) && unidades > 0 && (
                         <p className='text-xl font-bold tabular-nums' aria-live='polite'>
                           {formatCurrencyCLP(precioBotella * unidades)}
                         </p>
