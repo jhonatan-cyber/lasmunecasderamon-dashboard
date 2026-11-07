@@ -29,6 +29,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onColacionHabilitadaChange,
   coverHabilitado = false,
   onCoverHabilitadoChange,
+  cortoAnfitrionaHabilitado = true,
+  onCortoAnfitrionaHabilitadoChange,
   enVenta = true,
   onEnVentaChange,
   acompanamientoCliente = true,
@@ -36,6 +38,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   mostrarBebidasIncluidas = true,
   mostrarAnfitrionas = true,
   mostrarCortos = true,
+  ocultarTitulosVenta = false,
   venderConAnfitriona = true,
   onVenderConAnfitrionaChange,
   esCigarrillos = false,
@@ -77,6 +80,8 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   onColacionHabilitadaChange?: (value: boolean) => void;
   coverHabilitado?: boolean;
   onCoverHabilitadoChange?: (value: boolean) => void;
+  cortoAnfitrionaHabilitado?: boolean;
+  onCortoAnfitrionaHabilitadoChange?: (value: boolean) => void;
   enVenta?: boolean;
   onEnVentaChange?: (value: boolean) => void;
   acompanamientoCliente?: boolean;
@@ -84,6 +89,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
   mostrarBebidasIncluidas?: boolean;
   mostrarAnfitrionas?: boolean;
   mostrarCortos?: boolean;
+  ocultarTitulosVenta?: boolean;
   venderConAnfitriona?: boolean;
   onVenderConAnfitrionaChange?: (value: boolean) => void;
   esCigarrillos?: boolean;
@@ -159,13 +165,15 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
         )}
         {tipos.map(tipo => (
           <fieldset key={tipo} className='min-w-0 space-y-3'>
-            <legend className='px-1 text-sm font-semibold'>
-              {tipo === 'botella'
-                ? esCigarrillos
-                  ? 'Venta por cigarrillo'
-                  : 'Venta por botella'
-                : etiquetaShot}
-            </legend>
+            {!(tipo === 'botella' && ocultarTitulosVenta) && (
+              <legend className='px-1 text-sm font-semibold'>
+                {tipo === 'botella'
+                  ? esCigarrillos
+                    ? 'Venta por cigarrillo'
+                    : 'Venta por botella'
+                  : etiquetaShot}
+              </legend>
+            )}
             {tipo === 'shot' ? (
               <ShortSaleEditor
                 hideHelp={context === 'transfer'}
@@ -307,9 +315,11 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                   </div>
                 ) : (
                   <section aria-label='Botella sin anfitrionas' className={optionPanelClass}>
-                    <div>
-                      <h3 className={optionPanelHeadingClass}>Precio</h3>
-                    </div>
+                    {!ocultarTitulosVenta && (
+                      <div>
+                        <h3 className={optionPanelHeadingClass}>Precio</h3>
+                      </div>
+                    )}
                     {!onEnVentaChange || enVenta ? (
                       <div className='space-y-2'>
                         <Label htmlFor='price-botella' className='text-sm font-medium'>
@@ -327,9 +337,11 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                         />
                       </div>
                     ) : (
-                      <p className='text-xs text-muted-foreground'>
-                        Esta bebida está desactivada para la venta por botella.
-                      </p>
+                      !ocultarTitulosVenta && (
+                        <p className='text-xs text-muted-foreground'>
+                          Esta bebida está desactivada para la venta por botella.
+                        </p>
+                      )
                     )}
                   </section>
                 )}
@@ -378,9 +390,9 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                   </Label>
                 )}
                 {context === 'settings' && !mostrarAnfitrionas && !esCigarrillos && (
-                  <div className='flex flex-wrap items-start gap-x-8 gap-y-3'>
+                  <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                     {onEnVentaChange && (
-                      <Label className='flex cursor-pointer items-start gap-2'>
+                      <Label className='flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border bg-muted/20 p-3'>
                         <Checkbox
                           checked={enVenta}
                           onCheckedChange={checked => onEnVentaChange(checked === true)}
@@ -397,7 +409,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                       </Label>
                     )}
                     {onColacionHabilitadaChange && (
-                      <Label className='flex cursor-pointer items-start gap-2'>
+                      <Label className='flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border bg-muted/20 p-3'>
                         <Checkbox
                           checked={colacionHabilitada}
                           onCheckedChange={checked => onColacionHabilitadaChange(checked === true)}
@@ -413,7 +425,7 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                       </Label>
                     )}
                     {onCoverHabilitadoChange && (
-                      <Label className='flex cursor-pointer items-start gap-2'>
+                      <Label className='flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border bg-muted/20 p-3'>
                         <Checkbox
                           checked={coverHabilitado}
                           onCheckedChange={checked => onCoverHabilitadoChange(checked === true)}
@@ -426,6 +438,24 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                           </span>
                           <span className='block text-xs text-muted-foreground'>
                             Aparecerá como opción al registrar entradas de clientes.
+                          </span>
+                        </span>
+                      </Label>
+                    )}
+                    {onCortoAnfitrionaHabilitadoChange && (
+                      <Label className='flex min-w-0 cursor-pointer items-start gap-3 rounded-xl border bg-muted/20 p-3'>
+                        <Checkbox
+                          checked={cortoAnfitrionaHabilitado}
+                          onCheckedChange={checked =>
+                            onCortoAnfitrionaHabilitadoChange(checked === true)
+                          }
+                          disabled={saving}
+                          aria-label='Habilitar bebida para corto anfitriona'
+                        />
+                        <span>
+                          <span className='block text-sm font-medium'>Corto anfitriona</span>
+                          <span className='block text-xs text-muted-foreground'>
+                            Permite usarla como acompañamiento en cortos para anfitrionas.
                           </span>
                         </span>
                       </Label>

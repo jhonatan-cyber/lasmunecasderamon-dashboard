@@ -37,7 +37,8 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
   mostrarAnfitrionas = true,
   mostrarCortos = true,
   mostrarColacion = true,
-  esCigarrillos = false
+  esCigarrillos = false,
+  ocultarTitulosVenta = false
 }: {
   opciones: SaleOption[];
   esChampagne: boolean;
@@ -65,12 +66,13 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
   mostrarColacion?: boolean;
   /** La presentación se vende como cigarrillo (textos «de botella» → «de cigarrillo»). */
   esCigarrillos?: boolean;
+  ocultarTitulosVenta?: boolean;
 }) {
   const bottle = opciones.find(option => option.tipo === 'botella');
   const venderConAnfitriona = bottle?.vender_con_anfitriona ?? Number(bottle?.precio ?? 0) > 0;
   return (
     <div className='space-y-4'>
-      <p className='text-sm font-semibold'>Configuración guardada</p>
+      {!ocultarTitulosVenta && <p className='text-sm font-semibold'>Configuración guardada</p>}
       {bottle && (
         <>
           {mostrarAnfitrionas ? (
@@ -134,11 +136,13 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
             </div>
           ) : (
             <section aria-label='Botella sin anfitrionas' className={optionPanelClass}>
-              <h3 className={optionPanelHeadingClass}>Precio</h3>
+              {!ocultarTitulosVenta && <h3 className={optionPanelHeadingClass}>Precio</h3>}
               {bottle.en_venta === false ? (
-                <p className='text-xs text-muted-foreground'>
-                  Esta bebida está desactivada para la venta por botella.
-                </p>
+                !ocultarTitulosVenta && (
+                  <p className='text-xs text-muted-foreground'>
+                    Esta bebida está desactivada para la venta por botella.
+                  </p>
+                )
               ) : (
                 <dl className='space-y-3'>
                   <div>

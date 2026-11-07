@@ -34,6 +34,8 @@ export interface TransferForm {
   mlAcompanamientoColacionSugerido: number | null;
   coverHabilitado: boolean;
   setCoverHabilitado: (value: boolean) => void;
+  cortoAnfitrionaHabilitado: boolean;
+  setCortoAnfitrionaHabilitado: (value: boolean) => void;
   enVenta: boolean;
   setEnVenta: (value: boolean) => void;
   /** El corto al cliente incluye bebida analcohólica (solo cortos). */
@@ -101,6 +103,7 @@ export function useTransferForm({
   const [mlColacion, setMlColacion] = useState('');
   const [mlAcompanamientoColacion, setMlAcompanamientoColacion] = useState('');
   const [coverHabilitado, setCoverHabilitado] = useState(false);
+  const [cortoAnfitrionaHabilitado, setCortoAnfitrionaHabilitado] = useState(true);
   const [enVenta, setEnVenta] = useState(true);
   const [acompanamientoCliente, setAcompanamientoCliente] = useState(true);
   const [acompanamientoBotella, setAcompanamientoBotella] = useState<
@@ -178,6 +181,7 @@ export function useTransferForm({
           : ''
       );
       setCoverHabilitado(bottle?.cover_habilitado === true);
+      setCortoAnfitrionaHabilitado(bottle?.corto_anfitriona_habilitado !== false);
       setEnVenta(bottle?.en_venta !== false);
       setAcompanamientoBotella(
         (bottle?.acompanamiento?.unidades ?? 0) > 0
@@ -303,6 +307,7 @@ export function useTransferForm({
     setMlColacion('');
     setMlAcompanamientoColacion('');
     setCoverHabilitado(false);
+    setCortoAnfitrionaHabilitado(true);
     setEnVenta(true);
     setAcompanamientoCliente(true);
     setAcompanamientoBotella('ninguno');
@@ -353,6 +358,8 @@ export function useTransferForm({
     mlAcompanamientoColacionSugerido,
     coverHabilitado,
     setCoverHabilitado,
+    cortoAnfitrionaHabilitado,
+    setCortoAnfitrionaHabilitado,
     enVenta,
     setEnVenta,
     acompanamientoCliente,
