@@ -70,7 +70,14 @@ it('POST /sales rechaza con NO_CAJA_ABIERTA y no registra la venta sin caja', as
   try {
     await cerrarCajas();
     const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
-    const [product] = await query('SELECT id_producto FROM productos LIMIT 1');
+    const [product] = await query(
+      `SELECT p.id_producto
+         FROM productos p
+         LEFT JOIN categorias c ON c.id_categoria = p.categoria_id
+        WHERE LOWER(COALESCE(c.nombre, '')) NOT LIKE '%champ%'
+          AND LOWER(COALESCE(c.nombre, '')) NOT LIKE '%shamp%'
+        LIMIT 1`
+    );
     const [ventasAntes] = await query('SELECT COUNT(*) AS n FROM ventas');
 
     await expect(
@@ -90,7 +97,14 @@ it('POST /sales con caja abierta registra la venta y postula el saldo a la caja'
     await cerrarCajas();
     const idCaja = await abrirCaja();
     const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
-    const [product] = await query('SELECT id_producto FROM productos LIMIT 1');
+    const [product] = await query(
+      `SELECT p.id_producto
+         FROM productos p
+         LEFT JOIN categorias c ON c.id_categoria = p.categoria_id
+        WHERE LOWER(COALESCE(c.nombre, '')) NOT LIKE '%champ%'
+          AND LOWER(COALESCE(c.nombre, '')) NOT LIKE '%shamp%'
+        LIMIT 1`
+    );
 
     const sale = await SaleService.createSale(ventaBody(product.id_producto), user.id_usuario);
     const [stored] = await query('SELECT caja_id, total FROM ventas WHERE id_venta = ?', [sale.id]);
