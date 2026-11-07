@@ -6,6 +6,7 @@ export const SaleOptionsSchema = z
     z
       .object({
         tipo: z.enum(['botella', 'shot']),
+        vender_con_anfitriona: z.boolean().optional(),
         colacion_habilitada: z.boolean().optional(),
         cover_habilitado: z.boolean().optional(),
         en_venta: z.boolean().optional(),
@@ -68,6 +69,10 @@ export const SaleOptionsSchema = z
       .refine(
         option => option.tipo === 'botella' || option.colacion_habilitada === undefined,
         'La colación solo puede habilitarse para bebidas por botella'
+      )
+      .refine(
+        option => option.tipo === 'botella' || option.vender_con_anfitriona === undefined,
+        'Venta con anfitriona solo corresponde a botellas'
       )
       .refine(
         option => option.tipo === 'botella' || option.cover_habilitado === undefined,

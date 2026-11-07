@@ -77,6 +77,7 @@ export interface TransferForm {
   etiquetaShot: string;
   esChampagneItem: boolean;
   esAnalcoholicaItem: boolean;
+  esCigarrillosItem: boolean;
   /** Solo analcohólicas (sin cigarrillos): habilita el flag «a la venta». */
   esBebidaAnalcoholicaItem: boolean;
   opcionesGuardadas: SaleOption[];
@@ -134,15 +135,19 @@ export function useTransferForm({
   const etiquetaShot = etiquetaCorto(mlPorShot, mlPorShotAnfitriona);
 
   const esChampagneItem = esChampagne(item?.categoria_nombre);
+  const esCigarrillosItem = esCigarrillos(item?.categoria_nombre);
   const esBebidaAnalcoholicaItem = esBebidaAnalcoholica(item?.categoria_nombre);
-  const esAnalcoholicaItem = esBebidaAnalcoholicaItem || esCigarrillos(item?.categoria_nombre);
+  const esAnalcoholicaItem = esBebidaAnalcoholicaItem || esCigarrillosItem;
   const opcionesGuardadas: SaleOption[] = (
     parseSavedOptions(item?.opciones_venta) ?? [
       { tipo: 'botella', precio: item?.precio_venta ?? 0, comision: item?.comision ?? 0 }
     ]
   ).filter(option => !esAnalcoholicaItem || option.tipo === 'botella');
   const tieneConfig = opcionesGuardadas.some(
-    option => Number(option.precio ?? 0) > 0 || preciosCortoAnfitriona(option).length > 0
+    option =>
+      option.vender_con_anfitriona !== undefined ||
+      Number(option.precio ?? 0) > 0 ||
+      preciosCortoAnfitriona(option).length > 0
   );
 
   useEffect(() => {
@@ -209,7 +214,11 @@ export function useTransferForm({
       const botellaGuardada = parseSavedOptions(item.opciones_venta)?.find(
         option => option.tipo === 'botella'
       );
-      setVenderConAnfitriona(botellaGuardada ? Number(botellaGuardada.precio ?? 0) > 0 : true);
+      setVenderConAnfitriona(
+        botellaGuardada
+          ? (botellaGuardada.vender_con_anfitriona ?? Number(botellaGuardada.precio ?? 0) > 0)
+          : true
+      );
       setPrecioShot(shot && Number(shot.precio) > 0 ? formatNumber(String(shot.precio)) : '');
       setPrecioShotAnfitriona(
         preciosAnfitriona[0]?.precio != null
@@ -231,7 +240,10 @@ export function useTransferForm({
       );
       setEditarPrecios(
         !options.some(
-          option => Number(option.precio ?? 0) > 0 || preciosCortoAnfitriona(option).length > 0
+          option =>
+            option.vender_con_anfitriona !== undefined ||
+            Number(option.precio ?? 0) > 0 ||
+            preciosCortoAnfitriona(option).length > 0
         )
       );
       tiersEdited.current = false;
@@ -272,15 +284,16 @@ export function useTransferForm({
     )
       return;
     setTiersState(previous =>
-      Array.from(
-        { length: tierCount },
-        (_, index) =>
-          previous.find(row => row.anfitrionas === index + 1) ?? {
-            anfitrionas: index + 1,
-            precio: precioVenta || '0',
-            comision: comision || '0'
+      Array.from({ length: tierCount }, (_, index) => {
+        const anfitrionas = index + 1;
+        return (
+          previous.find(row => row.anfitrionas === anfitrionas) ?? {
+            anfitrionas,
+            precio: anfitrionas === 1 ? precioVenta || '' : '',
+            comision: anfitrionas === 1 ? comision || '' : ''
           }
-      )
+        );
+      })
     );
   }, [open, tierCount, tipos, comision, precioVenta, tiers.length]);
 
@@ -324,6 +337,7 @@ export function useTransferForm({
 
   return {
     esAnalcoholicaItem,
+    esCigarrillosItem,
     esBebidaAnalcoholicaItem,
     mlAcompanamientoAnfitriona,
     setMlAcompanamientoAnfitriona,

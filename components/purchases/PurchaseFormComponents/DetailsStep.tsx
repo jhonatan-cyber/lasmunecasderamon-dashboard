@@ -14,8 +14,11 @@ import {
 } from '@/components/ui/select';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { Line, formatMiles, toNumber } from './types';
+import { PurchaseCatalogItem } from './types';
+import { StockSummaryPanel } from './StockSummaryPanel';
 
 export function DetailsStep({
+  catalog,
   lines,
   setLines,
   total,
@@ -32,6 +35,7 @@ export function DetailsStep({
   removeItem,
   changeLineFechas
 }: {
+  catalog: PurchaseCatalogItem[];
   lines: Line[];
   setLines: React.Dispatch<React.SetStateAction<Line[]>>;
   total: number;
@@ -195,6 +199,9 @@ export function DetailsStep({
                 />
               </div>
             </div>
+            <StockSummaryPanel
+              resumen={catalog.find(item => item.id === line.presentacion_id)?.resumen_stock}
+            />
           </div>
         ))}
         <p className='text-right text-sm text-muted-foreground'>

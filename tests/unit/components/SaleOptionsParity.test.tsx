@@ -185,7 +185,7 @@ describe('paridad de la ficha de producto con la transferencia', () => {
 
     expect(campos).toEqual(
       expect.arrayContaining([
-        'Bebida analcohólica por botella',
+        'Incluir bebidas o acompañamiento',
         'Comisión',
         'Habilitar bebida para colación',
         'Máximo de anfitrionas',

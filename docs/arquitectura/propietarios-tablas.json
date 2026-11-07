@@ -40,9 +40,14 @@
     "ordenes_reposicion",
     "limpieza_articulos",
     "limpieza_movimientos",
-    "limpieza_stock"
+    "limpieza_stock",
+    "inventario_vencidos_retirados"
   ],
-  "entradas": ["entradas_clientes", "entradas_clientes_productos"],
+  "entradas": [
+    "entradas_clientes",
+    "entradas_clientes_productos",
+    "solicitudes_entrega_cortesias"
+  ],
   "operacion": [
     "cuentas",
     "cuentas_usuarios",

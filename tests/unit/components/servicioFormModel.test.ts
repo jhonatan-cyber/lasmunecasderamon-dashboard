@@ -2,8 +2,51 @@ import { describe, expect, it } from 'vitest';
 import {
   calcularDistribucionPrepago,
   buildServicioPayload,
+  calcularTotalesServicio,
   type ClienteConSaldo
 } from '@/components/private-rooms/new/servicioFormModel';
+
+describe('totales del servicio privado', () => {
+  it('cobra el servicio por anfitrionas y la habitacion por la cantidad mayor, con sesenta minutos duplicados', () => {
+    const result = calcularTotalesServicio({
+      precioServicio: 10_000,
+      cantidadAnfitrionas: 2,
+      cantidadClientes: 3,
+      selectedRoom: { tiempo: 60, comision_anfitriona: 0 },
+      precioHabitacion: 20_000,
+      metodoPago: 'efectivo',
+      pagosMixtos: [],
+      ivaRate: 0.19
+    });
+
+    expect(result).toEqual({
+      subTotal: 40_000,
+      iva: 0,
+      total: 160_000,
+      precioHabitacionActual: 120_000,
+      precioServicioActual: 40_000
+    });
+  });
+
+  it('habitacion con comision cobra una vez y usa el servicio solo como base de IVA', () => {
+    const result = calcularTotalesServicio({
+      precioServicio: 5_000,
+      cantidadAnfitrionas: 2,
+      cantidadClientes: 1,
+      selectedRoom: { tiempo: 30, comision_anfitriona: 15_000 },
+      precioHabitacion: 20_000,
+      metodoPago: 'tarjeta',
+      pagosMixtos: [],
+      ivaRate: 0.19
+    });
+
+    expect(result.precioHabitacionActual).toBe(20_000);
+    expect(result.precioServicioActual).toBe(10_000);
+    expect(result.subTotal).toBe(20_000);
+    expect(result.iva).toBe(5_000);
+    expect(result.total).toBe(35_000);
+  });
+});
 
 const cliente = (clienteId: string, saldo: number): ClienteConSaldo => ({
   clienteId,

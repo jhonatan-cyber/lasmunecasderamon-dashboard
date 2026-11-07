@@ -64,7 +64,9 @@ describe('PurchaseCodesPanel', () => {
     );
 
     expect(screen.getByText('Compra C-0001 registrada')).toBeInTheDocument();
-    expect(screen.getByText(/3 códigos generados, agrupados por producto/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/3 unidades recién ingresadas con sus códigos generados/)
+    ).toBeInTheDocument();
     // Un grupo por producto, cada código con su presentación.
     expect(screen.getByRole('region', { name: 'Ron Habana' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Coca Cola' })).toBeInTheDocument();

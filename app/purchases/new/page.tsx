@@ -50,7 +50,33 @@ export default function NewPurchasePage() {
           nombre: String(item.nombre ?? ''),
           foto: String(item.foto ?? 'default.png'),
           precio_compra: Number(item.precio_compra ?? 0),
-          stock: Number(item.stock ?? 0)
+          stock: Number(item.stock ?? 0),
+          resumen_stock: (() => {
+            const resumen = item.resumen_stock;
+            if (!resumen || typeof resumen !== 'object') return undefined;
+            const toGroup = (value: unknown) => {
+              if (!value || typeof value !== 'object') {
+                return { cantidad: 0, codigos: [] as string[] };
+              }
+              const group = value as { cantidad?: unknown; codigos?: unknown };
+              return {
+                cantidad: Number(group.cantidad ?? 0),
+                codigos: Array.isArray(group.codigos)
+                  ? group.codigos.map(codigo => String(codigo))
+                  : ([] as string[])
+              };
+            };
+            const typed = resumen as {
+              vencidas?: unknown;
+              por_vencer?: unknown;
+              buen_estado?: unknown;
+            };
+            return {
+              vencidas: toGroup(typed.vencidas),
+              por_vencer: toGroup(typed.por_vencer),
+              buen_estado: toGroup(typed.buen_estado)
+            };
+          })()
         }))
       );
     } catch {

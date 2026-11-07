@@ -117,3 +117,21 @@ it('conserva cero bebidas en configuración y no pide bebida al vender', () => {
   expect(parseOpcionesVenta(JSON.stringify(options))).toEqual(options);
   expect(resolverVentaProducto({ opciones_venta: options }).opciones[0].nombre).toBe('Botella');
 });
+
+it('no vuelve a activar anfitrionas al completar una botella deshabilitada', () => {
+  const options = [
+    {
+      tipo: 'botella' as const,
+      precio: 0,
+      comision: 0,
+      vender_con_anfitriona: false,
+      precio_sin_anfitriona: 10000
+    }
+  ];
+  const loaded = completarOpciones(JSON.stringify(options), [{ precio: 3000, comision: 500 }]);
+  expect(loaded?.[0]).toMatchObject({
+    precio: 0,
+    comision: 0,
+    vender_con_anfitriona: false
+  });
+});

@@ -59,6 +59,7 @@ export function useServicioForm() {
   const [tiempoHabitacion, setTiempoHabitacion] = useState(0);
   const [subTotal, setSubTotal] = useState(0);
   const [total, setTotal] = useState(0);
+  const [precioHabitacionActual, setPrecioHabitacionActual] = useState(0);
   const [pagosMixtos, setPagosMixtos] = useState<any[]>([]);
 
   const [prepagoDestino, setPrepagoDestino] = useState('');
@@ -111,7 +112,8 @@ export function useServicioForm() {
     const {
       subTotal: nuevoSubTotal,
       iva: nuevoIva,
-      total: nuevoTotal
+      total: nuevoTotal,
+      precioHabitacionActual: nuevoPrecioHabitacionActual
     } = calcularTotalesServicio({
       precioServicio: formData.precio_servicio,
       cantidadAnfitrionas: formData.usuarios.length,
@@ -124,6 +126,7 @@ export function useServicioForm() {
     });
     setSubTotal(nuevoSubTotal);
     setTotal(nuevoTotal);
+    setPrecioHabitacionActual(nuevoPrecioHabitacionActual);
     setFormData(prev => ({ ...prev, iva: nuevoIva }));
   }, [
     formData.precio_servicio,
@@ -216,10 +219,23 @@ export function useServicioForm() {
       toast.error('Ninguno de los clientes seleccionados tiene saldo disponible');
       return;
     }
+    if (formData.metodo_pago === 'mixto') {
+      if (pagosMixtos.length < 2) {
+        toast.error('Selecciona al menos 2 métodos de pago');
+        return;
+      }
+      const sumaPagos = pagosMixtos.reduce((sum, pago) => sum + Number(pago.monto || 0), 0);
+      if (Math.abs(sumaPagos - total) > 1) {
+        toast.error(
+          `La suma de los pagos (${sumaPagos.toLocaleString('es-CL')}) debe ser igual al total (${total.toLocaleString('es-CL')})`
+        );
+        return;
+      }
+    }
 
     const servicioData = buildServicioPayload({
       formData,
-      precioHabitacion,
+      precioHabitacion: precioHabitacionActual,
       subTotal,
       total,
       pagosMixtos,

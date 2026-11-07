@@ -43,10 +43,12 @@ export function UnitLabelSelector({
   const [confirmed, setConfirmed] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
-  const current = units.map(unit => ({
-    ...unit,
-    fecha_impresion: confirmed[unit.id] ?? unit.fecha_impresion
-  }));
+  const current = units
+    .filter(unit => !unit.estado || unit.estado === 'almacen')
+    .map(unit => ({
+      ...unit,
+      fecha_impresion: confirmed[unit.id] ?? unit.fecha_impresion
+    }));
   const visible = current.filter(
     unit =>
       status === 'all' || (status === 'printed' ? !!unit.fecha_impresion : !unit.fecha_impresion)

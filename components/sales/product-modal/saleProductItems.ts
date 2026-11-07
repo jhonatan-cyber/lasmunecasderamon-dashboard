@@ -246,7 +246,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           ? mixer.selected
           : [];
         const total = sabores.reduce((sum, sabor) => sum + (Number(sabor.unidades) || 0), 0);
-        if (total !== Number(mixer.unidades ?? 0)) return true;
+        if (total !== Number(mixer.unidades ?? 0) * mixer.cantidad) return true;
         return sabores.some(sabor => {
           const stock = Number(
             (sabor as { stock_bar?: number }).stock_bar ??
@@ -254,7 +254,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
                 ?.stock_bar ??
               0
           );
-          return Number(sabor.unidades) < 1 || stock < mixer.cantidad * Number(sabor.unidades);
+          return Number(sabor.unidades) < 1 || stock < Number(sabor.unidades);
         });
       }
       if (!mixer.selected || mixer.unidades === undefined) return false;
@@ -284,6 +284,23 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           !mixer.choices.some(choice => String(choice.id) === mixer.selected.presentacion_id))
     );
 
+  const normalizarAcompanamientoBotella = (
+    selected: AcompanamientoBotellaItem[] | undefined,
+    cantidadBotellas: number
+  ) => {
+    if (!Array.isArray(selected) || cantidadBotellas < 2) return selected;
+    const normalizado = selected.map(item => ({
+      ...item,
+      unidades: Math.floor((Number(item.unidades) || 0) / cantidadBotellas)
+    }));
+    const baseUnits = bottleMixerUnits(producto);
+    const asignado = normalizado.reduce((sum, item) => sum + (Number(item.unidades) || 0), 0);
+    if (normalizado.length > 0 && asignado !== baseUnits) {
+      normalizado[normalizado.length - 1].unidades += baseUnits - asignado;
+    }
+    return normalizado;
+  };
+
   const onAgregar = async () => {
     if (agregarDisabled) return;
     for (const opcion of opcionesTipo.filter(opcion => opcion.cantidad > 0)) {
@@ -300,7 +317,11 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
               )?.selected
             : undefined,
           acompanamiento_botella: esBotella(opcion.value)
-            ? mixers.find(m => m.value === opcion.value)?.selected
+            ? normalizarAcompanamientoBotella(
+                mixers.find(m => m.value === opcion.value)?.selected as
+                  AcompanamientoBotellaItem[] | undefined,
+                opcion.cantidad
+              )
             : undefined,
           unidades_acompanamiento: esBotella(opcion.value)
             ? parseSavedOptions(producto.opciones_venta)?.find(o => o.tipo === 'botella')

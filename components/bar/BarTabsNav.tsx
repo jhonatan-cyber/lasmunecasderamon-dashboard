@@ -1,7 +1,7 @@
 'use client';
 
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, GlassWater, History, ScanLine, Ticket } from 'lucide-react';
+import { AlertTriangle, Clock, GlassWater, History, ScanLine, Ticket } from 'lucide-react';
 
 const barTabClassName =
   'cursor-pointer rounded-full gap-1.5 transition-[background-color,color,box-shadow] duration-200 motion-reduce:transition-none data-[state=inactive]:hover:bg-accent data-[state=inactive]:hover:text-accent-foreground data-[state=active]:hover:bg-primary/10 data-[state=active]:hover:shadow-md data-[state=active]:hover:ring-1 data-[state=active]:hover:ring-primary/30';
@@ -27,6 +27,10 @@ export function BarTabsList({ pendientesCount, puedeDevolver }: BarTabsListProps
         <TabsTrigger value='historial' className={barTabClassName}>
           <History className='w-3.5 h-3.5' />
           Historial
+        </TabsTrigger>
+        <TabsTrigger value='vencidos' className={barTabClassName}>
+          <AlertTriangle className='w-3.5 h-3.5' />
+          Vencidos
         </TabsTrigger>
         <TabsTrigger value='colaciones' className={barTabClassName}>
           <GlassWater className='w-3.5 h-3.5' />

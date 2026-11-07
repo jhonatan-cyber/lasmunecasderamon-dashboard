@@ -83,6 +83,7 @@ export function PurchaseForm({ catalog, initialItems }: PurchaseFormProps) {
 
           {state.step === 2 && (
             <DetailsStep
+              catalog={catalog}
               lines={state.lines}
               setLines={state.setLines}
               total={state.total}

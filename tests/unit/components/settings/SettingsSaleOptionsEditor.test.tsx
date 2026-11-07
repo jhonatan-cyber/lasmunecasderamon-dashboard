@@ -53,10 +53,11 @@ it('con colación deshabilitada guarda cero si la cantidad queda vacía', () => 
   const colacion = screen.getByLabelText('Habilitar bebida para colación');
   expect(colacion).not.toBeChecked();
   expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 0 });
-  const units = screen.getByLabelText('Bebida analcohólica por botella');
+  fireEvent.click(screen.getByLabelText('Incluir bebidas o acompañamiento'));
+  const units = screen.getByLabelText('Cantidad por botella');
   fireEvent.change(units, { target: { value: '4' } });
   expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 4 });
-  fireEvent.change(units, { target: { value: '' } });
+  fireEvent.click(screen.getByLabelText('Incluir bebidas o acompañamiento'));
   expect(ref.current!.getConfig().opciones_venta[0].acompanamiento).toEqual({ unidades: 0 });
 });
 
@@ -76,7 +77,8 @@ it('guarda el precio adicional sin anfitriona y la cantidad de bebidas por botel
   fireEvent.change(screen.getByLabelText('Precio de botella sin anfitriona'), {
     target: { value: '35000' }
   });
-  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+  fireEvent.click(screen.getByLabelText('Incluir bebidas o acompañamiento'));
+  fireEvent.change(screen.getByLabelText('Cantidad por botella'), {
     target: { value: '3' }
   });
   expect(ref.current!.getConfig().opciones_venta[0]).toMatchObject({
@@ -164,7 +166,7 @@ it('edita todos los precios de corto, sus ml y la bebida de botella sin perder c
       saving={false}
     />
   );
-  fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+  fireEvent.change(screen.getByLabelText('Cantidad por botella'), {
     target: { value: '3' }
   });
   fireEvent.change(screen.getByLabelText('Precio corto anfitriona 2'), {
@@ -266,7 +268,8 @@ describe('configuración de colación, igual que al transferir', () => {
     fireEvent.change(screen.getByLabelText('Ml de la colación'), { target: { value: '350' } });
     fireEvent.change(screen.getByLabelText('Ml de acompañamiento'), { target: { value: '150' } });
     // Las unidades del acompañamiento siguen las bebidas incluidas por botella.
-    fireEvent.change(screen.getByLabelText('Bebida analcohólica por botella'), {
+    fireEvent.click(screen.getByLabelText('Incluir bebidas o acompañamiento'));
+    fireEvent.change(screen.getByLabelText('Cantidad por botella'), {
       target: { value: '2' }
     });
     const config = ref.current!.getConfig();

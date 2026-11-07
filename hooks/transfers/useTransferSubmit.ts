@@ -34,7 +34,7 @@ export function useTransferSubmit({
     const mlAcompTexto = form.mlAcompanamientoColacion.replace(/\D/g, '');
     const mlAcompanamientoColacion =
       mlAcompTexto !== '' ? Number(mlAcompTexto) : (form.mlAcompanamientoColacionSugerido ?? null);
-    if (form.colacionHabilitada) {
+    if (form.colacionHabilitada && !form.esCigarrillosItem) {
       if (
         mlColacion !== null &&
         (!Number.isInteger(mlColacion) || mlColacion < 1 || mlColacion > 10000)
@@ -75,18 +75,28 @@ export function useTransferSubmit({
           precio: Number(option.precio ?? 0),
           comision: Number(option.comision ?? 0)
         };
+        if (option.tipo === 'botella' && form.esBebidaAnalcoholicaItem && !form.enVenta) {
+          reutilizada.precio = 0;
+          reutilizada.comision = 0;
+        }
         if (option.tipo === 'botella' && option.precio_sin_anfitriona)
           reutilizada.precio_sin_anfitriona = option.precio_sin_anfitriona;
         if (option.tipo === 'botella') {
+          reutilizada.vender_con_anfitriona =
+            option.vender_con_anfitriona ?? Number(option.precio ?? 0) > 0;
           reutilizada.colacion_habilitada = form.colacionHabilitada;
           reutilizada.cover_habilitado = form.coverHabilitado;
           if (form.esBebidaAnalcoholicaItem) reutilizada.en_venta = form.enVenta;
-          if (form.colacionHabilitada && mlColacion !== null) reutilizada.ml_colacion = mlColacion;
-          if (form.colacionHabilitada && acompanamientoColacion)
+          if (form.colacionHabilitada && !form.esCigarrillosItem && mlColacion !== null)
+            reutilizada.ml_colacion = mlColacion;
+          if (!form.esAnalcoholicaItem && form.colacionHabilitada && acompanamientoColacion)
             reutilizada.acompanamiento_colacion = acompanamientoColacion;
           reutilizada.acompanamiento = {
             ...(option.acompanamiento ?? {}),
-            unidades: Number(form.unidadesAcompanamiento || 0)
+            unidades:
+              form.esBebidaAnalcoholicaItem && !form.enVenta
+                ? 0
+                : Number(form.unidadesAcompanamiento || 0)
           };
         }
         if (option.tipo === 'shot') {
@@ -103,6 +113,10 @@ export function useTransferSubmit({
       const com = form.comision.trim() === '' ? 0 : Number(form.comision.replace(/\./g, ''));
       const pvBottle = form.venderConAnfitriona ? pv : 0;
       const comBottle = form.venderConAnfitriona ? com : 0;
+      const bottleEnabled = !form.esBebidaAnalcoholicaItem || form.enVenta;
+      const bottlePrice = bottleEnabled ? pvBottle : 0;
+      const bottleCommission = bottleEnabled ? comBottle : 0;
+      const bottleUnits = bottleEnabled ? Number(form.unidadesAcompanamiento || 0) : 0;
       const pvShot = Number(form.precioShot.replace(/\./g, ''));
       const pvShotAnfitriona =
         form.precioShotAnfitriona.trim() === ''
@@ -112,19 +126,22 @@ export function useTransferSubmit({
         if (tipo === 'botella')
           return {
             tipo,
-            precio: pvBottle,
+            precio: bottlePrice,
+            vender_con_anfitriona: form.venderConAnfitriona,
             ...(form.precioSinAnfitriona?.trim()
               ? { precio_sin_anfitriona: Number(form.precioSinAnfitriona.replace(/\./g, '')) }
               : {}),
-            comision: comBottle,
+            comision: bottleCommission,
             colacion_habilitada: form.colacionHabilitada,
             cover_habilitado: form.coverHabilitado,
             ...(form.esBebidaAnalcoholicaItem ? { en_venta: form.enVenta } : {}),
-            ...(form.colacionHabilitada && mlColacion !== null ? { ml_colacion: mlColacion } : {}),
-            ...(form.colacionHabilitada && acompanamientoColacion
+            ...(form.colacionHabilitada && !form.esCigarrillosItem && mlColacion !== null
+              ? { ml_colacion: mlColacion }
+              : {}),
+            ...(!form.esAnalcoholicaItem && form.colacionHabilitada && acompanamientoColacion
               ? { acompanamiento_colacion: acompanamientoColacion }
               : {}),
-            acompanamiento: { unidades: Number(form.unidadesAcompanamiento || 0) }
+            acompanamiento: { unidades: bottleUnits }
           };
         const option: SaleOption = {
           tipo,
@@ -289,6 +306,17 @@ export function useTransferSubmit({
       }
 
       if (bottleCommission && maxHostesses !== null && maxHostesses >= 2 && form.tiers.length > 0) {
+        const filasIncompletas = form.tiers
+          .filter(row => Number(row.anfitrionas) > 1)
+          .some(row => {
+            const precio = Number(String(row.precio).replace(/\./g, '')) || 0;
+            const comision = Number(String(row.comision).replace(/\./g, '')) || 0;
+            return precio <= 0 || comision < 0 || comision > precio;
+          });
+        if (filasIncompletas) {
+          toast.error('Completa el precio y la comisión desde 2 anfitrionas en adelante');
+          return;
+        }
         const tiersRes = await fetch(`/api/products/${item.producto_id}/tiers`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

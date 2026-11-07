@@ -310,21 +310,27 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                     <div>
                       <h3 className={optionPanelHeadingClass}>Precio</h3>
                     </div>
-                    <div className='space-y-2'>
-                      <Label htmlFor='price-botella' className='text-sm font-medium'>
-                        {esCigarrillos ? 'Precio de cigarrillo' : 'Precio de botella'}
-                      </Label>
-                      <Input
-                        currency
-                        id='price-botella'
-                        required
-                        value={precioVenta}
-                        onChange={event => onPrecioVentaChange(formatNumber(event.target.value))}
-                        disabled={saving}
-                        placeholder='0'
-                        className='h-12 text-lg font-semibold tabular-nums'
-                      />
-                    </div>
+                    {!onEnVentaChange || enVenta ? (
+                      <div className='space-y-2'>
+                        <Label htmlFor='price-botella' className='text-sm font-medium'>
+                          {esCigarrillos ? 'Precio de cigarrillo' : 'Precio de botella'}
+                        </Label>
+                        <Input
+                          currency
+                          id='price-botella'
+                          required
+                          value={precioVenta}
+                          onChange={event => onPrecioVentaChange(formatNumber(event.target.value))}
+                          disabled={saving}
+                          placeholder='0'
+                          className='h-12 text-lg font-semibold tabular-nums'
+                        />
+                      </div>
+                    ) : (
+                      <p className='text-xs text-muted-foreground'>
+                        Esta bebida está desactivada para la venta por botella.
+                      </p>
+                    )}
                   </section>
                 )}
                 {mostrarBebidasIncluidas && (
@@ -344,7 +350,6 @@ export const SaleTypeEditor = memo(function SaleTypeEditor({
                     <BottleExtras
                       context={context}
                       commission={comision}
-
                       onAccompaniment={checked =>
                         onAcompanamientoBotellaChange(checked ? 'gaseosa' : 'ninguno')
                       }

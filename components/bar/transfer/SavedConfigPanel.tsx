@@ -67,52 +67,57 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
   esCigarrillos?: boolean;
 }) {
   const bottle = opciones.find(option => option.tipo === 'botella');
+  const venderConAnfitriona = bottle?.vender_con_anfitriona ?? Number(bottle?.precio ?? 0) > 0;
   return (
     <div className='space-y-4'>
       <p className='text-sm font-semibold'>Configuración guardada</p>
       {bottle && (
         <>
           {mostrarAnfitrionas ? (
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-              <section aria-label='Botella con anfitriona' className={optionPanelClass}>
-                <h3 className={optionPanelHeadingClass}>Con anfitriona</h3>
-                <dl className='space-y-3'>
-                  <div>
-                    <dt className='text-xs text-muted-foreground'>
-                      Precio de botella con anfitriona
-                    </dt>
-                    <dd className='text-lg font-semibold tabular-nums'>
-                      {formatCurrencyCLP(bottle.precio)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className='text-xs text-muted-foreground'>Comisión</dt>
-                    <dd className='font-semibold tabular-nums'>
-                      {formatCurrencyCLP(bottle.comision ?? 0)}
-                    </dd>
-                  </div>
-                </dl>
-                {onMaxAnfitrionasChange && Number(bottle.comision) > 0 && (
-                  <div className='space-y-2'>
-                    <Label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
-                      Máximo de anfitrionas
-                    </Label>
-                    <Input
-                      id='bottle-hostess-limit'
-                      type='number'
-                      min={1}
-                      max={20}
-                      step={1}
-                      value={maxAnfitrionas ?? ''}
-                      onChange={event => onMaxAnfitrionasChange(event.target.value)}
-                      placeholder='1'
-                      disabled={saving}
-                      className='h-12'
-                    />
-                  </div>
-                )}
-                {bottleTiers}
-              </section>
+            <div
+              className={`grid grid-cols-1 gap-4 ${venderConAnfitriona ? 'sm:grid-cols-2' : ''}`}
+            >
+              {venderConAnfitriona && (
+                <section aria-label='Botella con anfitriona' className={optionPanelClass}>
+                  <h3 className={optionPanelHeadingClass}>Con anfitriona</h3>
+                  <dl className='space-y-3'>
+                    <div>
+                      <dt className='text-xs text-muted-foreground'>
+                        Precio de botella con anfitriona
+                      </dt>
+                      <dd className='text-lg font-semibold tabular-nums'>
+                        {formatCurrencyCLP(bottle.precio)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className='text-xs text-muted-foreground'>Comisión</dt>
+                      <dd className='font-semibold tabular-nums'>
+                        {formatCurrencyCLP(bottle.comision ?? 0)}
+                      </dd>
+                    </div>
+                  </dl>
+                  {onMaxAnfitrionasChange && Number(bottle.comision) > 0 && (
+                    <div className='space-y-2'>
+                      <Label htmlFor='bottle-hostess-limit' className='text-sm font-medium'>
+                        Máximo de anfitrionas
+                      </Label>
+                      <Input
+                        id='bottle-hostess-limit'
+                        type='number'
+                        min={1}
+                        max={20}
+                        step={1}
+                        value={maxAnfitrionas ?? ''}
+                        onChange={event => onMaxAnfitrionasChange(event.target.value)}
+                        placeholder='1'
+                        disabled={saving}
+                        className='h-12'
+                      />
+                    </div>
+                  )}
+                  {bottleTiers}
+                </section>
+              )}
               <section aria-label='Botella sin anfitriona' className={optionPanelClass}>
                 <h3 className={optionPanelHeadingClass}>Sin anfitriona</h3>
                 <dl>
@@ -130,16 +135,22 @@ export const SavedConfigPanel = memo(function SavedConfigPanel({
           ) : (
             <section aria-label='Botella sin anfitrionas' className={optionPanelClass}>
               <h3 className={optionPanelHeadingClass}>Precio</h3>
-              <dl className='space-y-3'>
-                <div>
-                  <dt className='text-xs text-muted-foreground'>
-                    {esCigarrillos ? 'Precio de cigarrillo' : 'Precio de botella'}
-                  </dt>
-                  <dd className='text-lg font-semibold tabular-nums'>
-                    {formatCurrencyCLP(bottle.precio)}
-                  </dd>
-                </div>
-              </dl>
+              {bottle.en_venta === false ? (
+                <p className='text-xs text-muted-foreground'>
+                  Esta bebida está desactivada para la venta por botella.
+                </p>
+              ) : (
+                <dl className='space-y-3'>
+                  <div>
+                    <dt className='text-xs text-muted-foreground'>
+                      {esCigarrillos ? 'Precio de cigarrillo' : 'Precio de botella'}
+                    </dt>
+                    <dd className='text-lg font-semibold tabular-nums'>
+                      {formatCurrencyCLP(bottle.precio)}
+                    </dd>
+                  </div>
+                </dl>
+              )}
             </section>
           )}
           {mostrarBebidasIncluidas && (

@@ -381,6 +381,30 @@ export interface LoteVencido {
   unidades_bar: number;
   /** ml que quedaban abiertos en las botellas vencidas del bar. */
   ml_abiertos: number;
+  codigos: string[];
+}
+
+export interface VencidoRetirado {
+  id: string;
+  unidad_id: string;
+  codigo: string;
+  codigo_barras: string | null;
+  producto_id: string | null;
+  presentacion_id: string | null;
+  producto_nombre: string;
+  presentacion_nombre: string;
+  ubicacion_origen: 'almacen' | 'bar';
+  fecha_vencimiento: string | null;
+  fecha_retiro: string;
+  usuario_nombre: string | null;
+  compra_id: string | null;
+  compra_folio: string | null;
+  fecha_adquisicion: string | null;
+  fecha_elaboracion: string | null;
+  duracion_meses: number | null;
+  precio_adquisicion: number;
+  valor_retirado: number;
+  nota: string | null;
 }
 
 /** Qué salió del inventario en una baja por vencimiento. */

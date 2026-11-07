@@ -15,6 +15,7 @@ const crudo = {
   tipo: 'botella',
   precio: 30000,
   comision: 0,
+  vender_con_anfitriona: true,
   colacion_habilitada: true,
   cover_habilitado: true,
   ml_colacion: 150,
@@ -28,6 +29,7 @@ describe('copiarOpcionesDeBotella', () => {
     expect(option).toMatchObject({
       colacion_habilitada: true,
       cover_habilitado: true,
+      vender_con_anfitriona: true,
       ml_colacion: 150,
       acompanamiento_colacion: { unidades: 2, ml: 90 }
     });
@@ -61,6 +63,14 @@ describe('el cliente y el servidor leen las opciones igual', () => {
     const servidor = parseOpcionesVenta([crudo]);
     const cliente = parseSavedOptions([crudo]);
     expect(cliente).toEqual(servidor);
+  });
+
+  it('conserva explícitamente que no se vende con anfitriona aunque el precio sea cero', () => {
+    const sinAnfitriona = { ...crudo, precio: 0, vender_con_anfitriona: false };
+    const servidor = parseOpcionesVenta([sinAnfitriona]);
+    const cliente = parseSavedOptions([sinAnfitriona]);
+    expect(cliente?.[0].vender_con_anfitriona).toBe(false);
+    expect(servidor?.[0].vender_con_anfitriona).toBe(false);
   });
 
   it('descartan los mismos valores corruptos', () => {

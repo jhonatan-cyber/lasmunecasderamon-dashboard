@@ -11,6 +11,28 @@ afterEach(() => {
 });
 
 describe('seleccion de etiquetas', () => {
+  it('excluye los codigos retirados o vendidos de la impresion', () => {
+    render(
+      <UnitLabelSelector
+        units={[
+          { id: '1', codigo: 'LM-A', codigo_barras: '2900000000001', estado: 'almacen' },
+          { id: '2', codigo: 'LM-I', codigo_barras: '2900000000002', estado: 'inactivo' },
+          { id: '3', codigo: 'LM-V', codigo_barras: '2900000000003', estado: 'vendida' }
+        ]}
+      />
+    );
+
+    expect(
+      screen.queryByRole('checkbox', { name: 'Seleccionar código 2900000000002' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: 'Seleccionar código 2900000000003' })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar código 2900000000001' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Imprimir (1)' }));
+    expect(printUnitLabels).toHaveBeenLastCalledWith([{ code: '2900000000001' }]);
+  });
+
   it('imprime solo los codigos seleccionados, sin datos de compra', () => {
     render(
       <UnitLabelSelector

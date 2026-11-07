@@ -53,6 +53,8 @@ export interface Presentacion {
 export interface UnidadProducto {
   fecha_crea?: string | null;
   fecha_impresion?: string | null;
+  fecha_vencimiento?: string | null;
+  ubicacion?: string | null;
   compra_id?: string | null;
   compra_folio?: string | null;
   id: string;

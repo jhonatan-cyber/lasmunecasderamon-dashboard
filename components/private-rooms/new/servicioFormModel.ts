@@ -45,7 +45,13 @@ export function calcularTotalesServicio(args: {
   metodoPago: string;
   pagosMixtos: any[];
   ivaRate: number;
-}): { subTotal: number; iva: number; total: number } {
+}): {
+  subTotal: number;
+  iva: number;
+  total: number;
+  precioHabitacionActual: number;
+  precioServicioActual: number;
+} {
   const {
     precioServicio,
     cantidadAnfitrionas,
@@ -58,27 +64,21 @@ export function calcularTotalesServicio(args: {
   } = args;
   const anfitrionas = cantidadAnfitrionas || 1;
   const clientes = cantidadClientes || 1;
-  let multiplicadorServicio = anfitrionas;
-  let multiplicadorHabitacion = anfitrionas;
+  const multiplicadorTiempo = num(selectedRoom?.tiempo ?? selectedRoom?.time) === 60 ? 2 : 1;
+  const tieneComision = selectedRoom && num(selectedRoom.comision_anfitriona) > 0;
+  const multiplicadorServicio = anfitrionas;
+  const multiplicadorHabitacion = tieneComision ? 1 : Math.max(anfitrionas, clientes);
 
-  if (clientes > anfitrionas && selectedRoom && num(selectedRoom.comision_anfitriona) === 0) {
-    multiplicadorServicio = clientes;
-    multiplicadorHabitacion = clientes;
-  }
-
-  if (selectedRoom && num(selectedRoom.comision_anfitriona) > 0) {
-    multiplicadorHabitacion = 1;
-  }
-
-  const subTotal = precioServicio * multiplicadorServicio;
-  const precioHabitacionTotal = precioHabitacion * multiplicadorHabitacion;
+  const precioServicioActual = precioServicio * multiplicadorTiempo * multiplicadorServicio;
+  const precioHabitacionActual = precioHabitacion * multiplicadorTiempo * multiplicadorHabitacion;
+  const subTotal = tieneComision ? precioHabitacionActual : precioServicioActual;
 
   let iva = 0;
   if (metodoPago === 'tarjeta') {
-    iva = Math.floor(subTotal * ivaRate);
+    iva = Math.floor(precioServicioActual * ivaRate);
   }
 
-  const totalBase = subTotal + precioHabitacionTotal;
+  const totalBase = precioServicioActual + precioHabitacionActual;
   let total = totalBase;
 
   if (metodoPago === 'tarjeta') {
@@ -97,7 +97,7 @@ export function calcularTotalesServicio(args: {
     total = totalBase + iva;
   }
 
-  return { subTotal, iva, total };
+  return { subTotal, iva, total, precioHabitacionActual, precioServicioActual };
 }
 
 /** Mensaje de validación o null si el formulario está listo para confirmar. */

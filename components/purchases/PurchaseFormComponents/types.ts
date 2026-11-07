@@ -8,6 +8,18 @@ export interface PurchaseCatalogItem {
   foto: string;
   precio_compra: number;
   stock: number;
+  resumen_stock?: PurchaseStockSummary;
+}
+
+export interface PurchaseStockGroup {
+  cantidad: number;
+  codigos: string[];
+}
+
+export interface PurchaseStockSummary {
+  vencidas: PurchaseStockGroup;
+  por_vencer: PurchaseStockGroup;
+  buen_estado: PurchaseStockGroup;
 }
 
 export interface Line {

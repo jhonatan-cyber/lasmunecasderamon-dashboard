@@ -60,9 +60,13 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
   const tieneShotCliente = Boolean(opcionShot && precioShotCliente > 0);
   const tieneShotAnfitriona = preciosAnfitriona.length > 0;
   const tieneShot = tieneShotCliente || tieneShotAnfitriona;
+  const botellaHabilitada =
+    opcionBotella?.en_venta !== false &&
+    opcionBotella?.vender_con_anfitriona !== false &&
+    precioBotella > 0;
 
   const opciones: OpcionVentaProducto[] = [
-    ...(opcionBotella || !tieneShot
+    ...(botellaHabilitada && (opcionBotella || !tieneShot)
       ? [
           {
             value: 'botella' as SaleChoice,
@@ -121,19 +125,19 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
       ? eleccion
       : (eleccion === 'shot' || (eleccion && esCortoAnfitriona(eleccion))) && tieneShotCliente
         ? 'shot'
-        : opciones[0].value;
+        : (opciones[0]?.value ?? 'botella');
 
-  const elegida = opciones.find(opcion => opcion.value === tipoVenta) ?? opciones[0];
-  const maxCantidad = elegida.esShot ? 99 : Number(producto?.stock_bar ?? 0);
+  const elegida = opciones.find(opcion => opcion.value === tipoVenta) ?? opciones[0] ?? null;
+  const maxCantidad = elegida?.esShot ? 99 : Number(producto?.stock_bar ?? 0);
 
   return {
     opciones,
     tieneShot,
     tieneShotAnfitriona,
     tipoVenta,
-    esShot: elegida.esShot,
-    precio: elegida.precio,
-    comision: elegida.comision,
+    esShot: elegida?.esShot ?? false,
+    precio: elegida?.precio ?? 0,
+    comision: elegida?.comision ?? 0,
     precioBotella,
     comisionBotella,
     maxCantidad

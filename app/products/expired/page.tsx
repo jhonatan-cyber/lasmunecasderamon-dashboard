@@ -1,9 +1,9 @@
 import { ExpiredStockPanel } from '@/components/products/ExpiredStockPanel';
 
 export const metadata = {
-  title: 'Lotes vencidos | Las Muñecas de Ramón'
+  title: 'Productos vencidos retirados | Las Muñecas de Ramón'
 };
 
 export default function ExpiredStockPage() {
-  return <ExpiredStockPanel />;
+  return <ExpiredStockPanel historialOnly />;
 }

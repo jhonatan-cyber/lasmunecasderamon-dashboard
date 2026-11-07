@@ -1,6 +1,7 @@
 export type SaleType = 'botella' | 'shot';
 export interface SaleOption {
   tipo: SaleType;
+  vender_con_anfitriona?: boolean;
   colacion_habilitada?: boolean;
   cover_habilitado?: boolean;
   en_venta?: boolean;
