@@ -257,7 +257,6 @@ export function TransferModal({
                           onMlAcompanamientoAnfitrionaChange={form.setMlAcompanamientoAnfitriona}
                           acompanamientoCliente={form.acompanamientoCliente}
                           onAcompanamientoClienteChange={form.setAcompanamientoCliente}
-
                           maxAnfitrionas={form.maxAnfitrionas}
                           onMaxAnfitrionasChange={form.setMaxAnfitrionas}
                           colacionHabilitada={form.colacionHabilitada}

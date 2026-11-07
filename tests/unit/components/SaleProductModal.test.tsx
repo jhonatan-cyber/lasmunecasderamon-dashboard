@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   Harness,
@@ -417,6 +417,7 @@ it('excluye del corto anfitriona bebidas que no están habilitadas para ese uso'
   const mixer = await screen.findByRole('combobox', {
     name: /Corto anfitriona/
   });
+  await waitFor(() => expect(mixer).toBeEnabled());
   fireEvent.click(mixer);
 
   expect(await screen.findByRole('option', { name: /Bebida habilitada/ })).toBeInTheDocument();
