@@ -5,27 +5,27 @@ import { ShoppingCart } from 'lucide-react';
 
 export function SaleCardSkeleton() {
   return (
-    <div className='rounded-4xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6'>
-      <div className='flex items-center justify-between mb-5'>
-        <Skeleton className='h-12 w-12 rounded-2xl' />
-        <Skeleton className='h-6 w-28 rounded-full' />
-      </div>
-      <Skeleton className='h-3 w-24 rounded-full mb-2' />
-      <Skeleton className='h-10 w-36 rounded-lg mb-5' />
-      <div className='rounded-2xl bg-gray-50 dark:bg-slate-800/50 p-4 mb-4 space-y-3'>
-        <div className='flex justify-between'>
-          <Skeleton className='h-5 w-32 rounded-lg' />
-          <Skeleton className='h-5 w-20 rounded-lg' />
+    <div className='rounded-xl border border-l-4 border-neutral-200 border-l-neutral-300 bg-white p-4 shadow-sm dark:border-neutral-800 dark:border-l-neutral-700 dark:bg-neutral-950 sm:p-5'>
+      <div className='flex items-start justify-between gap-3'>
+        <div className='space-y-2'>
+          <Skeleton className='h-3 w-36 rounded' />
+          <Skeleton className='h-3 w-28 rounded' />
         </div>
-        <Skeleton className='h-4 w-44 rounded-lg' />
-        <div className='flex gap-2'>
-          <Skeleton className='h-6 w-16 rounded-full' />
-          <Skeleton className='h-6 w-14 rounded-full' />
+        <Skeleton className='h-6 w-24 rounded-md' />
+      </div>
+      <div className='mt-4 flex items-end justify-between gap-4'>
+        <div className='space-y-2'>
+          <Skeleton className='h-3 w-12 rounded' />
+          <Skeleton className='h-8 w-32 rounded' />
+        </div>
+        <div className='space-y-2'>
+          <Skeleton className='ml-auto h-4 w-28 rounded' />
+          <Skeleton className='ml-auto h-3 w-20 rounded' />
         </div>
       </div>
-      <div className='flex gap-2'>
-        <Skeleton className='h-10 flex-1 rounded-2xl' />
-        <Skeleton className='h-10 flex-1 rounded-2xl' />
+      <div className='mt-4 flex gap-4 border-t border-neutral-100 pt-3 dark:border-neutral-800'>
+        <Skeleton className='h-4 w-24 rounded' />
+        <Skeleton className='h-4 w-20 rounded' />
       </div>
     </div>
   );
