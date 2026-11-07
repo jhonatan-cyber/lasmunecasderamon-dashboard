@@ -188,7 +188,7 @@ export function TransferModal({
                     )}
                   </div>
                 </section>
-                <section className='min-w-0 space-y-4'>
+                <section aria-label='Configuración de venta' className='min-w-0 space-y-4'>
                   {!ventaDeshabilitada && (
                     <>
                       {!esAnalcoholica && (

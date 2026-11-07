@@ -148,14 +148,9 @@ function comparar(escenario: Escenario): { campos: string[]; tipos: string[] } {
   // editores, que es donde se eligen las opciones.
   const modificar = screen.queryByRole('button', { name: 'Modificar precios' });
   if (modificar) fireEvent.click(modificar);
-  const seccion = screen
-    .getByRole('heading', { name: 'Configuración de venta' })
-    .closest('section');
-  if (!seccion) throw new Error('El modal no tiene la sección Configuración de venta');
-  const enTransferencia = opcionesDe(seccion as HTMLElement).filter(
-    campo => !SOLO_TRANSFERENCIA.includes(campo)
-  );
-  const tiposTransferencia = tiposDeVenta(seccion as HTMLElement);
+  const seccion = screen.getByRole('region', { name: 'Configuración de venta' });
+  const enTransferencia = opcionesDe(seccion).filter(campo => !SOLO_TRANSFERENCIA.includes(campo));
+  const tiposTransferencia = tiposDeVenta(seccion);
 
   expect({
     soloEnSettings: enSettings.filter(campo => !enTransferencia.includes(campo)),
