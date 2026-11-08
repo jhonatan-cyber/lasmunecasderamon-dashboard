@@ -2,8 +2,7 @@ import { query, generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
-import { enviarWhatsApp } from '@/modules/comunicaciones';
-import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
+import { enviarWhatsAppAAdministradores } from '@/modules/comunicaciones';
 import { AuditService } from '@/modules/auditoria/registro/servicio';
 import { NotificationService } from '@/modules/comunicaciones';
 import { logger } from '@/lib/utils/logger';
@@ -314,11 +313,8 @@ export class SecurityAlertService {
     // 5. WhatsApp (SOLO para críticos)
     if (channels.includes('whatsapp') && alert.severity === 'critical') {
       try {
-        const adminWhatsApp = await getAdminWhatsApp();
-        if (adminWhatsApp) {
-          const whatsappMessage = `🔴 *ALERTA DE SEGURIDAD CRÍTICA*\n\n*Tipo:* ${alertTypeLabel(alert.type)}\n*Mensaje:* ${alert.message}\n*Hora:* ${timestamp}\n\nPor favor revisa el dashboard para más detalles.`;
-          await enviarWhatsApp(adminWhatsApp, whatsappMessage);
-        }
+        const whatsappMessage = `🔴 *ALERTA DE SEGURIDAD CRÍTICA*\n\n*Tipo:* ${alertTypeLabel(alert.type)}\n*Mensaje:* ${alert.message}\n*Hora:* ${timestamp}\n\nPor favor revisa el dashboard para más detalles.`;
+        await enviarWhatsAppAAdministradores(whatsappMessage);
       } catch (err) {
         logger.error('[SecurityAlert] Error en WhatsApp:', err);
       }

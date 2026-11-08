@@ -22,6 +22,9 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:8081',
   'https://dashboard.xn--lasmuecasderamon-bub.com',
+  // Nginx sirve el dashboard también en `www` (cae al único server 443, que no
+  // tiene default_server). Sin esta entrada sus POST mueren en el gate CSRF.
+  'https://www.xn--lasmuecasderamon-bub.com',
 
   ...[process.env.DEV_ALLOWED_ORIGINS, process.env.CORS_ORIGINS]
     .filter((origins): origins is string => Boolean(origins))

@@ -23,9 +23,8 @@ import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { obtenerCajaActiva, registrarMovimientoCobro, leerFondoCaja } from '@/modules/caja';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { enviarWhatsApp } from '@/modules/comunicaciones';
+import { enviarWhatsApp, enviarWhatsAppAAdministradores } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { logger } from '@/lib/utils/logger';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import {
@@ -323,7 +322,6 @@ export async function requestAnticipo(
       fecha_crea: now
     });
 
-    const adminWhatsApp = await getAdminWhatsApp();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
     const msg = buildAnticipoRequestMessage({
       nombreCompleto: `${user.nombre} ${user.apellido}`,
@@ -341,7 +339,7 @@ export async function requestAnticipo(
     });
 
     try {
-      await enviarWhatsApp(adminWhatsApp, msg);
+      await enviarWhatsAppAAdministradores(msg);
     } catch (err) {
       logger.error('[AnticipoQueries] Error enviando WhatsApp al admin:', { err });
     }
@@ -484,12 +482,10 @@ export async function processSolicitudAnticipo(
         fecha: new Date(now.replace(' ', 'T'))
       });
 
-      const adminWhatsApp = await getAdminWhatsApp();
-
       try {
         await Promise.all([
           enviarWhatsApp(sol.telefono || '', msgEmp),
-          enviarWhatsApp(adminWhatsApp, msgAdmin)
+          enviarWhatsAppAAdministradores(msgAdmin)
         ]);
       } catch (e) {
         logger.error('[AnticipoQueries] Error enviando WhatsApps:', { e });

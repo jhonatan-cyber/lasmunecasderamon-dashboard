@@ -28,6 +28,8 @@ import { SettingsBarTab } from '@/components/settings/SettingsBarTab';
 import { SettingsWhatsAppTab } from '@/components/settings/SettingsWhatsAppTab';
 import { SettingsTestPresenceTab } from '@/components/settings/SettingsTestPresenceTab';
 import { usePersistentTab } from '@/hooks/shared/usePersistentTab';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMemo } from 'react';
 
 /**
  * Las pestañas de Configuraciones, en una sola lista: la dibujan los triggers y también
@@ -46,15 +48,25 @@ const TABS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'pruebas', label: 'Pruebas', icon: UserCheck }
 ];
 
-// Referencias estables: si cambiaran en cada render, el efecto que restaura el tab se
-// volvería a ejecutar siempre.
 // Conserva la selección anterior de Comisiones y la muestra en la pestaña unificada.
-const VALORES_TAB = [...TABS.map(tab => tab.value), 'comisiones'];
 const CLAVE_TAB = 'settings_tab';
 
 export default function Settings() {
+  // La pestaña de WhatsApp —y sus credenciales por administrador— es sólo para el rol
+  // administrador: a los demás no se les muestra ni el trigger ni el contenido.
+  const { user } = useAuth();
+  const esAdmin = user?.role?.toLowerCase() === 'administrador';
+
+  // Referencias estables: si cambiaran en cada render, el efecto que restaura el tab se
+  // volvería a ejecutar siempre.
+  const tabs = useMemo(
+    () => (esAdmin ? TABS : TABS.filter(tab => tab.value !== 'whatsapp')),
+    [esAdmin]
+  );
+  const valoresTab = useMemo(() => [...tabs.map(tab => tab.value), 'comisiones'], [tabs]);
+
   // Al recargar se reabre en el tab que quedó abierto, no en Empresa.
-  const [tab, setTab] = usePersistentTab(CLAVE_TAB, VALORES_TAB, 'empresa');
+  const [tab, setTab] = usePersistentTab(CLAVE_TAB, valoresTab, 'empresa');
 
   return (
     <div className='w-full max-w-none p-4 sm:p-6 lg:p-8'>
@@ -64,7 +76,7 @@ export default function Settings() {
         className='w-full space-y-6'
       >
         <TabsList className='@container flex w-full flex-nowrap justify-start gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
-          {TABS.map(({ value, label, icon: Icon }) => (
+          {tabs.map(({ value, label, icon: Icon }) => (
             <TabsTrigger
               key={value}
               value={value}
@@ -94,9 +106,11 @@ export default function Settings() {
           <SettingsServiceLevelsCard />
         </TabsContent>
 
-        <TabsContent value='whatsapp'>
-          <SettingsWhatsAppTab />
-        </TabsContent>
+        {esAdmin && (
+          <TabsContent value='whatsapp'>
+            <SettingsWhatsAppTab />
+          </TabsContent>
+        )}
 
         <TabsContent value='mantenimiento'>
           <SettingsMaintenanceTab />

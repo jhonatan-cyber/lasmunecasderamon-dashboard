@@ -1,9 +1,8 @@
 import { query, generateUUID, withTransaction } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { enviarWhatsApp } from '@/modules/comunicaciones';
+import { enviarWhatsApp, enviarWhatsAppAAdministradores } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole, sendPushNotification } from '@/modules/comunicaciones';
-import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import { ROUTES } from '@/lib/constants/routes';
 import { NotFoundError, BusinessError, DatabaseError } from '@/lib/errors/errors';
 import { BaseRepository } from '@/lib/database/base-repository';
@@ -198,7 +197,6 @@ export async function requestGratificacion(
       });
     }
 
-    const adminWhatsApp = await getAdminWhatsApp();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
     const confirmUrl = baseUrl
       ? `${baseUrl}${ROUTES.CONFIRMAR_GRATIFICACION}?token=${encodeURIComponent(id)}`
@@ -219,7 +217,7 @@ ${
 }`;
 
     try {
-      await enviarWhatsApp(adminWhatsApp, message);
+      await enviarWhatsAppAAdministradores(message);
     } catch (err) {
       logger.error('[GratificacionQueries] Error enviando WhatsApp al admin:', { err });
     }
@@ -366,7 +364,6 @@ export async function processGratificacionSolicitud(
       const title = approved ? 'Gratificación aprobada' : 'Gratificación rechazada';
       const employeeName = `${solicitud.nombre} ${solicitud.apellido}`.trim();
       const amountText = formatCurrencyCLP(Number(solicitud.monto || 0));
-      const adminWhatsApp = await getAdminWhatsApp();
 
       await Promise.allSettled([
         solicitud.telefono
@@ -375,8 +372,7 @@ export async function processGratificacionSolicitud(
               `*${title.toUpperCase()}*\n\nHola ${employeeName}, tu gratificación por *${amountText}* ha sido *${approved ? 'aprobada' : 'rechazada'}*.`
             )
           : Promise.resolve(true),
-        enviarWhatsApp(
-          adminWhatsApp,
+        enviarWhatsAppAAdministradores(
           `*${title.toUpperCase()}*\n\n*Empleado:* ${employeeName}\n*Monto:* ${amountText}\n*Solicitud:* ${id}`
         ),
         sendPushByRole('cajero', title, `${employeeName} → ${amountText}`, {

@@ -12,10 +12,12 @@ export const POST = withPublicRoute(async request => {
     cookieStore.get('refresh_token')?.value || request.headers.get('x-refresh-token');
   const refreshUser = !user && refreshToken ? await verifyRefreshToken(refreshToken) : null;
   const userId = user?.id ?? refreshUser?.id;
+  // El `sid` identifica el dispositivo: sólo se revoca esa sesión.
+  const sesionId = user?.sid ?? refreshUser?.sid;
   cookieStore.delete('token');
   cookieStore.delete('refresh_token');
 
-  if (userId) await AuthService.logout(String(userId));
+  if (userId) await AuthService.logout(String(userId), sesionId ? String(sesionId) : undefined);
 
   return NextResponse.json({ success: true, message: 'Sesión cerrada' });
 });

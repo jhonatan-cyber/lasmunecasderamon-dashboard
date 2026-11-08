@@ -3,6 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import Settings from '@/app/settings/page';
 
+// La página decide qué pestañas dibujar según el rol, así que el usuario se controla
+// desde el test: la pestaña de WhatsApp existe sólo para administradores.
+const auth = vi.hoisted(() => ({ user: null as { role?: string } | null }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: auth.user }) }));
+
 // Cada tab se sustituye por un panel con su nombre: el test así no depende de los
 // fetch que hace cada configuración real, sólo de qué panel está montado.
 vi.mock('@/components/settings/SettingsCompanyTab', () => ({
@@ -45,6 +50,7 @@ vi.mock('@/components/settings/SettingsServiceLevelsCard', () => ({
 
 beforeEach(() => {
   window.localStorage.clear();
+  auth.user = { role: 'Administrador' };
 });
 
 /**
@@ -110,5 +116,15 @@ describe('pestaña activa de Configuraciones', () => {
     triggers.forEach((trigger, i) => {
       expect(trigger.getAttribute('aria-controls')).toBe(paneles[i].id);
     });
+  });
+
+  it('oculta WhatsApp a quien no es administrador y no deja la página en blanco', async () => {
+    auth.user = { role: 'Cajero' };
+    window.localStorage.setItem('settings_tab', 'whatsapp');
+
+    render(<Settings />);
+
+    expect(screen.queryByRole('tab', { name: 'WhatsApp' })).not.toBeInTheDocument();
+    expect(await screen.findByText('panel-empresa')).toBeInTheDocument();
   });
 });

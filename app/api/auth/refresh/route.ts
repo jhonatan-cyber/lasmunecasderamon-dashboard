@@ -3,6 +3,7 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '@
 import { cookies } from 'next/headers';
 import { withPublicRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
+import { extenderSesion } from '@/modules/identidad';
 
 export const POST = withPublicRoute(async (request: Request) => {
   try {
@@ -51,10 +52,15 @@ export const POST = withPublicRoute(async (request: Request) => {
       email: String(payload.email || ''),
       role: String(payload.role)
     };
+    // `verifyRefreshToken` ya exigió un `sid` vivo: el token se renueva sobre la
+    // misma sesión, sin abrir una nueva fila por cada refresh.
+    const sid = String(payload.sid);
 
     const [newAccessToken, newRefreshToken] = await Promise.all([
-      generateAccessToken(userData),
-      generateRefreshToken(userData)
+      generateAccessToken(userData, sid),
+      generateRefreshToken(userData, sid),
+      // El refresh corre la ventana de la sesión junto con el token rotado.
+      extenderSesion(sid)
     ]);
 
     const isProduction = process.env.NODE_ENV === 'production';

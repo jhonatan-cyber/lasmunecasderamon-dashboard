@@ -158,6 +158,8 @@ export interface AuthenticatedUser {
   nick?: string;
   email: string;
   role: string;
+  /** Fila de `sesiones` del dispositivo que abrió el token. */
+  sid?: string;
   permissions: UserPermissions;
   iat: number;
   exp: number;

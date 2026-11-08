@@ -23,6 +23,7 @@ describe('auth route contract', () => {
     const loginMock = vi.fn().mockResolvedValue({
       success: true,
       token: 'jwt-token',
+      sid: 'sesion-1',
       user: { id: 'user-1', role: 'cajero' }
     });
 
@@ -35,6 +36,7 @@ describe('auth route contract', () => {
     vi.doMock('@/modules/identidad/autenticacion/repositorio', () => ({
       AuthRepository: { login: loginMock }
     }));
+    const authModule = await import('@/lib/auth/auth');
     const route = await import('@/app/api/auth/login/route');
     const response = await route.POST(
       new Request('http://localhost/api/auth/login', {
@@ -51,6 +53,12 @@ describe('auth route contract', () => {
       { email: 'user@test.com', password: 'secret123' },
       '10.0.0.1'
     );
+    // El refresh hereda el `sid` de la sesión que abrió el login: es lo que
+    // permite cerrar este dispositivo sin tumbar los demás.
+    expect(authModule.generateRefreshToken).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'user-1', role: 'cajero' }),
+      'sesion-1'
+    );
     expect(setCookie).toHaveBeenCalledWith(
       'token',
       'jwt-token',
@@ -59,6 +67,7 @@ describe('auth route contract', () => {
     await expect(response.json()).resolves.toEqual({
       success: true,
       token: 'jwt-token',
+      sid: 'sesion-1',
       refreshToken: 'jwt-refresh',
       user: { id: 'user-1', role: 'cajero' }
     });
@@ -78,7 +87,7 @@ describe('auth route contract', () => {
       withPublicRoute: (handler: any) => handler
     }));
     vi.doMock('@/lib/auth/auth-app', () => ({
-      getAuth: vi.fn().mockResolvedValue({ id: 'user-1' })
+      getAuth: vi.fn().mockResolvedValue({ id: 'user-1', sid: 'sesion-1' })
     }));
     vi.doMock('@/modules/identidad/autenticacion/repositorio', () => ({
       AuthRepository: { logout: logoutMock }
@@ -90,7 +99,7 @@ describe('auth route contract', () => {
       { params: {} } as any
     );
 
-    expect(logoutMock).toHaveBeenCalledWith('user-1');
+    expect(logoutMock).toHaveBeenCalledWith('user-1', 'sesion-1');
     expect(deleteCookie).toHaveBeenCalledWith('token');
     await expect(response.json()).resolves.toEqual({ success: true, message: 'Sesión cerrada' });
   });

@@ -22,7 +22,8 @@ vi.mock('@/modules/comunicaciones/push/servicio', () => ({
 }));
 
 vi.mock('@/modules/comunicaciones/whatsapp/adaptador', () => ({
-  enviarWhatsApp: vi.fn()
+  enviarWhatsApp: vi.fn(),
+  enviarWhatsAppAAdministradores: vi.fn()
 }));
 
 vi.mock('@/lib/business/whatsappConfig', () => ({
@@ -53,8 +54,7 @@ import { SecurityAlertService } from '@/modules/auditoria/alertas/servicio';
 import { query } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
-import { enviarWhatsApp } from '@/modules/comunicaciones/whatsapp/adaptador';
-import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
+import { enviarWhatsAppAAdministradores } from '@/modules/comunicaciones/whatsapp/adaptador';
 import { AuditRepository } from '@/modules/auditoria/registro/repositorio';
 import { NotificationService } from '@/modules/comunicaciones/notificaciones/servicio';
 import { AnulationCounter } from '@/modules/auditoria/alertas/contador';
@@ -63,7 +63,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   AnulationCounter.clearMemory();
   vi.mocked(query).mockResolvedValue([] as any);
-  vi.mocked(getAdminWhatsApp).mockResolvedValue('+56911111111');
 });
 
 afterEach(() => {
@@ -231,8 +230,7 @@ describe('SecurityAlertService.checkMassAnulation', () => {
     await SecurityAlertService.checkMassAnulation({ ...base, entityId: 'v2', entityCode: 'V2' });
     vi.mocked(AuditRepository.log).mockClear();
     vi.mocked(sendNotificationToAll).mockClear();
-    vi.mocked(enviarWhatsApp).mockClear();
-    vi.mocked(getAdminWhatsApp).mockResolvedValue('+56911111111');
+    vi.mocked(enviarWhatsAppAAdministradores).mockClear();
 
     await SecurityAlertService.checkMassAnulation({ ...base, entityId: 'v3', entityCode: 'V3' });
 
@@ -242,8 +240,7 @@ describe('SecurityAlertService.checkMassAnulation', () => {
         details: expect.objectContaining({ severity: 'critical' })
       })
     );
-    expect(enviarWhatsApp).toHaveBeenCalledWith(
-      '+56911111111',
+    expect(enviarWhatsAppAAdministradores).toHaveBeenCalledWith(
       expect.stringContaining('ALERTA DE SEGURIDAD CRÍTICA')
     );
 
@@ -278,7 +275,7 @@ describe('SecurityAlertService.alertSuspicious', () => {
     // push solo high/critical
     expect(sendPushByRole).not.toHaveBeenCalled();
     // whatsapp solo critical
-    expect(enviarWhatsApp).not.toHaveBeenCalled();
+    expect(enviarWhatsAppAAdministradores).not.toHaveBeenCalled();
   });
 
   it('permite severity custom high y activa push', async () => {
@@ -296,7 +293,7 @@ describe('SecurityAlertService.alertSuspicious', () => {
       expect.any(String),
       expect.objectContaining({ severity: 'high' })
     );
-    expect(enviarWhatsApp).not.toHaveBeenCalled();
+    expect(enviarWhatsAppAAdministradores).not.toHaveBeenCalled();
   });
 });
 
@@ -314,7 +311,7 @@ describe('SecurityAlertService.trigger', () => {
     expect(sendNotificationToAll).not.toHaveBeenCalled();
     expect(NotificationService.create).not.toHaveBeenCalled();
     expect(sendPushByRole).not.toHaveBeenCalled();
-    expect(enviarWhatsApp).not.toHaveBeenCalled();
+    expect(enviarWhatsAppAAdministradores).not.toHaveBeenCalled();
   });
 
   it('no lanza si falla el audit log', async () => {
@@ -346,6 +343,6 @@ describe('SecurityAlertService.trigger', () => {
     expect(AuditRepository.log).toHaveBeenCalled();
     expect(sendNotificationToAll).toHaveBeenCalled();
     expect(sendPushByRole).not.toHaveBeenCalled();
-    expect(enviarWhatsApp).not.toHaveBeenCalled();
+    expect(enviarWhatsAppAAdministradores).not.toHaveBeenCalled();
   });
 });

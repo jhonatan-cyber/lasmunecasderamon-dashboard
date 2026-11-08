@@ -2,6 +2,7 @@ import { query, generateUUID } from '@/lib/database/db';
 import * as argon2 from 'argon2';
 import { generateToken } from '@/lib/auth/auth';
 import { registrarLogin } from './sesionesRepositorio';
+import { crearSesion, revocarSesion, revocarTodasLasSesiones } from './sesionTokensRepositorio';
 import { getSystemTimezone, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import {
   ValidationError,
@@ -193,15 +194,22 @@ export async function loginUser(creds: { email?: string; password?: string }, ip
       throw new ValidationError('Proporcione credenciales');
     }
 
-    const tokenPromise = generateToken({
-      id: user.id_usuario,
-      username: user.username || user.nombre,
-      name: user.nombre,
-      lastName: user.apellido,
-      nick: user.nick,
-      email: user.email,
-      role: user.rol_nombre
-    });
+    // Cada inicio de sesión abre su propia fila en `sesiones`: el `sid` viaja en
+    // el token y permite cerrar un dispositivo sin tocar los demás.
+    const sid = await crearSesion(user.id_usuario, ip);
+
+    const tokenPromise = generateToken(
+      {
+        id: user.id_usuario,
+        username: user.username || user.nombre,
+        name: user.nombre,
+        lastName: user.apellido,
+        nick: user.nick,
+        email: user.email,
+        role: user.rol_nombre
+      },
+      sid
+    );
 
     // Optimización: registrarLogin fire-and-forget (no bloqueante, tiene try/catch)
     await registrarLogin(user.id_usuario, user.rol_nombre);
@@ -220,6 +228,7 @@ export async function loginUser(creds: { email?: string; password?: string }, ip
     return {
       success: true,
       token: resolvedToken,
+      sid,
       user: { ...mappedUser, forcePasswordChange }
     };
   } catch (err) {
@@ -229,11 +238,16 @@ export async function loginUser(creds: { email?: string; password?: string }, ip
   }
 }
 
-export async function logoutUser(userId: string) {
+/**
+ * Cierra la sesión del dispositivo que llama.
+ *
+ * Revoca sólo la fila de `sesiones` de ese token: los demás equipos del mismo
+ * usuario siguen trabajando. La revocación global (cambio de rol, baja de
+ * cuenta, «cerrar todas las sesiones») sigue pasando por `session_version`.
+ */
+export async function logoutUser(userId: string, sesionId?: string) {
   try {
-    await query('UPDATE usuarios SET session_version = session_version + 1 WHERE id_usuario = ?', [
-      userId
-    ]);
+    if (sesionId) await revocarSesion(sesionId);
     await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
     // Sin fila de `logins` la persona deja de estar en el local: el resto de sesiones
     // refresca contadores y selectores de personal presente.
@@ -339,6 +353,7 @@ export async function cerrarTodasSesiones() {
   try {
     await query('UPDATE usuarios SET session_version = session_version + 1');
     await query('DELETE FROM logins');
+    await revocarTodasLasSesiones();
   } catch (err) {
     logger.error('[AuthQueries] Error en cerrarTodasSesiones:', { err });
     throw new DatabaseError('Error al cerrar todas las sesiones', err);

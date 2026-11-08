@@ -28,11 +28,20 @@ export class AuthService {
 }
 
 import * as tokens from './sesionTokensRepositorio';
-export function obtenerEstadoSesionToken(usuarioId: string) {
-  return tokens.obtenerEstadoSesionToken(usuarioId);
+export function obtenerEstadoSesionToken(usuarioId: string, sesionId?: string) {
+  return tokens.obtenerEstadoSesionToken(usuarioId, sesionId);
+}
+export function crearSesion(usuarioId: string, ip?: string | null) {
+  return tokens.crearSesion(usuarioId, ip);
+}
+export function revocarSesion(sesionId: string) {
+  return tokens.revocarSesion(sesionId);
 }
 export function revocarSesionesUsuario(usuarioId: string) {
   return tokens.revocarSesionesUsuario(usuarioId);
+}
+export function extenderSesion(sesionId: string) {
+  return tokens.extenderSesion(sesionId);
 }
 
 /** Herramienta de pruebas: lista y fuerza la presencia del personal en el local. */
