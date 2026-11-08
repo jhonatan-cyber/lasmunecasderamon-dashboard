@@ -40,7 +40,10 @@ export { UserService } from './usuarios/fachada';
 export {
   AuthService,
   obtenerEstadoSesionToken,
+  crearSesion,
+  revocarSesion,
   revocarSesionesUsuario,
+  extenderSesion,
   cerrarSesionesPorCierreCaja,
   marcarPresenciaLocal,
   asegurarSesionPresente,

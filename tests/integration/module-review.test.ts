@@ -69,7 +69,12 @@ vi.mock('@/modules/comunicaciones', () => ({
 vi.mock('@/lib/business/shotAlerts', () => ({ notifyBarShotAlerts: vi.fn() }));
 import { query } from '@/lib/database/db';
 import { enUnaUnidad } from '@/lib/transaction/contract';
-import { obtenerEstadoSesionToken, revocarSesionesUsuario } from '@/modules/identidad';
+import {
+  crearSesion,
+  obtenerEstadoSesionToken,
+  revocarSesion,
+  revocarSesionesUsuario
+} from '@/modules/identidad';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -167,17 +172,26 @@ async function asistencia() {
   });
 }
 
-it('revoca access y refresh inmediatamente; desactivar o cambiar el rol también los invalida', async () => {
-  const current = (await obtenerEstadoSesionToken(user))!;
+it('revoca access y refresh de la sesión cerrada; cambiar el rol o desactivar la cuenta invalidan la vigente', async () => {
+  const sid = await crearSesion(user);
+  const current = (await obtenerEstadoSesionToken(user, sid))!;
   const data = { ...current, nick: current.nick ?? undefined };
-  const access = await generateAccessToken(data),
-    refresh = await generateRefreshToken(data);
+  const access = await generateAccessToken(data, sid),
+    refresh = await generateRefreshToken(data, sid);
   expect(await verifyToken(access)).not.toBeNull();
   expect(await verifyRefreshToken(refresh)).not.toBeNull();
   await revocarSesionesUsuario(user);
   expect(await verifyToken(access)).toBeNull();
   expect(await verifyRefreshToken(refresh)).toBeNull();
-  const next = await generateAccessToken(data);
+
+  // Una sesión nueva vive con normalidad, pero el cambio de rol invalida los
+  // tokens ya emitidos y la baja de la cuenta corta también los recién creados.
+  const sid2 = await crearSesion(user);
+  const data2 = {
+    ...(await obtenerEstadoSesionToken(user, sid2))!,
+    nick: current.nick ?? undefined
+  };
+  const next = await generateAccessToken(data2, sid2);
   const changedRole = randomUUID();
   await query(
     "INSERT INTO roles (id_rol,nombre,descripcion,estado,fecha_crea) VALUES (?,'cajero','',1,now())",
@@ -185,10 +199,22 @@ it('revoca access y refresh inmediatamente; desactivar o cambiar el rol también
   );
   await query('UPDATE usuarios SET rol_id=? WHERE id_usuario=?', [changedRole, user]);
   expect(await verifyToken(next)).toBeNull();
-  const currentToken = await generateAccessToken(data);
+  const currentToken = await generateAccessToken(data2, sid2);
   expect(await verifyToken(currentToken)).toMatchObject({ role: 'cajero' });
   await query('UPDATE usuarios SET estado=0 WHERE id_usuario=?', [user]);
   expect(await verifyToken(currentToken)).toBeNull();
+});
+it('un mismo usuario mantiene varias sesiones: cerrar una deja vivir las demás', async () => {
+  const sidA = await crearSesion(user);
+  const sidB = await crearSesion(user);
+  const data = { ...(await obtenerEstadoSesionToken(user, sidA))!, nick: undefined };
+  const tokenA = await generateAccessToken(data, sidA);
+  const tokenB = await generateAccessToken(data, sidB);
+  expect(await verifyToken(tokenA)).not.toBeNull();
+  expect(await verifyToken(tokenB)).not.toBeNull();
+  await revocarSesion(sidA);
+  expect(await verifyToken(tokenA)).toBeNull();
+  expect(await verifyToken(tokenB)).not.toBeNull();
 });
 it('editar con el mismo RUN conserva la contraseña y el indicador de cambio obligatorio', async () => {
   await UserService.updateUser(user, { id: user, run: user, name: 'Editado' });

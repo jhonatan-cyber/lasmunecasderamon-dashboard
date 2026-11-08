@@ -1,18 +1,24 @@
 import twilio from 'twilio';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
-import { getTwilioConfig } from '@/lib/business/twilioConfig';
+import { getTwilioConfig, type TwilioConfig } from '@/lib/business/twilioConfig';
+import { resolverDestinosWhatsApp } from './administradores';
 import { ROUTES } from '@/lib/constants/routes';
 import logger from '@/lib/utils/logger';
 import { normalizeWhatsAppPhone } from '@/lib/utils/whatsappPhone';
 
+/**
+ * Envía un mensaje puntual con las credenciales dadas (por defecto, las globales).
+ * El fan-out a administradores pasa las credenciales de cada uno para poder enviar
+ * desde su propia cuenta de Twilio.
+ */
 export async function enviarWhatsAppConEstado(
   numero: string,
   mensaje: string,
   tipo: 'mensaje' | 'prueba' = 'mensaje',
-  mediaUrls?: string[]
+  mediaUrls?: string[],
+  credenciales?: Pick<TwilioConfig, 'accountSid' | 'authToken' | 'whatsappNumber'>
 ) {
-  const { accountSid, authToken, whatsappNumber } = await getTwilioConfig();
+  const { accountSid, authToken, whatsappNumber } = credenciales ?? (await getTwilioConfig());
   if (!accountSid || !authToken || !whatsappNumber) throw new Error('Twilio no configurado');
   const numeroFormateado = normalizeWhatsAppPhone(numero);
   const { whatsappWebhookUrl } = await import('@/lib/integrations/twilioWebhook');
@@ -61,11 +67,60 @@ export async function enviarWhatsApp(numero: string, mensaje: string): Promise<b
   return true;
 }
 
+export interface ResultadoEnvioAdministradores {
+  enviados: number;
+  total: number;
+  /** Números de destino enmascarados, para mostrar sin exponer el número completo. */
+  destinos: string[];
+}
+
+/**
+ * Envía un aviso a todos los administradores con WhatsApp configurado —o al número
+ * global como respaldo—. Cada administrador recibe desde su propia cuenta de Twilio
+ * a su propio número, así el aviso llega aunque estén en países distintos.
+ *
+ * Lanza si no hay ningún destino o si todos los envíos fallan.
+ */
+export async function enviarWhatsAppAAdministradores(
+  mensaje: string,
+  tipo: 'mensaje' | 'prueba' = 'mensaje',
+  mediaUrls?: string[]
+): Promise<ResultadoEnvioAdministradores> {
+  const destinos = await resolverDestinosWhatsApp();
+  if (destinos.length === 0) throw new Error('Configura el WhatsApp del administrador');
+
+  const resultados = await Promise.allSettled(
+    destinos.map(destino =>
+      enviarWhatsAppConEstado(destino.destino, mensaje, tipo, mediaUrls, {
+        accountSid: destino.accountSid,
+        authToken: destino.authToken,
+        whatsappNumber: destino.whatsappNumber
+      })
+    )
+  );
+
+  resultados.forEach((resultado, indice) => {
+    if (resultado.status === 'rejected') {
+      logger.error('No se pudo enviar WhatsApp a un administrador', {
+        administrador: destinos[indice].nombre,
+        motivo:
+          resultado.reason instanceof Error ? resultado.reason.message : String(resultado.reason)
+      });
+    }
+  });
+
+  const enviados = resultados.filter(resultado => resultado.status === 'fulfilled').length;
+  if (enviados === 0) throw new Error('WhatsApp rechazó el envío a todos los administradores');
+
+  return {
+    enviados,
+    total: destinos.length,
+    destinos: destinos.map(destino => `••••${destino.destino.slice(-4)}`)
+  };
+}
+
 export async function enviarPruebaWhatsApp() {
-  const destino = await getAdminWhatsApp();
-  if (!destino) throw new Error('Configura el WhatsApp del administrador');
-  return enviarWhatsAppConEstado(
-    destino,
+  return enviarWhatsAppAAdministradores(
     'Mensaje de prueba de Las Muñecas de Ramon. La conexión de WhatsApp está funcionando.',
     'prueba'
   );
@@ -76,9 +131,6 @@ export async function enviarPdfCierreCajaWhatsApp(datos: {
   cajaId: string;
   token: string;
 }): Promise<boolean> {
-  const destino = await getAdminWhatsApp();
-  if (!destino) throw new Error('Configura el WhatsApp del administrador');
-
   const baseUrl =
     process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
   if (!baseUrl) throw new Error('Configura la URL pública HTTPS del dashboard');
@@ -90,8 +142,7 @@ export async function enviarPdfCierreCajaWhatsApp(datos: {
     throw new Error('El PDF de cierre requiere una URL pública HTTPS para WhatsApp');
   }
 
-  await enviarWhatsAppConEstado(
-    destino,
+  await enviarWhatsAppAAdministradores(
     `Caja ${datos.cajaId.slice(0, 8)} cerrada. Adjunto el detalle final del cierre en PDF.`,
     'mensaje',
     [url.toString()]
@@ -104,9 +155,6 @@ export async function enviarReporteCajaWhatsApp(datos: {
   cajaId: string;
   token: string;
 }): Promise<boolean> {
-  const destino = await getAdminWhatsApp();
-  if (!destino) throw new Error('Configura el WhatsApp del administrador');
-
   const bases = [
     process.env.TWILIO_WEBHOOK_BASE_URL,
     process.env.NEXT_PUBLIC_BASE_URL,
@@ -128,7 +176,7 @@ export async function enviarReporteCajaWhatsApp(datos: {
     basePublica
   );
   const mensaje = `*REPORTE DE CAJA*\nCaja ${datos.cajaId.slice(0, 8)}. Adjunto el informe PDF con el resumen financiero y los gráficos del turno.`;
-  await enviarWhatsAppConEstado(destino, mensaje, 'mensaje', [pdfUrl.toString()]);
+  await enviarWhatsAppAAdministradores(mensaje, 'mensaje', [pdfUrl.toString()]);
   return true;
 }
 
@@ -189,8 +237,8 @@ ${
 
 Si hay varias solicitudes pendientes, responde "1 SI" o "1 NO" sobre la mas reciente.`;
 
-  const adminWhatsApp = await getAdminWhatsApp();
-  return await enviarWhatsApp(adminWhatsApp, mensaje);
+  const resultado = await enviarWhatsAppAAdministradores(mensaje);
+  return resultado.enviados > 0;
 }
 
 /**
@@ -294,14 +342,10 @@ export async function enviarMensajeSolicitudCierreCaja(
 ): Promise<boolean> {
   const mensaje = construirMensajeSolicitudCierreCaja(datos);
 
-  const adminWhatsApp = await getAdminWhatsApp();
-  // Sin número no hay a dónde avisar: el cajero se queda esperando una
+  // Sin ningún destino la función lanza: el cajero se queda esperando una
   // autorización que nadie puede dar.
-  if (!adminWhatsApp) {
-    logger.error('❌ No hay numero de admin para la solicitud de cierre de caja');
-    throw new Error('Numero de admin no configurado');
-  }
-  return await enviarWhatsApp(adminWhatsApp, mensaje);
+  const resultado = await enviarWhatsAppAAdministradores(mensaje);
+  return resultado.enviados > 0;
 }
 
 export async function enviarRecordatorioDevolucionSaldo(datos: {
@@ -325,10 +369,6 @@ ${datos.motivo ? `• Motivo: ${datos.motivo}` : ''}
 
 Por favor revisar en dashboard: Clientes → Devolucion`;
 
-  const numeroAdmin = await getAdminWhatsApp();
-  if (!numeroAdmin) {
-    logger.error('❌ No hay numero de admin para recordatorio devolucion');
-    throw new Error('Numero de admin no configurado');
-  }
-  return await enviarWhatsApp(numeroAdmin, mensaje);
+  const resultado = await enviarWhatsAppAAdministradores(mensaje);
+  return resultado.enviados > 0;
 }

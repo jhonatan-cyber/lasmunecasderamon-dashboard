@@ -432,6 +432,20 @@ describe('proxy — CSRF', () => {
     expect(res.status).toBe(200);
   });
 
+  it('permite POST con Origin www del dashboard', async () => {
+    mockJwtVerify.mockResolvedValue({ payload: ADMIN_PAYLOAD });
+    const proxy = await loadProxy();
+    const res = await proxy(
+      createRequest({
+        pathname: '/api/sales',
+        method: 'POST',
+        headers: { origin: 'https://www.xn--lasmuecasderamon-bub.com' },
+        cookies: { token: 'good' }
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+
   it('permite POST desde la IP configurada del dashboard local', async () => {
     vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'http://192.168.0.11:3000');
     mockJwtVerify.mockResolvedValue({ payload: ADMIN_PAYLOAD });

@@ -16,7 +16,7 @@ import { listarVentasEnCurso } from '@/modules/ventas';
 import { CashRegisterService } from '@/modules/caja';
 import { GratificacionService } from '@/modules/personal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
+import { numerosAdministradores } from '@/modules/comunicaciones';
 
 export async function POST(request: Request) {
   try {
@@ -39,16 +39,17 @@ export async function POST(request: Request) {
 
     const mensaje = normalizeWhatsAppMessage(Body);
     const numeroRemitente = From.replace('whatsapp:', '');
-    const adminWhatsApp = await getAdminWhatsApp();
+    const numeros = await numerosAdministradores();
 
-    if (!adminWhatsApp) {
+    if (numeros.size === 0) {
       return NextResponse.json(
         { error: 'WhatsApp del administrador no configurado (Configuraciones → WhatsApp)' },
         { status: 500 }
       );
     }
 
-    if (numeroRemitente !== adminWhatsApp) return NextResponse.json({ message: 'No autorizado' });
+    // Cualquier administrador con WhatsApp configurado puede responder y aprobar.
+    if (!numeros.has(numeroRemitente)) return NextResponse.json({ message: 'No autorizado' });
 
     const [
       ventasPendientes,
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
         (anticiposPendientes as any[]).map(a => ({ ...a, tipo: 'anticipo' })),
         comandoAnticipo.anticipoId,
         comandoAnticipo.action === 'aprobar',
-        adminWhatsApp
+        numeroRemitente
       );
       return NextResponse.json({ message: result.message });
     }

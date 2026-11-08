@@ -12,7 +12,10 @@ vi.mock('@/lib/business/timezoneService', async importOriginal => {
   const actual = await importOriginal<typeof import('@/lib/business/timezoneService')>();
   return { ...actual, getNowInBusinessTimezone: () => '2026-09-27 12:00:00' };
 });
-vi.mock('@/modules/comunicaciones/whatsapp/adaptador', () => ({ enviarWhatsApp: vi.fn() }));
+vi.mock('@/modules/comunicaciones/whatsapp/adaptador', () => ({
+  enviarWhatsApp: vi.fn(),
+  enviarWhatsAppAAdministradores: vi.fn()
+}));
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: vi.fn() }));
 vi.mock('@/modules/comunicaciones/push/servicio', () => ({
   sendPushByRole: vi.fn(),

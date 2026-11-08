@@ -9,8 +9,17 @@ vi.mock('@/lib/business/twilioConfig', () => ({
     whatsappNumber: '+14155238886'
   })
 }));
-vi.mock('@/lib/business/whatsappConfig', () => ({
-  getAdminWhatsApp: vi.fn().mockResolvedValue('59170000000')
+vi.mock('@/modules/comunicaciones/whatsapp/administradores', () => ({
+  resolverDestinosWhatsApp: vi.fn().mockResolvedValue([
+    {
+      usuarioId: null,
+      nombre: 'Administrador',
+      accountSid: 'AC' + 'a'.repeat(32),
+      authToken: 'token-ficticio',
+      whatsappNumber: '+14155238886',
+      destino: '59170000000'
+    }
+  ])
 }));
 vi.mock('@/modules/comunicaciones/whatsapp/seguimiento', () => ({
   registrarEntregaWhatsApp: mocks.registrar
@@ -50,14 +59,14 @@ it('usa el destino guardado e incluye el callback público al enviar la prueba',
     expect.objectContaining({ tipo: 'prueba', estado: 'queued' })
   );
   expect(result).toMatchObject({
-    estado: 'queued',
-    destino: '••••0000',
-    seguimientoGuardado: true
+    enviados: 1,
+    total: 1,
+    destinos: ['••••0000']
   });
 });
 it('un error guardando el seguimiento no reenvía un mensaje que Twilio ya aceptó', async () => {
   mocks.registrar.mockRejectedValue(new Error('database unavailable'));
-  expect(await enviarPruebaWhatsApp()).toMatchObject({ seguimientoGuardado: false });
+  await expect(enviarPruebaWhatsApp()).resolves.toMatchObject({ enviados: 1, total: 1 });
   expect(mocks.create).toHaveBeenCalledTimes(1);
 });
 

@@ -17,7 +17,12 @@
     "clientes_prepago_movimientos",
     "solicitudes_devolucion_saldo"
   ],
-  "comunicaciones": ["notificaciones", "push_tokens", "whatsapp_entregas"],
+  "comunicaciones": [
+    "notificaciones",
+    "push_tokens",
+    "whatsapp_entregas",
+    "whatsapp_administradores"
+  ],
   "configuracion": ["configuraciones", "backups"],
   "identidad": [
     "usuarios",
@@ -25,6 +30,7 @@
     "permissions",
     "role_permissions",
     "logins",
+    "sesiones",
     "codigos"
   ],
   "inventario": [

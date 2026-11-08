@@ -3,14 +3,13 @@ import { enUnaUnidad } from '@/lib/transaction/contract';
 import { estadoTrasSolicitud, marcarEstadoVenta } from '@/modules/ventas';
 import { listarDestinatariosAnulaciones } from '@/modules/identidad';
 import { procesarAnulacionCuentaCanal } from '@/modules/operacion';
-import { enviarWhatsApp as sendWhatsApp } from '@/modules/comunicaciones';
+import { enviarWhatsAppAAdministradores } from '@/modules/comunicaciones';
 import { buildSolicitudRespuestaMessage } from '@/lib/notifications/notificationMessages';
 import { NotificationService } from '@/modules/comunicaciones';
 import { SaleService } from '@/workflows/ventas';
 import { ServiceService } from '@/modules/operacion';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
-import { getAdminWhatsApp } from '@/lib/business/whatsappConfig';
 import logger from '@/lib/utils/logger';
 
 type PendingSolicitud = {
@@ -138,8 +137,7 @@ export async function processPendingSolicitud(solicitud: PendingSolicitud, accio
 
   await notifySolicitudResolution(solicitud, accion, estadoTexto);
   try {
-    const adminWhatsApp = await getAdminWhatsApp();
-    await sendWhatsApp(adminWhatsApp, mensajeRespuesta);
+    await enviarWhatsAppAAdministradores(mensajeRespuesta);
   } catch (err) {
     logger.error('[WhatsappPendingActions] Error enviando respuesta por WhatsApp:', { err });
   }

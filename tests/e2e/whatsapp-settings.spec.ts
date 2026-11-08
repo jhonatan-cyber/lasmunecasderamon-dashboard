@@ -15,7 +15,10 @@ test('WhatsApp: prueba explícita, URL de callback y actualización de entrega',
     if (route.request().method() === 'POST') {
       sent = true;
       await route.fulfill({
-        json: { success: true, data: { destino: '••••0000', seguimientoGuardado: true } }
+        json: {
+          success: true,
+          data: { enviados: 1, total: 1, destinos: ['••••0000'] }
+        }
       });
       return;
     }
@@ -55,7 +58,7 @@ test('WhatsApp: prueba explícita, URL de callback y actualización de entrega',
   await page.getByRole('button', { name: 'Enviar mensaje de prueba', exact: true }).click();
   await expect(page.getByText('En cola', { exact: true })).toBeVisible();
   await expect(
-    page.getByRole('status').filter({ hasText: 'Prueba aceptada por Twilio para' })
+    page.getByRole('status').filter({ hasText: 'Twilio aceptó la prueba para 1 de 1' })
   ).toBeVisible();
   delivered = true;
   await page.getByRole('button', { name: 'Actualizar estados de WhatsApp' }).click();

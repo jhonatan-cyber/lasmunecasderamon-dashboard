@@ -1,6 +1,6 @@
 import { ValidationError } from '@/lib/errors/errors';
-import { getTwilioConfig } from '@/lib/business/twilioConfig';
 import { guardarEntrega, listarEntregas } from './seguimientoRepositorio';
+import { credencialesParaWebhook } from './administradores';
 
 const PROGRESO: Record<string, number> = {
   accepted: 0,
@@ -46,11 +46,17 @@ export async function registrarEntregaWhatsApp(data: {
 }
 
 export async function historialWhatsApp() {
-  const { accountSid } = await getTwilioConfig();
-  if (!accountSid) return [];
-  const rows = await listarEntregas(accountSid);
-  return rows.map(row => ({
-    ...row,
-    destino: row.destino ? `••••${row.destino.slice(-4)}` : null
-  }));
+  // Los mensajes salen de la cuenta global o de la propia de cada administrador:
+  // se reúnen las entregas de todas las cuentas configuradas.
+  const cuentas = (await credencialesParaWebhook()).map(credencial => credencial.accountSid);
+  if (cuentas.length === 0) return [];
+  const listas = await Promise.all(cuentas.map(accountSid => listarEntregas(accountSid)));
+  return listas
+    .flat()
+    .sort((a, b) => String(b.fecha_crea).localeCompare(String(a.fecha_crea)))
+    .slice(0, 20)
+    .map(row => ({
+      ...row,
+      destino: row.destino ? `••••${row.destino.slice(-4)}` : null
+    }));
 }

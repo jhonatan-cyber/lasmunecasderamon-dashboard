@@ -31,9 +31,12 @@ export const POST = withRoute(
       }
 
       await cambiarPassword(userId, password);
+      // La contraseña cambia, pero la sesión de este dispositivo sigue siendo la
+      // misma: los tokens nuevos conservan el `sid` para no cerrar los demás.
+      const sid = String(user.sid);
       const [token, refreshToken] = await Promise.all([
-        generateAccessToken(user),
-        generateRefreshToken(user)
+        generateAccessToken(user, sid),
+        generateRefreshToken(user, sid)
       ]);
       const cookieStore = await cookies();
       const options = {

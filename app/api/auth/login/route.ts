@@ -25,17 +25,21 @@ export const POST = async (request: Request) => {
 
       let refreshToken: string | null = null;
       const userData = (result as any).user as Record<string, unknown> | undefined;
-      if (userData && userData.id) {
+      const sid = (result as { sid?: string }).sid;
+      if (userData && userData.id && sid) {
         try {
-          refreshToken = await generateRefreshToken({
-            id: userData.id as string | number,
-            username: String(userData.username || userData.name || ''),
-            name: String(userData.name || ''),
-            lastName: String(userData.lastName || ''),
-            nick: userData.nick ? String(userData.nick) : undefined,
-            email: String(userData.email || ''),
-            role: String(userData.role || '')
-          });
+          refreshToken = await generateRefreshToken(
+            {
+              id: userData.id as string | number,
+              username: String(userData.username || userData.name || ''),
+              name: String(userData.name || ''),
+              lastName: String(userData.lastName || ''),
+              nick: userData.nick ? String(userData.nick) : undefined,
+              email: String(userData.email || ''),
+              role: String(userData.role || '')
+            },
+            sid
+          );
           cookieStore.set('refresh_token', refreshToken, {
             httpOnly: true,
             secure: isProduction,

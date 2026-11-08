@@ -1,12 +1,14 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import twilio from 'twilio';
-vi.mock('@/lib/business/twilioConfig', () => ({
-  getTwilioConfig: vi
+// La firma ahora puede venir de la cuenta global o de la de cualquier administrador:
+// el validador pide las credenciales candidatas al módulo de comunicaciones.
+vi.mock('@/modules/comunicaciones', () => ({
+  registrarEntregaWhatsApp: vi.fn(),
+  credencialesParaWebhook: vi
     .fn()
-    .mockResolvedValue({ accountSid: 'AC' + 'a'.repeat(32), authToken: 'token-de-pruebas' })
+    .mockResolvedValue([{ accountSid: 'AC' + 'a'.repeat(32), authToken: 'token-de-pruebas' }])
 }));
-vi.mock('@/modules/comunicaciones', () => ({ registrarEntregaWhatsApp: vi.fn() }));
 import { validarWebhookTwilio, whatsappWebhookUrl } from '@/lib/integrations/twilioWebhook';
 import { registrarEntregaWhatsApp } from '@/modules/comunicaciones';
 import { POST } from '@/app/api/whatsapp/status/route';

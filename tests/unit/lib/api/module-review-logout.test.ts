@@ -21,13 +21,20 @@ beforeEach(() => {
 });
 
 it('revoca la sesión al cerrar con acceso vencido y refresh vigente', async () => {
-  mocks.refresh.mockResolvedValue({ id: 'usuario' });
+  mocks.refresh.mockResolvedValue({ id: 'usuario', sid: 'sesion-1' });
   const { POST } = await import('@/app/api/auth/logout/route');
   await POST(new Request('http://localhost/api/auth/logout', { method: 'POST' }) as any, {} as any);
   expect(mocks.refresh).toHaveBeenCalledWith('refresh-valido');
-  expect(mocks.logout).toHaveBeenCalledWith('usuario');
+  expect(mocks.logout).toHaveBeenCalledWith('usuario', 'sesion-1');
   expect(mocks.deleteCookie).toHaveBeenCalledWith('token');
   expect(mocks.deleteCookie).toHaveBeenCalledWith('refresh_token');
+});
+
+it('revoca la sesión del acceso vigente sin tocar las demás del usuario', async () => {
+  mocks.getAuth.mockResolvedValue({ id: 'usuario', sid: 'sesion-2' });
+  const { POST } = await import('@/app/api/auth/logout/route');
+  await POST(new Request('http://localhost/api/auth/logout', { method: 'POST' }) as any, {} as any);
+  expect(mocks.logout).toHaveBeenCalledWith('usuario', 'sesion-2');
 });
 
 it('no revoca sesiones de terceros si el refresh es inválido', async () => {

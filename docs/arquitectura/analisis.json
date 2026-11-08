@@ -1,24 +1,24 @@
 {
   "resumen": {
-    "commit": "a8f105b7128802a03c4f907587ca34534c4215ae",
-    "generado": "2026-11-04T17:59:30.111Z",
-    "archivos": 2231,
-    "rutas": 234,
-    "sqlFueraDeRepositorio": 64,
+    "commit": "7ba7f565aa2d755405d651252dc98be00546c9b4",
+    "generado": "2026-11-07T22:38:22.959Z",
+    "archivos": 2250,
+    "rutas": 238,
+    "sqlFueraDeRepositorio": 65,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 20,
-    "caches": 26,
+    "caches": 27,
     "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 20
   },
   "rutas": [
     {
-      "ruta": "/api/sales/:id/baucher",
-      "archivo": "app/api/sales/[id]/baucher/route.ts",
+      "ruta": "/api/whatsapp/administradores",
+      "archivo": "app/api/whatsapp/administradores/route.ts",
       "metodos": [],
-      "nivel": "sales.read",
-      "audit": false,
+      "nivel": "administrator",
+      "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1589,6 +1589,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/sales/:id/baucher",
+      "archivo": "app/api/sales/[id]/baucher/route.ts",
+      "metodos": [],
+      "nivel": "sales.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/sales/:id",
       "archivo": "app/api/sales/[id]/route.ts",
       "metodos": [],
@@ -1891,6 +1900,33 @@
       "metodos": [],
       "nivel": "entradas.deliver",
       "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/cortesia-solicitudes/:id/approve",
+      "archivo": "app/api/tickets/cortesia-solicitudes/[id]/approve/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/cortesia-solicitudes/:id/reject",
+      "archivo": "app/api/tickets/cortesia-solicitudes/[id]/reject/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/cortesia-solicitudes",
+      "archivo": "app/api/tickets/cortesia-solicitudes/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -2384,6 +2420,12 @@
       "escribe": []
     },
     {
+      "archivo": "modules/inventario/compras/catalogo.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "inventario",
+      "escribe": []
+    },
+    {
       "archivo": "modules/inventario/compras/servicio.ts",
       "capa": "modules/aplicacion",
       "modulo": "inventario",
@@ -2867,7 +2909,7 @@
     },
     {
       "archivo": "components/settings/SettingsWhatsAppTab.tsx",
-      "linea": 63,
+      "linea": 97,
       "tipo": "setInterval",
       "texto": "const timer = setInterval(() => {"
     },
@@ -3008,6 +3050,11 @@
       "texto": "caché en memoria (new Map + cache)"
     },
     {
+      "archivo": "components/products/ExpiredStockPanel.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
       "archivo": "components/shared/ProductPhoto.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
@@ -3076,33 +3123,36 @@
   "ciclos": [],
   "matriz": {
     "app/api": {
-      "lib/api": 277,
-      "workflows": 23,
-      "lib/otros": 84,
+      "lib/api": 282,
+      "workflows": 24,
+      "lib/otros": 88,
       "lib/identidad": 15,
-      "lib/business": 36,
+      "lib/business": 34,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
-    "lib/business": {
-      "raiz": 4,
-      "lib/api": 3,
-      "lib/otros": 15,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "components": 1
+    "modules/aplicacion": {
+      "lib/business": 46,
+      "modules/infraestructura": 23,
+      "lib/otros": 106,
+      "lib/database": 48,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 8
     },
-    "lib/otros": {
-      "raiz": 8,
-      "lib/database": 4,
-      "lib/api": 2,
-      "lib/business": 7,
-      "components": 2
+    "modules/infraestructura": {
+      "lib/database": 113,
+      "lib/otros": 168,
+      "lib/business": 75,
+      "modules/aplicacion": 27,
+      "lib/api": 9,
+      "lib/identidad": 2,
+      "raiz": 3
     },
     "app/ui": {
       "hooks": 65,
-      "lib/otros": 55,
+      "lib/otros": 56,
       "lib/api": 7,
       "components": 6,
       "lib/business": 7,
@@ -3110,10 +3160,10 @@
       "raiz": 14
     },
     "components": {
-      "hooks": 151,
-      "lib/otros": 381,
+      "hooks": 150,
+      "lib/otros": 386,
       "raiz": 91,
-      "lib/business": 53,
+      "lib/business": 54,
       "lib/api": 3,
       "modules/aplicacion": 9,
       "app/ui": 1
@@ -3127,7 +3177,7 @@
     },
     "hooks": {
       "raiz": 40,
-      "lib/otros": 101,
+      "lib/otros": 103,
       "lib/api": 8,
       "components": 20,
       "lib/business": 19,
@@ -3143,34 +3193,29 @@
     "lib/identidad": {
       "lib/otros": 5
     },
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 15,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "raiz": 4,
+      "components": 1
+    },
+    "lib/otros": {
+      "lib/database": 4,
+      "lib/api": 2,
+      "lib/business": 7,
+      "raiz": 8,
+      "components": 2
+    },
     "lib/database": {
       "lib/otros": 4,
       "lib/business": 1
     },
-    "lib/integrations": {
-      "lib/business": 1
-    },
-    "modules/infraestructura": {
-      "lib/database": 111,
-      "lib/otros": 167,
-      "lib/business": 76,
-      "modules/aplicacion": 27,
-      "lib/api": 9,
-      "lib/identidad": 2,
-      "raiz": 3
-    },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 106,
-      "lib/database": 47,
-      "lib/business": 46,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 8
-    },
+    "lib/integrations": {},
     "scripts": {},
     "workflows": {
-      "lib/business": 11,
+      "lib/business": 10,
       "lib/otros": 22,
       "lib/api": 4,
       "modules/aplicacion": 4
