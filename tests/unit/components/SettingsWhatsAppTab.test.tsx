@@ -120,7 +120,7 @@ it('deja seleccionado al administrador logueado al abrir la pestaña', async () 
   render(<SettingsWhatsAppTab />);
 
   const selector = await screen.findByLabelText('Configurando WhatsApp de');
-  expect(selector).toHaveValue('u1');
+  await waitFor(() => expect(selector).toHaveValue('u1'));
   expect(await screen.findByDisplayValue('+56911111111')).toBeInTheDocument();
 });
 
