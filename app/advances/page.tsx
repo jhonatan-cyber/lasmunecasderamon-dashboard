@@ -53,10 +53,10 @@ export default function AdvancesPage() {
   const canCreate = isAdmin && hasPermission('advances', 'create');
 
   const pendingCount = (allAnticipos || []).filter(
-    a => Number(a.estado) === 1 && !a.fecha_cobro
+    a => (Number(a.estado) === 2 || Number(a.estado) === 1) && !a.fecha_entrega
   ).length;
   const paidCount = (allAnticipos || []).filter(
-    a => Number(a.estado) === 4 || !!a.fecha_cobro
+    a => Number(a.estado) === 0 || !!a.fecha_cobro || !!a.fecha_entrega
   ).length;
 
   const handleOpenDialog = () => {
