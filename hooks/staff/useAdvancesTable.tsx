@@ -9,21 +9,24 @@ export function useAdvancesTable(advances: Anticipo[], activeTab: 'pending' | 'p
     () =>
       advances.filter(a => {
         if (activeTab === 'pending') {
-          return Number(a.estado) === 1 || Number(a.estado) === 2;
+          // Pendientes de aprobación (2) o aprobados esperando entrega (1)
+          return (Number(a.estado) === 1 || Number(a.estado) === 2) && !a.fecha_entrega;
         } else {
-          return Number(a.estado) === 4 || !!a.fecha_cobro;
+          // Cobrados: entregados (estado 0) o con fecha_cobro (descontado en nómina)
+          return Number(a.estado) === 0 || !!a.fecha_cobro || !!a.fecha_entrega;
         }
       }),
     [advances, activeTab]
   );
 
   const paidAdvances = useMemo(
-    () => filteredAdvances.filter(a => Number(a.estado) === 0),
+    () => filteredAdvances.filter(a => !!a.fecha_cobro),
     [filteredAdvances]
   );
 
   const pendingAdvances = useMemo(
-    () => filteredAdvances.filter(a => Number(a.estado) === 1 || Number(a.estado) === 2),
+    () =>
+      filteredAdvances.filter(a => Number(a.estado) === 0 || (!!a.fecha_entrega && !a.fecha_cobro)),
     [filteredAdvances]
   );
 
@@ -40,6 +43,14 @@ export function useAdvancesTable(advances: Anticipo[], activeTab: 'pending' | 'p
       return (
         <Badge className='rounded-full px-3 py-1 bg-emerald-100 text-emerald-700 border-none hover:bg-emerald-100 flex items-center gap-1 w-fit mx-auto lg:mx-0 font-bold uppercase tracking-tighter text-[10px]'>
           Entregado
+        </Badge>
+      );
+    }
+
+    if (Number(estado) === 1) {
+      return (
+        <Badge className='rounded-full px-3 py-1 bg-green-100 text-green-700 border-none hover:bg-green-100 flex items-center gap-1 w-fit mx-auto lg:mx-0 font-bold uppercase tracking-tighter text-[10px]'>
+          Aprobado
         </Badge>
       );
     }
