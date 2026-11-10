@@ -36,17 +36,17 @@ async function sembrarFixture({ entregarAnticipo = true }: { entregarAnticipo?: 
   const [rol] = await query<{ id_rol: string }[]>('SELECT id_rol FROM roles LIMIT 1');
   if (!admin || !rol) throw new Error('La base de pruebas no tiene usuarios ni roles');
 
-  // Semilla mínima: `permissions` y `role_permissions` viajan con el esquema,
-  // pero si la base ejecutó `datos.sql` antes que este test se haya preparado,
-  // la expresión asume eso y borra a imitación de los tests de todos los módulos.
-  await query('DELETE FROM role_permissions');
-  await query('DELETE FROM permissions');
+  // Siembra idempotente del mínimo que usa este fixture. La suite postgres
+  // comparte una sola DB y corre en serie: borrar el catálogo rompería a los
+  // archivos que corren después (transfers-custom-role necesita
+  // products/accept_transfer). Insertamos sin pisar lo que ya sembró el setup.
   await query(`
     INSERT INTO permissions (id, name, description, module, action, created_at, updated_at)
     VALUES (gen_random_uuid()::text, 'Ver roles', 'Acceso de prueba', 'roles', 'view', now(), now()),
            (gen_random_uuid()::text, 'Editar roles', 'Acceso de prueba', 'roles', 'edit', now(), now()),
            (gen_random_uuid()::text, 'Ver planilla', 'Acceso de prueba', 'payroll', 'view', now(), now()),
            (gen_random_uuid()::text, 'Crear pagos', 'Acceso de prueba', 'payroll', 'create', now(), now())
+    ON CONFLICT ON CONSTRAINT unique_permission DO NOTHING
   `);
   await query(`
     INSERT INTO role_permissions (id, role_id, permission_id, created_at)
