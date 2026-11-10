@@ -134,6 +134,7 @@ export default function GratificacionesTable({
                         variant='ghost'
                         size='sm'
                         onClick={() => onViewDetail(gratificacion)}
+                        aria-label={`Ver detalle de la gratificación de ${gratificacion.usuario}`}
                         className='h-8 w-8 p-0 hover:bg-blue-50'
                       >
                         <Eye className='h-4 w-4' />
@@ -144,6 +145,7 @@ export default function GratificacionesTable({
                         variant='ghost'
                         size='sm'
                         onClick={() => onEdit(gratificacion)}
+                        aria-label={`Editar la gratificación de ${gratificacion.usuario}`}
                         className='h-8 w-8 p-0 hover:bg-yellow-50'
                       >
                         <Pencil className='h-4 w-4' />
@@ -154,6 +156,7 @@ export default function GratificacionesTable({
                         variant='ghost'
                         size='sm'
                         onClick={() => onDelete(gratificacion)}
+                        aria-label={`Eliminar la gratificación de ${gratificacion.usuario}`}
                         className='h-8 w-8 p-0 hover:bg-red-50 text-red-500'
                       >
                         <Trash2 className='h-4 w-4' />
@@ -293,6 +296,7 @@ export default function GratificacionesTable({
                             variant='ghost'
                             size='sm'
                             onClick={() => onViewDetail(gratificacion)}
+                            aria-label={`Ver detalle de la gratificación de ${gratificacion.usuario}`}
                             className='h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600'
                           >
                             <Eye className='h-4 w-4' />
@@ -303,6 +307,7 @@ export default function GratificacionesTable({
                             variant='ghost'
                             size='sm'
                             onClick={() => onEdit(gratificacion)}
+                            aria-label={`Editar la gratificación de ${gratificacion.usuario}`}
                             className='h-8 w-8 p-0 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 text-yellow-600'
                           >
                             <Pencil className='h-4 w-4' />
@@ -313,6 +318,7 @@ export default function GratificacionesTable({
                             variant='ghost'
                             size='sm'
                             onClick={() => onDelete(gratificacion)}
+                            aria-label={`Eliminar la gratificación de ${gratificacion.usuario}`}
                             className='h-8 w-8 p-0 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500'
                           >
                             <Trash2 className='h-4 w-4' />

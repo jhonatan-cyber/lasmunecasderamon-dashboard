@@ -57,6 +57,10 @@ export default function PayrollCalendarPage() {
     handleMouseDown,
     handleMouseEnter,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
     clearSelection: clearCalendarSelection
   } = useCalendarSelection('servicios', {
     enabled: canViewDetails,
@@ -286,6 +290,10 @@ export default function PayrollCalendarPage() {
               handleMouseDown={handleMouseDown}
               handleMouseEnter={handleMouseEnter}
               handleMouseUp={handleMouseUp}
+              handleTouchStart={handleTouchStart}
+              handleTouchMove={handleTouchMove}
+              handleTouchEnd={handleTouchEnd}
+              handleTouchCancel={handleTouchCancel}
               renderDateActions={renderDateActions}
               getActionsForDate={getActionsForDate}
             />

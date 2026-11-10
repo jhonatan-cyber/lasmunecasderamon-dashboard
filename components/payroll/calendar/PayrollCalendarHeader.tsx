@@ -31,6 +31,7 @@ export function PayrollCalendarHeader({
             size='sm'
             onClick={() => onNavigate(-1)}
             className='h-8 w-8 p-0 shrink-0'
+            aria-label='Periodo anterior'
           >
             <svg
               className='w-4 h-4 sm:w-5 sm:h-5'
@@ -56,6 +57,7 @@ export function PayrollCalendarHeader({
             size='sm'
             onClick={() => onNavigate(1)}
             className='h-8 w-8 p-0 shrink-0'
+            aria-label='Periodo siguiente'
           >
             <svg
               className='w-4 h-4 sm:w-5 sm:h-5'
@@ -74,6 +76,8 @@ export function PayrollCalendarHeader({
             size='sm'
             onClick={() => onChangeView('multi')}
             className='h-8 w-8 p-0'
+            aria-label='Vista multimes'
+            aria-pressed={currentView === 'multi'}
           >
             <Grid3X3 className='w-3 h-3' />
           </Button>
@@ -114,6 +118,8 @@ export function PayrollCalendarHeader({
             variant={currentView === 'multi' ? 'default' : 'outline-solid'}
             size='sm'
             onClick={() => onChangeView('multi')}
+            aria-label='Vista multimes'
+            aria-pressed={currentView === 'multi'}
           >
             <Grid3X3 className='w-3 h-3 sm:w-4 sm:h-4' />
           </Button>

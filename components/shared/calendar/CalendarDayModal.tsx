@@ -133,7 +133,7 @@ export default function CalendarDayModal({
   return (
     <Dialog open={isOpen && selectedDates.length > 0} onOpenChange={onClose}>
       <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-lg font-semibold'>
             {formatDatesList(selectedDates)}
           </DialogTitle>
@@ -142,7 +142,7 @@ export default function CalendarDayModal({
         {loadError && onRetry ? (
           <ListLoadError message={loadError} onRetry={onRetry} />
         ) : (
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
             <div className='space-y-4 text-center'>
               <div className='flex justify-center gap-4 flex-wrap'>
                 {roleCategories.map(key => {
@@ -181,7 +181,7 @@ export default function CalendarDayModal({
 
               <div className={`mt-6 ${MODULE_TABLE_CARD_CLASS}`}>
                 {isLoadingSelectedData ? (
-                  <div className='p-8 text-center'>
+                  <div className='p-4 text-center sm:p-8'>
                     <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2'></div>
                     <div className='text-gray-500 dark:text-gray-400'>
                       Obteniendo {allDataTypeConfig[selectedDataType].title.toLowerCase()} para las
@@ -189,7 +189,7 @@ export default function CalendarDayModal({
                     </div>
                   </div>
                 ) : selectedDateData.length === 0 ? (
-                  <div className='p-8 text-center'>
+                  <div className='p-4 text-center sm:p-8'>
                     <EmptyState
                       variant='text'
                       title='No hay datos'
@@ -394,7 +394,7 @@ export default function CalendarDayModal({
             </div>
           </div>
         )}
-        <div className='shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t p-4 sm:p-6'>
           <div className='flex justify-center'>
             <Button
               variant='outline'

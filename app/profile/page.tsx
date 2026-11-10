@@ -1,6 +1,7 @@
 'use client';
 
 import { ErrorState } from '@/components/shared/ErrorState';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
@@ -24,6 +25,7 @@ import {
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -162,17 +164,17 @@ export default function ProfilePage() {
 
   const handleUserChange = (userId: string) => {
     if (isEditing) {
-      if (
-        confirm(
-          '¿Estás seguro de que querés cambiar de usuario? Se perderán los cambios no guardados.'
-        )
-      ) {
-        setIsEditing(false);
-        loadUserData(userId);
-      }
+      setPendingUserId(userId);
     } else {
       loadUserData(userId);
     }
+  };
+
+  const handleConfirmUserChange = () => {
+    if (!pendingUserId) return;
+    setIsEditing(false);
+    loadUserData(pendingUserId);
+    setPendingUserId(null);
   };
 
   const handleNickChange = (newNick: string) => {
@@ -405,7 +407,7 @@ export default function ProfilePage() {
 
   if (!userData) {
     return (
-      <div className='container mx-auto p-6'>
+      <div className='container mx-auto p-4 sm:p-6'>
         <div className='flex items-center justify-center h-64'>
           <ErrorState
             className='text-center'
@@ -477,6 +479,18 @@ export default function ProfilePage() {
           />
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingUserId !== null}
+        onOpenChange={open => {
+          if (!open) setPendingUserId(null);
+        }}
+        title='Cambiar de usuario'
+        message='Se perderán los cambios no guardados del perfil actual.'
+        confirmText='Cambiar de usuario'
+        type='warning'
+        onConfirm={handleConfirmUserChange}
+      />
     </BoneyardSkeleton>
   );
 }

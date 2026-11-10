@@ -47,8 +47,8 @@ export function CategoryFormModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-2 border-b'>
-          <DialogTitle className='text-xl font-bold flex items-center gap-2'>
+        <DialogHeader className='p-4 pb-2 pr-12 border-b sm:p-6 sm:pb-2 sm:pr-14'>
+          <DialogTitle className='text-lg font-bold flex items-center gap-2 sm:text-xl'>
             <span>{isEditMode ? 'Editar Categoría' : 'Nueva Categoría'}</span>
           </DialogTitle>
           <DialogDescription className='sr-only'>
@@ -56,7 +56,7 @@ export function CategoryFormModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <form id='category-form' onSubmit={onFormSubmit} className='space-y-4 sm:space-y-6'>
             <div>
               <Label
@@ -108,7 +108,7 @@ export function CategoryFormModal({
           </form>
         </div>
 
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
           <Button
             variant='outline'
             onClick={onCancel}

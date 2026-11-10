@@ -283,6 +283,41 @@ describe('vistas de productos en nueva venta', () => {
     expect(screen.getByRole('img', { name: 'Botella simple' })).toBeInTheDocument();
   });
 
+  it('lista presentaciones con stock o con botella abierta vendible por cortos', () => {
+    renderExpanded(
+      <Harness
+        productos={[
+          { ...product, id: 'con-stock', nombre: 'Con stock', stock_bar: 3 },
+          { ...product, id: 'sin-stock', nombre: 'Sin stock', stock_bar: 0 },
+          { ...product, id: 'negativo', nombre: 'Stock negativo', stock_bar: -1 },
+          { ...product, id: 'abierta', nombre: 'Abierta', stock_bar: 0, ml_abierta: 800 }
+        ]}
+        onAdd={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Con stock')).toBeInTheDocument();
+    expect(screen.getByText('Abierta')).toBeInTheDocument();
+    expect(screen.queryByText('Sin stock')).not.toBeInTheDocument();
+    expect(screen.queryByText('Stock negativo')).not.toBeInTheDocument();
+    expect(screen.getByText('2 presentaciones disponibles en bar')).toBeInTheDocument();
+  });
+
+  it('vende una botella abierta solo por cortos', () => {
+    renderExpanded(
+      <Harness
+        productos={[
+          { ...product, id: 'abierta', nombre: 'Abierta', stock_bar: 0, ml_abierta: 800 }
+        ]}
+        onAdd={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Sin botellas selladas · solo cortos')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Corto.*aumentar cantidad$/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Botella.*aumentar cantidad$/ })).toBeNull();
+  });
+
   it('muestra todos los productos disponibles sin limitar la lista a cinco', () => {
     const products = Array.from({ length: 7 }, (_, index) => ({
       ...product,

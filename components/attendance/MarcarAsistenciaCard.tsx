@@ -59,7 +59,7 @@ export function MarcarAsistenciaCard() {
         </h2>
       </div>
 
-      <div className='relative overflow-hidden rounded-[2.5rem] bg-indigo-600 p-8 text-white shadow-2xl shadow-indigo-200 dark:shadow-none'>
+      <div className='relative overflow-hidden rounded-[2.5rem] bg-indigo-600 p-5 text-white shadow-2xl shadow-indigo-200 sm:p-8 dark:shadow-none'>
         <div className='absolute -right-10 -top-10 h-60 w-60 rounded-full bg-white/10 blur-3xl' />
         <form onSubmit={handleSubmit} className='relative space-y-6 flex flex-col items-center'>
           <div className='text-center space-y-2'>

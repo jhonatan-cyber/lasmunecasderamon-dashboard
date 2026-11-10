@@ -17,17 +17,20 @@ export function SaleProductDetails({
   showFormats?: boolean;
 }) {
   const p = item.product;
+  const stockBar = Number(p.stock_bar ?? 0);
+  const mlAbierta = Number(p.ml_abierta ?? 0);
+  const soloCortos = stockBar <= 0 && mlAbierta > 0;
   return (
     <div className='min-w-0 space-y-1'>
       <div className='text-sm font-semibold leading-tight'>{item.name}</div>
       <p className='flex items-center gap-1.5 text-xs text-muted-foreground'>
         <span
           className={`size-1.5 shrink-0 rounded-full ${
-            Number(p.stock_bar ?? 0) > 0 ? 'bg-emerald-500' : 'bg-red-500'
+            stockBar > 0 ? 'bg-emerald-500' : soloCortos ? 'bg-amber-500' : 'bg-red-500'
           }`}
           aria-hidden='true'
         />
-        Disponibles en bar: {p.stock_bar ?? 0}
+        {soloCortos ? 'Sin botellas selladas · solo cortos' : `Disponibles en bar: ${stockBar}`}
       </p>
       {item.enCarrito > 0 && (
         <span className='inline-flex w-fit max-w-full flex-nowrap items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold leading-none text-emerald-700 dark:text-emerald-300'>

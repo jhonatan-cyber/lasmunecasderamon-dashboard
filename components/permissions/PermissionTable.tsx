@@ -22,6 +22,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 export interface Permission {
   id: number;
@@ -141,13 +142,17 @@ const MobileCardView = React.memo(
                 </div>
 
                 <div className='grid grid-cols-2 gap-3'>
-                  <div className='text-xs text-gray-400 uppercase font-bold'>Módulo</div>
+                  <div className='text-xs text-gray-500 dark:text-gray-400 uppercase font-bold'>
+                    Módulo
+                  </div>
                   <div className='text-xs text-gray-500'>
                     <Badge variant='outline' className='text-xs rounded-full'>
                       {permission.module.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
-                  <div className='text-xs text-gray-400 uppercase font-bold'>Acción</div>
+                  <div className='text-xs text-gray-500 dark:text-gray-400 uppercase font-bold'>
+                    Acción
+                  </div>
                   <div className='text-xs text-gray-500'>
                     <Badge variant='secondary' className='text-xs rounded-full'>
                       {permission.action.toUpperCase()}
@@ -155,7 +160,9 @@ const MobileCardView = React.memo(
                   </div>
                   {permission.description && (
                     <>
-                      <div className='text-xs text-gray-400 uppercase font-bold'>Descripción</div>
+                      <div className='text-xs text-gray-500 dark:text-gray-400 uppercase font-bold'>
+                        Descripción
+                      </div>
                       <div className='text-xs text-gray-500'>{permission.description}</div>
                     </>
                   )}
@@ -332,10 +339,10 @@ export function PermissionTable({
   currentPage,
   pageSize
 }: PermissionTableProps) {
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
+
   const handleDeleteClick = (permissionId: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este permiso?')) {
-      onDelete(permissionId);
-    }
+    setPendingDeleteId(permissionId);
   };
 
   if (!loading && permissions.length === 0) {
@@ -350,24 +357,41 @@ export function PermissionTable({
   }
 
   return (
-    <div className='space-y-4'>
-      <MobileCardView
-        permissions={permissions}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onEdit={onEdit}
-        handleDeleteClick={handleDeleteClick}
-        loading={loading}
-      />
+    <>
+      <div className='space-y-4'>
+        <MobileCardView
+          permissions={permissions}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onEdit={onEdit}
+          handleDeleteClick={handleDeleteClick}
+          loading={loading}
+        />
 
-      <DesktopTableView
-        permissions={permissions}
-        currentPage={currentPage}
-        pageSize={pageSize}
-        onEdit={onEdit}
-        handleDeleteClick={handleDeleteClick}
-        loading={loading}
+        <DesktopTableView
+          permissions={permissions}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onEdit={onEdit}
+          handleDeleteClick={handleDeleteClick}
+          loading={loading}
+        />
+      </div>
+
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        onOpenChange={open => {
+          if (!open) setPendingDeleteId(null);
+        }}
+        title='Eliminar permiso'
+        message='Esta acción eliminará el permiso seleccionado y no se puede revertir.'
+        confirmText='Eliminar'
+        type='warning'
+        onConfirm={() => {
+          if (pendingDeleteId) onDelete(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
       />
-    </div>
+    </>
   );
 }

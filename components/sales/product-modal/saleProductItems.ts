@@ -12,7 +12,7 @@ import {
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { precioUnitarioAcompanamiento } from '@/lib/sales/recargoAcompanamiento';
 import { getChampagneHostessLimit, isChampagneProduct } from '@/components/orders';
-import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
+import { resolverVentaEnBar, type SaleChoice } from '@/lib/sales/saleChoice';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import type { SaleFormatQuantityOption } from '@/components/sales/SaleFormatQuantities';
 export interface SaleProductItem {
@@ -121,7 +121,8 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
 
   const mlPorShot = resolveShotMl(producto.ml_shot, ctx.shotMl);
   const mlPorShotAnfitriona = resolveShotMlAnfitriona(producto.ml_shot_anfitriona, mlPorShot);
-  const venta = resolverVentaProducto(producto);
+  // Sin unidades selladas la presentación solo se vende por cortos.
+  const venta = resolverVentaEnBar(producto);
   const { tipoVenta, esShot, tieneShot } = venta;
   const precioVenta = venta.precio;
   const comisionVenta = venta.comision;

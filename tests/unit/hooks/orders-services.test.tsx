@@ -7,6 +7,7 @@ import useOrders from '@/hooks/orders/useOrders';
 import { useServicios } from '@/hooks/services/useServicios';
 import { useOrdersList } from '@/hooks/orders/useOrdersList';
 import { showSuccessToast } from '@/lib/utils/toastUtils';
+import { appEventBus } from '@/lib/utils/eventBus';
 
 vi.unmock('@tanstack/react-query');
 vi.mock('@/hooks/shared', () => ({ useSharedSSE: vi.fn() }));
@@ -135,4 +136,45 @@ describe('pedidos y servicios', () => {
       expect(result.current.servicios).toHaveLength(1);
     }
   );
+
+  it('quita el pedido del listado cuando la venta se registra en este dashboard', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => ({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: url.includes('service-requests') ? [] : [{ id_pedido: '1' }, { id_pedido: '2' }]
+        })
+      }))
+    );
+    const { result } = renderHook(useOrdersList);
+    await waitFor(() => expect(result.current.orders).toHaveLength(2));
+
+    act(() => {
+      appEventBus.emit('updatePendingOrders', { type: 'order-processed', orderId: '1' });
+    });
+
+    await waitFor(() => expect(result.current.orders.map(order => order.id_pedido)).toEqual(['2']));
+  });
+
+  it('recarga el listado cuando el evento avisa un cambio sin detalle', async () => {
+    const request = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: url.includes('service-requests') ? [] : [{ id_pedido: '1' }]
+      })
+    }));
+    vi.stubGlobal('fetch', request);
+    const { result } = renderHook(useOrdersList);
+    await waitFor(() => expect(result.current.orders).toHaveLength(1));
+    const llamadas = request.mock.calls.length;
+
+    await act(async () => {
+      appEventBus.emit('updatePendingOrders', {});
+    });
+
+    await waitFor(() => expect(request.mock.calls.length).toBe(llamadas + 2));
+  });
 });

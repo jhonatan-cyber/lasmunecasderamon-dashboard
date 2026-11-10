@@ -609,7 +609,7 @@ export default function EntradasPage() {
             No hay entradas registradas para esta fecha.
           </p>
         ) : (
-          <Table className='w-full text-sm'>
+          <Table className='w-full min-w-[820px] text-sm'>
             <TableHeader className='bg-muted/50 text-muted-foreground'>
               <TableRow>
                 <TableHead>Cliente</TableHead>

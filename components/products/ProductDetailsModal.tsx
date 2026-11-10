@@ -339,7 +339,7 @@ export function ProductDetailsModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='flex max-h-[90dvh] max-w-4xl flex-col overflow-hidden rounded-2xl p-0'>
-        <DialogHeader className='border-b p-6 pr-12'>
+        <DialogHeader className='border-b p-4 pr-12 sm:p-6'>
           <DialogTitle>Detalle de la presentación</DialogTitle>
           <DialogDescription>
             Precios, inventario y etiquetas de esta presentación.

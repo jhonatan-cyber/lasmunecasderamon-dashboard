@@ -7,8 +7,12 @@ import { formatMiles, type ChampagneTierRow } from '@/components/bar/transfer/tr
 const ColumnHeaders = () => (
   <>
     <span className='text-[10px] font-bold uppercase tracking-wider text-gray-400'>N°</span>
-    <span className='text-[10px] font-bold uppercase tracking-wider text-gray-400'>Precio</span>
-    <span className='text-[10px] font-bold uppercase tracking-wider text-gray-400'>Comisión</span>
+    <span className='text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+      Precio
+    </span>
+    <span className='text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+      Comisión
+    </span>
   </>
 );
 

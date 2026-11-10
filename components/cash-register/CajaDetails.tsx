@@ -70,7 +70,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
               counts={view.tabCounts}
             />
 
-            <div className='flex-1 overflow-y-auto custom-scrollbar p-6 print:overflow-visible print:max-h-none'>
+            <div className='flex-1 overflow-y-auto custom-scrollbar p-4 print:overflow-visible print:max-h-none sm:p-6'>
               {view.activeTab === 'resumen' && (
                 <CajaDetailsResumenTab
                   caja={view.cajaActual}
@@ -133,7 +133,7 @@ export default function CajaDetails({ caja, open, onOpenChange }: CajaDetailsPro
             </div>
           </div>
 
-          <div className='shrink-0 border-t border-slate-100 dark:border-slate-800 p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl print:hidden'>
+          <div className='shrink-0 rounded-b-2xl border-t border-slate-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900/50 flex justify-center print:hidden sm:p-6'>
             <Button
               variant='outline'
               size='sm'

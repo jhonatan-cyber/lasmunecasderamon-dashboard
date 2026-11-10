@@ -272,10 +272,10 @@ export default function Users() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className='w-full max-w-none px-1 sm:px-3 lg:px-4 space-y-6 mt-4 pb-24 sm:pb-8'>
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6'>
+    <div className='mt-4 w-full max-w-none space-y-4 px-4 pb-24 sm:mt-6 sm:space-y-6 sm:px-6 sm:pb-8 lg:mt-10 lg:px-10'>
+      <div className='flex flex-col justify-between gap-6 sm:flex-row sm:items-center'>
         <div>
-          <h1 className='text-3xl font-bold'>Gestión de Usuarios</h1>
+          <h1 className='text-2xl font-bold sm:text-3xl'>Gestión de Usuarios</h1>
           <p className='text-gray-600'>Control de plataforma.</p>
         </div>
         <div className='flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2'>

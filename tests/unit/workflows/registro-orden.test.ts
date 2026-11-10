@@ -235,9 +235,21 @@ describe('orden transaccional de ventas', () => {
     expect(tareas).toHaveLength(1);
     await tareas[0]();
     expect(sendNotificationToAll).toHaveBeenCalledWith(
+      'order_updated',
+      expect.objectContaining({ orderId: 'pedido', estado: 0 })
+    );
+    expect(sendNotificationToAll).toHaveBeenCalledWith(
       'updateSales',
       expect.objectContaining({ id: 'id-1' })
     );
+  });
+  it('no anuncia el cierre de un pedido cuando la venta no viene de uno', async () => {
+    const tareasLocales: Array<() => void | Promise<void>> = [];
+    await registrarVenta({ ...venta, pedido_id: undefined }, 'cajero', contexto, tarea =>
+      tareasLocales.push(tarea)
+    );
+    await Promise.all(tareasLocales.map(tarea => tarea()));
+    expect(sendNotificationToAll).not.toHaveBeenCalledWith('order_updated', expect.anything());
   });
   it('prepara la venta del pedido con el pago que elige la caja', async () => {
     const cobro = {

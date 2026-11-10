@@ -53,7 +53,7 @@ export function AnulacionVentaModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='flex max-h-[90vh] w-[95vw] max-w-[95vw] flex-col p-0 sm:w-auto sm:max-w-[425px]'>
-        <DialogHeader className='shrink-0 border-b px-6 pt-6 pb-4 dark:border-gray-700'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-gray-700 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='mb-4 flex items-center gap-2 text-lg text-red-600 dark:text-red-400 sm:mb-6 sm:text-xl'>
             <AlertTriangle className='h-4 w-4 sm:h-5 sm:w-5' />
             Solicitud Anulación
@@ -64,7 +64,7 @@ export function AnulacionVentaModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='space-y-4'>
             {ventaInfo && (
               <div className='rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800'>
@@ -123,7 +123,7 @@ export function AnulacionVentaModal({
           </div>
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4 dark:border-gray-700'>
+        <div className='shrink-0 border-t p-4 dark:border-gray-700 sm:p-6'>
           <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
             <Button
               size='sm'

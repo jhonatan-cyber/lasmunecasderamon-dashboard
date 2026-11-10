@@ -158,7 +158,9 @@ export function NewPresentacionRow({
                 <p className='text-xs font-bold uppercase tracking-wider text-gray-400'>
                   Presentación {i + 1}
                 </p>
-                <p className='text-[11px] text-gray-400'>Arrastra o toca la imagen</p>
+                <p className='text-[11px] text-gray-500 dark:text-gray-400'>
+                  Arrastra o toca la imagen
+                </p>
               </div>
             </div>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>

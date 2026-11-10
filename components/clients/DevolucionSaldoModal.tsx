@@ -63,7 +63,7 @@ export function DevolucionSaldoModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-2 border-b'>
+        <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold flex items-center gap-2'>
             {isCajero ? (
               <Send className='w-5 h-5 text-amber-600' />
@@ -79,7 +79,7 @@ export function DevolucionSaldoModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <form id='devolucion-form' onSubmit={handleSubmit} className='space-y-6'>
             <div className='space-y-2'>
               <Label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
@@ -88,6 +88,7 @@ export function DevolucionSaldoModal({
               <div className='relative'>
                 <User className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
                 <Input
+                  aria-label='Cliente'
                   value={client ? `${client.name} ${client.lastName}` : ''}
                   disabled
                   className='pl-10 bg-gray-50/50 dark:bg-slate-900/50 border-gray-200 dark:border-gray-800'
@@ -183,7 +184,7 @@ export function DevolucionSaldoModal({
           </form>
         </div>
 
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
           <Button
             variant='outline'
             onClick={handleCancel}

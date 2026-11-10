@@ -96,7 +96,7 @@ export default function OvertimeDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-gray-700 sm:p-6 sm:pr-14 sm:pb-3'>
           <div className='flex items-center justify-between'>
             <DialogTitle className='text-xl font-bold dark:text-white'>
               Detalle de Horas Extras
@@ -104,11 +104,11 @@ export default function OvertimeDetailModal({
           </div>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='space-y-4'>
             {}
             <Card>
-              <CardContent className='p-6'>
+              <CardContent className='p-4 sm:p-6'>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                   <div className='flex flex-col space-y-2'>
                     <h4 className='text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
@@ -184,8 +184,8 @@ export default function OvertimeDetailModal({
               />
             ) : (
               <div className='space-y-6'>
-                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
-                  <Table>
+                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-x-auto'>
+                  <Table className='min-w-[540px]'>
                     <TableHeader>
                       <TableRow className='hover:bg-transparent'>
                         <TableHead className='font-bold text-center'>Fecha</TableHead>
@@ -242,7 +242,7 @@ export default function OvertimeDetailModal({
           </div>
         </div>
 
-        <DialogFooter className='px-6 py-4 border-t dark:border-gray-700 flex items-center justify-center sm:justify-center'>
+        <DialogFooter className='flex items-center justify-center border-t p-4 dark:border-gray-700 sm:justify-center sm:p-6'>
           <Button
             onClick={onClose}
             variant='outline'

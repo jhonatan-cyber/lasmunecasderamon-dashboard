@@ -57,14 +57,14 @@ export function PayrollCalendarDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl w-full max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-lg font-semibold'>
             {detailTitle}
             <span className='ml-2 text-gray-500 font-normal'>{selectedItem.codigo}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6'>
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4'>
             <div className='p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg'>
               <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>Cliente</div>
@@ -163,7 +163,9 @@ export function PayrollCalendarDetailModal({
                 )}
 
               <div className='p-3 sm:p-4 bg-black text-white rounded-lg'>
-                <div className='text-xs text-gray-400 uppercase mb-1'>Total Venta</div>
+                <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                  Total Venta
+                </div>
                 <div className='text-xl sm:text-2xl font-bold'>
                   {formatCurrencyCLP(selectedItem.total || 0)}
                 </div>
@@ -246,7 +248,9 @@ export function PayrollCalendarDetailModal({
                 )}
 
               <div className='p-3 sm:p-4 bg-black text-white rounded-lg'>
-                <div className='text-xs text-gray-400 uppercase mb-1'>Total Servicio</div>
+                <div className='text-xs text-gray-500 dark:text-gray-400 uppercase mb-1'>
+                  Total Servicio
+                </div>
                 <div className='text-xl sm:text-2xl font-bold'>
                   {formatCurrencyCLP(selectedItem.total || 0)}
                 </div>
@@ -269,7 +273,7 @@ export function PayrollCalendarDetailModal({
           </div>
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t p-4 sm:p-6'>
           <div className='flex justify-center'>
             <Button
               variant='outline'

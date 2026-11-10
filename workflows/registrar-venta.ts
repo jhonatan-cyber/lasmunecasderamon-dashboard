@@ -273,6 +273,8 @@ export async function registrarVenta(
     sendNotificationToAll('timers_updated', { timestamp: now });
     if (validated.servicio_id && validated.servicio_anfitrionas !== undefined)
       sendNotificationToAll('service_changed', { action: 'hostesses', id: validated.servicio_id });
+    // El pedido quedó cerrado: los listados de pedidos deben quitarlo al instante.
+    if (pedidoId) sendNotificationToAll('order_updated', { orderId: pedidoId, estado: 0 });
     sendNotificationToAll('updateSales', { id: result.id_venta, type: 'venta' });
     await notifyBarShotAlerts(alertasShots);
   };

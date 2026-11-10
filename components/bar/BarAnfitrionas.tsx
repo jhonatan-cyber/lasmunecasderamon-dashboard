@@ -130,7 +130,9 @@ export function BarAnfitrionas({
       {isChampagne && open && (
         <div className='rounded-xl border border-purple-100 dark:border-purple-900/40 overflow-hidden'>
           {loading || !tiers ? (
-            <p className='text-xs text-gray-400 px-3 py-2'>Cargando precios...</p>
+            <p className='text-xs text-gray-500 dark:text-gray-400 px-3 py-2'>
+              Cargando precios...
+            </p>
           ) : (
             <Table className='w-full'>
               <TableHeader className='bg-purple-50 dark:bg-purple-900/20'>

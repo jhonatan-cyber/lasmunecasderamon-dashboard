@@ -46,6 +46,10 @@ export interface UseRoleCalendarReturn {
   handleMouseDown: (date: Date) => void;
   handleMouseEnter: (date: Date) => void;
   handleMouseUp: () => void;
+  handleTouchStart: (date: Date, clientX: number, clientY: number) => void;
+  handleTouchMove: (clientX: number, clientY: number) => void;
+  handleTouchEnd: () => void;
+  handleTouchCancel: () => void;
   clearSelection: () => void;
   setSelectedDataType: (type: DataType) => void;
   setIsModalOpen: (open: boolean) => void;

@@ -113,7 +113,7 @@ export function TipsEmployeeList({ allowedRole }: Props) {
 
   if (userLoading) {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
           <p className='mt-4 text-gray-600'>Cargando...</p>
@@ -124,7 +124,7 @@ export function TipsEmployeeList({ allowedRole }: Props) {
 
   if (user?.role?.toLowerCase() !== allowedRole) {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='text-center'>
           <h1 className='text-2xl font-bold text-red-600 mb-4'>Acceso Denegado</h1>
           <p className='text-gray-600'>No tienes permisos para acceder a esta página.</p>
@@ -213,19 +213,19 @@ export function TipsEmployeeList({ allowedRole }: Props) {
     return <ListLoadError message='No se pudieron cargar tus propinas.' onRetry={fetchTips} />;
 
   return (
-    <div className='p-6 space-y-6'>
+    <div className='p-4 space-y-6 sm:p-6'>
       {}
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Listado de Propinas</h1>
-          <p className='text-gray-600'>
+          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl'>Listado de Propinas</h1>
+          <p className='text-sm text-gray-600 sm:text-base'>
             Propinas de {user?.name} {user?.lastName}
           </p>
         </div>
         <Button
           variant='outline'
           onClick={() => router.back()}
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200'
+          className='w-full rounded-full bg-black text-white hover:scale-105 transition-all duration-200 sm:w-auto'
         >
           <ArrowLeft className='w-4 h-4 mr-2' />
           Atrás

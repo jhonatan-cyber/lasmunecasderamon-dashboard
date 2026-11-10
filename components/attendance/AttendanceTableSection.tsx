@@ -191,7 +191,7 @@ export function AttendanceTableSection({
 
 export function AttendanceDetailFooter({ onClose }: { onClose: () => void }) {
   return (
-    <div className='shrink-0 px-6 py-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-slate-900/40'>
+    <div className='shrink-0 border-t bg-gray-50 p-4 dark:border-gray-700 dark:bg-slate-900/40 sm:p-6'>
       <div className='flex justify-center'>
         <Button
           variant='unstyled'

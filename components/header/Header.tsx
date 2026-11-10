@@ -64,19 +64,25 @@ export function Header({ showSidebarControls = true }: { showSidebarControls?: b
   const shouldShowNotifications = isAdmin || isCajero;
 
   return (
-    <header className='bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800 h-14 sm:h-16 flex items-center justify-between px-2 sm:px-6 sticky top-0 z-50'>
-      <div className='flex min-w-[44px] items-center gap-2 sm:gap-4'>
+    <header className='bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800 h-14 sm:h-16 flex items-center justify-between gap-2 px-2 sm:px-4 lg:px-6 sticky top-0 z-50'>
+      <div className='flex shrink-0 items-center gap-2 sm:gap-4'>
         {showSidebarControls ? <SidebarControls /> : null}
       </div>
 
-      <div className='flex min-w-0 items-center gap-1.5 sm:gap-4'>
+      <div className='flex min-w-0 items-center gap-0.5 sm:gap-2 lg:gap-4'>
         {!isAnfitriona && (isAdmin || isCajero) && (
           <CodigoVerificacionHeader userRole={user?.role} />
         )}
         {user && !isAdmin && <AttendanceCodeModal />}
-        <ThemeSwitcher />
-        {shouldShowNotifications ? <HeaderNotifications /> : null}
-        <div className='h-6 w-px bg-gray-200 dark:bg-gray-800 mx-0.5 sm:mx-2'></div>
+        <div className='shrink-0'>
+          <ThemeSwitcher />
+        </div>
+        {shouldShowNotifications ? (
+          <div className='shrink-0'>
+            <HeaderNotifications />
+          </div>
+        ) : null}
+        <div className='mx-0.5 hidden h-6 w-px bg-gray-200 sm:block sm:mx-2 dark:bg-gray-800'></div>
         <div className='shrink-0'>
           <HeaderUserMenu />
         </div>

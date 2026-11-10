@@ -31,7 +31,7 @@ export default function AccountSummary({
 
   return (
     <div className='flex flex-col items-center justify-center'>
-      <div className='text-xs text-gray-400 font-semibold mb-1'>TOTAL</div>
+      <div className='text-xs text-gray-500 dark:text-gray-400 font-semibold mb-1'>TOTAL</div>
       <div className='text-2xl font-bold text-gray-900 mb-2 text-center justify-center items-center'>
         {formatCurrencyCLP(total)}
       </div>

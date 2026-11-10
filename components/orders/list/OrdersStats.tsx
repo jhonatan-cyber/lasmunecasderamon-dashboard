@@ -31,7 +31,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
     };
 
     return (
-      <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
+      <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6 sm:px-8'>
         {}
         <MetricCard
           tone='emerald'
@@ -110,7 +110,7 @@ export const OrdersStats = ({ activeTab, orders, servicios }: OrdersStatsProps) 
   };
 
   return (
-    <div className='grid gap-4 grid-cols-2 sm:grid-cols-3 mb-6 px-4 sm:px-8'>
+    <div className='grid gap-4 grid-cols-2 sm:grid-cols-3 mb-6 sm:px-8'>
       {}
       <MetricCard
         tone='emerald'

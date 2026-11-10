@@ -104,6 +104,7 @@ function SidebarHeader({ isCollapsed, subtitle, onClose, loading = false }: Side
         <Button
           variant='unstyled'
           onClick={onClose}
+          aria-label='Cerrar menú'
           className='lg:hidden ml-auto p-2 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors'
         >
           <X className='h-5 w-5 text-gray-500 dark:text-neutral-400' />
@@ -258,6 +259,7 @@ export function Sidebar() {
               <Button
                 variant='unstyled'
                 onClick={() => setSearchTerm('')}
+                aria-label='Limpiar búsqueda'
                 className='absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors'
               >
                 <X className='h-3.5 w-3.5' />
@@ -295,6 +297,7 @@ export function Sidebar() {
             <div
               className='fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 sidebar-overlay'
               onClick={closeSidebar}
+              aria-hidden='true'
             />
             <div className='fixed inset-y-0 left-0 z-50 sidebar-enter'>{content}</div>
           </div>

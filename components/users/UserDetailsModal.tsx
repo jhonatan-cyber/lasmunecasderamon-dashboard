@@ -124,7 +124,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden'>
-        <DialogHeader className='p-6 border-b flex flex-row items-center justify-between'>
+        <DialogHeader className='p-4 pr-12 border-b flex flex-row items-center justify-between sm:p-6 sm:pr-14'>
           <div>
             <DialogTitle className='text-xl font-bold'>Detalles del Usuario</DialogTitle>
             <DialogDescription className='sr-only'>
@@ -132,7 +132,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
             </DialogDescription>
           </div>
         </DialogHeader>
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='w-full max-w-xl mx-auto'>
             <div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6 mb-4 sm:mb-6'>
               <div className='flex items-center space-x-3 sm:space-x-4'>
@@ -363,7 +363,7 @@ export function UserDetailsModal({ user, isOpen, onClose }: UserDetailsModalProp
             </div>
           </div>
         </div>
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center rounded-b-2xl sm:p-6'>
           <Button
             onClick={onClose}
             className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 transition-all hover:bg-white! hover:text-black! hover:scale-105 border-2'

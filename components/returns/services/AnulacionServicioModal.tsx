@@ -33,13 +33,13 @@ export function AnulacionServicioModal({
       }}
     >
       <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-gray-700 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-gray-900 dark:text-gray-100'>
             Solicitar Anulación de Servicio
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className='flex flex-col flex-1'>
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <form onSubmit={handleSubmit} className='flex min-h-0 flex-1 flex-col'>
+          <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
             <div className='space-y-4'>
               {servicio && (
                 <div className='space-y-2'>
@@ -85,7 +85,7 @@ export function AnulacionServicioModal({
             </div>
           </div>
 
-          <div className='shrink-0 border-t dark:border-gray-700 px-6 py-4'>
+          <div className='shrink-0 border-t p-4 dark:border-gray-700 sm:p-6'>
             <div className='flex justify-end space-x-2'>
               <Button
                 type='button'

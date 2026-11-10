@@ -52,14 +52,14 @@ export function SolicitarAnulacionModal({
       }}
     >
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-2 border-b'>
+        <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold'>Solicitar anulacion</DialogTitle>
           <DialogDescription>
             Completa el motivo y el monto antes de enviar la solicitud por WhatsApp.
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto p-6 space-y-6'>
+        <div className='min-h-0 flex-1 space-y-6 overflow-y-auto p-4 sm:p-6'>
           <div className='rounded-2xl border bg-slate-50 p-4 dark:bg-slate-900/60'>
             <div className='text-sm text-slate-500 dark:text-slate-400'>Cuenta</div>
             <div className='font-semibold text-slate-900 dark:text-slate-100'>
@@ -109,7 +109,7 @@ export function SolicitarAnulacionModal({
           </div>
         </div>
 
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
           <Button
             variant='outline'
             onClick={onCancelar}

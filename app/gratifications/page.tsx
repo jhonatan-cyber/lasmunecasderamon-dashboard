@@ -176,7 +176,7 @@ export default function GratificacionesPage() {
 
   if (error) {
     return (
-      <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
+      <div className='flex min-h-[60vh] flex-col items-center justify-center gap-4 p-4 text-center'>
         <AlertCircle className='h-12 w-12 text-red-500' />
         <h2 className='text-xl font-bold'>Lo sentimos, ocurrió un error</h2>
         <p className='text-zinc-500'>{error}</p>
@@ -192,7 +192,7 @@ export default function GratificacionesPage() {
   }
 
   return (
-    <div className='p-6 space-y-6'>
+    <div className='space-y-6 p-4 sm:p-6'>
       <CajaStatusBanner entityName='gratificaciones' />
 
       <GratificacionesHeader
@@ -211,7 +211,7 @@ export default function GratificacionesPage() {
       />
 
       {/* Toggle Mis gratificaciones / Mis solicitudes (solo lectura) */}
-      <div className='flex justify-center gap-3 border-b pb-1'>
+      <div className='flex w-full flex-col gap-2 border-b pb-2 sm:flex-row sm:justify-center sm:gap-3 sm:pb-1'>
         <Button
           variant='unstyled'
           type='button'

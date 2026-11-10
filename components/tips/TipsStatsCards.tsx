@@ -17,7 +17,7 @@ export default function TipsStatsCards({
   formatCurrency
 }: TipsStatsCardsProps) {
   return (
-    <div className='grid gap-4 grid-cols-2 lg:grid-cols-3 mb-6'>
+    <div className='mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
       <MetricCard
         tone='emerald'
         icon={<DollarSign className='h-4 w-4 text-emerald-600' />}

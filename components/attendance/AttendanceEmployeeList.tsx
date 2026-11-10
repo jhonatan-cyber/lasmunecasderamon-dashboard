@@ -151,7 +151,7 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
 
   if (userLoading) {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
           <p className='mt-4 text-gray-600'>Cargando...</p>
@@ -162,7 +162,7 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
 
   if (user?.role?.toLowerCase() !== allowedRole) {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='text-center'>
           <h1 className='text-2xl font-bold text-red-600 mb-4'>Acceso Denegado</h1>
           <p className='text-gray-600'>No tienes permisos para acceder a esta página.</p>
@@ -251,18 +251,18 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
   };
 
   return (
-    <div className='p-6 space-y-6'>
+    <div className='p-4 space-y-6 sm:p-6'>
       {}
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>
             Listado de Asistencias
           </h1>
-          <p className='text-gray-600'>
+          <p className='text-sm text-gray-600 sm:text-base'>
             Asistencias de {user?.name} {user?.lastName}
           </p>
         </div>
-        <div className='flex gap-2'>
+        <div className='flex flex-wrap gap-2'>
           {['garzon', 'cajero'].includes(allowedRole) && (
             <Button
               variant='outline'

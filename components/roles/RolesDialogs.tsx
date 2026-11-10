@@ -70,13 +70,13 @@ export function RolesDialogs({
         }}
       >
         <DialogContent className='w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+          <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
             <DialogTitle className='text-lg sm:text-xl lg:text-2xl'>
               {isEditMode ? 'Editar Rol' : 'Agregar Nuevo Rol'}
             </DialogTitle>
             <DialogDescription className='sr-only'>Formulario de rol</DialogDescription>
           </DialogHeader>
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
             <RoleForm
               isEditMode={isEditMode}
               initialValues={newRole}
@@ -87,7 +87,7 @@ export function RolesDialogs({
               hideButtons={true}
             />
           </div>
-          <div className='shrink-0 border-t px-6 py-4'>
+          <div className='shrink-0 border-t p-4 sm:p-6'>
             <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
               <Button
                 type='button'

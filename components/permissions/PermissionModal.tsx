@@ -99,7 +99,7 @@ export function PermissionModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-2 border-b'>
+        <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold flex items-center gap-2'>
             <Key className='h-5 w-5' />
             {isEditMode ? 'Editar Permiso' : 'Nuevo Permiso'}
@@ -112,7 +112,7 @@ export function PermissionModal({
         <form
           id='permission-form'
           onSubmit={handleSubmit}
-          className='flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6'
+          className='min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:space-y-6 sm:p-6'
         >
           {}
           <div>
@@ -195,7 +195,7 @@ export function PermissionModal({
           </div>
         </form>
 
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
           <Button
             variant='outline'
             onClick={handleCancel}

@@ -110,10 +110,12 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
 
   if (userLoading) {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='flex flex-col items-center gap-4'>
           <div className='h-12 w-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin' />
-          <p className='font-black text-gray-400 uppercase tracking-tighter'>Cargando...</p>
+          <p className='font-black text-gray-500 dark:text-gray-400 uppercase tracking-tighter'>
+            Cargando...
+          </p>
         </div>
       </div>
     );
@@ -121,7 +123,7 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
 
   if (user?.role?.toLowerCase() !== allowedRole) {
     return (
-      <div className='p-6 flex flex-col items-center justify-center min-h-[60vh] gap-4'>
+      <div className='flex min-h-[60vh] flex-col items-center justify-center gap-4 p-4 sm:p-6'>
         <div className='h-16 w-16 bg-red-100 rounded-3xl flex items-center justify-center'>
           <ArrowLeft className='h-8 w-8 text-red-600' />
         </div>
@@ -142,7 +144,7 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
     );
 
   return (
-    <div className='p-6 space-y-6'>
+    <div className='p-4 space-y-6 sm:p-6'>
       {}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6'>
         <div className='flex flex-col'>

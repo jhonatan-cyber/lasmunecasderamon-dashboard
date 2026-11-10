@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 export function OfflinePageClient() {
   return (
     <div className='flex min-h-screen items-center justify-center bg-gray-50 dark:bg-neutral-900'>
-      <div className='text-center space-y-6 p-8'>
+      <div className='space-y-6 p-4 text-center sm:p-8'>
         <div className='flex justify-center'>
           <div className='rounded-full bg-gray-100 dark:bg-neutral-800 p-6'>
             <WifiOff className='h-16 w-16 text-gray-400 dark:text-neutral-500' />

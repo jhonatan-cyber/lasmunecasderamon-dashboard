@@ -144,7 +144,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <div
               {...attributes}
               {...listeners}
-              className='absolute top-4 left-4 z-20 cursor-grab active:cursor-grabbing p-2 bg-white/80 dark:bg-slate-900/80 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-opacity'
+              className='absolute top-4 left-4 z-20 cursor-grab active:cursor-grabbing p-2 bg-white/80 dark:bg-slate-900/80 rounded-full shadow-xs opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100'
             >
               <GripVertical className='w-4 h-4 text-gray-400 group-active:text-purple-500' />
             </div>
@@ -158,7 +158,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   variant='ghost'
                   size='icon'
                   aria-label='Más acciones'
-                  className='h-8 w-8 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-all duration-300'
+                  className='h-8 w-8 bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 rounded-full shadow-xs opacity-100 transition-all duration-300 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100'
                 >
                   <MoreVertical className='h-4 w-4 text-gray-600 dark:text-gray-300' />
                 </Button>

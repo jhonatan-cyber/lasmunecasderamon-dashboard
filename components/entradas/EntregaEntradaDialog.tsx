@@ -540,6 +540,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
                 className='rounded-full'
                 variant={formatoSeleccionado === 'corte' ? 'default' : 'outline'}
                 onClick={() => cambiarFormato('corte')}
+                aria-pressed={formatoSeleccionado === 'corte'}
               >
                 Corte · {formatCurrencyCLP(precioFormato(bebidaSeleccionada, 'corte'))}
               </Button>
@@ -549,6 +550,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
                 className='rounded-full'
                 variant={formatoSeleccionado === 'botella' ? 'default' : 'outline'}
                 onClick={() => cambiarFormato('botella')}
+                aria-pressed={formatoSeleccionado === 'botella'}
               >
                 Botella · {formatCurrencyCLP(bebidaSeleccionada.precio_venta)}
               </Button>

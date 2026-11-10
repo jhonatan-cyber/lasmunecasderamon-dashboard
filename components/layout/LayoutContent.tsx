@@ -46,7 +46,7 @@ function MainLayout({ children, user }: { children: React.ReactNode; user: Layou
   const showSidebar = canShowSidebar(user);
 
   return (
-    <div className={cn('flex h-screen bg-background', !showSidebar && 'hide-sidebar')}>
+    <div className={cn('flex h-dvh bg-background', !showSidebar && 'hide-sidebar')}>
       {showSidebar ? <Sidebar /> : null}
       <div
         className={cn(

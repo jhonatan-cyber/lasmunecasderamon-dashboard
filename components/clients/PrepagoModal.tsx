@@ -106,8 +106,8 @@ function PrepagoForm({
       <PaymentMethodSelect
         value={paymentMethod}
         onChange={onPaymentMethodChange}
-        label='Metodo de pago'
-        placeholder='Seleccionar metodo de pago'
+        label='Método de pago'
+        placeholder='Seleccionar método de pago'
         className='w-full'
         showPrepago={false}
         showMixto={true}
@@ -158,6 +158,7 @@ function PrepagoForm({
                   type='button'
                   variant='outline'
                   size='sm'
+                  aria-label='Eliminar medio de pago'
                   onClick={() =>
                     onMixedPaymentsChange(
                       mixedPayments.filter((_, itemIndex) => itemIndex !== index)
@@ -326,7 +327,7 @@ export function PrepagoModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-2 border-b'>
+        <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold flex items-center gap-2'>
             <Wallet className='w-5 h-5 text-green-600' />
             <span>Cargar Saldo Prepago</span>
@@ -336,7 +337,7 @@ export function PrepagoModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           {/* La carga de saldo mueve dinero en caja: con caja cerrada se avisa
               y se deshabilita el guardado (paridad con las apps). */}
           {cajaCerrada && <CajaStatusBanner entityName='ventas' />}
@@ -355,7 +356,7 @@ export function PrepagoModal({
           />
         </div>
 
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
           <Button
             variant='outline'
             onClick={handleCancel}

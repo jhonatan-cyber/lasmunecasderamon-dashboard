@@ -34,7 +34,7 @@ export default function Dashboard() {
   const { user, loading } = useCurrentUser();
   if (loading || !user)
     return (
-      <p role='status' className='p-6 text-muted-foreground'>
+      <p role='status' className='p-4 text-muted-foreground sm:p-6'>
         Cargando dashboard…
       </p>
     );

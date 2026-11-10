@@ -171,13 +171,13 @@ export const CerrarCajaDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-lg max-h-[90vh] flex flex-col p-0 border-none bg-white/95 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden'>
-        <DialogHeader className='shrink-0 px-8 pt-8 pb-4 border-b border-slate-100 dark:border-slate-800'>
-          <DialogTitle className='text-2xl font-black tracking-tight text-slate-900 dark:text-white'>
+        <DialogHeader className='shrink-0 px-4 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800 sm:px-8 sm:pt-8'>
+          <DialogTitle className='text-xl font-black tracking-tight text-slate-900 dark:text-white sm:text-2xl'>
             Cerrar Caja {getDiaSemana(caja.fecha_apertura)}
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6'>
           {pendiente ? (
             <div className='space-y-4'>
               <div className='bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 space-y-3'>
@@ -311,14 +311,14 @@ export const CerrarCajaDialog = ({
           )}
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t px-4 py-4 sm:px-6'>
           <form onSubmit={handleSubmit}>
-            <div className='flex justify-center gap-2 text-center'>
+            <div className='flex flex-col-reverse justify-center gap-2 text-center sm:flex-row'>
               <Button
                 type='button'
                 size='sm'
                 variant='outline'
-                className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                className='w-full rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105 sm:w-auto'
                 onClick={handleClose}
                 disabled={loading}
               >
@@ -329,7 +329,7 @@ export const CerrarCajaDialog = ({
                 disabled={loading || usersLoading || !!pendiente}
                 size='sm'
                 variant='default'
-                className={`rounded-full px-8 bg-red-600 text-white hover:bg-red-700 transition-all hover:scale-105 ${
+                className={`w-full rounded-full px-8 bg-red-600 text-white hover:bg-red-700 transition-all hover:scale-105 sm:w-auto ${
                   pendiente ? 'hidden' : ''
                 }`}
               >

@@ -343,7 +343,7 @@ export function SalesDetailModal({
           )}
         </div>
 
-        <DialogFooter className='px-8 py-4 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center sm:justify-center'>
+        <DialogFooter className='flex items-center justify-center border-t border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-slate-800/50 sm:justify-center sm:p-8'>
           <Button
             onClick={() => onOpenChange(false)}
             variant='outline'

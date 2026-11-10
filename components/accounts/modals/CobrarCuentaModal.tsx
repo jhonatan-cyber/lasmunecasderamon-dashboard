@@ -20,7 +20,7 @@ import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { useCuentaCobro, useCuentaDetail } from '@/hooks/accounts';
 import { summarizeCuentaDetalles } from '@/lib/utils/cuentas';
 import { ProductCartTable } from '../tables/ProductCartTable';
-import { CreditCard, DollarSign, Loader2 } from 'lucide-react';
+import { CreditCard, DollarSign, Loader2, AlertTriangle } from 'lucide-react';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { calcularPropina } from '@/lib/business/saleTotals';
 
@@ -196,13 +196,13 @@ export default function CobrarCuentaModal({
       }}
     >
       <DialogContent className='sm:max-w-4xl max-h-[90vh] flex flex-col p-0 bg-white rounded-xl shadow-md'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 px-4 pt-5 pb-4 border-b sm:px-6 sm:pt-6'>
           <DialogTitle className='text-start text-xl font-semibold tracking-tight'>
             Cobrar Cuenta
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           {showLoading ? (
             <div className='flex items-center justify-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900' />
@@ -213,7 +213,7 @@ export default function CobrarCuentaModal({
           ) : (
             <div className='space-y-8 rounded-xl'>
               {hasOpenCaja === false && <CajaStatusBanner entityName='ventas' />}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-12 border-b pb-6 rounded-xl'>
+              <div className='grid grid-cols-1 gap-6 border-b pb-6 rounded-xl md:grid-cols-2 md:gap-12'>
                 <div className='space-y-2 text-sm text-gray-700'>
                   <div>
                     <span className='font-medium'>
@@ -288,8 +288,12 @@ export default function CobrarCuentaModal({
                       </Select>
                     </div>
                     {showMetodoPagoError && !metodoPago && (
-                      <div role='alert' className='text-xs text-red-500 mt-1'>
-                        ⚠️ El método de pago es obligatorio
+                      <div
+                        role='alert'
+                        className='text-xs text-red-500 mt-1 flex items-center gap-1'
+                      >
+                        <AlertTriangle className='h-3 w-3 shrink-0' aria-hidden='true' />
+                        <span>El método de pago es obligatorio</span>
                       </div>
                     )}
                   </div>
@@ -429,12 +433,12 @@ export default function CobrarCuentaModal({
           )}
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4'>
-          <div className='flex justify-center gap-4'>
+        <div className='shrink-0 border-t px-4 py-4 sm:px-6'>
+          <div className='flex flex-col-reverse justify-center gap-3 sm:flex-row sm:gap-4'>
             <Button
               size='sm'
               variant='outline'
-              className='flex items-center gap-2 rounded-full px-8 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black w-full sm:w-auto text-sm sm:text-base border-gray-200 dark:border-gray-800'
+              className='flex items-center justify-center gap-2 rounded-full px-8 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black w-full sm:w-auto text-sm sm:text-base border-gray-200 dark:border-gray-800'
               onClick={handleClose}
             >
               Cancelar
@@ -442,7 +446,7 @@ export default function CobrarCuentaModal({
             <Button
               size='sm'
               variant='outline'
-              className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
+              className='w-full justify-center bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2 sm:w-auto'
               onClick={handleCobrarCuenta}
               disabled={isCobrando || hasOpenCaja === false}
             >

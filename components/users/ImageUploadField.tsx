@@ -466,7 +466,9 @@ function ImageUploadFieldComponent({
                   <p className='text-sm font-semibold text-gray-700 dark:text-gray-200'>
                     Subir foto
                   </p>
-                  <p className='text-xs text-gray-400 mt-1 px-2'>Arrastra una imagen o haz clic</p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1 px-2'>
+                    Arrastra una imagen o haz clic
+                  </p>
                   <div className='mt-3 flex flex-wrap justify-center gap-1.5 px-4'>
                     {['JPG', 'PNG', 'WEBP', 'GIF'].map(ext => (
                       <span

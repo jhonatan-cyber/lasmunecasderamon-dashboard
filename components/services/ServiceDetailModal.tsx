@@ -83,7 +83,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
         {}
-        <DialogHeader className='p-6 pb-4 border-b shrink-0'>
+        <DialogHeader className='p-4 pb-4 border-b shrink-0 sm:p-6 sm:pb-4'>
           <DialogTitle className='text-xl font-bold flex items-center gap-3'>
             Detalle del Servicio
             <span className='text-lg font-normal text-gray-500'>#{servicio.codigo}</span>
@@ -94,7 +94,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
         </DialogHeader>
 
         {}
-        <div className='flex-1 overflow-y-auto px-6 py-4 space-y-6'>
+        <div className='min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4 sm:px-6'>
           {servicio.producto_incluido_nombre && (
             <div className='rounded-xl border p-4 text-sm'>
               <p className='font-semibold'>Producto incluido</p>
@@ -315,7 +315,7 @@ export function ServiceDetailModal({ open, onOpenChange, servicio }: ServiceDeta
         </div>
 
         {}
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl shrink-0'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl shrink-0 sm:p-6'>
           <Button
             variant='outline'
             onClick={() => onOpenChange(false)}

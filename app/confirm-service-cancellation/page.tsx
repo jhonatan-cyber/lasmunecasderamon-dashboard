@@ -103,8 +103,8 @@ function ConfirmarAnulacionServicioContent() {
       if (result.success) {
         toast.success(
           accion === 'confirmar'
-            ? '✅ Anulación de servicio confirmada exitosamente'
-            : '❌ Anulación de servicio rechazada exitosamente'
+            ? 'Anulación de servicio confirmada exitosamente'
+            : 'Anulación de servicio rechazada exitosamente'
         );
 
         toast.info('La ventana se cerrará automáticamente en 2 segundos');
@@ -127,7 +127,7 @@ function ConfirmarAnulacionServicioContent() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4'>
         <div className='text-center'>
           <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4' />
           <p>Cargando solicitud de anulación de servicio...</p>
@@ -138,7 +138,7 @@ function ConfirmarAnulacionServicioContent() {
 
   if (error) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4'>
         <Card className='w-full max-w-md'>
           <CardHeader>
             <CardTitle className='text-red-600'>Error</CardTitle>
@@ -158,7 +158,7 @@ function ConfirmarAnulacionServicioContent() {
 
   if (!solicitud) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4'>
         <Card className='w-full max-w-md'>
           <CardHeader>
             <CardTitle>Solicitud no encontrada</CardTitle>

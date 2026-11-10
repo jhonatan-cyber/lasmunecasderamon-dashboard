@@ -47,6 +47,10 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     handleMouseDown,
     handleMouseEnter,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
     clearSelection,
     setSelectedDataType,
     setIsModalOpen
@@ -171,6 +175,10 @@ export function useRoleCalendar({ role, userId }: UseRoleCalendarProps): UseRole
     handleMouseDown,
     handleMouseEnter,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
     clearSelection,
     setSelectedDataType,
     setIsModalOpen

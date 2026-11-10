@@ -123,8 +123,8 @@ export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosC
         aria-label='Resumen del mes'
         className='border-b border-gray-200 dark:border-slate-800'
       >
-        <div className='grid grid-cols-3 divide-x divide-gray-200 dark:divide-slate-800'>
-          <div className='px-4 py-3'>
+        <div className='grid grid-cols-1 divide-y divide-gray-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-slate-800'>
+          <div className='flex items-center justify-between gap-3 px-4 py-3 sm:block'>
             <span className='block text-[11px] uppercase tracking-wide text-gray-500 dark:text-neutral-400'>
               Reservas
             </span>
@@ -132,7 +132,7 @@ export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosC
               {resumen.reservas.toLocaleString('es-CL')}
             </span>
           </div>
-          <div className='px-4 py-3'>
+          <div className='flex items-center justify-between gap-3 px-4 py-3 sm:block'>
             <span className='block text-[11px] uppercase tracking-wide text-gray-500 dark:text-neutral-400'>
               Personas
             </span>
@@ -140,7 +140,7 @@ export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosC
               {resumen.personas.toLocaleString('es-CL')}
             </span>
           </div>
-          <div className='px-4 py-3'>
+          <div className='flex items-center justify-between gap-3 px-4 py-3 sm:block'>
             <span className='block text-[11px] uppercase tracking-wide text-gray-500 dark:text-neutral-400'>
               Recaudación
             </span>

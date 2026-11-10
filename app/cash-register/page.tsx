@@ -165,8 +165,8 @@ export default function CashRegister() {
 
   if (error) {
     return (
-      <div className='p-6 min-h-[60vh] flex items-center justify-center'>
-        <Card className='max-w-md w-full border-none shadow-2xl bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] p-8 text-center'>
+      <div className='flex min-h-[60vh] items-center justify-center p-4 sm:p-6'>
+        <Card className='w-full max-w-md rounded-[2.5rem] border-none bg-white/80 p-6 text-center shadow-2xl backdrop-blur-xl dark:bg-slate-900/40 sm:p-8'>
           <div className='w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-4xl flex items-center justify-center mx-auto mb-6'>
             <AlertTriangle className='h-10 w-10 text-rose-500' />
           </div>
@@ -227,7 +227,7 @@ export default function CashRegister() {
         {}
         <div className='space-y-8'>
           {!isCajero && (
-            <div className='flex justify-center gap-3 border-b pb-1'>
+            <div className='flex w-full flex-col gap-2 border-b pb-2 sm:flex-row sm:justify-center sm:gap-3 sm:pb-1'>
               <Button
                 variant='unstyled'
                 onClick={() => setCashierTab('cajas')}

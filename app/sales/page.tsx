@@ -248,7 +248,7 @@ export default function Sales() {
               setPage={setPage}
             />
 
-            <div className='flex justify-center gap-3 border-b pb-1 mb-6'>
+            <div className='mb-6 flex w-full flex-col gap-2 border-b pb-2 sm:flex-row sm:justify-center sm:gap-3 sm:pb-1'>
               <Button
                 variant='unstyled'
                 onClick={() => setSalesTab('all')}

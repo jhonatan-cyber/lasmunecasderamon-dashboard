@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useOrdersSSE } from '@/hooks/orders/useOrdersSSE';
+import { appEventBus } from '@/lib/utils/eventBus';
 import logger from '@/lib/utils/logger';
 
 export interface Order {
@@ -102,9 +103,16 @@ export const useOrdersList = () => {
     }
   }, []);
 
+  // Evento local (venta registrada en este dashboard) o remoto (SSE): el listado se
+  // actualiza sin esperar a que el cajero recargue la página.
   const handleOrderUpdate = useCallback(
-    (data: { type: string; orderId: string | number }) => {
-      const normalizedOrderId = String(data.orderId);
+    (data?: { type?: string; orderId?: string | number | null }) => {
+      if (!data?.type) {
+        fetchOrders();
+        fetchServicios();
+        return;
+      }
+      const normalizedOrderId = String(data.orderId ?? '');
       if (data.type === 'order-processed' || data.type === 'order-deleted') {
         setOrders(prev => prev.filter(o => o.id_pedido !== normalizedOrderId));
         fetchServicios();
@@ -116,6 +124,8 @@ export const useOrdersList = () => {
   );
 
   useOrdersSSE(handleOrderUpdate);
+
+  useEffect(() => appEventBus.on('updatePendingOrders', handleOrderUpdate), [handleOrderUpdate]);
 
   useEffect(() => {
     fetchOrders();

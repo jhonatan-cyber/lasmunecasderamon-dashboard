@@ -19,7 +19,7 @@ export default function AttendanceDetailModal({
   onClose,
   userId,
   userName,
-  userNick,
+  userNick
 }: AttendanceDetailModalProps) {
   const {
     asistencias,
@@ -35,7 +35,7 @@ export default function AttendanceDetailModal({
     setPageSize,
     formatDate,
     formatTime,
-    getStatusBadgeText,
+    getStatusBadgeText
   } = useAttendanceDetail({ isOpen, userId });
 
   const renderStatusBadge = (estado: number) => {
@@ -46,19 +46,15 @@ export default function AttendanceDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-gray-700 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-xl font-bold dark:text-white'>
             Detalle de Asistencias
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='space-y-4'>
-            <AttendanceFinancialSummary
-              userName={userName}
-              userNick={userNick}
-              totals={totals}
-            />
+            <AttendanceFinancialSummary userName={userName} userNick={userNick} totals={totals} />
 
             <AttendanceTableSection
               asistencias={asistencias}

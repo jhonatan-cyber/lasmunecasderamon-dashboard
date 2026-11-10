@@ -108,7 +108,7 @@ function ConfirmarAnulacionContent() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
         <div className='text-center'>
           <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100' />
           <p className='text-gray-900 dark:text-gray-100'>Cargando solicitud de anulación...</p>
@@ -119,7 +119,7 @@ function ConfirmarAnulacionContent() {
 
   if (error) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
         <Card className='w-full max-w-md'>
           <CardHeader>
             <CardTitle className='text-red-600 dark:text-red-400'>Error</CardTitle>
@@ -139,7 +139,7 @@ function ConfirmarAnulacionContent() {
 
   if (!solicitud) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
         <Card className='w-full max-w-md'>
           <CardHeader>
             <CardTitle>Solicitud no encontrada</CardTitle>

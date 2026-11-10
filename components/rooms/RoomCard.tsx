@@ -170,7 +170,7 @@ const RoomCard: React.FC<{
                   variant='ghost'
                   size='icon'
                   aria-label='Más acciones'
-                  className={`transition-opacity h-7 w-7 rounded-lg shrink-0 ${isDraggable ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                  className={`transition-opacity h-7 w-7 rounded-lg shrink-0 ${isDraggable ? 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100' : ''}`}
                 >
                   <MoreVertical className='h-3 w-3' />
                 </Button>

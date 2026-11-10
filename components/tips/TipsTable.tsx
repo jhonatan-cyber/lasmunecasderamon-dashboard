@@ -153,6 +153,7 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
                           variant='ghost'
                           size='sm'
                           onClick={() => onVerDetalle(propina)}
+                          aria-label={`Ver detalle de la propina de ${propina.nombre_completo || propina.nick}`}
                           className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200'
                         >
                           <Eye className='w-4 h-4' />

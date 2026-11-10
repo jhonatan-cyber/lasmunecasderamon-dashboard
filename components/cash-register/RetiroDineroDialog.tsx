@@ -117,17 +117,17 @@ export function RetiroDineroDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-md border-none bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden p-0 flex flex-col'>
-        <DialogHeader className='p-8 pb-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-slate-900'>
-          <DialogTitle className='text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3'>
-            <Wallet className='w-6 h-6 text-gray-900 dark:text-white' />
+        <DialogHeader className='p-4 pb-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-slate-900 sm:p-8 sm:pb-4'>
+          <DialogTitle className='text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3 sm:text-xl'>
+            <Wallet className='w-5 h-5 shrink-0 text-gray-900 dark:text-white sm:w-6 sm:h-6' />
             Retirar Dinero - Caja {getDiaSemana(caja.fecha_apertura)}
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-8 py-6 custom-scrollbar bg-white dark:bg-slate-900'>
+        <div className='flex-1 overflow-y-auto px-4 py-4 custom-scrollbar bg-white dark:bg-slate-900 sm:px-8 sm:py-6'>
           <div className='space-y-8'>
             {}
-            <div className='bg-gray-50/50 dark:bg-gray-800/20 p-6 rounded-2xl border border-gray-100 dark:border-gray-800'>
+            <div className='rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/20 sm:p-6'>
               <div className='flex items-center gap-2 mb-4'>
                 <Info className='w-4 h-4 text-gray-400' />
                 <h4 className='font-bold text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500'>
@@ -210,11 +210,11 @@ export function RetiroDineroDialog({
         </div>
 
         {}
-        <div className='shrink-0 border-t border-gray-100 dark:border-gray-800 p-6 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-4'>
+        <div className='shrink-0 border-t border-gray-100 dark:border-gray-800 p-4 bg-gray-50 dark:bg-slate-900/50 flex flex-col-reverse justify-center gap-3 sm:flex-row sm:gap-4 sm:p-6'>
           <Button
             type='button'
             variant='outline'
-            className='rounded-full px-8 h-10 dark:hover:bg-white dark:hover:text-black font-bold text-xs uppercase tracking-widest transition-all hover:scale-105'
+            className='rounded-full px-8 h-10 w-full dark:hover:bg-white dark:hover:text-black font-bold text-xs uppercase tracking-widest transition-all hover:scale-105 sm:w-auto'
             onClick={handleClose}
             disabled={loading}
           >
@@ -224,7 +224,7 @@ export function RetiroDineroDialog({
             type='submit'
             form='retiro-form'
             disabled={loading}
-            className='rounded-full px-8 h-10 bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-all duration-200 font-bold text-xs uppercase tracking-widest'
+            className='rounded-full px-8 h-10 w-full bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-all duration-200 font-bold text-xs uppercase tracking-widest sm:w-auto'
           >
             {loading && <Loader2 className='h-4 w-4 mr-2 animate-spin' />}
             Confirmar Retiro

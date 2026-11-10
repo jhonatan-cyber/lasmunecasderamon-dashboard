@@ -258,7 +258,7 @@ export default function CommissionsDetalleModal({
                             {detalle.fecha_pago ? (
                               formatSoloFecha(detalle.fecha_pago)
                             ) : (
-                              <span className='text-gray-400'>Pendiente</span>
+                              <span className='text-gray-500 dark:text-gray-400'>Pendiente</span>
                             )}
                           </TableCell>
                         </TableRow>

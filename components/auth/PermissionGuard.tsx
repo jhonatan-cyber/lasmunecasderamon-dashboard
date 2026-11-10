@@ -82,7 +82,7 @@ export function PermissionGuard({
     }
 
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='text-center max-w-md'>
           <div className='flex justify-center mb-4'>
             <div className='p-3 bg-red-100 rounded-full'>

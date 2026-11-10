@@ -87,7 +87,7 @@ export function ConfirmModal({
         className={`${sizeClasses[size]} flex flex-col p-0 overflow-hidden rounded-2xl`}
       >
         {}
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-slate-800 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='flex items-center gap-2'>
             <span className={`p-1.5 rounded-lg ${variantConfig.iconBg}`}>{variantConfig.icon}</span>
             <span className='text-gray-900 dark:text-neutral-100 text-base font-semibold'>
@@ -97,7 +97,7 @@ export function ConfirmModal({
         </DialogHeader>
 
         {}
-        <div className='flex-1 px-6 py-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='bg-gray-50 dark:bg-slate-800/50 p-4 rounded-xl border border-gray-200 dark:border-slate-700'>
             <p className='text-sm text-gray-700 dark:text-gray-300 text-center leading-relaxed'>
               {message.split('\n').map((line, i) => (
@@ -111,7 +111,7 @@ export function ConfirmModal({
         </div>
 
         {}
-        <div className='shrink-0 border-t dark:border-slate-800 px-6 py-4 bg-gray-50 dark:bg-slate-900/50 rounded-b-2xl'>
+        <div className='shrink-0 rounded-b-2xl border-t bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900/50 sm:p-6'>
           <div className='flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 w-full'>
             {!hideCancel && (
               <Button

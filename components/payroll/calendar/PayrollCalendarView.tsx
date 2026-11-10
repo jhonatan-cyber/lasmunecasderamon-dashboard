@@ -15,6 +15,10 @@ interface PayrollCalendarViewProps {
   handleMouseDown: (date: Date) => void;
   handleMouseEnter: (date: Date) => void;
   handleMouseUp: () => void;
+  handleTouchStart: (date: Date, clientX: number, clientY: number) => void;
+  handleTouchMove: (clientX: number, clientY: number) => void;
+  handleTouchEnd: () => void;
+  handleTouchCancel: () => void;
   renderDateActions: (date: Date) => React.ReactNode;
   getActionsForDate: (date: Date) => CalendarAction[];
 }
@@ -51,12 +55,23 @@ export function PayrollCalendarView({
   handleMouseDown,
   handleMouseEnter,
   handleMouseUp,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
+  handleTouchCancel,
   renderDateActions,
   getActionsForDate
 }: PayrollCalendarViewProps) {
   if (currentView === 'multi') {
     return (
-      <div className='p-4' onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+      <div
+        className='p-4'
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchMove={e => handleTouchMove(e.touches[0].clientX, e.touches[0].clientY)}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
+      >
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           {[0, 1, 2, 3].map(monthOffset => {
             const monthDate = new Date(
@@ -105,7 +120,8 @@ export function PayrollCalendarView({
                     return (
                       <div
                         key={`${monthOffset}-${index}`}
-                        className={`min-h-[32px] p-1 border-r border-b border-gray-200 dark:border-gray-600 ${
+                        data-calendar-date={day.date.getTime()}
+                        className={`min-h-[32px] p-1 border-r border-b border-gray-200 dark:border-gray-600 [touch-action:pan-y_pinch-zoom] ${
                           canViewDetails
                             ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600'
                             : 'cursor-not-allowed opacity-60'
@@ -121,6 +137,9 @@ export function PayrollCalendarView({
                           handleMouseDown(day.date);
                         }}
                         onMouseEnter={() => handleMouseEnter(day.date)}
+                        onTouchStart={e =>
+                          handleTouchStart(day.date, e.touches[0].clientX, e.touches[0].clientY)
+                        }
                       >
                         <div
                           className={`text-xs ${
@@ -176,6 +195,9 @@ export function PayrollCalendarView({
         className='grid grid-cols-7 min-h-[300px] sm:min-h-[500px]'
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchMove={e => handleTouchMove(e.touches[0].clientX, e.touches[0].clientY)}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
       >
         {days.map((day, index) => {
           const isCurrentDay = isToday(day.date);
@@ -184,7 +206,8 @@ export function PayrollCalendarView({
           return (
             <div
               key={index}
-              className={`min-h-[50px] sm:min-h-[80px] p-0.5 sm:p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
+              data-calendar-date={day.date.getTime()}
+              className={`min-h-[50px] sm:min-h-[80px] p-0.5 sm:p-2 border-r border-b border-gray-200 dark:border-gray-700 [touch-action:pan-y_pinch-zoom] ${
                 canViewDetails
                   ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'
                   : 'cursor-not-allowed opacity-60'
@@ -200,6 +223,9 @@ export function PayrollCalendarView({
                 handleMouseDown(day.date);
               }}
               onMouseEnter={() => handleMouseEnter(day.date)}
+              onTouchStart={e =>
+                handleTouchStart(day.date, e.touches[0].clientX, e.touches[0].clientY)
+              }
             >
               <div
                 className={`text-[11px] sm:text-sm font-medium mb-0.5 sm:mb-1 ${

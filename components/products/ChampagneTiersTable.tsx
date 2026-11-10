@@ -39,7 +39,7 @@ export function ChampagneTiersTable({
         </Button>
       </div>
       {cargandoTiers ? (
-        <p className='text-xs text-gray-400 ml-1'>Cargando tabla...</p>
+        <p className='text-xs text-gray-500 dark:text-gray-400 ml-1'>Cargando tabla...</p>
       ) : (
         <div className='space-y-2'>
           <div className='grid grid-cols-[3rem_1fr_1fr] gap-2 items-center px-1'>

@@ -133,7 +133,7 @@ export function UserFormModal({
   return (
     <Dialog open={isOpen} onOpenChange={onCancel}>
       <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden'>
-        <DialogHeader className='p-6 pb-2 border-b'>
+        <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold'>
             {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
           </DialogTitle>
@@ -141,7 +141,7 @@ export function UserFormModal({
             Formulario para crear o editar usuarios
           </DialogDescription>
         </DialogHeader>
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <FormProvider {...form}>
             <form id='user-form' onSubmit={handleFormSubmit} className='space-y-4 sm:space-y-6'>
               <Alert className='bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/10 dark:border-blue-900/30 dark:text-blue-300 rounded-2xl'>
@@ -333,7 +333,7 @@ export function UserFormModal({
             </form>
           </FormProvider>
         </div>
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
           <Button
             onClick={onCancel}
             variant='outline'

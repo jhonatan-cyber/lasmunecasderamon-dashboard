@@ -317,7 +317,9 @@ export function HeaderNotifications() {
           {}
           <div className='px-3 py-2 text-xs font-semibold text-gray-500'>Pedidos de Productos</div>
           {pendingOrders.length === 0 ? (
-            <div className='text-xs text-gray-400 px-4 py-2'>No hay pedidos pendientes</div>
+            <div className='text-xs text-gray-500 dark:text-gray-400 px-4 py-2'>
+              No hay pedidos pendientes
+            </div>
           ) : (
             pendingOrders.map((order: any, index: number) => (
               <DropdownMenuItem
@@ -354,7 +356,9 @@ export function HeaderNotifications() {
             Solicitudes de Servicio
           </div>
           {pendingServiceRequests.length === 0 ? (
-            <div className='text-xs text-gray-400 px-4 py-2'>No hay solicitudes pendientes</div>
+            <div className='text-xs text-gray-500 dark:text-gray-400 px-4 py-2'>
+              No hay solicitudes pendientes
+            </div>
           ) : (
             pendingServiceRequests.map((solicitud: any) => (
               <DropdownMenuItem

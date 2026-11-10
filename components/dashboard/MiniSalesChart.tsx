@@ -232,15 +232,15 @@ export default function MiniSalesChart() {
     );
 
   return (
-    <div className='w-full space-y-10 group'>
-      <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-8'>
+    <div className='w-full space-y-6 sm:space-y-10 group'>
+      <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8'>
         <div className='flex flex-col gap-4'>
-          <div className='flex items-center gap-4'>
-            <div className='p-3 bg-emerald-500 shadow-xl shadow-emerald-500/20 rounded-2xl'>
-              <BarChart3 className='h-6 w-6 text-white' />
+          <div className='flex items-center gap-3 sm:gap-4'>
+            <div className='p-2 sm:p-3 bg-emerald-500 shadow-xl shadow-emerald-500/20 rounded-2xl'>
+              <BarChart3 className='h-5 w-5 sm:h-6 sm:w-6 text-white' />
             </div>
             <div className='flex flex-col'>
-              <h3 className='text-2xl font-black tracking-tighter uppercase text-slate-900 dark:text-white'>
+              <h3 className='text-xl font-black tracking-tighter uppercase text-slate-900 sm:text-2xl dark:text-white'>
                 Análisis de Rendimiento
               </h3>
               <div className='flex items-center gap-2'>
@@ -253,14 +253,14 @@ export default function MiniSalesChart() {
           </div>
 
           {summary && (
-            <div aria-live='polite' className='flex items-center gap-10 mt-2'>
+            <div aria-live='polite' className='mt-2 flex flex-wrap items-center gap-4 sm:gap-10'>
               <div className='flex flex-col'>
                 <span className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 opacity-60'>
                   Ingresos Brutos
                 </span>
                 <div className='flex items-baseline gap-1'>
                   <span className='text-emerald-500 text-lg font-black'>$</span>
-                  <span className='text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic'>
+                  <span className='text-2xl font-black text-slate-900 sm:text-4xl dark:text-white tracking-tighter italic'>
                     {formatNumberCL(summary.totalVentas)}
                   </span>
                 </div>
@@ -270,7 +270,7 @@ export default function MiniSalesChart() {
                 <span className='text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 opacity-60'>
                   Promedio {viewMode === 'month' ? 'Mensual' : 'Diario'}
                 </span>
-                <span className='text-3xl font-black text-emerald-500 tracking-tighter'>
+                <span className='text-2xl font-black text-emerald-500 tracking-tighter sm:text-3xl'>
                   $ {formatNumberCL(summaryAverage)}
                 </span>
               </div>
@@ -278,7 +278,7 @@ export default function MiniSalesChart() {
           )}
         </div>
 
-        <div className='flex flex-wrap items-center gap-4'>
+        <div className='flex flex-wrap items-center gap-3 sm:gap-4'>
           <Button
             variant='unstyled'
             onClick={refreshData}
@@ -350,7 +350,7 @@ export default function MiniSalesChart() {
               variant='unstyled'
               onClick={() => setViewMode('month')}
               className={cn(
-                'px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500',
+                'px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 sm:px-8 sm:py-3',
                 viewMode === 'month'
                   ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-white'
@@ -362,7 +362,7 @@ export default function MiniSalesChart() {
               variant='unstyled'
               onClick={() => setViewMode('week')}
               className={cn(
-                'px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500',
+                'px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 sm:px-8 sm:py-3',
                 viewMode === 'week'
                   ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-white'
@@ -374,7 +374,7 @@ export default function MiniSalesChart() {
         </div>
       </div>
 
-      <div className='relative h-[450px] w-full bg-white/40 dark:bg-slate-900/20 backdrop-blur-xs rounded-[3rem] p-8 border border-slate-200/60 dark:border-slate-800/60 shadow-inner overflow-hidden'>
+      <div className='relative h-[320px] w-full bg-white/40 dark:bg-slate-900/20 backdrop-blur-xs rounded-3xl p-3 border border-slate-200/60 dark:border-slate-800/60 shadow-inner overflow-hidden sm:h-[450px] sm:rounded-[3rem] sm:p-8'>
         <div className='absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-emerald-500/20 to-transparent' />
 
         <ResponsiveContainer width='100%' height='100%'>

@@ -155,8 +155,8 @@ export default function NewOrder() {
 
   return (
     <>
-      <div className='flex items-center justify-between mt-10 p-8'>
-        <div>
+      <div className='mt-10 flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-8'>
+        <div className='min-w-0'>
           <h2 className='text-2xl font-bold text-gray-900 dark:text-zinc-100'>
             Datos Ticket Pedido
           </h2>
@@ -167,7 +167,7 @@ export default function NewOrder() {
 
         <Button
           variant='outline'
-          className='rounded-full bg-black text-white hover:scale-105 transition-all duration-200 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white'
+          className='w-full shrink-0 rounded-full bg-black text-white hover:scale-105 transition-all duration-200 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white sm:w-auto'
           onClick={() => {
             setProductos([]);
             try {
@@ -181,13 +181,19 @@ export default function NewOrder() {
           Atrás
         </Button>
       </div>
-      <div className='p-8 ml-8 mr-8 space-y-6'>
+      <div className='space-y-6 px-4 pb-8 pt-2 sm:px-8 sm:pb-10'>
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='mb-6 flex w-full justify-start gap-2 rounded-full bg-gray-100 p-1 dark:bg-gray-800'>
-            <TabsTrigger value='productos' className='flex-1 rounded-full'>
+          <TabsList className='mb-6 flex h-auto w-full items-stretch gap-1 rounded-full bg-gray-100 p-1 dark:bg-gray-800 sm:gap-2'>
+            <TabsTrigger
+              value='productos'
+              className='h-full flex-1 whitespace-normal rounded-full px-2 py-2 text-center text-xs leading-tight sm:px-3 sm:text-sm'
+            >
               Pedidos de Productos
             </TabsTrigger>
-            <TabsTrigger value='servicios' className='flex-1 rounded-full'>
+            <TabsTrigger
+              value='servicios'
+              className='h-full flex-1 whitespace-normal rounded-full px-2 py-2 text-center text-xs leading-tight sm:px-3 sm:text-sm'
+            >
               Pedidos de Servicio
             </TabsTrigger>
           </TabsList>

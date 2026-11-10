@@ -213,11 +213,11 @@ export default function ReplenishmentPage() {
               )}
             </div>
             {error && !rows.length ? (
-              <p className='p-8 text-center text-sm text-muted-foreground'>
+              <p className='p-4 text-center text-sm text-muted-foreground sm:p-8'>
                 Actualiza la orden para volver a comprobar el stock.
               </p>
             ) : !rows.length ? (
-              <div className='px-6 py-16 text-center flex flex-col items-center gap-3'>
+              <div className='flex flex-col items-center gap-3 px-4 py-12 text-center sm:px-6 sm:py-16'>
                 <div className='rounded-full bg-emerald-500/10 p-4 text-emerald-600 dark:text-emerald-400'>
                   <PackageCheck className='h-8 w-8' />
                 </div>

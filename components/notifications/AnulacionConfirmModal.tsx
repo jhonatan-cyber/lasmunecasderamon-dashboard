@@ -57,7 +57,7 @@ export function AnulacionConfirmModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-gray-700'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-gray-700 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='flex items-center gap-2 mb-4'>
             {isConfirmada ? (
               <CheckCircle className='text-green-500 dark:text-green-400' />
@@ -72,13 +72,13 @@ export function AnulacionConfirmModal({
               }
             >
               {isConfirmada
-                ? `✅ Anulación de ${isServicio ? 'Servicio' : 'Venta'} Confirmada`
-                : `❌ Anulación de ${isServicio ? 'Servicio' : 'Venta'} Rechazada`}
+                ? `Anulación de ${isServicio ? 'Servicio' : 'Venta'} Confirmada`
+                : `Anulación de ${isServicio ? 'Servicio' : 'Venta'} Rechazada`}
             </span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='text-left'>
             {isConfirmada ? (
               <div>
@@ -168,7 +168,7 @@ export function AnulacionConfirmModal({
           </div>
         </div>
 
-        <div className='shrink-0 border-t dark:border-gray-700 px-6 py-4'>
+        <div className='shrink-0 border-t p-4 dark:border-gray-700 sm:p-6'>
           <div className='flex justify-center items-center'>
             <Button
               onClick={handleAccept}

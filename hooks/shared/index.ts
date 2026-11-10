@@ -9,6 +9,7 @@ export { useConfirmModal } from './useConfirmModal';
 export { useGenericFetch } from './useGenericFetch';
 export { useGenericFilters } from './useGenericFilters';
 export { useGenericMutations } from './useGenericMutations';
+export { useIsMobile } from './useIsMobile';
 export { useMasterData } from './useMasterData';
 export { useNumberFormatter } from './useNumberFormatter';
 export { usePersistentTab } from './usePersistentTab';

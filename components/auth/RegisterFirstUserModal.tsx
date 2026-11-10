@@ -1,5 +1,6 @@
 'use client';
 
+import { Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +29,7 @@ export const RegisterFirstUserModal = ({
       <div className='bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl'>
         <div className='text-center mb-6'>
           <div className='w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4'>
-            <span className='text-2xl'>👑</span>
+            <Crown className='h-8 w-8 text-green-700 dark:text-green-400' aria-hidden='true' />
           </div>
           <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-2'>
             Crear Administrador
@@ -65,7 +66,10 @@ export const RegisterFirstUserModal = ({
 
           <div className='grid grid-cols-2 gap-4'>
             <div>
-              <Label htmlFor='nombre' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+              <Label
+                htmlFor='nombre'
+                className='text-sm font-medium text-gray-700 dark:text-gray-200'
+              >
                 Nombre
               </Label>
               <Input
@@ -78,7 +82,10 @@ export const RegisterFirstUserModal = ({
               />
             </div>
             <div>
-              <Label htmlFor='apellido' className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+              <Label
+                htmlFor='apellido'
+                className='text-sm font-medium text-gray-700 dark:text-gray-200'
+              >
                 Apellido
               </Label>
               <Input
@@ -113,12 +120,7 @@ export const RegisterFirstUserModal = ({
           >
             {loading ? 'Creando...' : 'Crear Administrador'}
           </Button>
-          <Button
-            type='button'
-            variant='ghost'
-            className='w-full'
-            onClick={onClose}
-          >
+          <Button type='button' variant='ghost' className='w-full' onClick={onClose}>
             Cancelar
           </Button>
         </form>
