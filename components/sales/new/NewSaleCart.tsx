@@ -187,6 +187,12 @@ function SaleCartProductCard({
                 {formatCurrencyNoDecimals(Number(producto.comision || 0) * quantity)}
               </p>
             )}
+            {Number(producto.recargo_acompanamiento) > 0 && (
+              <p className='text-[10px] text-amber-700 dark:text-amber-300'>
+                Recargo acompañamiento:{' '}
+                {formatCurrencyNoDecimals(Number(producto.recargo_acompanamiento) * quantity)}
+              </p>
+            )}
           </div>
           <div>
             <p className='text-[10px] uppercase tracking-wide text-muted-foreground'>Subtotal</p>
@@ -475,6 +481,14 @@ export const NewSaleCart = ({
                           <p className='mt-1 text-xs text-muted-foreground'>
                             Comisión por unidad: {formatCurrencyNoDecimals(Number(p.comision) || 0)}
                           </p>
+                          {Number(p.recargo_acompanamiento) > 0 && (
+                            <p className='mt-1 text-xs text-amber-700 dark:text-amber-300'>
+                              Recargo acompañamiento:{' '}
+                              {formatCurrencyNoDecimals(
+                                Number(p.recargo_acompanamiento) * quantity
+                              )}
+                            </p>
+                          )}
                         </TableCell>
                         {visibleColumns.hostess && (
                           <TableCell

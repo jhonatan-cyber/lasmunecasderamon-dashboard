@@ -24,12 +24,21 @@ export interface AcompanamientoBotellaItem {
   unidades: number;
   nombre?: string;
   foto?: string | null;
+  /** Precio unitario del acompañamiento al momento de la venta. */
+  precio?: number;
 }
 
 export type AcompanamientoBotella = AcompanamientoBotellaItem | AcompanamientoBotellaItem[];
 export type AcompanamientoVenta =
   | AcompanamientoBotella
-  | { presentacion_id: string; unidades?: number; ml_por_corto?: number; nombre?: string }
+  | {
+      presentacion_id: string;
+      unidades?: number;
+      ml_por_corto?: number;
+      nombre?: string;
+      /** Precio unitario del acompañamiento al momento de la venta. */
+      precio?: number;
+    }
   | null;
 
 export interface VentaDetalle {
@@ -43,6 +52,7 @@ export interface VentaDetalle {
   comision: number;
   cantidad: number;
   sub_total: number;
+  recargo_acompanamiento?: number;
   producto_nombre?: string;
   categoria_nombre?: string | null;
   presentacion_nombre?: string | null;
@@ -117,6 +127,8 @@ export interface VentaDetalleCreate {
   isChampagne?: boolean;
   tipo_venta?: 'botella' | 'shot';
   shot_anfitriona?: boolean;
+  /** Exceso por unidad del producto cuando el acompañamiento supera el tope. */
+  recargo_acompanamiento?: number;
 }
 
 export interface VentaUpdate {

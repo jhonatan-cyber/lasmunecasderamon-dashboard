@@ -98,7 +98,10 @@ export default function NewOrder() {
         return {
           ...producto,
           cantidad: nuevaCantidad,
-          subtotal: (producto.precio || producto.price) * nuevaCantidad,
+          subtotal:
+            (Number(producto.precio || producto.price || 0) +
+              Number(producto.recargo_acompanamiento || 0)) *
+            nuevaCantidad,
           comision: producto.selectedHostesses?.length ? comisionUnitaria * nuevaCantidad : 0,
           comisionUnitaria: comisionUnitaria,
           selectedHostesses:

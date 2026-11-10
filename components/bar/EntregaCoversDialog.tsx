@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { urlProductosParaVenta } from '@/lib/constants/api-endpoints';
 import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
+import { dividirRepartoPorEntrega, recortarReparto } from '@/lib/sales/repartoAcompanamiento';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { productImageUrl } from '@/lib/utils/productImage';
 import { cn } from '@/lib/utils/utils';
@@ -54,16 +55,16 @@ type Acompanamiento = {
   foto: string | null;
 };
 
-export type CortesiaPendiente = {
+export type CoverPendiente = {
   id: string;
   monto_entrada: number;
   hora: string;
 };
 
-export type GrupoCortesia = {
+export type GrupoCover = {
   id: string;
   cliente: string | null;
-  filas: CortesiaPendiente[];
+  filas: CoverPendiente[];
   cantidad: number;
   total: number;
   montoUnitario: number;
@@ -78,7 +79,7 @@ type LineaSeleccion = {
 };
 
 type Props = {
-  grupo: GrupoCortesia | null;
+  grupo: GrupoCover | null;
   tope: number;
   onClose: () => void;
   onEntregado: () => void | Promise<void>;
@@ -113,7 +114,7 @@ const normalizar = (valor: string) =>
     .toLowerCase()
     .trim();
 
-function categoriaFueraDeCortesia(categoria: string | null | undefined): boolean {
+function categoriaFueraDeCover(categoria: string | null | undefined): boolean {
   const normalizada = normalizar(categoria || '');
   return normalizada.includes('analcohol') || normalizada.includes('cigarr');
 }
@@ -180,19 +181,38 @@ function precioCorte(bebida: Bebida): number | null {
   return precio > 0 ? precio : null;
 }
 
-function formatoCortesia(bebida: Bebida, umbral: number): Formato | null {
+function formatosCover(bebida: Bebida, presupuesto: number, umbral: number): Formato[] {
+  const formatos: Formato[] = [];
   const corte = precioCorte(bebida);
-  if (corte !== null && corte <= umbral) return 'corte';
-  if (bebida.precio_sin_anfitriona <= umbral && bebida.precio_venta <= umbral) return 'botella';
-  return null;
+  if (corte !== null && corte <= presupuesto) formatos.push('corte');
+  // La botella entra por su precio sin anfitriona; si queda sobre el umbral se
+  // cobra la diferencia, y como cover el servidor exige que el precio de venta
+  // tampoco lo supere.
+  if (
+    bebida.precio_sin_anfitriona <= presupuesto &&
+    (bebida.precio_sin_anfitriona > umbral || bebida.precio_venta <= umbral)
+  )
+    formatos.push('botella');
+  return formatos;
 }
 
 function precioVisible(bebida: Bebida, formato: Formato): number {
   return formato === 'corte' ? (precioCorte(bebida) ?? 0) : bebida.precio_sin_anfitriona;
 }
 
+/** Diferencia que se cobra en la barra, con la regla del servidor. */
+function montoCobroBarra(precio: number, montoEntrada: number, tope: number): number {
+  const umbral = Math.max(tope, montoEntrada);
+  return precio > umbral ? Math.max(0, precio - montoEntrada) : 0;
+}
+
 function unidadesAcompanamientoFormato(bebida: Bebida, formato: Formato): number {
   return formato === 'corte' ? 1 : unidadesAcompanamiento(bebida);
+}
+
+/** Unidades que hay que repartir entre todas las entregas de la línea. */
+function unidadesAcompanamientoLinea(bebida: Bebida, formato: Formato, cantidad: number): number {
+  return unidadesAcompanamientoFormato(bebida, formato) * Math.max(1, cantidad);
 }
 
 function requiereAcompanamiento(bebida: Bebida, formato: Formato): boolean {
@@ -207,24 +227,33 @@ function opcionesCoverPara(acompanamientos: Acompanamiento[], bebida: Bebida): A
 
 const claveDe = (bebida: Bebida, formato: Formato) => `${bebida.presentacion_id}:${formato}`;
 
-export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Props) {
+export function EntregaCoversDialog({ grupo, tope, onClose, onEntregado }: Props) {
   const [bebidas, setBebidas] = useState<Bebida[]>([]);
   const [acompanamientos, setAcompanamientos] = useState<Acompanamiento[]>([]);
   const [cargando, setCargando] = useState(false);
   const [errorBebidas, setErrorBebidas] = useState<string | null>(null);
   const [errorCover, setErrorCover] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const [montoAdicional, setMontoAdicional] = useState('');
   const [seleccion, setSeleccion] = useState<Record<string, LineaSeleccion>>({});
   const [entregando, setEntregando] = useState(false);
 
   const filas = useMemo(() => grupo?.filas ?? [], [grupo]);
-  const umbral = Math.max(tope, filas[0]?.monto_entrada ?? 0);
+  const topeCover = Number(tope) || 0;
+  const umbral = Math.max(topeCover, Number(filas[0]?.monto_entrada) || 0);
+  const totalEntradas = useMemo(
+    () => filas.reduce((suma, fila) => suma + (Number(fila.monto_entrada) || 0), 0),
+    [filas]
+  );
+  const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
+  const presupuesto = totalEntradas + adicional;
   const abierto = grupo !== null;
 
   useEffect(() => {
     if (!abierto) return;
     setSeleccion({});
     setBusqueda('');
+    setMontoAdicional('');
     const controller = new AbortController();
     setCargando(true);
     setErrorBebidas(null);
@@ -274,18 +303,23 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
   const visibles = useMemo(() => {
     const termino = normalizar(busqueda);
     return bebidas
-      .map(bebida => ({ bebida, formato: formatoCortesia(bebida, umbral) }))
-      .filter(
-        (fila): fila is { bebida: Bebida; formato: Formato } =>
-          fila.formato !== null && !categoriaFueraDeCortesia(fila.bebida.categoria_nombre)
-      )
+      .flatMap(bebida => {
+        if (categoriaFueraDeCover(bebida.categoria_nombre)) return [];
+        const formatos = formatosCover(bebida, presupuesto, umbral);
+        // Lo ya elegido se mantiene visible aunque el presupuesto baje.
+        for (const formato of ['corte', 'botella'] as Formato[]) {
+          const clave = claveDe(bebida, formato);
+          if (seleccion[clave] && !formatos.includes(formato)) formatos.push(formato);
+        }
+        return formatos.map(formato => ({ bebida, formato }));
+      })
       .filter(
         ({ bebida, formato }) =>
           !termino ||
           Boolean(seleccion[claveDe(bebida, formato)]) ||
           normalizar(`${bebida.producto_nombre} ${bebida.presentacion_nombre}`).includes(termino)
       );
-  }, [bebidas, busqueda, seleccion, umbral]);
+  }, [bebidas, busqueda, presupuesto, seleccion, umbral]);
 
   const totalSeleccionado = useMemo(
     () => Object.values(seleccion).reduce((suma, linea) => suma + linea.cantidad, 0),
@@ -309,12 +343,44 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
         if (!requiereAcompanamiento(linea.bebida, linea.formato)) return false;
         const opciones = opcionesCoverPara(acompanamientos, linea.bebida);
         if (opciones.length === 0) return linea.formato === 'botella';
-        const requeridas = unidadesAcompanamientoFormato(linea.bebida, linea.formato);
+        const requeridas = unidadesAcompanamientoLinea(linea.bebida, linea.formato, linea.cantidad);
         const asignado = linea.reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
         return asignado !== requeridas;
       }),
     [acompanamientos, lineas]
   );
+
+  /** Precio de cada entrega en el orden en que se consumen las entradas. */
+  const unidadesEntrega = useMemo(
+    () =>
+      lineas.flatMap(linea =>
+        Array.from({ length: linea.cantidad }, () => ({
+          precio: precioVisible(linea.bebida, linea.formato)
+        }))
+      ),
+    [lineas]
+  );
+
+  const precioSeleccionado = useMemo(
+    () => unidadesEntrega.reduce((suma, unidad) => suma + unidad.precio, 0),
+    [unidadesEntrega]
+  );
+
+  // Lo que el cliente paga en la barra: la diferencia de cada unidad sobre el
+  // umbral de su entrada.
+  const cobroBarra = useMemo(
+    () =>
+      unidadesEntrega.reduce((suma, unidad, indice) => {
+        const fila = filas[indice];
+        if (!fila) return suma;
+        return suma + montoCobroBarra(unidad.precio, Number(fila.monto_entrada) || 0, topeCover);
+      }, 0),
+    [filas, topeCover, unidadesEntrega]
+  );
+
+  const excedePresupuesto = precioSeleccionado > presupuesto;
+  const excedeAdicional = cobroBarra > adicional;
+  const presupuestoInsuficiente = excedePresupuesto || excedeAdicional;
 
   const agregar = useCallback(
     (bebida: Bebida, formato: Formato) => {
@@ -334,7 +400,7 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
     [filas.length]
   );
 
-  const quitar = useCallback((clave: string) => {
+  const quitar = useCallback((clave: string, unidadesPorEntrega: number) => {
     setSeleccion(previo => {
       const actual = previo[clave];
       if (!actual) return previo;
@@ -343,7 +409,14 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
         delete resto[clave];
         return resto;
       }
-      return { ...previo, [clave]: { ...actual, cantidad: actual.cantidad - 1 } };
+      const cantidad = actual.cantidad - 1;
+      return {
+        ...previo,
+        [clave]: {
+          cantidad,
+          reparto: recortarReparto(actual.reparto, unidadesPorEntrega * cantidad)
+        }
+      };
     });
   }, []);
 
@@ -381,27 +454,45 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
       toast.error('Selecciona el acompañamiento de cada producto que lo incluye');
       return;
     }
+    if (presupuestoInsuficiente) {
+      toast.error('Sube el monto adicional o quita productos para cubrir la selección');
+      return;
+    }
 
     setEntregando(true);
     let entregadas = 0;
     try {
       for (const linea of lineas) {
+        // El reparto de la línea cubre todas sus entregas: cada ticket recibe
+        // su propia mezcla de sabores (un corte, una sola bebida).
+        const repartos = requiereAcompanamiento(linea.bebida, linea.formato)
+          ? dividirRepartoPorEntrega(
+              linea.reparto,
+              unidadesAcompanamientoFormato(linea.bebida, linea.formato),
+              linea.cantidad
+            )
+          : [];
         for (let indice = 0; indice < linea.cantidad; indice += 1) {
           const fila = grupo.filas[entregadas];
           if (!fila) throw new Error('La compra ya no tiene entradas pendientes');
+          const reparto = repartos[indice] ?? [];
           const respuesta = await fetch(`/api/tickets/${encodeURIComponent(fila.id)}/entregar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               presentacion_id: linea.bebida.presentacion_id,
               tipo_entrega: linea.formato,
-              acompanamientos:
-                requiereAcompanamiento(linea.bebida, linea.formato) && linea.reparto.length
-                  ? linea.reparto.map(sabor => ({
-                      presentacion_id: sabor.presentacion_id,
-                      unidades: sabor.unidades
-                    }))
-                  : null
+              acompanamientos: reparto.length
+                ? reparto.map(sabor => ({
+                    presentacion_id: sabor.presentacion_id,
+                    unidades: sabor.unidades
+                  }))
+                : null,
+              monto_adicional: montoCobroBarra(
+                precioVisible(linea.bebida, linea.formato),
+                Number(fila.monto_entrada) || 0,
+                topeCover
+              )
             })
           });
           const json: unknown = await respuesta.json().catch(() => null);
@@ -410,10 +501,9 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
           entregadas += 1;
         }
       }
-      toast.success(
-        entregadas === 1 ? 'Cortesía entregada' : `${entregadas} cortesías entregadas`,
-        { description: grupo.cliente || undefined }
-      );
+      toast.success(entregadas === 1 ? 'Cover entregado' : `${entregadas} covers entregados`, {
+        description: grupo.cliente || undefined
+      });
       await onEntregado();
       onClose();
     } catch (error) {
@@ -430,7 +520,17 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
     } finally {
       setEntregando(false);
     }
-  }, [entregando, faltaAcompanamiento, grupo, lineas, onClose, onEntregado, totalSeleccionado]);
+  }, [
+    entregando,
+    faltaAcompanamiento,
+    grupo,
+    lineas,
+    onClose,
+    onEntregado,
+    presupuestoInsuficiente,
+    topeCover,
+    totalSeleccionado
+  ]);
 
   return (
     <Dialog
@@ -441,7 +541,7 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
     >
       <DialogContent className='max-h-[88vh] overflow-y-auto sm:max-w-3xl'>
         <DialogHeader>
-          <DialogTitle>Entregar cortesías</DialogTitle>
+          <DialogTitle>Entregar covers</DialogTitle>
           <DialogDescription>
             {grupo
               ? `${grupo.cliente || 'Sin nombre'} · ${grupo.cantidad} ${
@@ -458,9 +558,24 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
           aria-label='Buscar producto'
         />
 
+        <div className='space-y-1'>
+          <Label htmlFor='monto-adicional-grupo' className='text-xs'>
+            Monto adicional del grupo
+          </Label>
+          <Input
+            id='monto-adicional-grupo'
+            inputMode='numeric'
+            value={montoAdicional}
+            onChange={evento => setMontoAdicional(evento.target.value.replace(/[^\d]/g, ''))}
+            placeholder='0'
+          />
+        </div>
+
         <p className='text-xs text-muted-foreground'>
-          Solo cortes y botellas sin anfitriona hasta {formatCurrencyCLP(umbral)} con stock en el
-          bar. Puedes combinar varios productos y repetir el mismo.
+          Entradas {formatCurrencyCLP(totalEntradas)}
+          {adicional > 0 ? ` + adicional ${formatCurrencyCLP(adicional)}` : ''} = presupuesto{' '}
+          {formatCurrencyCLP(presupuesto)}. Se listan cortes y botellas sin anfitriona hasta ese
+          monto y la diferencia se cobra en la barra.
         </p>
 
         {cargando ? (
@@ -475,7 +590,7 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
           <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
             {busqueda.trim()
               ? 'No hay bebidas que coincidan con la búsqueda.'
-              : `Sin cortes hasta ${formatCurrencyCLP(umbral)} con stock en el bar.`}
+              : `Sin productos hasta ${formatCurrencyCLP(presupuesto)} con stock en el bar.`}
           </p>
         ) : (
           <div
@@ -543,7 +658,7 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
                         {sinStock ? 'Sin stock' : `${bebida.stock_bar} en bar`}
                       </span>
                       <Badge variant='secondary' className='rounded-full px-2 py-0 text-[11px]'>
-                        Cortesía
+                        Cover
                       </Badge>
                     </span>
                   </span>
@@ -564,7 +679,11 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
             {lineas.map(linea => {
               const opciones = opcionesCoverPara(acompanamientos, linea.bebida);
               const necesitaCover = requiereAcompanamiento(linea.bebida, linea.formato);
-              const unidades = unidadesAcompanamientoFormato(linea.bebida, linea.formato);
+              const unidades = unidadesAcompanamientoLinea(
+                linea.bebida,
+                linea.formato,
+                linea.cantidad
+              );
               const asignado = linea.reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
               const falta = necesitaCover
                 ? opciones.length === 0
@@ -589,7 +708,12 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
                         size='icon'
                         variant='outline'
                         className='size-8 rounded-full'
-                        onClick={() => quitar(linea.clave)}
+                        onClick={() =>
+                          quitar(
+                            linea.clave,
+                            unidadesAcompanamientoFormato(linea.bebida, linea.formato)
+                          )
+                        }
                         aria-label='Quitar una unidad'
                       >
                         <Minus className='size-3.5' />
@@ -625,8 +749,12 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
                     <div className='mt-3 space-y-2'>
                       <Label htmlFor={`cover-${linea.clave}`} className='text-xs'>
                         {linea.formato === 'corte'
-                          ? 'Acompañamiento del corte'
-                          : 'Acompañamiento incluido'}
+                          ? linea.cantidad > 1
+                            ? 'Acompañamiento de los cortes'
+                            : 'Acompañamiento del corte'
+                          : linea.cantidad > 1
+                            ? 'Acompañamiento incluido en las botellas'
+                            : 'Acompañamiento incluido'}
                       </Label>
                       {opciones.length === 0 ? (
                         <p
@@ -648,7 +776,7 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
                           requeridas={unidades}
                           valor={linea.reparto}
                           onChange={reparto => cambiarReparto(linea.clave, reparto)}
-                          repeticiones={linea.cantidad}
+                          repartoTotal
                           disabled={entregando}
                         />
                       )}
@@ -666,6 +794,32 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
               {totalSeleccionado} de {filas.length} {filas.length === 1 ? 'entrada' : 'entradas'}{' '}
               por entregar. Un producto por persona.
             </p>
+            <div className='rounded-xl border border-dashed p-3 text-xs'>
+              <p className='flex flex-wrap justify-between gap-2 text-muted-foreground'>
+                <span>Productos</span>
+                <span className='font-medium text-foreground tabular-nums'>
+                  {formatCurrencyCLP(precioSeleccionado)} de {formatCurrencyCLP(presupuesto)}
+                </span>
+              </p>
+              <p className='mt-1 flex flex-wrap justify-between gap-2 text-muted-foreground'>
+                <span>Cobro en barra</span>
+                <span className='font-medium text-foreground tabular-nums'>
+                  {formatCurrencyCLP(cobroBarra)} de {formatCurrencyCLP(adicional)}
+                </span>
+              </p>
+              {excedePresupuesto ? (
+                <p className='mt-2 text-amber-600 dark:text-amber-400'>
+                  Faltan {formatCurrencyCLP(precioSeleccionado - presupuesto)} de presupuesto para
+                  esta selección.
+                </p>
+              ) : null}
+              {excedeAdicional ? (
+                <p className='mt-2 text-amber-600 dark:text-amber-400'>
+                  El cobro en barra supera el monto adicional en{' '}
+                  {formatCurrencyCLP(cobroBarra - adicional)}.
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
@@ -694,6 +848,7 @@ export function EntregaCortesiasDialog({ grupo, tope, onClose, onEntregado }: Pr
               Boolean(errorBebidas) ||
               lineas.length === 0 ||
               faltaAcompanamiento ||
+              presupuestoInsuficiente ||
               totalSeleccionado > filas.length
             }
             onClick={() => void entregar()}

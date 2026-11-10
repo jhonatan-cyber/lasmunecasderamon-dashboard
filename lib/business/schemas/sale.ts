@@ -91,7 +91,8 @@ export const SaleCreateSchema = z.object({
             .object({
               presentacion_id: z.string().min(1),
               unidades: z.number().int().min(1).max(1000).optional(),
-              ml_por_corto: z.number().int().min(1).max(10000).optional()
+              ml_por_corto: z.number().int().min(1).max(10000).optional(),
+              precio: z.number().min(0).optional()
             })
             .refine(
               value => (value.unidades !== undefined) !== (value.ml_por_corto !== undefined),
@@ -102,6 +103,7 @@ export const SaleCreateSchema = z.object({
           precio: z.number(),
           comision: z.number().optional().default(0),
           cantidad: z.number().min(1),
+          recargo_acompanamiento: z.number().min(0).optional(),
           sub_total: z.number().optional(),
           hostess_id: z.string().nullable().optional(),
           hostesses: z.array(z.string()).optional(),

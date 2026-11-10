@@ -60,9 +60,9 @@ export default function SaleProductModal({
   onOtherProductHostessChange,
   productosEnCarrito
 }: SaleProductModalProps) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleProduct = (id: string) =>
-    setCollapsed(previous => ({ ...previous, [id]: !previous[id] }));
+    setExpanded(previous => ({ ...previous, [id]: !previous[id] }));
   const modal = useSaleProductModal({
     open,
     productos,
@@ -77,6 +77,10 @@ export default function SaleProductModal({
     productosEnCarrito
   });
 
+  // Los detalles parten ocultos: solo se expande lo que el usuario abre.
+  const collapsed: Record<string, boolean> = {};
+  for (const item of modal.items) collapsed[item.id] = !expanded[item.id];
+
   const [adding, setAdding] = useState(false);
   const addingRef = useRef(false);
   const addDisabled =
@@ -86,7 +90,7 @@ export default function SaleProductModal({
     modal.selectedItems.some(item => item.agregarDisabled);
   const closeAndReset = () => {
     modal.resetSelection();
-    setCollapsed({});
+    setExpanded({});
     onClose();
   };
   const addSelected = async () => {

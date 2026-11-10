@@ -68,6 +68,7 @@ export function repartirDetalleVenta(d: DetalleVenta, validatedHostessSet: Reado
 
   const totalComm = d.tipo_venta === 'shot' && !d.shot_anfitriona ? 0 : Math.round(d.comision || 0);
   const totalQty = Math.max(1, Number(d.cantidad || 1));
+  const precioConRecargo = Number(d.precio || 0) + Number(d.recargo_acompanamiento || 0);
   const isChampagne = d.tipo_venta !== 'shot' && Boolean(d.isChampagne);
   const effectiveHostesses =
     hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
@@ -84,7 +85,7 @@ export function repartirDetalleVenta(d: DetalleVenta, validatedHostessSet: Reado
     for (let i = 0; i < hostessCount; i++) {
       commissionByIndex[i] = commBase + (i === 0 ? remainder : 0);
       quantityByIndex[i] = i === 0 ? totalQty : 0;
-      subtotalByIndex[i] = i === 0 ? d.sub_total || d.precio * totalQty : 0;
+      subtotalByIndex[i] = i === 0 ? d.sub_total || precioConRecargo * totalQty : 0;
     }
   } else {
     const unitBaseCommission = Math.floor(totalComm / totalQty);
@@ -96,7 +97,7 @@ export function repartirDetalleVenta(d: DetalleVenta, validatedHostessSet: Reado
       const qtyPart = i === hostessCount - 1 ? remainingQty : baseQty === 0 ? 1 : baseQty;
       remainingQty -= qtyPart;
       quantityByIndex[i] = qtyPart;
-      subtotalByIndex[i] = d.precio * qtyPart;
+      subtotalByIndex[i] = precioConRecargo * qtyPart;
 
       let commPart = unitBaseCommission * qtyPart;
       const remainderForThisHostess = Math.min(remainingCommissionRemainder, qtyPart);

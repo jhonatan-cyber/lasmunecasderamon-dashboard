@@ -29,7 +29,7 @@ const ANTICIPO = 1500;
 // 1 asistencia × sueldo + hx + gratificación − anticipo − aporte (descuento 0).
 const TOTAL_ESPERADO = SUELDO + HX + GRATIFICACION - ANTICIPO - APORTE;
 
-async function sembrarFixture() {
+async function sembrarFixture({ entregarAnticipo = true }: { entregarAnticipo?: boolean } = {}) {
   const [admin] = await query<{ id_usuario: string }[]>(
     'SELECT id_usuario FROM usuarios ORDER BY fecha_crea ASC LIMIT 1'
   );
@@ -82,9 +82,9 @@ async function sembrarFixture() {
     [generateUUID(), usuarioId, HX / 2, HX]
   );
   await query(
-    `INSERT INTO anticipos (id_anticipo, usuario_id, monto, motivo, estado, fecha_crea)
-     VALUES (?, ?, ?, 'Anticipo de planilla PRD', 1, now())`,
-    [generateUUID(), usuarioId, ANTICIPO]
+    `INSERT INTO anticipos (id_anticipo, usuario_id, monto, motivo, estado, fecha_entrega, fecha_crea)
+     VALUES (?, ?, ?, 'Anticipo de planilla PRD', 1, ?, now())`,
+    [generateUUID(), usuarioId, ANTICIPO, entregarAnticipo ? new Date().toISOString() : null]
   );
   await query(
     `INSERT INTO gratificaciones (id, usuario_id, monto, descripcion, estado, solicitante_id, fecha_crea)
@@ -220,6 +220,44 @@ it('el pago ceroa los pendientes y deja la liquidación con monto, desglose y ej
         [usuarioId]
       )
     ).toBe(0);
+
+    const [anticipo] = await query<{ estado: number; fecha_cobro: Date | null }[]>(
+      'SELECT estado, fecha_cobro FROM anticipos WHERE usuario_id = ?',
+      [usuarioId]
+    );
+    expect(Number(anticipo.estado)).toBe(4);
+    expect(anticipo.fecha_cobro).toBeTruthy();
+  } finally {
+    await query('DELETE FROM pagos_nomina WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM gratificaciones WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM anticipos WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM horas_extras WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM asistencias WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM usuarios WHERE id_usuario = ?', [usuarioId]);
+  }
+});
+
+it('no descuenta ni liquida un anticipo aprobado que aún no se entrega', async () => {
+  const { usuarioId, adminId } = await sembrarFixture({ entregarAnticipo: false });
+  const totalSinAnticipo = SUELDO + HX + GRATIFICACION - APORTE;
+  try {
+    const filas = (await PayrollService.getSummary()) as Array<Record<string, unknown>>;
+    const fila = filas.find(f => String(f.id_usuario) === usuarioId);
+
+    expect(fila, 'el trabajador sigue teniendo saldo por otros conceptos').toBeDefined();
+    expect(Number(fila!.anticipos)).toBe(0);
+    expect(Number(fila!.total)).toBe(totalSinAnticipo);
+
+    const resumen = await PayrollService.pay(usuarioId, adminId, totalSinAnticipo);
+    expect(resumen.componentes.anticipos).toBe(0);
+
+    const [anticipo] = await query<{ estado: number; fecha_cobro: Date | null }[]>(
+      'SELECT estado, fecha_cobro FROM anticipos WHERE usuario_id = ?',
+      [usuarioId]
+    );
+    // Sigue pendiente de entrega: se descontará recién en la nómina siguiente.
+    expect(Number(anticipo.estado)).toBe(1);
+    expect(anticipo.fecha_cobro).toBeNull();
   } finally {
     await query('DELETE FROM pagos_nomina WHERE usuario_id = ?', [usuarioId]);
     await query('DELETE FROM gratificaciones WHERE usuario_id = ?', [usuarioId]);

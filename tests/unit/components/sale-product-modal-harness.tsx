@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { expect, vi } from 'vitest';
 import SaleProductModal from '@/components/sales/SaleProductModal';
 
@@ -100,6 +100,27 @@ export async function distributeMixer(flavor: RegExp = /Sprite/) {
     if (!plus || (plus as HTMLButtonElement).disabled) break;
     fireEvent.click(plus);
   }
+}
+
+/**
+ * Renderiza el modal con todos los detalles ya abiertos. Los productos parten
+ * plegados, así que los tests que interactúan con formatos y acompañamientos
+ * necesitan expandirlos primero.
+ */
+export function expandAll() {
+  for (
+    let buttons = screen.queryAllByRole('button', { name: /^Mostrar detalles de / });
+    buttons.length > 0;
+    buttons = screen.queryAllByRole('button', { name: /^Mostrar detalles de / })
+  ) {
+    fireEvent.click(buttons[0]);
+  }
+}
+
+export function renderExpanded(element: React.ReactElement) {
+  const result = render(element);
+  expandAll();
+  return result;
 }
 
 export function Harness({

@@ -10,6 +10,7 @@ import {
 } from '@/lib/sales/productConfiguration';
 
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { precioUnitarioAcompanamiento } from '@/lib/sales/recargoAcompanamiento';
 import { getChampagneHostessLimit, isChampagneProduct } from '@/components/orders';
 import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
@@ -252,6 +253,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
                         : choice.producto_foto,
                     stock_bar: Number(choice.stock_bar) || 0,
                     ml_abierta: Number(choice.ml_abierta) || 0,
+                    precio: precioUnitarioAcompanamiento(choice),
                     ...consumption
                   }
                 : undefined

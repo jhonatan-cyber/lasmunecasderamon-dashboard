@@ -4,6 +4,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { accountCartKey } from '@/lib/sales/accountCartKey';
+import { recargoAcompanamientoDeProducto } from '@/lib/sales/recargoAcompanamiento';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 interface ProductoCarrito extends SaleInventoryFields {
   id?: string | number;
@@ -40,11 +42,13 @@ interface ProductoInput extends SaleInventoryFields {
 export function useProductCart() {
   const [productos, setProductos] = useState<ProductoCarrito[]>([]);
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
+  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0));
 
   const total = useMemo(() => productos.reduce((sum, p) => sum + p.sub_total, 0), [productos]);
 
   const agregarProducto = useCallback(
     (producto: ProductoInput, cantidadExtra?: number) => {
+      const recargo = recargoAcompanamientoDeProducto(producto, topeAcompanamiento);
       const productoNormalizado = {
         ...producto,
         ...saleInventoryFields(producto),
@@ -52,6 +56,7 @@ export function useProductCart() {
         nombre: producto.nombre || producto.name || '',
         precio: producto.precio ?? producto.price ?? 0,
         comision: producto.comision ?? producto.commission ?? 0,
+        recargo_acompanamiento: recargo,
         categoria_nombre:
           producto.categoria_nombre || producto.categoria || producto.category || 'Sin categoría',
         selectedHostesses: producto.selectedHostesses || [],
@@ -71,7 +76,9 @@ export function useProductCart() {
               ? {
                   ...p,
                   cantidad: p.cantidad + cantidad,
-                  sub_total: (p.cantidad + cantidad) * p.precio,
+                  sub_total:
+                    (p.cantidad + cantidad) *
+                    (Number(p.precio || 0) + Number(p.recargo_acompanamiento || 0)),
                   selectedHostesses: producto.selectedHostesses || p.selectedHostesses,
                   isChampagne: producto.isChampagne ?? p.isChampagne
                 }
@@ -84,7 +91,7 @@ export function useProductCart() {
             nombre: productoNormalizado.nombre,
             precio: productoNormalizado.precio,
             cantidad: cantidad,
-            sub_total: productoNormalizado.precio * cantidad,
+            sub_total: (Number(productoNormalizado.precio) + recargo) * cantidad,
             categoria_nombre: productoNormalizado.categoria_nombre,
             comision: productoNormalizado.comision,
             selectedHostesses: producto.selectedHostesses || [],
@@ -100,7 +107,7 @@ export function useProductCart() {
 
       toast.success(`${productoNormalizado.nombre} agregado al carrito`);
     },
-    [cantidades]
+    [cantidades, topeAcompanamiento]
   );
 
   const actualizarCantidad = useCallback((index: number, nuevaCantidad: number) => {
@@ -116,7 +123,8 @@ export function useProductCart() {
           ? {
               ...p,
               cantidad: nuevaCantidad,
-              sub_total: nuevaCantidad * p.precio
+              sub_total:
+                nuevaCantidad * (Number(p.precio || 0) + Number(p.recargo_acompanamiento || 0))
             }
           : p
       )

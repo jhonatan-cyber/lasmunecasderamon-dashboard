@@ -19,7 +19,7 @@ export const POST = withRoute(
     const validated = validateOrResponse(CajaSolicitarCierreSchema, body);
     if (validated instanceof NextResponse) return validated;
 
-    // Barrido de cortesías pendientes (migración 097). El garzón cobró esas
+    // Barrido de covers pendientes (migración 097). El garzón cobró esas
     // entradas en la puerta y nunca se postearon: sin esto el efectivo del cierre
     // no coincide con el saldo del sistema. Se postean como *entradas* y quedan
     // `anulada`. Vive acá —y no en el módulo de caja— para no crear el ciclo

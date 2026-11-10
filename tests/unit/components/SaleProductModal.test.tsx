@@ -1,12 +1,13 @@
 'use client';
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   Harness,
   distributeMixer,
   presentacionesDePrueba,
   product,
+  renderExpanded,
   selectMixer
 } from './sale-product-modal-harness';
 
@@ -42,7 +43,7 @@ afterEach(async () => {
  * presupuesto de 30 s por archivo (ver `DurationBudgetReporter`).
  */
 it('duplica el acompañamiento requerido al seleccionar dos botellas', () => {
-  render(
+  renderExpanded(
     <Harness
       productos={[
         {
@@ -73,7 +74,7 @@ it('duplica el acompañamiento requerido al seleccionar dos botellas', () => {
 
 it('vende botella sin anfitriona al precio adicional con las bebidas configuradas', async () => {
   const add = vi.fn();
-  render(
+  renderExpanded(
     <Harness
       productos={[
         {
@@ -126,7 +127,7 @@ it.each(['botella', 'botella_sin_anfitriona'])(
   'con bebida cero oculta selector y no agrega bebida: %s',
   async format => {
     const add = vi.fn();
-    render(
+    renderExpanded(
       <Harness
         productos={[
           {
@@ -171,7 +172,7 @@ it.each(['botella', 'botella_sin_anfitriona'])(
 
 it('requiere cantidad y permite agregar una botella con comisión sin anfitrionas', async () => {
   const add = vi.fn();
-  render(
+  renderExpanded(
     <Harness
       productos={[
         {
@@ -202,7 +203,7 @@ it('ofrece el shot al precio de anfitriona como formato independiente', async ()
       { tipo: 'shot', precio: 1000, comision: 0, precio_anfitriona: 800 }
     ]
   };
-  render(<Harness productos={[conAnfitriona]} onAdd={add} />);
+  renderExpanded(<Harness productos={[conAnfitriona]} onAdd={add} />);
 
   // Con precio de anfitriona el shot se parte en dos opciones, cada una con su precio.
   expect(screen.getByText('Corto cliente · 50 ml y 1 unidad de bebida')).toBeInTheDocument();
@@ -222,7 +223,7 @@ it('ofrece el shot al precio de anfitriona como formato independiente', async ()
 });
 
 it('mantiene una sola opción de shot cuando no hay precio de anfitriona', async () => {
-  render(<Harness productos={[product]} onAdd={vi.fn()} />);
+  renderExpanded(<Harness productos={[product]} onAdd={vi.fn()} />);
   expect(screen.getByText('Corto · 50 ml y 1 unidad de bebida')).toBeInTheDocument();
   expect(screen.queryByText('Corto anfitriona · 50 ml')).not.toBeInTheDocument();
 });
@@ -236,7 +237,7 @@ const conComisiones = {
 };
 
 it('solo permite seleccionar anfitrionas en el formato con comisión', async () => {
-  render(<Harness productos={[conComisiones]} onAdd={vi.fn()} />);
+  renderExpanded(<Harness productos={[conComisiones]} onAdd={vi.fn()} />);
   expect(screen.getByText('Sin comisión')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml: aumentar cantidad' }));
   expect(screen.getByText('Sin comisión')).toBeInTheDocument();
@@ -256,7 +257,7 @@ it('ofrece anfitriona opcional al vender el shot con comisión', async () => {
       { tipo: 'shot', precio: 1000, comision: 500 }
     ]
   };
-  render(<Harness productos={[shotConComision]} onAdd={vi.fn()} />);
+  renderExpanded(<Harness productos={[shotConComision]} onAdd={vi.fn()} />);
   expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
   fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml: aumentar cantidad' }));
   await selectMixer();
@@ -271,7 +272,7 @@ it('muestra las unidades en carrito junto a los contadores independientes de for
       { tipo: 'shot', precio: 1000, comision: 0, precio_anfitriona: 800 }
     ]
   };
-  render(
+  renderExpanded(
     <Harness
       productos={[conAnfitriona]}
       onAdd={vi.fn()}
@@ -307,7 +308,7 @@ it.each([
   'elige la bebida de %s dentro del modal antes de agregar',
   async (label, field, consumption, expectedText, expectedCount) => {
     const add = vi.fn();
-    render(
+    renderExpanded(
       <Harness
         productos={[
           {
@@ -391,7 +392,7 @@ it('excluye del corto anfitriona bebidas que no están habilitadas para ese uso'
       })
     })
   );
-  render(
+  renderExpanded(
     <Harness
       productos={[
         {
@@ -450,7 +451,7 @@ it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async ()
       })
     })
   );
-  render(
+  renderExpanded(
     <Harness
       productos={[
         {

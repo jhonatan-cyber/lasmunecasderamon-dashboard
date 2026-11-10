@@ -118,6 +118,14 @@ export function SalesProductDetail({
         <p className='text-lg font-bold text-emerald-600'>
           {formatCurrencyNoDecimals(detail.sub_total)}
         </p>
+        {Number(detail.recargo_acompanamiento) > 0 && (
+          <p className='text-xs text-amber-600 dark:text-amber-400'>
+            Incluye recargo de acompañamiento:{' '}
+            {formatCurrencyNoDecimals(
+              Number(detail.recargo_acompanamiento) * Number(detail.cantidad || 0)
+            )}
+          </p>
+        )}
       </div>
     </div>
   );

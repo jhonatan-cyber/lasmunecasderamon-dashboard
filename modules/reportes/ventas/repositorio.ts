@@ -89,7 +89,7 @@ export class VentasStatsRepository {
         COALESCE(SUM(v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(v.propina), 0) as propinas,
         COALESCE(SUM((
-          SELECT COALESCE(SUM(dv.precio * dv.cantidad), 0)
+          SELECT COALESCE(SUM(dv.sub_total), 0)
           FROM detalle_ventas dv
           WHERE dv.venta_id = v.id_venta
         )), 0) as monto_productos
@@ -129,7 +129,7 @@ export class VentasStatsRepository {
         COALESCE(SUM(DISTINCT v.cargo_tarjeta), 0) as cargo_tarjeta,
         COALESCE(SUM(DISTINCT v.propina), 0) as propinas,
         (
-          SELECT COALESCE(SUM(dv.precio * dv.cantidad), 0)
+          SELECT COALESCE(SUM(dv.sub_total), 0)
           FROM detalle_ventas dv
           INNER JOIN productos p ON p.id_producto = dv.producto_id
           WHERE dv.venta_id = v.id_venta
@@ -183,7 +183,7 @@ export class VentasStatsRepository {
           WHERE c.venta_id = v.id_venta
         ) as comisiones,
         (
-          SELECT COALESCE(SUM(dv.precio * dv.cantidad), 0)
+          SELECT COALESCE(SUM(dv.sub_total), 0)
           FROM detalle_ventas dv
           WHERE dv.venta_id = v.id_venta
         ) as monto_productos

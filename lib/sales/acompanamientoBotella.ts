@@ -24,7 +24,8 @@ export function normalizarAcompanamientoBotella(
       presentacion_id: String(item.presentacion_id),
       unidades: Math.floor(Number(item.unidades)),
       ...(item.nombre !== undefined ? { nombre: item.nombre } : {}),
-      ...(item.foto !== undefined ? { foto: item.foto } : {})
+      ...(item.foto !== undefined ? { foto: item.foto } : {}),
+      ...(item.precio !== undefined ? { precio: Number(item.precio) } : {})
     }));
 }
 

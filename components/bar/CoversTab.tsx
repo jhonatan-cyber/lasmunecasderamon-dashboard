@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { EntregaCortesiasDialog } from '@/components/bar/EntregaCortesiasDialog';
+import { EntregaCoversDialog } from '@/components/bar/EntregaCoversDialog';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
@@ -35,7 +35,7 @@ type EntradaPendiente = {
   registrado_por_nombre: string;
 };
 
-/** Compra con al menos una cortesía pendiente: la barra la atiende completa. */
+/** Compra con al menos un cover pendiente: la barra la atiende completa. */
 type GrupoPendiente = {
   id: string;
   filas: EntradaPendiente[];
@@ -100,7 +100,7 @@ function aEntrada(valor: unknown): EntradaPendiente | null {
   };
 }
 
-export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
+export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
   const [entradas, setEntradas] = useState<EntradaPendiente[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorCola, setErrorCola] = useState<string | null>(null);
@@ -110,9 +110,7 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
 
   const { hasPermission } = useUserPermissions();
   const puedeEntregar = hasPermission('entradas', 'deliver');
-  const topeCortesia = Number(
-    useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
-  );
+  const topeCover = Number(useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000));
 
   const cargarCola = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -125,12 +123,10 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
       const json: unknown = await respuesta.json().catch(() => null);
       const lista = listaDe(json);
       if (!respuesta.ok || lista === null)
-        throw new Error(mensajeDe(json, 'No se pudo cargar la cola de cortesías'));
+        throw new Error(mensajeDe(json, 'No se pudo cargar la cola de covers'));
       setEntradas(lista.map(aEntrada).filter((fila): fila is EntradaPendiente => fila !== null));
     } catch (error) {
-      setErrorCola(
-        error instanceof Error ? error.message : 'No se pudo cargar la cola de cortesías'
-      );
+      setErrorCola(error instanceof Error ? error.message : 'No se pudo cargar la cola de covers');
       setEntradas([]);
     } finally {
       if (!silent) setLoading(false);
@@ -226,7 +222,7 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
               <Ticket className='size-5' aria-hidden='true' />
             </div>
             <div>
-              <h2 className='font-semibold'>Cortesías pendientes</h2>
+              <h2 className='font-semibold'>Covers pendientes</h2>
               <p className='text-sm text-muted-foreground'>
                 Compras cobradas en la puerta que esperan sus bebidas en la barra.
               </p>
@@ -243,7 +239,7 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
               size='sm'
               disabled={loading || recargando}
               onClick={() => void recargar()}
-              aria-label='Actualizar cortesías pendientes'
+              aria-label='Actualizar covers pendientes'
               className='gap-1.5 rounded-full'
             >
               <RefreshCw
@@ -257,7 +253,7 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
 
         {loading ? (
           <div className='flex items-center gap-2 p-6 text-sm text-muted-foreground'>
-            <LoaderCircle className='size-4 animate-spin' /> Cargando cortesías…
+            <LoaderCircle className='size-4 animate-spin' /> Cargando covers…
           </div>
         ) : errorCola ? (
           <div className='p-6 text-sm text-destructive'>{errorCola}</div>
@@ -265,7 +261,7 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
           <div className='p-8 text-center'>
             <Ticket className='mx-auto mb-2 size-7 text-muted-foreground' aria-hidden='true' />
             <p className='font-medium'>
-              {searchTerm ? 'No hay cortesías que coincidan' : 'No hay cortesías pendientes'}
+              {searchTerm ? 'No hay covers que coincidan' : 'No hay covers pendientes'}
             </p>
             <p className='mt-1 text-sm text-muted-foreground'>
               Las compras registradas en la puerta aparecerán aquí hasta entregar sus bebidas.
@@ -341,7 +337,7 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
                               className='rounded-full'
                               onClick={() => abrirDialogo(grupo)}
                               aria-label={`Entregar ${grupo.cantidad} ${
-                                grupo.cantidad === 1 ? 'cortesía' : 'cortesías'
+                                grupo.cantidad === 1 ? 'cover' : 'covers'
                               } de ${grupo.cliente || 'cliente sin nombre'}`}
                             >
                               Entregar
@@ -404,14 +400,14 @@ export function CortesiasTab({ searchTerm = '' }: { searchTerm?: string }) {
         )}
         {!puedeEntregar ? (
           <p className='border-t p-4 text-sm text-muted-foreground'>
-            No tienes permiso para entregar cortesías.
+            No tienes permiso para entregar covers.
           </p>
         ) : null}
       </section>
 
-      <EntregaCortesiasDialog
+      <EntregaCoversDialog
         grupo={grupoSeleccionado}
-        tope={topeCortesia}
+        tope={topeCover}
         onClose={cerrarDialogo}
         onEntregado={() => cargarCola(true)}
       />

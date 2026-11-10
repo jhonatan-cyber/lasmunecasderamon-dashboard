@@ -1,24 +1,42 @@
 {
   "resumen": {
-    "commit": "7ba7f565aa2d755405d651252dc98be00546c9b4",
-    "generado": "2026-11-07T22:38:22.959Z",
-    "archivos": 2250,
-    "rutas": 238,
+    "commit": "6a176fea8c4e6184d40232820fb65b3dfdf0c36e",
+    "generado": "2026-11-10T01:39:21.336Z",
+    "archivos": 2258,
+    "rutas": 241,
     "sqlFueraDeRepositorio": 65,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 20,
     "caches": 27,
     "rutasApiConSqlDirecto": 0,
-    "rutasSinWrapper": 20
+    "rutasSinWrapper": 23
   },
   "rutas": [
     {
-      "ruta": "/api/whatsapp/administradores",
-      "archivo": "app/api/whatsapp/administradores/route.ts",
+      "ruta": "/api/tickets/cover-solicitudes/:id/approve",
+      "archivo": "app/api/tickets/cover-solicitudes/[id]/approve/route.ts",
       "metodos": [],
-      "nivel": "administrator",
+      "nivel": "entradas.deliver",
       "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/cover-solicitudes/:id/reject",
+      "archivo": "app/api/tickets/cover-solicitudes/[id]/reject/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/cover-solicitudes",
+      "archivo": "app/api/tickets/cover-solicitudes/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1907,8 +1925,8 @@
       "ruta": "/api/tickets/cortesia-solicitudes/:id/approve",
       "archivo": "app/api/tickets/cortesia-solicitudes/[id]/approve/route.ts",
       "metodos": [],
-      "nivel": "entradas.deliver",
-      "audit": true,
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1916,8 +1934,8 @@
       "ruta": "/api/tickets/cortesia-solicitudes/:id/reject",
       "archivo": "app/api/tickets/cortesia-solicitudes/[id]/reject/route.ts",
       "metodos": [],
-      "nivel": "entradas.deliver",
-      "audit": true,
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -1925,7 +1943,7 @@
       "ruta": "/api/tickets/cortesia-solicitudes",
       "archivo": "app/api/tickets/cortesia-solicitudes/route.ts",
       "metodos": [],
-      "nivel": "entradas.deliver",
+      "nivel": "SIN_WRAPPER",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -2125,6 +2143,15 @@
       "metodos": [],
       "nivel": "publico",
       "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/whatsapp/administradores",
+      "archivo": "app/api/whatsapp/administradores/route.ts",
+      "metodos": [],
+      "nivel": "administrator",
+      "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -2861,7 +2888,7 @@
     },
     {
       "archivo": "app/tickets/page.tsx",
-      "linea": 172,
+      "linea": 203,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2909,7 +2936,7 @@
     },
     {
       "archivo": "components/settings/SettingsWhatsAppTab.tsx",
-      "linea": 97,
+      "linea": 105,
       "tipo": "setInterval",
       "texto": "const timer = setInterval(() => {"
     },
@@ -3035,6 +3062,11 @@
       "texto": "const client = new Redis(url, {"
     },
     {
+      "archivo": "components/bar/CoversTab.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
       "archivo": "app/tickets/page.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
@@ -3043,11 +3075,6 @@
       "archivo": "app/tickets/page.tsx",
       "linea": 0,
       "texto": "caché compartida en globalThis"
-    },
-    {
-      "archivo": "components/bar/CortesiasTab.tsx",
-      "linea": 0,
-      "texto": "caché en memoria (new Map + cache)"
     },
     {
       "archivo": "components/products/ExpiredStockPanel.tsx",
@@ -3124,31 +3151,47 @@
   "matriz": {
     "app/api": {
       "lib/api": 282,
-      "workflows": 24,
       "lib/otros": 88,
+      "workflows": 24,
       "lib/identidad": 15,
       "lib/business": 34,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
-    "modules/aplicacion": {
-      "lib/business": 46,
-      "modules/infraestructura": 23,
-      "lib/otros": 106,
-      "lib/database": 48,
-      "lib/api": 11,
-      "lib/identidad": 3,
+    "components": {
+      "hooks": 151,
+      "lib/otros": 391,
+      "lib/business": 54,
+      "raiz": 91,
+      "lib/api": 3,
+      "modules/aplicacion": 9,
+      "app/ui": 1
+    },
+    "lib/otros": {
+      "components": 3,
+      "lib/database": 4,
+      "lib/api": 2,
+      "lib/business": 7,
       "raiz": 8
     },
     "modules/infraestructura": {
       "lib/database": 113,
-      "lib/otros": 168,
       "lib/business": 75,
+      "lib/otros": 168,
       "modules/aplicacion": 27,
       "lib/api": 9,
       "lib/identidad": 2,
       "raiz": 3
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 23,
+      "lib/otros": 106,
+      "lib/database": 48,
+      "lib/business": 46,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 8
     },
     "app/ui": {
       "hooks": 65,
@@ -3159,15 +3202,6 @@
       "modules/aplicacion": 3,
       "raiz": 14
     },
-    "components": {
-      "hooks": 150,
-      "lib/otros": 386,
-      "raiz": 91,
-      "lib/business": 54,
-      "lib/api": 3,
-      "modules/aplicacion": 9,
-      "app/ui": 1
-    },
     "raiz": {
       "lib/otros": 13,
       "hooks": 4,
@@ -3177,7 +3211,7 @@
     },
     "hooks": {
       "raiz": 40,
-      "lib/otros": 103,
+      "lib/otros": 108,
       "lib/api": 8,
       "components": 20,
       "lib/business": 19,
@@ -3200,13 +3234,6 @@
       "modules/aplicacion": 4,
       "raiz": 4,
       "components": 1
-    },
-    "lib/otros": {
-      "lib/database": 4,
-      "lib/api": 2,
-      "lib/business": 7,
-      "raiz": 8,
-      "components": 2
     },
     "lib/database": {
       "lib/otros": 4,

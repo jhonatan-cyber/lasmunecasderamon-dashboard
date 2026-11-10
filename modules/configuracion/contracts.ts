@@ -17,6 +17,7 @@ export {
   REGISTRO_CLAVES,
   aliasDeClave,
   categoriaDeClave,
+  claveCanonica,
   defaultDeClave,
   definicionDe,
   esClaveConfigValida,

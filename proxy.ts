@@ -130,7 +130,10 @@ async function generateAccessTokenFromPayload(payload: any): Promise<string> {
     nick: payload.nick,
     email: payload.email,
     role: payload.role,
-    sessionVersion: payload.sessionVersion
+    sessionVersion: payload.sessionVersion,
+    // Sin `sid` el token renovado no se puede validar: `validarSesionPayload` exige
+    // la fila de `sesiones` que lo respalda y todas las APIs responden 401.
+    sid: payload.sid
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

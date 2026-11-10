@@ -138,7 +138,7 @@ const normalizar = (valor: string) =>
     .toLowerCase()
     .trim();
 
-function categoriaFueraDeCortesia(categoria: string | null | undefined): boolean {
+function categoriaFueraDeCover(categoria: string | null | undefined): boolean {
   const normalizada = normalizar(categoria || '');
   return normalizada.includes('analcohol') || normalizada.includes('cigarr');
 }
@@ -176,12 +176,12 @@ function previsionDeCobro(
   precio: number,
   umbral: number,
   montoEntrada: number
-): { etiqueta: string; esCortesia: boolean; montoAdicional: number } {
-  if (precio <= umbral) return { etiqueta: 'Cortesía', esCortesia: true, montoAdicional: 0 };
+): { etiqueta: string; esCover: boolean; montoAdicional: number } {
+  if (precio <= umbral) return { etiqueta: 'Cover', esCover: true, montoAdicional: 0 };
   const montoAdicional = Math.max(0, precio - montoEntrada);
   return {
     etiqueta: `Cobra ${formatCurrencyCLP(montoAdicional)}`,
-    esCortesia: false,
+    esCover: false,
     montoAdicional
   };
 }
@@ -199,9 +199,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   const [entregando, setEntregando] = useState(false);
   const [montoAdicional, setMontoAdicional] = useState('');
 
-  const topeCortesia = Number(
-    useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
-  );
+  const topeCover = Number(useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000));
 
   const dialogoAbierto = entrada !== null;
 
@@ -238,7 +236,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     return () => controller.abort();
   }, [dialogoAbierto]);
 
-  const umbral = Math.max(topeCortesia, entrada?.monto_entrada ?? 0);
+  const umbral = Math.max(topeCover, entrada?.monto_entrada ?? 0);
   const bebidaSeleccionada = useMemo(
     () => productos.find(bebida => bebida.presentacion_id === presentacionId),
     [productos, presentacionId]
@@ -308,7 +306,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
   }, [requiereAcompanamiento]);
 
   const bebidasDisponibles = useMemo(
-    () => productos.filter(bebida => !categoriaFueraDeCortesia(bebida.categoria_nombre)),
+    () => productos.filter(bebida => !categoriaFueraDeCover(bebida.categoria_nombre)),
     [productos]
   );
 
@@ -388,8 +386,8 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
       const tipo = texto(json.data.tipo);
       const montoCobrarBarra = numero(json.data.montoCobrarBarra);
       toast.success(
-        tipo === 'cortesia'
-          ? 'Cortesía entregada'
+        tipo === 'cover'
+          ? 'Cover entregado'
           : `Adicional registrado: cobrar ${formatCurrencyCLP(montoCobrarBarra)}`
       );
       await onEntregada?.();
@@ -511,10 +509,10 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
                         {sinStock ? 'Sin stock' : `${bebida.stock_bar} en bar`}
                       </span>
                       <Badge
-                        variant={prevision.esCortesia ? 'secondary' : 'outline'}
+                        variant={prevision.esCover ? 'secondary' : 'outline'}
                         className={cn(
                           'rounded-full px-2 py-0 text-[11px]',
-                          !prevision.esCortesia && 'text-amber-600 dark:text-amber-400'
+                          !prevision.esCover && 'text-amber-600 dark:text-amber-400'
                         )}
                       >
                         {prevision.etiqueta}

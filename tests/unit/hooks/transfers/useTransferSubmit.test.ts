@@ -44,6 +44,10 @@ function formulario(overrides: Partial<TransferForm> = {}): TransferForm {
     mlAcompanamientoAnfitriona: '',
     preciosAnfitrionaExtra: [],
     tipos: ['botella'],
+    venderConAnfitriona: true,
+    enVenta: true,
+    esBebidaAnalcoholicaItem: false,
+    esCigarrillosItem: false,
     usarConfigGuardada: false,
     opcionesGuardadas: [],
     editarPrecios: false,
@@ -114,5 +118,35 @@ describe('useTransferSubmit guarda la configuración de colación', () => {
     const cuerpos = await enviar(formulario({ mlColacion: '150' }));
 
     expect(cuerpos[0].opciones_venta[0].ml_colacion).toBe(150);
+  });
+});
+
+describe('useTransferSubmit guarda el precio de la botella', () => {
+  it('conserva el precio de una bebida analcohólica aunque no se venda con anfitriona', async () => {
+    const cuerpos = await enviar(
+      formulario({
+        esBebidaAnalcoholicaItem: true,
+        venderConAnfitriona: false,
+        precioVenta: '8000'
+      })
+    );
+
+    const botella = cuerpos[0].opciones_venta.find((option: any) => option.tipo === 'botella');
+    expect(botella.precio).toBe(8000);
+    expect(botella.vender_con_anfitriona).toBe(true);
+  });
+
+  it('mantiene en cero el precio de un licor que no se vende con anfitriona', async () => {
+    const cuerpos = await enviar(
+      formulario({
+        esBebidaAnalcoholicaItem: false,
+        venderConAnfitriona: false,
+        precioVenta: '30000'
+      })
+    );
+
+    const botella = cuerpos[0].opciones_venta.find((option: any) => option.tipo === 'botella');
+    expect(botella.precio).toBe(0);
+    expect(botella.vender_con_anfitriona).toBe(false);
   });
 });

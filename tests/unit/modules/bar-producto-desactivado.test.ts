@@ -5,7 +5,7 @@ import { bloquearYValidarConfiguracionVenta } from '@/modules/inventario/bar/val
 
 /**
  * Un producto desactivado a mano no sale del bar: ni en la venta por corto, ni
- * en la venta por botella, ni en el cover, ni en la cortesía.
+ * en la venta por botella, ni en el cover, ni en la cover.
  *
  * La comprobación vive donde ya se bloquea la presentación, así que el bloqueo
  * sigue siendo sobre las mismas filas y en el mismo orden.

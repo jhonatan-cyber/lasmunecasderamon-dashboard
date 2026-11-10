@@ -69,11 +69,12 @@ export const CLAVES_VENTAS: Record<string, DefinicionClave> = {
     alias: 'threshold_producto_caro',
     validar: enteroPositivo('umbral_habitacion_desde')
   },
-  monto_base_trago_cortesia_cliente: {
+  monto_base_trago_cover_cliente: {
     categoria: 'comisiones',
     tipo: 'number',
     default: 10000,
-    validar: enteroPositivo('monto_base_trago_cortesia_cliente')
+    alias: 'monto_base_trago_cortesia_cliente',
+    validar: enteroPositivo('monto_base_trago_cover_cliente')
   },
   costo_entrada: {
     categoria: 'comisiones',
@@ -98,5 +99,16 @@ export const CLAVES_VENTAS: Record<string, DefinicionClave> = {
     tipo: 'number',
     default: 49,
     validar: enteroPositivo('split_tarjeta_propina')
+  },
+  /**
+   * Precio máximo por unidad de acompañamiento. Cuando un acompañamiento cuesta
+   * más que este tope, el exceso (`precio - tope`) se suma al subtotal de la
+   * venta por cada unidad. `0` = sin tope (no se aplica la regla).
+   */
+  tope_precio_acompanamiento: {
+    categoria: 'comisiones',
+    tipo: 'number',
+    default: 0,
+    validar: enteroPositivo('tope_precio_acompanamiento')
   }
 };

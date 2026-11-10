@@ -5,6 +5,7 @@ import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { Minus, Plus, X } from 'lucide-react';
 import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
+import { precioUnitarioAcompanamiento } from '@/lib/sales/recargoAcompanamiento';
 import { productImageUrl } from '@/lib/utils/productImage';
 
 export type OpcionAcompanamiento = {
@@ -13,6 +14,8 @@ export type OpcionAcompanamiento = {
   nombre: string;
   stock_bar: number;
   foto?: string | null;
+  /** Precio del acompañamiento; si falta se intenta deducir del producto de bar. */
+  precio?: number | null;
 };
 
 type Props = {
@@ -25,6 +28,11 @@ type Props = {
   onChange: (valor: AcompanamientoBotellaItem[]) => void;
   /** Entregas que comparten el mismo reparto; topa el máximo por sabor según stock. */
   repeticiones?: number;
+  /**
+   * `requeridas` cubre todas las entregas juntas (se reparten sabores distintos
+   * entre ellas) en vez de repetir el mismo reparto en cada una.
+   */
+  repartoTotal?: boolean;
   disabled?: boolean;
 };
 
@@ -43,9 +51,10 @@ export function AcompanamientoDistribuidor({
   valor,
   onChange,
   repeticiones = 1,
+  repartoTotal = false,
   disabled = false
 }: Props) {
-  const lotes = Math.max(1, Math.floor(repeticiones));
+  const lotes = repartoTotal ? 1 : Math.max(1, Math.floor(repeticiones));
   const requerido = Math.max(1, Math.floor(requeridas));
   const asignado = valor.reduce((suma, sabor) => suma + sabor.unidades, 0);
   const restante = Math.max(0, requerido - asignado);
@@ -69,7 +78,8 @@ export function AcompanamientoDistribuidor({
         presentacion_id: opcion.id,
         unidades: 1,
         nombre: nombreDe(opcion),
-        foto: opcion.foto ?? null
+        foto: opcion.foto ?? null,
+        precio: opcion.precio ?? precioUnitarioAcompanamiento(opcion)
       }
     ]);
   };
@@ -90,8 +100,12 @@ export function AcompanamientoDistribuidor({
     <div className='space-y-2'>
       <p className='text-xs text-muted-foreground'>
         {restante > 0
-          ? `Reparte ${requerido} unidad${requerido === 1 ? '' : 'es'} por entrega · ${asignado}/${requerido}`
-          : `Reparto completo · ${requerido} unidad${requerido === 1 ? '' : 'es'} por entrega`}
+          ? `Reparte ${requerido} unidad${requerido === 1 ? '' : 'es'} ${
+              repartoTotal ? 'en total' : 'por entrega'
+            } · ${asignado}/${requerido}`
+          : `Reparto completo · ${requerido} unidad${
+              requerido === 1 ? '' : 'es'
+            } ${repartoTotal ? 'en total' : 'por entrega'}`}
       </p>
 
       {disponibles.length > 0 && restante > 0 ? (

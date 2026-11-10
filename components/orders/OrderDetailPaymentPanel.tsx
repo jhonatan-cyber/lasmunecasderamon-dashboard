@@ -3,7 +3,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
 import { PaymentMethodSelect } from '@/components/shared/selects';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { ORDER_FIELD_INPUT_CLASS, ORDER_FIELD_LABEL_CLASS } from './orderFieldStyles';
@@ -101,12 +100,8 @@ export function OrderDetailPaymentPanel({
             <Input
               id='tiempo-habitacion'
               className={ORDER_FIELD_INPUT_CLASS}
-              type='number'
-              min={1}
-              max={1440}
-              step={1}
               value={tiempoHabitacion}
-              onChange={e => setTiempoHabitacion(Number(e.target.value))}
+              readOnly
             />
           </div>
         </>
@@ -124,30 +119,20 @@ export function OrderDetailPaymentPanel({
               readOnly
             />
           </>
-        ) : (
+        ) : agregarPropina ? (
           <>
-            <Label htmlFor='propina-checkbox' className={ORDER_FIELD_LABEL_CLASS}>
+            <Label htmlFor='propina-display' className={ORDER_FIELD_LABEL_CLASS}>
               Propina ({propinaPct}%)
             </Label>
-            <div className='flex items-center gap-3 py-2'>
-              <Checkbox
-                id='propina-checkbox'
-                checked={agregarPropina}
-                onCheckedChange={checked => setAgregarPropina(checked === true)}
-              />
-              <Label
-                htmlFor='propina-checkbox'
-                className='text-sm text-gray-700 cursor-pointer select-none dark:text-zinc-300'
-              >
-                Agregar propina del {propinaPct}%
-                {agregarPropina && (
-                  <span className='ml-2 font-semibold text-blue-600 dark:text-blue-400'>
-                    ({formatCurrencyCLP(propina)})
-                  </span>
-                )}
-              </Label>
-            </div>
+            <Input
+              id='propina-display'
+              className={ORDER_FIELD_INPUT_CLASS}
+              value={formatCurrencyCLP(propina)}
+              readOnly
+            />
           </>
+        ) : (
+          <div className='py-1 text-sm text-muted-foreground'>Sin propina</div>
         )}
       </div>
       {orderTotalCommission > 0 && (

@@ -76,7 +76,7 @@ export function TransferModal({
     ? ventaDeshabilitada
       ? 0
       : Number(form.opcionesGuardadas.find(option => option.tipo === 'botella')?.precio ?? 0)
-    : form.venderConAnfitriona
+    : esVentaSimple || form.venderConAnfitriona
       ? Number(form.precioVenta.replace(/\./g, '')) || 0
       : 0;
 

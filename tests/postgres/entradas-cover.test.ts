@@ -21,6 +21,7 @@ import { restoreDatabase, snapshotDatabase } from '@/lib/database/maintenance';
 import {
   anularEntrada,
   entregarEntrada,
+  listarEntradas,
   listarPendientes,
   postearPendientesDeCaja,
   registrarEntrada
@@ -31,10 +32,10 @@ import { SaleService } from '@/workflows/ventas';
 
 /**
  * Flujo real de entradas contra PostgreSQL: el garzón cobra en la puerta y el
- * cliente decide en la barra si recibe la cortesía o paga un adicional.
+ * cliente decide en la barra si recibe la cover o paga un adicional.
  *
  * El invariante que estas pruebas cuidan es que cada peso entra a la caja una
- * sola vez: la puerta no postea nada, la cortesía postea el monto de la entrada
+ * sola vez: la puerta no postea nada, la cover postea el monto de la entrada
  * y el adicional deja que `SaleService` registre la venta (el módulo nunca
  * postea dinero de venta por su cuenta).
  *
@@ -209,17 +210,18 @@ async function crearAcompanamiento(
 async function filaEntrada(id: string) {
   const [fila] = await query<
     {
-      cortesia_estado: string;
+      cover_estado: string;
+      anulacion_origen: string | null;
       monto_entrada: number;
       monto_bebida_adicional: number;
       cover_presentacion_id: string | null;
-      cortesia_entregada_por: string | null;
-      cortesia_entregada_at: string | null;
+      cover_entregada_por: string | null;
+      cover_entregada_at: string | null;
       venta_id: string | null;
     }[]
   >(
-    `SELECT e.cortesia_estado, e.monto_entrada, e.monto_bebida_adicional,
-            e.cover_presentacion_id, e.cortesia_entregada_por, e.cortesia_entregada_at,
+    `SELECT e.cover_estado, e.anulacion_origen, e.monto_entrada, e.monto_bebida_adicional,
+            e.cover_presentacion_id, e.cover_entregada_por, e.cover_entregada_at,
             v.id_venta AS venta_id
        FROM entradas_clientes e
        LEFT JOIN ventas v ON v.entrada_id = e.id
@@ -270,15 +272,15 @@ it('registra la entrada en la puerta sin postear caja, stock ni venta', async ()
     expect(resultado.caja_id).toBe(cajaId);
 
     const filas = await query<
-      { id: string; cortesia_estado: string; monto_entrada: number; caja_id: string }[]
+      { id: string; cover_estado: string; monto_entrada: number; caja_id: string }[]
     >(
-      `SELECT id, cortesia_estado, monto_entrada, caja_id
+      `SELECT id, cover_estado, monto_entrada, caja_id
          FROM entradas_clientes WHERE grupo_registro_id = ? ORDER BY id`,
       [resultado.grupo_registro_id]
     );
     expect(filas).toHaveLength(2);
     for (const fila of filas) {
-      expect(fila.cortesia_estado).toBe('pendiente');
+      expect(fila.cover_estado).toBe('pendiente');
       expect(Number(fila.monto_entrada)).toBe(10000);
       expect(fila.caja_id).toBe(cajaId);
     }
@@ -372,14 +374,14 @@ it('rechaza un total que no coincide con costo_entrada', async () => {
   }
 });
 
-it('entrega la cortesía: consume el bar, postea la entrada y cierra la fila', async () => {
+it('entrega la cover: consume el bar, postea la entrada y cierra la fila', async () => {
   const snapshot = await snapshotDatabase();
   try {
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
-    const bebida = await crearBebida('Bebida de cortesía', 8000);
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
+    const bebida = await crearBebida('Bebida de cover', 8000);
 
     const entrada = await registrarEntrada({
       cantidadEntradas: 1,
@@ -397,7 +399,7 @@ it('entrega la cortesía: consume el bar, postea la entrada y cierra la fila', a
     });
 
     expect(entrega).toMatchObject({
-      tipo: 'cortesia',
+      tipo: 'cover',
       precio: 8000,
       montoEntrada: 10000,
       montoCobrarBarra: 0,
@@ -405,23 +407,23 @@ it('entrega la cortesía: consume el bar, postea la entrada y cierra la fila', a
       cajaId
     });
 
-    // El stock salió como cortesía (precio 0) y el dinero se posteó a la caja
+    // El stock salió como cover (precio 0) y el dinero se posteó a la caja
     // como entrada: efectivo sube, `venta` no.
     const [movimiento] = await query<{ tipo: string; precio_venta: number }[]>(
       'SELECT tipo, precio_venta FROM inventario_movimientos WHERE presentacion_id = ?',
       [bebida.presentacionId]
     );
-    expect(movimiento).toMatchObject({ tipo: 'cortesia', precio_venta: 0 });
+    expect(movimiento).toMatchObject({ tipo: 'cover', precio_venta: 0 });
 
     const saldosDespues = await saldosCaja(cajaId);
     expect(saldosDespues.efectivo - saldosAntes.efectivo).toBe(10000);
     expect(saldosDespues.venta).toBe(saldosAntes.venta);
 
     expect(await filaEntrada(entrada.id)).toMatchObject({
-      cortesia_estado: 'entregada',
+      cover_estado: 'entregada',
       monto_bebida_adicional: 0,
       cover_presentacion_id: bebida.presentacionId,
-      cortesia_entregada_por: usuarioId,
+      cover_entregada_por: usuarioId,
       venta_id: null
     });
 
@@ -440,15 +442,15 @@ it('entrega la cortesía: consume el bar, postea la entrada y cierra la fila', a
   }
 });
 
-it('usa el mayor entre el tope de cortesía y lo pagado en la puerta', async () => {
+it('usa el mayor entre el tope de cover y lo pagado en la puerta', async () => {
   const snapshot = await snapshotDatabase();
   try {
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
     // Tope configurado por debajo de la entrada: la bebida vale más que el tope
-    // pero menos que lo ya pagado, así que sigue siendo cortesía.
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 3000);
+    // pero menos que lo ya pagado, así que sigue siendo cover.
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 3000);
     const bebida = await crearBebida('Bebida intermedia', 9000);
 
     const entrada = await registrarEntrada({
@@ -466,7 +468,7 @@ it('usa el mayor entre el tope de cortesía y lo pagado en la puerta', async () 
       usuarioId
     });
 
-    expect(entrega.tipo).toBe('cortesia');
+    expect(entrega.tipo).toBe('cover');
     expect(entrega.montoCobrarBarra).toBe(0);
     expect((await saldosCaja(cajaId)).efectivo - saldosAntes.efectivo).toBe(10000);
   } finally {
@@ -480,7 +482,7 @@ it('entrega con adicional: arma la venta por el precio de lista y no postea el d
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
     const bebida = await crearBebida('Bebida premium', 25000);
 
     const entrada = await registrarEntrada({
@@ -531,7 +533,7 @@ it('entrega con adicional: arma la venta por el precio de lista y no postea el d
     expect(await saldosCaja(cajaId)).toEqual(saldosAntes);
 
     expect(await filaEntrada(entrada.id)).toMatchObject({
-      cortesia_estado: 'entregada',
+      cover_estado: 'entregada',
       monto_bebida_adicional: 15000,
       cover_presentacion_id: bebida.presentacionId
     });
@@ -546,7 +548,7 @@ it('registra la venta del adicional con SaleService y deja la caja cuadrada', as
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
     const bebida = await crearBebida('Bebida premium con venta', 25000);
 
     const entrada = await registrarEntrada({
@@ -660,9 +662,12 @@ it('barre las pendientes del cierre de caja y las deja anuladas sin repetir el p
 
     for (const id of entrada.ids) {
       expect(await filaEntrada(id)).toMatchObject({
-        cortesia_estado: 'anulada',
-        cortesia_entregada_por: usuarioId
+        cover_estado: 'anulada',
+        anulacion_origen: 'cierre',
+        cover_entregada_por: usuarioId
       });
+      const [listada] = (await listarEntradas(FECHA)).filter(fila => fila.id === id);
+      expect(listada.anulacion_origen).toBe('cierre');
     }
 
     // El barrido es idempotente: ya no queda nada pendiente en esa caja.
@@ -676,7 +681,7 @@ it('barre las pendientes del cierre de caja y las deja anuladas sin repetir el p
   }
 });
 
-it('anula a mano una entrada que nunca se sirvió y postea su monto', async () => {
+it('anula a mano una entrada que nunca se sirvió y devuelve su monto sin tocar la caja', async () => {
   const snapshot = await snapshotDatabase();
   try {
     const cajaId = await cajaAbierta();
@@ -694,38 +699,41 @@ it('anula a mano una entrada que nunca se sirvió y postea su monto', async () =
     const saldosAntes = await saldosCaja(cajaId);
 
     const anulacion = await anularEntrada({ entradaId: entrada.id, usuarioId });
+    // El dinero se devuelve al cliente: nunca entró al libro de la caja.
     expect(anulacion.monto).toBe(10000);
-    expect((await saldosCaja(cajaId)).transferencia - saldosAntes.transferencia).toBe(10000);
-    expect((await saldosCaja(cajaId)).venta).toBe(saldosAntes.venta);
+    expect(await saldosCaja(cajaId)).toEqual(saldosAntes);
 
     expect(await filaEntrada(entrada.id)).toMatchObject({
-      cortesia_estado: 'anulada',
-      cortesia_entregada_por: usuarioId
+      cover_estado: 'anulada',
+      anulacion_origen: 'manual',
+      cover_entregada_por: usuarioId
     });
+    const [listada] = (await listarEntradas(FECHA)).filter(fila => fila.id === entrada.id);
+    expect(listada.anulacion_origen).toBe('manual');
 
     // Anulada no se entrega.
     await expect(
       entregarEntrada({ entradaId: entrada.id, presentacionId: bebida.presentacionId, usuarioId })
     ).rejects.toThrow('Esta entrada ya fue entregada o anulada');
 
-    // Y no se anula dos veces: el dinero no puede entrar dos veces a la caja.
+    // Y no se anula dos veces.
     await expect(anularEntrada({ entradaId: entrada.id, usuarioId })).rejects.toThrow(
       'Esta entrada ya fue entregada o anulada'
     );
-    expect((await saldosCaja(cajaId)).transferencia - saldosAntes.transferencia).toBe(10000);
+    expect(await saldosCaja(cajaId)).toEqual(saldosAntes);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }
 });
 
-it('recorre el ciclo completo de la cortesía: cola, entrega y anulación sin postear dos veces', async () => {
+it('recorre el ciclo completo de la cover: cola, entrega y anulación sin postear dos veces', async () => {
   const snapshot = await snapshotDatabase();
   try {
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
-    const bebida = await crearBebida('Ciclo de cortesía', 8000);
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
+    const bebida = await crearBebida('Ciclo de cover', 8000);
 
     // La puerta cobra dos personas: ambas aparecen en la cola de la barra.
     const porEntregar = await registrarEntrada({
@@ -754,7 +762,7 @@ it('recorre el ciclo completo de la cortesía: cola, entrega y anulación sin po
       presentacionId: bebida.presentacionId,
       usuarioId
     });
-    expect(entrega.tipo).toBe('cortesia');
+    expect(entrega.tipo).toBe('cover');
 
     const colaTrasEntrega = await cola();
     expect(colaTrasEntrega).not.toContain(porEntregar.id);
@@ -769,20 +777,23 @@ it('recorre el ciclo completo de la cortesía: cola, entrega y anulación sin po
     );
     expect((await saldosCaja(cajaId)).efectivo - saldosAntes.efectivo).toBe(10000);
 
-    // 2) La segunda se anula desde la cola: también sale y postea su monto.
+    // 2) La segunda se anula desde la cola: sale y su dinero se devuelve sin
+    // postearlo, porque nunca entró al libro de la caja.
     const anulacion = await anularEntrada({ entradaId: porAnular.id, usuarioId });
     expect(anulacion.monto).toBe(10000);
     expect(await cola()).not.toContain(porAnular.id);
+    expect(await filaEntrada(porAnular.id)).toMatchObject({ anulacion_origen: 'manual' });
+    expect((await saldosCaja(cajaId)).efectivo - saldosAntes.efectivo).toBe(10000);
 
     // Lo anulado no admite entrega: ni bebida ni dinero extra.
     await expect(
       entregarEntrada({ entradaId: porAnular.id, presentacionId: bebida.presentacionId, usuarioId })
     ).rejects.toThrow('Esta entrada ya fue entregada o anulada');
 
-    // Cada entrada postó su monto exactamente una vez (20.000 en total) y la
-    // bebida salió del bar una sola vez.
+    // Sólo la entrada servida entró a la caja (10.000) y la bebida salió del
+    // bar una sola vez.
     const saldosFinales = await saldosCaja(cajaId);
-    expect(saldosFinales.efectivo - saldosAntes.efectivo).toBe(20000);
+    expect(saldosFinales.efectivo - saldosAntes.efectivo).toBe(10000);
     expect(saldosFinales.venta - saldosAntes.venta).toBe(0);
     const [movimientos] = await query<{ total: number }[]>(
       'SELECT COUNT(*)::int AS total FROM inventario_movimientos WHERE presentacion_id = ?',
@@ -794,16 +805,16 @@ it('recorre el ciclo completo de la cortesía: cola, entrega y anulación sin po
   }
 });
 
-it('exige y entrega el acompañamiento incluido en la botella de cortesía', async () => {
+it('exige y entrega el acompañamiento incluido en la botella de cover', async () => {
   const snapshot = await snapshotDatabase();
   try {
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
     // La botella exige 2 unidades de acompañamiento (lo pide la opción botella).
     const bebida = await crearBebidaConAcompanamiento('Botella con acompañamiento', 8000, 2);
-    const acompanamiento = await crearAcompanamiento('Analcohólica de cortesía', 2);
+    const acompanamiento = await crearAcompanamiento('Analcohólica de cover', 2);
 
     const entrada = await registrarEntrada({
       clienteNombre: 'Botella con acompañamiento',
@@ -819,18 +830,18 @@ it('exige y entrega el acompañamiento incluido en la botella de cortesía', asy
     await expect(
       entregarEntrada({ entradaId: entrada.id, presentacionId: bebida.presentacionId, usuarioId })
     ).rejects.toThrow('Selecciona el acompañamiento incluido en esta bebida');
-    expect(await filaEntrada(entrada.id)).toMatchObject({ cortesia_estado: 'pendiente' });
+    expect(await filaEntrada(entrada.id)).toMatchObject({ cover_estado: 'pendiente' });
     expect(await saldosCaja(cajaId)).toEqual(saldosAntes);
     expect((await listarPendientes(FECHA)).map(fila => fila.id)).toContain(entrada.id);
 
-    // Con el acompañamiento la entrega es cortesía y sale de la cola.
+    // Con el acompañamiento la entrega es cover y sale de la cola.
     const entrega = await entregarEntrada({
       entradaId: entrada.id,
       presentacionId: bebida.presentacionId,
       acompanamientoPresentacionId: acompanamiento.presentacionId,
       usuarioId
     });
-    expect(entrega).toMatchObject({ tipo: 'cortesia', montoCobrarBarra: 0 });
+    expect(entrega).toMatchObject({ tipo: 'cover', montoCobrarBarra: 0 });
     expect((await listarPendientes(FECHA)).map(fila => fila.id)).not.toContain(entrada.id);
 
     // La fila guarda qué se acompañó y el detalle lo registra por separado.
@@ -853,15 +864,15 @@ it('exige y entrega el acompañamiento incluido en la botella de cortesía', asy
     expect(unidades).toHaveLength(3);
     for (const unidad of unidades) expect(unidad.estado).toBe(ESTADO_UNIDAD_VENDIDA);
 
-    // Una cortesía por unidad entregada: 1 de la bebida + 2 del acompañamiento.
+    // Una cover por unidad entregada: 1 de la bebida + 2 del acompañamiento.
     const [movimientos] = await query<{ total: number }[]>(
       `SELECT COUNT(*)::int AS total FROM inventario_movimientos
-        WHERE tipo = 'cortesia' AND presentacion_id IN (?)`,
+        WHERE tipo = 'cover' AND presentacion_id IN (?)`,
       [[bebida.presentacionId, acompanamiento.presentacionId]]
     );
     expect(movimientos.total).toBe(3);
 
-    // La caja postea la entrada una sola vez; la cortesía no genera venta.
+    // La caja postea la entrada una sola vez; la cover no genera venta.
     const saldosFinales = await saldosCaja(cajaId);
     expect(saldosFinales.efectivo - saldosAntes.efectivo).toBe(10000);
     expect(saldosFinales.venta - saldosAntes.venta).toBe(0);
@@ -876,7 +887,7 @@ it('no admite acompañamiento en una bebida que no lo tiene configurado', async 
     const usuarioId = await primerUsuarioActivo();
     await cajaAbierta();
     await fijarConfiguracion('costo_entrada', 10000);
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
     const bebida = await crearBebida('Botella sin acompañamiento', 8000);
     const acompanamiento = await crearAcompanamiento('Analcohólica que sobra', 1);
 
@@ -898,7 +909,7 @@ it('no admite acompañamiento en una bebida que no lo tiene configurado', async 
       })
     ).rejects.toThrow('La bebida seleccionada no tiene acompañamiento configurado');
 
-    expect(await filaEntrada(entrada.id)).toMatchObject({ cortesia_estado: 'pendiente' });
+    expect(await filaEntrada(entrada.id)).toMatchObject({ cover_estado: 'pendiente' });
     // El acompañamiento que sobra sigue en el bar.
     const [unidad] = await query<{ estado: string }[]>(
       'SELECT estado FROM inventario_unidades WHERE id = ?',
@@ -916,13 +927,13 @@ it('entrega 3 entradas de una compra con productos y cover distintos, y verifica
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
-    await fijarConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+    await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
 
     // Tres productos distintos con su cover. La tercera bebida supera el tope
     // para que la entrega genere una venta real con adicional.
     const bebidas = [
-      await crearBebidaConAcompanamiento('Cortesía de tres A', 8000, 1),
-      await crearBebidaConAcompanamiento('Cortesía de tres B', 9000, 1),
+      await crearBebidaConAcompanamiento('Cover de tres A', 8000, 1),
+      await crearBebidaConAcompanamiento('Cover de tres B', 9000, 1),
       await crearBebidaConAcompanamiento('Venta de tres C', 25000, 1)
     ];
     const covers = [
@@ -995,8 +1006,8 @@ it('entrega 3 entradas de una compra con productos y cover distintos, y verifica
       }
     );
 
-    expect(primera).toMatchObject({ tipo: 'cortesia', montoCobrarBarra: 0, ventaId: null });
-    expect(segunda).toMatchObject({ tipo: 'cortesia', montoCobrarBarra: 0, ventaId: null });
+    expect(primera).toMatchObject({ tipo: 'cover', montoCobrarBarra: 0, ventaId: null });
+    expect(segunda).toMatchObject({ tipo: 'cover', montoCobrarBarra: 0, ventaId: null });
     expect(tercera).toMatchObject({
       tipo: 'upgrade',
       precio: 25000,
@@ -1009,14 +1020,14 @@ it('entrega 3 entradas de una compra con productos y cover distintos, y verifica
     const filas = await query<
       {
         id: string;
-        cortesia_estado: string;
+        cover_estado: string;
         cover_presentacion_id: string | null;
         bebida_acompanamiento_presentacion_id: string | null;
         monto_bebida_adicional: number;
         venta_id: string | null;
       }[]
     >(
-      `SELECT e.id, e.cortesia_estado, e.cover_presentacion_id,
+      `SELECT e.id, e.cover_estado, e.cover_presentacion_id,
               e.bebida_acompanamiento_presentacion_id, e.monto_bebida_adicional,
               v.id_venta AS venta_id
          FROM entradas_clientes e
@@ -1030,7 +1041,7 @@ it('entrega 3 entradas de una compra con productos y cover distintos, y verifica
       const fila = porEntrada.get(compra.ids[indice]);
       expect(fila).toBeTruthy();
       expect(fila).toMatchObject({
-        cortesia_estado: 'entregada',
+        cover_estado: 'entregada',
         cover_presentacion_id: bebidas[indice].presentacionId,
         bebida_acompanamiento_presentacion_id: covers[indice].presentacionId
       });
@@ -1048,13 +1059,13 @@ it('entrega 3 entradas de una compra con productos y cover distintos, y verifica
     expect(stockFinal).toHaveLength(6);
     for (const unidad of stockFinal) expect(unidad.estado).toBe(ESTADO_UNIDAD_VENDIDA);
 
-    // Dos cortesías (producto + cover) y una venta (producto + cover).
+    // Dos covers (producto + cover) y una venta (producto + cover).
     const movimientos = await query<{ tipo: string; presentacion_id: string }[]>(
       'SELECT tipo, presentacion_id FROM inventario_movimientos WHERE presentacion_id IN (?)',
       [presentaciones]
     );
     expect(movimientos).toHaveLength(6);
-    expect(movimientos.filter(movimiento => movimiento.tipo === 'cortesia')).toHaveLength(4);
+    expect(movimientos.filter(movimiento => movimiento.tipo === 'cover')).toHaveLength(4);
     expect(movimientos.filter(movimiento => movimiento.tipo === 'venta')).toHaveLength(2);
 
     // La venta del adicional queda facturada por el precio de lista completo.
@@ -1107,7 +1118,7 @@ it('entrega 3 entradas de una compra con productos y cover distintos, y verifica
       }
     ]);
 
-    // Dos cortesías postean la entrada (20.000) y la venta el precio completo
+    // Dos covers postean la entrada (20.000) y la venta el precio completo
     // (25.000): la caja sube 45.000 y la columna de ventas 25.000.
     const saldosDespues = await saldosCaja(cajaId);
     expect(saldosDespues.efectivo - saldosAntes.efectivo).toBe(45000);

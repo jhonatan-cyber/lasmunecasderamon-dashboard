@@ -8,8 +8,9 @@ import { notificarEntradaActualizada } from '@/lib/notifications/entradaNotifica
 /**
  * Anula una entrada que nunca se sirvió (el cliente se fue).
  *
- * El dinero se cobró en la puerta: se postea como entrada a la caja y la fila
- * queda cerrada sin tocar el stock.
+ * El dinero cobrado en la puerta se devuelve al cliente y no entra a la caja:
+ * se postea recién al servir la entrada o al cerrar el turno. La fila queda
+ * cerrada sin tocar el stock.
  */
 export const POST = withRoute(
   { auth: true, audit: true, module: 'entradas', action: 'deliver' },

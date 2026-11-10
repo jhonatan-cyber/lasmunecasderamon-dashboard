@@ -5,11 +5,15 @@ const mockJwtVerify = vi.hoisted(() => vi.fn());
 const mockValidarSesion = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/auth/auth', () => ({ validarSesionPayload: mockValidarSesion }));
 const mockSignJWT = vi.hoisted(() => vi.fn());
+const mockSignedPayload = vi.hoisted(() => vi.fn());
 const mockCheckRateLimit = vi.hoisted(() => vi.fn());
 
 vi.mock('jose', () => ({
   jwtVerify: mockJwtVerify,
   SignJWT: class {
+    constructor(payload: unknown) {
+      mockSignedPayload(payload);
+    }
     setProtectedHeader() {
       return this;
     }
@@ -354,6 +358,26 @@ describe('proxy — refresh token rotation', () => {
     expect(res.headers.get('location')).toBeNull();
     const setCookie = res.headers.get('set-cookie') ?? '';
     expect(setCookie).toContain('token=renewed-access-token');
+  });
+
+  it('conserva el sid de la sesión en el token renovado', async () => {
+    mockJwtVerify.mockRejectedValueOnce(new Error('expired')).mockResolvedValueOnce({
+      payload: { ...ADMIN_PAYLOAD, sid: 'sesion-123', sessionVersion: 1 }
+    });
+    mockSignJWT.mockResolvedValue('renewed-access-token');
+
+    const proxy = await loadProxy();
+    const res = await proxy(
+      createRequest({
+        pathname: '/api/auth/me',
+        cookies: { token: 'expired', refresh_token: 'valid-refresh' }
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockSignedPayload).toHaveBeenCalledWith(
+      expect.objectContaining({ sid: 'sesion-123', sessionVersion: 1 })
+    );
   });
 
   it('no renueva si el refresh token también es inválido', async () => {

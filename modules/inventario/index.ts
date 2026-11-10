@@ -4,9 +4,9 @@ export { listarLimpieza, operarLimpieza } from './limpieza/servicio';
 export {
   consumirStockBar,
   consumirColacionBar,
-  consumirCorteCortesiaBar,
+  consumirCorteCoverBar,
   consumirCoverBar,
-  consumirProductoCortesiaBar
+  consumirProductoCoverBar
 } from './bar/servicio';
 export { revertirStockAnulacion } from './anulaciones/servicio';
 export {

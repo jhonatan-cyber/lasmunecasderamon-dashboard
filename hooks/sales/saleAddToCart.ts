@@ -6,6 +6,7 @@ import {
   type ChampagneTier
 } from '@/lib/business/champagne';
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
+import { recargoAcompanamientoDeProducto } from '@/lib/sales/recargoAcompanamiento';
 import { normalizarProducto, tipoVentaDe, type AddLineContext } from './saleCart';
 
 export interface CartNote {
@@ -20,11 +21,13 @@ export type PrepareCartLineResult =
 export async function prepareCartLine({
   producto,
   cantidades,
+  topeAcompanamiento,
   limiteAnfitrionasDe,
   fetchTiers
 }: {
   producto: any;
   cantidades: { [key: string]: number };
+  topeAcompanamiento: number;
   limiteAnfitrionasDe: (p: any) => Promise<number>;
   fetchTiers: (productoId: string) => Promise<ChampagneTier[]>;
 }): Promise<PrepareCartLineResult> {
@@ -107,6 +110,11 @@ export async function prepareCartLine({
 
   if (!permiteAnfitrionaConComision(tipoVenta, comision, shotAnfitriona)) hostessIds = [];
 
+  const recargo = recargoAcompanamientoDeProducto(
+    { ...producto, tipo_venta: tipoVenta },
+    topeAcompanamiento
+  );
+
   const normalizado = normalizarProducto(producto, {
     id,
     precio,
@@ -114,12 +122,23 @@ export async function prepareCartLine({
     cantidad,
     hostessIds,
     tipoVenta,
-    shotAnfitriona
+    shotAnfitriona,
+    recargo
   });
 
   return {
     kind: 'added',
-    line: { producto, normalizado, tipoVenta, shotAnfitriona, cantidad, precio, comision, id },
+    line: {
+      producto,
+      normalizado,
+      tipoVenta,
+      shotAnfitriona,
+      cantidad,
+      precio,
+      comision,
+      recargo,
+      id
+    },
     notes
   };
 }

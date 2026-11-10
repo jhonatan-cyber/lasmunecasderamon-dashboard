@@ -28,6 +28,9 @@ export function orderLineToSaleDetail(item: OrderLine) {
     Number(item.comision || 0) > 0 &&
     item.genera_comision !== 0 &&
     !(inventory.tipo_venta === 'shot' && !inventory.shot_anfitriona);
+  const precio = Number(item.precio || 0);
+  const cantidad = Number(item.cantidad || 0);
+  const recargo = Number(inventory.recargo_acompanamiento || 0);
   return {
     ...inventory,
     isChampagne:
@@ -39,10 +42,11 @@ export function orderLineToSaleDetail(item: OrderLine) {
           .toLowerCase()
       ),
     producto_id: item.id_producto || item.producto_id,
-    precio: Number(item.precio || 0),
-    cantidad: Number(item.cantidad || 0),
+    precio,
+    cantidad,
+    recargo_acompanamiento: recargo,
     comision: hasCommission ? Number(item.comision || 0) : 0,
-    sub_total: Number(item.precio || 0) * Number(item.cantidad || 0),
+    sub_total: (precio + recargo) * cantidad,
     hostess_id: hasCommission ? item.hostess_id || null : null,
     hostesses: hasCommission ? hostesses : []
   };

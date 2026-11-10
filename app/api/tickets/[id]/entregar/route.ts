@@ -11,7 +11,7 @@ type JsonRecord = Record<string, unknown>;
 /**
  * Entrega de la bebida en la barra.
  *
- * El módulo decide cortesía o adicional; cuando es adicional arma el plan y esta
+ * El módulo decide cover o adicional; cuando es adicional arma el plan y esta
  * ruta registra la venta con `SaleService` (§5: la orquestación entre módulos
  * vive en el adaptador HTTP) con el mismo contexto transaccional.
  */

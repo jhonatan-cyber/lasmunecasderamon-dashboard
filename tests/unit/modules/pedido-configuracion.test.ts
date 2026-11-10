@@ -203,6 +203,31 @@ it('no permite omitir presentacion para evitar el control de stock', async () =>
     validarConfiguracionPedido(trx(), [{ ...bottle, presentacion_id: undefined }])
   ).rejects.toThrow('presentacion');
 });
+it('acepta el pedido con recargo de acompañamiento sumado al subtotal', () => {
+  const payload = {
+    codigo: 'pedido-recargo',
+    meseroId: 'mesero',
+    subtotal: 66000,
+    total: 66000,
+    metodoPago: 'efectivo',
+    detalles: [
+      {
+        ...bottle,
+        acompanamiento_botella: [{ presentacion_id: 'coca', unidades: 3, precio: 5000 }],
+        recargo_acompanamiento: 6000,
+        subtotal: 66000
+      }
+    ]
+  };
+  expect(OrderCreateSchema.safeParse(payload).success).toBe(true);
+  expect(
+    OrderCreateSchema.safeParse({
+      ...payload,
+      detalles: [{ ...payload.detalles[0], subtotal: 63000 }]
+    }).success
+  ).toBe(false);
+});
+
 it('rechaza un producto deshabilitado aunque queden unidades', async () => {
   await expect(validarConfiguracionPedido(trx({ estado: 0 }), [bottle])).rejects.toThrow(
     'no esta disponible'

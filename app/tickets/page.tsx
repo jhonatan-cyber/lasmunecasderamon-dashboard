@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import { DollarSign, Eye, Minus, Plus, Ticket, UserRoundPlus } from 'lucide-react';
+import {
+  Ban,
+  DollarSign,
+  Eye,
+  LoaderCircle,
+  Minus,
+  Plus,
+  Ticket,
+  UserRoundPlus,
+  Wine
+} from 'lucide-react';
 import { BaucherFileInput } from '@/components/shared/BaucherFileInput';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
@@ -31,13 +41,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import {
-  EntregaCortesiasDialog,
-  type GrupoCortesia
-} from '@/components/bar/EntregaCortesiasDialog';
+import { EntregaCoversDialog, type GrupoCover } from '@/components/bar/EntregaCoversDialog';
 import { EntregaEntradaDialog } from '@/components/entradas/EntregaEntradaDialog';
 import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -46,7 +54,9 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { fechaDeNegocio } from '@/lib/business/timezoneService';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
-type EstadoCortesia = 'pendiente' | 'entregada' | 'anulada';
+type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
+/** Anulada a mano se devuelve; anulada por el cierre del turno se cobra en caja. */
+type AnulacionOrigen = 'manual' | 'cierre';
 
 type Entrada = {
   id: string;
@@ -58,18 +68,20 @@ type Entrada = {
   /** Nombre del archivo en `public/img/tickets`; sólo lo tienen las de transferencia. */
   baucher_foto: string | null;
   venta_id: string | null;
-  bebida_cortesia_presentacion_id: string | null;
-  bebida_cortesia: string | null;
+  bebida_cover_presentacion_id: string | null;
+  bebida_cover: string | null;
   bebida_acompanamiento_presentacion_id: string | null;
   acompanamiento_bebida: string | null;
-  productos_cortesia?: string | null;
-  cantidad_productos_cortesia: number;
+  productos_cover?: string | null;
+  cantidad_productos_cover: number;
   fecha: string;
   hora: string;
   registrado_por_nombre: string;
-  cortesia_estado: EstadoCortesia;
-  cortesia_entregada_at: string | null;
-  cortesia_entregada_por_nombre: string | null;
+  cover_estado: EstadoCover;
+  /** Solo tiene valor cuando `cover_estado` es `anulada`. */
+  anulacion_origen: AnulacionOrigen | null;
+  cover_entregada_at: string | null;
+  cover_entregada_por_nombre: string | null;
 };
 
 type GrupoEntrada = {
@@ -80,7 +92,8 @@ type GrupoEntrada = {
   venta_id: string | null;
   pendientes: Entrada[];
   entregadas: Entrada[];
-  anuladas: number;
+  anuladasManuales: Entrada[];
+  anuladasCierre: Entrada[];
 };
 
 const horaLocal = () =>
@@ -101,40 +114,54 @@ const formatoFechaHora = ({ fecha, hora }: { fecha: string; hora: string }) => {
   return `${day}/${month}/${year} · ${hora}`;
 };
 
-/** `cortesia_entregada_at` llega como `AAAA-MM-DD HH:MM` desde el listado. */
+/** `cover_entregada_at` llega como `AAAA-MM-DD HH:MM` desde el listado. */
 const formatoEntrega = (valor: string | null) => {
   if (!valor) return 'Entregada';
   const [fecha, hora = ''] = valor.split(' ');
   return fecha && hora ? `Entregada ${formatoFechaHora({ fecha, hora })}` : `Entregada ${valor}`;
 };
 
-const estadoEtiqueta = (estado: EstadoCortesia) => {
-  if (estado === 'entregada') return 'Entregada';
-  if (estado === 'anulada') return 'Anulada';
+const estadoEtiqueta = (entrada: Pick<Entrada, 'cover_estado' | 'anulacion_origen'>) => {
+  if (entrada.cover_estado === 'entregada') return 'Entregada';
+  if (entrada.cover_estado === 'anulada') {
+    if (entrada.anulacion_origen === 'cierre') return 'Anulada al cierre';
+    if (entrada.anulacion_origen === 'manual') return 'Devuelta';
+    return 'Anulada';
+  }
   return 'Pendiente';
 };
 
-const varianteEstado = (estado: EstadoCortesia): 'success' | 'secondary' | 'destructive' => {
-  if (estado === 'entregada') return 'success';
-  if (estado === 'anulada') return 'destructive';
+const varianteEstado = (
+  entrada: Pick<Entrada, 'cover_estado' | 'anulacion_origen'>
+): 'success' | 'secondary' | 'destructive' => {
+  if (entrada.cover_estado === 'entregada') return 'success';
+  if (entrada.cover_estado === 'anulada') return 'destructive';
   return 'secondary';
 };
 
-/** Resumen del grupo: "Entregada" si no queda nada pendiente, o el conteo por estado. */
+/** Resumen del grupo: distingue lo devuelto de lo que el cierre posteó a caja. */
 const estadoGrupo = (grupo: GrupoEntrada) => {
-  if (grupo.pendientes.length === 0 && grupo.anuladas === 0) return 'Entregada';
+  const anuladas = grupo.anuladasManuales.length + grupo.anuladasCierre.length;
+  if (grupo.pendientes.length === 0 && anuladas === 0) return 'Entregada';
   const partes: string[] = [];
   if (grupo.pendientes.length > 0)
     partes.push(`${grupo.pendientes.length} pendiente${grupo.pendientes.length === 1 ? '' : 's'}`);
   if (grupo.entregadas.length > 0)
     partes.push(`${grupo.entregadas.length} entregada${grupo.entregadas.length === 1 ? '' : 's'}`);
-  if (grupo.anuladas > 0)
-    partes.push(`${grupo.anuladas} anulada${grupo.anuladas === 1 ? '' : 's'}`);
+  if (grupo.anuladasManuales.length > 0)
+    partes.push(
+      `${grupo.anuladasManuales.length} devuelta${grupo.anuladasManuales.length === 1 ? '' : 's'}`
+    );
+  if (grupo.anuladasCierre.length > 0)
+    partes.push(
+      `${grupo.anuladasCierre.length} anulada${grupo.anuladasCierre.length === 1 ? '' : 's'} al cierre`
+    );
   return partes.join(' · ');
 };
 
 const varianteGrupo = (grupo: GrupoEntrada): 'success' | 'secondary' | 'destructive' => {
-  if (grupo.pendientes.length === 0 && grupo.anuladas === 0) return 'success';
+  const anuladas = grupo.anuladasManuales.length + grupo.anuladasCierre.length;
+  if (grupo.pendientes.length === 0 && anuladas === 0) return 'success';
   if (grupo.pendientes.length > 0) return 'secondary';
   return 'destructive';
 };
@@ -152,19 +179,18 @@ export default function EntradasPage() {
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [grupoDetalleId, setGrupoDetalleId] = useState<string | null>(null);
   const [entradaAEntregar, setEntradaAEntregar] = useState<Entrada | null>(null);
-  const [grupoAEntregar, setGrupoAEntregar] = useState<GrupoCortesia | null>(null);
+  const [grupoAEntregar, setGrupoAEntregar] = useState<GrupoCover | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [anulandoGrupoId, setAnulandoGrupoId] = useState<string | null>(null);
+  const [grupoAAnular, setGrupoAAnular] = useState<GrupoEntrada | null>(null);
   const operacionEntrada = useRef<{ signature: string; key: string } | null>(null);
   const { hasOpenCaja } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
   const canCreate = hasPermission('entradas', 'create');
   const canDeliver = hasPermission('entradas', 'deliver');
   const costoEntradaPredeterminado = Number(useConfigValue('comisiones', 'costo_entrada', 10000));
-  const topeCortesia = Number(
-    useConfigValue('comisiones', 'monto_base_trago_cortesia_cliente', 10000)
-  );
+  const topeCover = Number(useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000));
   const totalPuerta = costoEntradaPredeterminado * cantidadEntradas;
 
   useEffect(() => {
@@ -218,7 +244,8 @@ export default function EntradasPage() {
           venta_id: null,
           pendientes: [],
           entregadas: [],
-          anuladas: 0
+          anuladasManuales: [],
+          anuladasCierre: []
         };
         grupos.set(id, grupo);
       }
@@ -226,16 +253,23 @@ export default function EntradasPage() {
       grupo.monto_entrada += Number(entrada.monto_entrada);
       grupo.monto_bebida_adicional += Number(entrada.monto_bebida_adicional || 0);
       if (!grupo.venta_id && entrada.venta_id) grupo.venta_id = entrada.venta_id;
-      if (entrada.cortesia_estado === 'pendiente') grupo.pendientes.push(entrada);
-      else if (entrada.cortesia_estado === 'entregada') grupo.entregadas.push(entrada);
-      else grupo.anuladas += 1;
+      if (entrada.cover_estado === 'pendiente') grupo.pendientes.push(entrada);
+      else if (entrada.cover_estado === 'entregada') grupo.entregadas.push(entrada);
+      else if (entrada.anulacion_origen === 'manual') grupo.anuladasManuales.push(entrada);
+      else grupo.anuladasCierre.push(entrada);
     }
     return Array.from(grupos.values());
   }, [entradas]);
 
-  // En la puerta el único dinero que entra es el de las entradas cobradas.
+  // Sólo es dinero cobrado lo que no se devolvió: las anuladas a mano salieron
+  // del cajón, mientras que el barrido del cierre sí posteó su monto.
   const total = useMemo(
-    () => entradas.reduce((sum, entrada) => sum + Number(entrada.monto_entrada), 0),
+    () =>
+      entradas.reduce(
+        (sum, entrada) =>
+          entrada.anulacion_origen === 'manual' ? sum : sum + Number(entrada.monto_entrada),
+        0
+      ),
     [entradas]
   );
   const grupoDetalle = gruposEntradas.find(grupo => grupo.id === grupoDetalleId) ?? null;
@@ -248,6 +282,14 @@ export default function EntradasPage() {
           hora: grupoDetalle.registros[0].hora
         })}`
       : '';
+  // Anular a mano devuelve el dinero de esa entrada; el barrido del cierre lo
+  // deja cobrado en caja, por eso sólo se descuenta lo devuelto.
+  const devueltoDetalle =
+    grupoDetalle?.anuladasManuales.reduce(
+      (suma, registro) => suma + Number(registro.monto_entrada),
+      0
+    ) ?? 0;
+  const cobradoPuertaDetalle = grupoDetalle ? grupoDetalle.monto_entrada - devueltoDetalle : 0;
 
   const registrar = async (event: FormEvent) => {
     event.preventDefault();
@@ -321,14 +363,14 @@ export default function EntradasPage() {
     }
   };
 
-  const anularPendientes = async (grupo: GrupoEntrada) => {
+  const anularPendientes = (grupo: GrupoEntrada) => {
     if (grupo.pendientes.length === 0) return;
-    const confirmado = window.confirm(
-      grupo.pendientes.length === 1
-        ? '¿Anular la entrada pendiente de este grupo? El monto se registrará como entrada en la caja.'
-        : `¿Anular las ${grupo.pendientes.length} entradas pendientes de este grupo? El monto se registrará como entrada en la caja.`
-    );
-    if (!confirmado) return;
+    setGrupoAAnular(grupo);
+  };
+
+  const confirmarAnulacion = async () => {
+    const grupo = grupoAAnular;
+    if (!grupo || grupo.pendientes.length === 0) return;
     setAnulandoGrupoId(grupo.id);
     let anuladas = 0;
     try {
@@ -339,11 +381,20 @@ export default function EntradasPage() {
           throw new Error(result.message || 'No se pudo anular la entrada');
         anuladas += 1;
       }
-      toast.success(anuladas === 1 ? 'Entrada anulada' : `${anuladas} entradas anuladas`);
+      toast.success(
+        anuladas === 1
+          ? 'Entrada anulada y dinero devuelto'
+          : `${anuladas} entradas anuladas y dinero devuelto`
+      );
+      setGrupoAAnular(null);
       await cargar();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al anular las entradas');
-      if (anuladas > 0) await cargar();
+      // Si una parte ya se anuló, el grupo del diálogo quedó desactualizado.
+      if (anuladas > 0) {
+        setGrupoAAnular(null);
+        await cargar();
+      }
     } finally {
       setAnulandoGrupoId(null);
     }
@@ -589,9 +640,9 @@ export default function EntradasPage() {
                         <Badge variant={varianteGrupo(grupo)}>{estadoGrupo(grupo)}</Badge>
                         {grupo.entregadas.map(entrega => (
                           <p key={entrega.id} className='text-xs text-muted-foreground'>
-                            {formatoEntrega(entrega.cortesia_entregada_at)}
-                            {entrega.cortesia_entregada_por_nombre
-                              ? ` · ${entrega.cortesia_entregada_por_nombre}`
+                            {formatoEntrega(entrega.cover_entregada_at)}
+                            {entrega.cover_entregada_por_nombre
+                              ? ` · ${entrega.cover_entregada_por_nombre}`
                               : ''}
                           </p>
                         ))}
@@ -609,8 +660,19 @@ export default function EntradasPage() {
                         {canDeliver && grupo.pendientes.length > 0 && (
                           <Button
                             type='button'
-                            size='sm'
+                            variant='ghost'
+                            size='icon'
                             disabled={anulandoGrupoId === grupo.id}
+                            title={
+                              grupo.pendientes.length > 1
+                                ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
+                                : 'Entregar la entrada pendiente'
+                            }
+                            aria-label={
+                              grupo.pendientes.length > 1
+                                ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
+                                : 'Entregar la entrada pendiente'
+                            }
                             onClick={() => {
                               // Una sola pendiente: se entrega directo. Varias: la
                               // entrega múltiple reparte los productos en el acto;
@@ -619,25 +681,45 @@ export default function EntradasPage() {
                                 setEntradaAEntregar(grupo.pendientes[0]);
                               else abrirEntregaMultiple(grupo);
                             }}
-                            className='rounded-full'
+                            className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
                           >
-                            {grupo.pendientes.length > 1
-                              ? `Entregar (${grupo.pendientes.length})`
-                              : 'Entregar'}
+                            <Wine className='h-4 w-4' />
+                            {grupo.pendientes.length > 1 && (
+                              <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground'>
+                                {grupo.pendientes.length}
+                              </span>
+                            )}
                           </Button>
                         )}
                         {canDeliver && grupo.pendientes.length > 0 && (
                           <Button
                             type='button'
-                            variant='outline'
-                            size='sm'
+                            variant='ghost'
+                            size='icon'
                             disabled={anulandoGrupoId === grupo.id}
-                            onClick={() => void anularPendientes(grupo)}
-                            className='rounded-full'
+                            title={
+                              grupo.pendientes.length > 1
+                                ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
+                                : 'Anular y devolver la entrada pendiente'
+                            }
+                            aria-label={
+                              grupo.pendientes.length > 1
+                                ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
+                                : 'Anular y devolver la entrada pendiente'
+                            }
+                            onClick={() => anularPendientes(grupo)}
+                            className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-destructive/10 hover:text-destructive hover:shadow-md active:scale-95'
                           >
-                            {anulandoGrupoId === grupo.id
-                              ? 'Anulando…'
-                              : `Anular pendientes (${grupo.pendientes.length})`}
+                            {anulandoGrupoId === grupo.id ? (
+                              <LoaderCircle className='h-4 w-4 animate-spin' />
+                            ) : (
+                              <Ban className='h-4 w-4' />
+                            )}
+                            {grupo.pendientes.length > 1 && anulandoGrupoId !== grupo.id && (
+                              <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-white'>
+                                {grupo.pendientes.length}
+                              </span>
+                            )}
                           </Button>
                         )}
                         <Button
@@ -662,10 +744,17 @@ export default function EntradasPage() {
       <Dialog open={Boolean(grupoDetalle)} onOpenChange={open => !open && setGrupoDetalleId(null)}>
         <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-2xl'>
           <DialogHeader>
-            <DialogTitle>Detalle de entradas</DialogTitle>
+            <div className='flex flex-wrap items-center gap-2'>
+              <DialogTitle>Detalle de entradas</DialogTitle>
+              {grupoDetalle && (
+                <Badge variant={varianteGrupo(grupoDetalle)}>{estadoGrupo(grupoDetalle)}</Badge>
+              )}
+            </div>
             <DialogDescription>
               {grupoDetalle &&
-                `${grupoDetalle.registros.length} entrada(s) · ${formatoFechaHora({
+                `${grupoDetalle.registros[0].cliente_nombre || 'Cliente sin nombre'} · ${
+                  grupoDetalle.registros.length
+                } entrada(s) · ${formatoFechaHora({
                   fecha: grupoDetalle.registros[0].fecha,
                   hora: grupoDetalle.registros[0].hora
                 })}`}
@@ -687,14 +776,41 @@ export default function EntradasPage() {
                   </p>
                 </div>
                 <div>
-                  <p className='text-muted-foreground'>Cobrado en la puerta</p>
-                  <p className='font-semibold'>{formatCurrencyCLP(grupoDetalle.monto_entrada)}</p>
-                </div>
-                <div>
                   <p className='text-muted-foreground'>Registró</p>
                   <p className='font-semibold'>{grupoDetalle.registros[0].registrado_por_nombre}</p>
                 </div>
+                <div>
+                  <p className='text-muted-foreground'>Total de entradas</p>
+                  <p className='font-semibold'>{grupoDetalle.registros.length}</p>
+                </div>
               </div>
+
+              <div className='grid gap-3 rounded-lg border p-4 text-sm sm:grid-cols-3'>
+                <div>
+                  <p className='text-muted-foreground'>Cobrado en la puerta</p>
+                  <p className='font-semibold'>{formatCurrencyCLP(cobradoPuertaDetalle)}</p>
+                  {devueltoDetalle > 0 && (
+                    <p className='text-xs font-medium text-destructive'>
+                      Devuelto {formatCurrencyCLP(devueltoDetalle)}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className='text-muted-foreground'>Adicional en barra</p>
+                  <p className='font-semibold'>
+                    {formatCurrencyCLP(Number(grupoDetalle.monto_bebida_adicional))}
+                  </p>
+                </div>
+                <div>
+                  <p className='text-muted-foreground'>Total del grupo</p>
+                  <p className='font-semibold'>
+                    {formatCurrencyCLP(
+                      cobradoPuertaDetalle + Number(grupoDetalle.monto_bebida_adicional)
+                    )}
+                  </p>
+                </div>
+              </div>
+
               {canDeliver && grupoDetalle.pendientes.length > 1 ? (
                 <Button
                   type='button'
@@ -711,52 +827,149 @@ export default function EntradasPage() {
                 />
               )}
               <div className='space-y-2'>
-                <h3 className='text-sm font-semibold'>Estado por entrada</h3>
-                {grupoDetalle.registros.map((registro, indice) => (
-                  <div
-                    key={registro.id}
-                    className='flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-3 text-sm'
-                  >
-                    <span className='font-medium'>Entrada {indice + 1}</span>
-                    <Badge variant={varianteEstado(registro.cortesia_estado)}>
-                      {estadoEtiqueta(registro.cortesia_estado)}
-                    </Badge>
-                    {registro.cortesia_estado === 'pendiente' && canDeliver && (
-                      <Button
-                        type='button'
-                        size='sm'
-                        className='rounded-full'
-                        onClick={() => {
-                          setGrupoDetalleId(null);
-                          setEntradaAEntregar(registro);
-                        }}
-                      >
-                        Entregar bebida
-                      </Button>
-                    )}
-                    {registro.cortesia_estado === 'entregada' && (
-                      <span className='text-xs text-muted-foreground'>
-                        {formatoEntrega(registro.cortesia_entregada_at)}
-                        {registro.cortesia_entregada_por_nombre
-                          ? ` · ${registro.cortesia_entregada_por_nombre}`
-                          : ''}
-                      </span>
-                    )}
-                    {registro.bebida_cortesia && (
-                      <span className='text-xs text-muted-foreground'>
-                        {registro.bebida_cortesia}
-                      </span>
-                    )}
-                    {registro.venta_id && (
-                      <span className='text-xs text-muted-foreground'>
-                        Adicional {formatCurrencyCLP(Number(registro.monto_bebida_adicional))}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                <h3 className='text-sm font-semibold'>Detalle por entrada</h3>
+                {grupoDetalle.registros.map((registro, indice) => {
+                  const bebida = registro.bebida_cover || registro.productos_cover;
+                  const adicional = Number(registro.monto_bebida_adicional || 0);
+                  return (
+                    <div
+                      key={registro.id}
+                      className='space-y-1 rounded-lg border px-4 py-3 text-sm'
+                    >
+                      <div className='flex flex-wrap items-center justify-between gap-2'>
+                        <div className='flex items-center gap-2'>
+                          <span className='font-medium'>Entrada {indice + 1}</span>
+                          <Badge variant={varianteEstado(registro)}>
+                            {estadoEtiqueta(registro)}
+                          </Badge>
+                        </div>
+                        <span className='font-semibold'>
+                          {formatCurrencyCLP(Number(registro.monto_entrada))}
+                        </span>
+                      </div>
+                      {bebida && <p className='text-sm'>{bebida}</p>}
+                      {registro.acompanamiento_bebida && (
+                        <p className='text-xs text-muted-foreground'>
+                          + {registro.acompanamiento_bebida}
+                        </p>
+                      )}
+                      {registro.cantidad_productos_cover > 1 && (
+                        <p className='text-xs text-muted-foreground'>
+                          {registro.cantidad_productos_cover} productos en barra
+                        </p>
+                      )}
+                      {adicional > 0 && (
+                        <p className='text-xs text-muted-foreground'>
+                          Adicional en barra {formatCurrencyCLP(adicional)}
+                        </p>
+                      )}
+                      <div className='flex flex-wrap items-center justify-between gap-2 pt-1'>
+                        <span className='text-xs text-muted-foreground'>
+                          {registro.cover_estado === 'entregada' &&
+                            `${formatoEntrega(registro.cover_entregada_at)}${
+                              registro.cover_entregada_por_nombre
+                                ? ` · ${registro.cover_entregada_por_nombre}`
+                                : ''
+                            }`}
+                          {registro.cover_estado === 'anulada' &&
+                            (registro.anulacion_origen === 'cierre'
+                              ? 'Cobrada al cierre de caja'
+                              : `Devuelto ${formatCurrencyCLP(
+                                  Number(registro.monto_entrada)
+                                )} en la puerta`)}
+                          {registro.cover_estado === 'pendiente' && 'Pendiente de entrega'}
+                        </span>
+                        {registro.cover_estado === 'pendiente' && canDeliver && (
+                          <Button
+                            type='button'
+                            size='sm'
+                            className='rounded-full'
+                            onClick={() => {
+                              setGrupoDetalleId(null);
+                              setEntradaAEntregar(registro);
+                            }}
+                          >
+                            Entregar bebida
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(grupoAAnular)}
+        onOpenChange={open => {
+          if (!open && !anulandoGrupoId) setGrupoAAnular(null);
+        }}
+      >
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Anular entradas pendientes</DialogTitle>
+            <DialogDescription>
+              El dinero de estas entradas se devuelve al cliente y no entra a la caja. Esta acción
+              no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          {grupoAAnular && (
+            <div className='space-y-3 text-sm'>
+              <div className='flex items-center justify-between gap-3'>
+                <span className='text-muted-foreground'>Cliente</span>
+                <span className='font-medium'>
+                  {grupoAAnular.registros[0]?.cliente_nombre || 'Sin nombre'}
+                </span>
+              </div>
+              <div className='flex items-center justify-between gap-3'>
+                <span className='text-muted-foreground'>Entradas a anular</span>
+                <span className='font-medium'>{grupoAAnular.pendientes.length}</span>
+              </div>
+              <div className='flex items-center justify-between gap-3'>
+                <span className='text-muted-foreground'>Método de pago</span>
+                <span className='font-medium capitalize'>
+                  {grupoAAnular.pendientes[0]?.metodo_pago}
+                </span>
+              </div>
+              <div className='flex items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-2'>
+                <span className='font-medium'>Total a devolver</span>
+                <span className='text-lg font-semibold'>
+                  {formatCurrencyCLP(
+                    grupoAAnular.pendientes.reduce(
+                      (suma, fila) => suma + Number(fila.monto_entrada),
+                      0
+                    )
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+          <DialogFooter className='gap-2 sm:justify-end'>
+            <Button
+              variant='outline'
+              onClick={() => setGrupoAAnular(null)}
+              disabled={Boolean(anulandoGrupoId)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={() => void confirmarAnulacion()}
+              disabled={Boolean(anulandoGrupoId)}
+            >
+              {anulandoGrupoId ? (
+                <>
+                  <LoaderCircle className='mr-2 h-4 w-4 animate-spin' />
+                  Anulando…
+                </>
+              ) : (
+                'Devolver y anular'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -765,9 +978,9 @@ export default function EntradasPage() {
         onClose={() => setEntradaAEntregar(null)}
         onEntregada={() => cargar(true)}
       />
-      <EntregaCortesiasDialog
+      <EntregaCoversDialog
         grupo={grupoAEntregar}
-        tope={topeCortesia}
+        tope={topeCover}
         onClose={() => setGrupoAEntregar(null)}
         onEntregado={() => cargar(true)}
       />

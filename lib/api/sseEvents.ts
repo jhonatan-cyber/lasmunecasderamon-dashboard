@@ -68,7 +68,7 @@ const WAREHOUSE_STAFF: readonly SseAudience[] = [
 
 /**
  * La puerta avisa a la barra: quien cobró la entrada no necesita el aviso, pero
- * administración, caja y barra sí para preparar la bebida de cortesía.
+ * administración, caja y barra sí para preparar el cover.
  */
 const ENTRADA_STAFF: readonly SseAudience[] = [
   { channel: 'role', roles: ['administrador', 'cajero', 'barman'] }
@@ -157,7 +157,7 @@ export const SSE_EVENTS = {
   bar_shot_alert: { audiences: BAR_STAFF },
 
   // ─── Entradas de clientes: la puerta avisa a la barra ─────────────────────
-  // El garzón cobra en la puerta y la cortesía queda pendiente; administración,
+  // El garzón cobra en la puerta y el cover queda pendiente; administración,
   // caja y barra reciben el aviso para entregar la bebida (payload
   // { id, grupo_registro_id, cliente_nombre, cantidad, monto_total, hora, ... }).
   entrada_registrada: { audiences: ENTRADA_STAFF },

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
+import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -13,11 +15,13 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
+import { precioUnitarioAcompanamiento } from '@/lib/sales/recargoAcompanamiento';
 import type { SaleProductItem, SaleProductMixer } from './saleProductItems';
 import { SaleProductPhoto } from './SaleProductPhoto';
 
 function MixerChoice({ choice }: { choice: any }) {
   const name = `${choice.producto_nombre} · ${choice.nombre}`;
+  const precio = precioUnitarioAcompanamiento(choice);
   return (
     <span className='flex min-w-0 items-center gap-2 text-left'>
       <SaleProductPhoto
@@ -34,10 +38,36 @@ function MixerChoice({ choice }: { choice: any }) {
         <span className='block truncate text-sm font-medium'>{name}</span>
         <span className='block text-xs text-muted-foreground'>
           Stock: {Number(choice.stock_bar) || 0} unidades
-          {Number(choice.ml_abierta) > 0 ? ` · ${Number(choice.ml_abierta)} ml abiertos` : ''}
+          {Number(choice.ml_abierta) > 0
+            ? ` · ${Number(choice.ml_abierta)} ml abiertos`
+            : ''} · {precio > 0 ? formatCurrencyNoDecimals(precio) : 'sin precio'}
         </span>
       </span>
     </span>
+  );
+}
+
+/**
+ * Explica cuánto suma el acompañamiento elegido según el tope configurado; si
+ * la bebida no tiene precio guardado, lo advierte porque no habrá excedente.
+ */
+function MixerExcess({ precio, unidades }: { precio: number; unidades: number }) {
+  const tope = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0)) || 0;
+  if (precio <= 0) {
+    return (
+      <p className='text-xs text-amber-700 dark:text-amber-300'>
+        Esta bebida no tiene precio configurado; no se sumará excedente.
+      </p>
+    );
+  }
+  const exceso = tope > 0 ? Math.max(0, precio - tope) * Math.max(1, unidades) : 0;
+  return (
+    <p className='text-xs text-muted-foreground'>
+      Acompañamiento {formatCurrencyNoDecimals(precio)}
+      {exceso > 0
+        ? ` · se suman ${formatCurrencyNoDecimals(exceso)} al total`
+        : ` · dentro del tope de ${formatCurrencyNoDecimals(tope)}`}
+    </p>
   );
 }
 
@@ -63,6 +93,12 @@ function MixerSelect({
           ? 'Configura los ml de bebida para corto anfitriona en este producto.'
           : `Consumo: ${mixer.cantidad * (mixer.unidades ?? mixer.ml_por_corto ?? 0)} ${mixer.unidades !== undefined ? 'unidades' : 'ml'}`}
       </p>
+      {selectedChoice && !mixer.needsConfiguration && mixer.unidades !== undefined && (
+        <MixerExcess
+          precio={precioUnitarioAcompanamiento(selectedChoice)}
+          unidades={Number(mixer.unidades) || 1}
+        />
+      )}
       <Select
         value={mixer.selected?.presentacion_id ?? ''}
         onValueChange={(value: string) => mixer.onChange(value === '__clear__' ? '' : value)}
@@ -157,7 +193,8 @@ function MixerDistribute({
         unidades: 1,
         nombre: `${choice.producto_nombre} ${choice.nombre}`,
         foto: choice.foto && choice.foto !== 'default.png' ? choice.foto : choice.producto_foto,
-        stock_bar: Number(choice.stock_bar) || 0
+        stock_bar: Number(choice.stock_bar) || 0,
+        precio: precioUnitarioAcompanamiento(choice)
       } as AcompanamientoBotellaItem
     ]);
   };

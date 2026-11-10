@@ -3,9 +3,11 @@ import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  expandAll,
   Harness,
   presentacionesDePrueba,
   product,
+  renderExpanded,
   selectMixer
 } from './sale-product-modal-harness';
 
@@ -44,13 +46,14 @@ describe('vistas de productos en nueva venta', () => {
   it('cancelar limpia cantidades y bebidas sin agregar al carrito', async () => {
     const add = vi.fn();
     const close = vi.fn();
-    render(<Harness productos={[product]} onAdd={add} onClose={close} />);
+    renderExpanded(<Harness productos={[product]} onAdd={add} onClose={close} />);
     fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml: aumentar cantidad' }));
     await selectMixer();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(close).toHaveBeenCalledTimes(1);
     expect(add).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
+    expandAll();
     fireEvent.click(screen.getByRole('button', { name: 'Corto · 50 ml: aumentar cantidad' }));
     expect(screen.getByRole('combobox')).not.toHaveTextContent('Sprite');
     expect(screen.getByRole('button', { name: 'Agregar producto' })).toBeDisabled();
@@ -58,7 +61,7 @@ describe('vistas de productos en nueva venta', () => {
 
   it('pliega la información, conserva la selección y muestra el importe encima de agregar', async () => {
     const add = vi.fn();
-    render(
+    renderExpanded(
       <Harness
         productos={[
           {
@@ -102,9 +105,36 @@ describe('vistas de productos en nueva venta', () => {
       })
     );
   });
+  it('oculta los detalles de cada producto al abrir el modal', () => {
+    render(
+      <Harness
+        productos={[
+          {
+            ...product,
+            categoria: 'Licores',
+            producto_nombre: 'Whisky',
+            presentacion_nombre: '750 ml'
+          }
+        ]}
+        onAdd={vi.fn()}
+      />
+    );
+    const toggle = screen.getByRole('button', { name: `Mostrar detalles de ${product.nombre}` });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Formato y cantidad')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Botella: aumentar cantidad' })
+    ).not.toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(screen.getByText('Formato y cantidad')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Botella: aumentar cantidad' })).toBeInTheDocument();
+  });
+
   it('busca la bebida en el selector shadcn junto al producto', async () => {
     const add = vi.fn();
-    render(<Harness productos={[{ ...product, modalCantidades: { shot: 1 } }]} onAdd={add} />);
+    renderExpanded(
+      <Harness productos={[{ ...product, modalCantidades: { shot: 1 } }]} onAdd={add} />
+    );
     await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
     fireEvent.click(screen.getByRole('combobox'));
     const search = await screen.findByPlaceholderText('Buscar bebida o presentación…');
@@ -127,7 +157,7 @@ describe('vistas de productos en nueva venta', () => {
     expect(screen.queryByText('Anfitrionas')).not.toBeInTheDocument();
   });
   it('incluye bebidas con stock cero y ml abiertos suficientes para corto anfitriona', async () => {
-    render(
+    renderExpanded(
       <Harness
         productos={[
           {
@@ -155,7 +185,9 @@ describe('vistas de productos en nueva venta', () => {
   });
   it('conserva la cantidad del buscador al abrir la selección de bebida', async () => {
     const add = vi.fn();
-    render(<Harness productos={[{ ...product, modalCantidades: { shot: 2 } }]} onAdd={add} />);
+    renderExpanded(
+      <Harness productos={[{ ...product, modalCantidades: { shot: 2 } }]} onAdd={add} />
+    );
     await selectMixer();
     expect(screen.getAllByText('Consumo: 1 unidades')).toHaveLength(2);
     await act(async () => {
@@ -172,7 +204,7 @@ describe('vistas de productos en nueva venta', () => {
   it('conserva cantidades independientes al cambiar de tabla a tarjetas y agrega los formatos elegidos', async () => {
     const add = vi.fn();
     const close = vi.fn();
-    render(<Harness productos={[product]} onAdd={add} onClose={close} />);
+    renderExpanded(<Harness productos={[product]} onAdd={add} onClose={close} />);
     expect(screen.getByRole('table')).toBeInTheDocument();
     const photo = screen.getByRole('img', { name: product.nombre });
     expect(photo).toHaveAttribute(
@@ -221,7 +253,7 @@ describe('vistas de productos en nueva venta', () => {
       nombre: 'Botella simple',
       opciones_venta: [{ tipo: 'botella', precio: 4000, comision: 0 }]
     };
-    render(<Harness productos={[simpleBottle, product]} onAdd={vi.fn()} />);
+    renderExpanded(<Harness productos={[simpleBottle, product]} onAdd={vi.fn()} />);
     const controls = screen.getByTestId('product-search-view-controls');
     expect(controls).toContainElement(
       screen.getByRole('textbox', { name: 'Buscar producto en esta categoría' })
@@ -259,7 +291,7 @@ describe('vistas de productos en nueva venta', () => {
       opciones_venta: [{ tipo: 'botella', precio: 4000, comision: 0 }]
     }));
 
-    render(<Harness productos={products} onAdd={vi.fn()} />);
+    renderExpanded(<Harness productos={products} onAdd={vi.fn()} />);
 
     expect(screen.getAllByRole('row')).toHaveLength(7);
     expect(screen.getByRole('img', { name: 'Producto simple 7' })).toBeInTheDocument();
@@ -267,7 +299,7 @@ describe('vistas de productos en nueva venta', () => {
   });
 
   it('limpia la búsqueda con el botón de icono dentro del campo', () => {
-    render(<Harness productos={[product]} onAdd={vi.fn()} />);
+    renderExpanded(<Harness productos={[product]} onAdd={vi.fn()} />);
     const search = screen.getByRole('textbox', {
       name: 'Buscar producto en esta categoría'
     });

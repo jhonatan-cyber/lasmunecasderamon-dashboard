@@ -15,11 +15,12 @@ export interface AddLineContext {
   cantidad: number;
   precio: number;
   comision: number;
+  recargo: number;
   id: string;
 }
 
 export function crearComparadorLinea(ctx: AddLineContext) {
-  const { producto, normalizado, tipoVenta, shotAnfitriona, precio, comision } = ctx;
+  const { producto, normalizado, tipoVenta, shotAnfitriona, precio, comision, recargo } = ctx;
   return (p: any) =>
     p.id === normalizado.id &&
     (p.tipo_venta === 'shot' ? 'shot' : 'botella') === tipoVenta &&
@@ -30,6 +31,7 @@ export function crearComparadorLinea(ctx: AddLineContext) {
       JSON.stringify(producto.acompanamiento_corto ?? null) &&
     Number(p.precio) === Number(precio) &&
     Number(p.comision ?? 0) === Number(comision) &&
+    Number(p.recargo_acompanamiento ?? 0) === Number(recargo ?? 0) &&
     (p.presentacion_id || null) === (normalizado.presentacion_id || null) &&
     JSON.stringify([...(p.selectedHostesses || [])].sort()) ===
       JSON.stringify([...(normalizado.selectedHostesses || [])].sort());
@@ -44,7 +46,8 @@ export function normalizarProducto(
     cantidad,
     hostessIds,
     tipoVenta,
-    shotAnfitriona
+    shotAnfitriona,
+    recargo = 0
   }: {
     id: string;
     precio: number;
@@ -53,6 +56,7 @@ export function normalizarProducto(
     hostessIds: string[];
     tipoVenta: TipoVenta;
     shotAnfitriona: boolean;
+    recargo?: number;
   }
 ) {
   return {
@@ -68,7 +72,8 @@ export function normalizarProducto(
       '',
     comision,
     cantidad,
-    subtotal: precio * cantidad,
+    recargo_acompanamiento: recargo,
+    subtotal: (precio + recargo) * cantidad,
     tipo_venta: tipoVenta,
     shot_anfitriona: shotAnfitriona,
     selectedHostesses: hostessIds,
@@ -77,7 +82,7 @@ export function normalizarProducto(
 }
 
 export function agregarLineaAlCarro(prev: any[], ctx: AddLineContext): any[] {
-  const { producto, normalizado, tipoVenta, cantidad, precio, id } = ctx;
+  const { producto, normalizado, tipoVenta, cantidad, precio, recargo, id } = ctx;
   const isMatch = crearComparadorLinea(ctx);
   const existing = prev.find(isMatch);
   let agregar = cantidad;
@@ -101,12 +106,14 @@ export function agregarLineaAlCarro(prev: any[], ctx: AddLineContext): any[] {
         ? {
             ...p,
             cantidad: Number(p.cantidad) + agregar,
-            subtotal: p.precio * (Number(p.cantidad) + agregar)
+            subtotal:
+              (Number(p.precio || 0) + Number(p.recargo_acompanamiento || 0)) *
+              (Number(p.cantidad) + agregar)
           }
         : p
     );
   }
-  return [...prev, { ...normalizado, cantidad: agregar, subtotal: precio * agregar }];
+  return [...prev, { ...normalizado, cantidad: agregar, subtotal: (precio + recargo) * agregar }];
 }
 
 export function cambiarCantidadEnCarro(
@@ -146,7 +153,7 @@ export function cambiarCantidadEnCarro(
       ? {
           ...p,
           cantidad: final,
-          subtotal: (p.precio || 0) * final,
+          subtotal: (Number(p.precio || 0) + Number(p.recargo_acompanamiento || 0)) * final,
           selectedHostesses: recortePorCantidad(p, final)
         }
       : p

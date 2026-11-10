@@ -120,6 +120,25 @@ describe('Pedido listo para vender', () => {
   });
 });
 
+it('conserva el recargo de acompañamiento en el subtotal del pedido convertido en venta', () => {
+  const detail = orderLineToSaleDetail({
+    ...base,
+    configuracion_venta: JSON.stringify({
+      presentacion_id: 'whisky-750',
+      tipo_venta: 'botella',
+      acompanamiento_botella: [{ presentacion_id: 'coca', unidades: 3, precio: 5000 }],
+      recargo_acompanamiento: 6000
+    })
+  });
+  expect(detail).toMatchObject({
+    recargo_acompanamiento: 6000,
+    precio: 20000,
+    cantidad: 2,
+    sub_total: 52000
+  });
+  expect(SaleCreateSchema.safeParse({ total: 52000, detalles: [detail] }).success).toBe(true);
+});
+
 it('conserva el reparto de botella de champana entre varias anfitrionas', () => {
   expect(
     orderLineToSaleDetail({ ...base, categoria: 'Champana', tipo_venta: 'botella', cantidad: 1 })
