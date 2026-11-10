@@ -26,7 +26,7 @@ function renderPanel(overrides: Partial<typeof baseProps> = {}) {
 }
 
 describe('Cobro de pedido', () => {
-  it('conserva la propina que trae el pedido y sigue ajustando la habitación', () => {
+  it('conserva la propina que trae el pedido y muestra la habitación en solo lectura', () => {
     renderPanel();
     expect(screen.getByLabelText('Propina incluida (la eligió el garzón)')).toHaveAttribute(
       'readonly'
@@ -35,10 +35,9 @@ describe('Cobro de pedido', () => {
     expect(screen.getByLabelText('Total Comisión')).toHaveAttribute('readonly');
     expect(screen.queryByRole('checkbox')).toBeNull();
 
-    const duration = screen.getByRole('spinbutton', { name: 'Tiempo de uso (minutos)' });
-    expect(duration).toHaveValue(90);
-    fireEvent.change(duration, { target: { value: '120' } });
-    expect(baseProps.setTiempoHabitacion).toHaveBeenCalledWith(120);
+    const duration = screen.getByLabelText('Tiempo de uso (minutos)');
+    expect(duration).toHaveAttribute('readonly');
+    expect(duration).toHaveValue('90');
   });
 
   it('mantiene el método de pago del pedido y no permite cambiarlo', () => {
@@ -54,13 +53,23 @@ describe('Cobro de pedido', () => {
     expect(baseProps.setMetodoPago).not.toHaveBeenCalled();
   });
 
-  it('sin propina del pedido, el cajero la activa con el porcentaje configurado', () => {
+  it('sin propina del pedido muestra el aviso sin ofrecer activarla', () => {
     renderPanel({ propina: 0, propinaOriginal: 0, agregarPropina: false, totalFinal: 20000 });
     expect(screen.queryByLabelText(/Propina incluida/)).toBeNull();
-    const checkbox = screen.getByRole('checkbox', { name: /agregar propina del 10%/i });
-    expect(checkbox).not.toBeChecked();
-    fireEvent.click(checkbox);
-    expect(baseProps.setAgregarPropina).toHaveBeenCalledWith(true);
+    expect(screen.getByText('Sin propina')).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('muestra la propina activa en solo lectura con el porcentaje configurado', () => {
+    renderPanel({
+      propina: 2000,
+      propinaOriginal: 0,
+      agregarPropina: true,
+      totalFinal: 20000
+    });
+    const propina = screen.getByLabelText('Propina (10%)');
+    expect(propina).toHaveAttribute('readonly');
+    expect(propina).toHaveValue('$2.000');
   });
 
   it('ofrece prepago con el saldo del cliente y avisa del pago mixto', () => {
