@@ -385,10 +385,12 @@ export default function AsistenciaQrPage() {
         ) : (
           <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6'>
             {filteredUsers.map(user => (
-              <div
+              <Button
                 key={user.id}
+                type='button'
+                variant='unstyled'
                 onClick={() => handleUserClick(user)}
-                className='group bg-white dark:bg-neutral-900/30 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 flex flex-col items-center text-center cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg'
+                className='group bg-white dark:bg-neutral-900/30 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 flex flex-col items-center text-center whitespace-normal cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg'
               >
                 {user.foto && user.foto !== 'default.png' ? (
                   <Image
@@ -415,14 +417,14 @@ export default function AsistenciaQrPage() {
                     Presente {user.marcada.substring(0, 5)}
                   </span>
                 )}
-              </div>
+              </Button>
             ))}
           </div>
         )}
       </div>
 
       <Dialog open={!!selectedUser} onOpenChange={open => !open && setSelectedUser(null)}>
-        <DialogContent className='w-[92vw] max-w-sm sm:max-w-md bg-slate-950 border-slate-800 text-white'>
+        <DialogContent className='w-[92vw] max-w-sm sm:max-w-md bg-slate-950 border-slate-800 text-white max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle className='text-lg font-black uppercase tracking-tight'>
               Código de asistencia

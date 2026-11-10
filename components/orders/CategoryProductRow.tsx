@@ -7,7 +7,7 @@ import { resolverVentaProducto, type SaleChoice } from '@/lib/sales/saleChoice';
 import { esCortoAnfitriona, permiteAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Check } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { HostessMultiSelect } from '@/components/orders';
 import { IndividualHostessSelect, RoomSelect } from '@/components/shared/selects';
@@ -173,7 +173,10 @@ export function CategoryProductRow({
               className='w-full'
             />
             {roomSelections[id] && (
-              <div className='text-xs text-green-600 font-medium'>✓ Habitación asignada</div>
+              <div className='flex items-center gap-1 text-xs text-green-600 font-medium'>
+                <Check className='h-3 w-3' aria-hidden='true' />
+                Habitación asignada
+              </div>
             )}
           </div>
         ) : (
@@ -211,7 +214,7 @@ export function CategoryProductRow({
             />
           )
         ) : (
-          <div className='text-xs text-gray-400'>Sin comisión</div>
+          <div className='text-xs text-gray-500 dark:text-gray-400'>Sin comisión</div>
         )}
       </TableCell>
       <TableCell className='text-center'>
@@ -338,8 +341,9 @@ function OtherHostessSection({
         className='w-full'
       />
       {selections.length > 0 ? (
-        <div className='text-xs text-green-600 font-medium'>
-          ✓ Asignada:{' '}
+        <div className='flex items-center gap-1 text-xs text-green-600 font-medium'>
+          <Check className='h-3 w-3' aria-hidden='true' />
+          Asignada:{' '}
           {(() => {
             const hostessId = selections[0];
             const hostess = availableHostesses.find(

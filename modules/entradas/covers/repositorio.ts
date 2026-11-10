@@ -2,7 +2,7 @@ import 'server-only';
 import { generateUUID, query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
-export interface NuevaSolicitudCortesia {
+export interface NuevaSolicitudCover {
   grupoRegistroId: string | null;
   clienteNombre: string | null;
   entradaIds: string[];
@@ -10,10 +10,10 @@ export interface NuevaSolicitudCortesia {
   montoTotal: number;
 }
 
-export async function listarSolicitudesCortesia(estado: string): Promise<any[]> {
+export async function listarSolicitudesCover(estado: string): Promise<any[]> {
   return query<any[]>(
     `SELECT s.*, u.nick AS solicitado_por_nick
-       FROM solicitudes_entrega_cortesias s
+       FROM solicitudes_entrega_covers s
        LEFT JOIN usuarios u ON u.id_usuario::text = s.solicitado_por::text
       WHERE s.estado = ?
       ORDER BY s.fecha_solicitud DESC`,
@@ -21,10 +21,10 @@ export async function listarSolicitudesCortesia(estado: string): Promise<any[]> 
   );
 }
 
-export async function crearSolicitudCortesia(solicitud: NuevaSolicitudCortesia, usuarioId: string) {
+export async function crearSolicitudCover(solicitud: NuevaSolicitudCover, usuarioId: string) {
   const id = generateUUID();
   await query(
-    `INSERT INTO solicitudes_entrega_cortesias
+    `INSERT INTO solicitudes_entrega_covers
      (id, grupo_registro_id, cliente_nombre, entrada_ids, unidades, monto_total, solicitado_por, estado, fecha_solicitud)
      VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, 'pendiente', ?)`,
     [
@@ -41,26 +41,26 @@ export async function crearSolicitudCortesia(solicitud: NuevaSolicitudCortesia, 
   return id;
 }
 
-export async function obtenerSolicitudCortesia(id: string): Promise<any | null> {
+export async function obtenerSolicitudCover(id: string): Promise<any | null> {
   const filas = await query<any[]>(
-    `SELECT * FROM solicitudes_entrega_cortesias WHERE id = ? FOR UPDATE`,
+    `SELECT * FROM solicitudes_entrega_covers WHERE id = ? FOR UPDATE`,
     [id]
   );
   return filas[0] ?? null;
 }
 
-export async function aprobarSolicitudCortesia(id: string, usuarioId: string) {
+export async function aprobarSolicitudCover(id: string, usuarioId: string) {
   await query(
-    `UPDATE solicitudes_entrega_cortesias
+    `UPDATE solicitudes_entrega_covers
         SET estado = 'aprobada', autorizado_por = ?, fecha_respuesta = ?
       WHERE id = ?`,
     [usuarioId, getNowInBusinessTimezone(), id]
   );
 }
 
-export async function rechazarSolicitudCortesia(id: string, usuarioId: string, motivo: string) {
+export async function rechazarSolicitudCover(id: string, usuarioId: string, motivo: string) {
   await query(
-    `UPDATE solicitudes_entrega_cortesias
+    `UPDATE solicitudes_entrega_covers
         SET estado = 'rechazada', autorizado_por = ?, motivo_rechazo = ?, fecha_respuesta = ?
       WHERE id = ?`,
     [usuarioId, motivo, getNowInBusinessTimezone(), id]

@@ -111,14 +111,18 @@ export default function OvertimeTable({
 
                 <div className='grid grid-cols-2 gap-4 py-3 border-y border-gray-50 dark:border-gray-800'>
                   <div className='space-y-1'>
-                    <span className='text-[10px] uppercase font-bold text-gray-400'>Horas</span>
+                    <span className='text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      Horas
+                    </span>
                     <div className='flex items-center gap-1.5 font-bold text-gray-900 dark:text-white'>
                       <Clock className='h-4 w-4 text-blue-500' />
                       {overtime.hora.toFixed(1)} hrs
                     </div>
                   </div>
                   <div className='space-y-1 text-right'>
-                    <span className='text-[10px] uppercase font-bold text-gray-400'>Total</span>
+                    <span className='text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400'>
+                      Total
+                    </span>
                     <div className='flex items-center justify-end gap-1.5 font-black text-emerald-600'>
                       {formatCurrencyCLP(overtime.total)}
                     </div>

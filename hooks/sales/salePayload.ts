@@ -30,6 +30,7 @@ export function buildSaleDetail(p: any) {
     precio: p.precio,
     comision: selectedHostesses.length > 0 ? (p.comision || 0) * p.cantidad : 0,
     cantidad: p.cantidad,
+    recargo_acompanamiento: Number(p.recargo_acompanamiento || 0),
     sub_total: p.subtotal,
     isChampagne: Boolean(p.isChampagne)
   };

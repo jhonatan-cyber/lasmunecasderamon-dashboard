@@ -30,7 +30,7 @@ export default function ApiDocsPage() {
     <div className='min-h-screen bg-slate-50'>
       {}
       <header className='bg-white border-b border-slate-200'>
-        <div className='max-w-7xl mx-auto px-6 py-12'>
+        <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12'>
           <div className='text-center space-y-6'>
             {}
             <div className='flex items-center justify-center space-x-4'>
@@ -77,7 +77,7 @@ export default function ApiDocsPage() {
         </div>
       </header>
 
-      <main className='max-w-7xl mx-auto px-6 py-8'>
+      <main className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8'>
         {}
         <section className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-12'>
           {}

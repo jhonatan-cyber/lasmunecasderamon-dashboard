@@ -62,7 +62,7 @@ export function ReservaQuinchoDetalleModal({
     <>
       <Dialog open={open} onOpenChange={cerrar}>
         <DialogContent className='flex max-h-[90vh] max-w-2xl flex-col overflow-hidden rounded-2xl p-0'>
-          <DialogHeader className='border-b p-6 pb-3 dark:border-slate-800'>
+          <DialogHeader className='border-b p-4 pr-12 pb-3 dark:border-slate-800 sm:p-6 sm:pr-14 sm:pb-3'>
             <DialogTitle className='flex items-center gap-2 text-xl font-bold'>
               <Flame className='h-5 w-5 text-orange-500' />
               Reservas del quincho
@@ -73,7 +73,7 @@ export function ReservaQuinchoDetalleModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className='flex-1 space-y-4 overflow-y-auto p-6'>
+          <div className='min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6'>
             {reservas.length === 0 && (
               <p className='rounded-2xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-slate-700 dark:text-neutral-400'>
                 No hay reservas registradas para esta fecha.

@@ -58,7 +58,7 @@ export const POST = withRoute(
             hora: String(body.hora || ''),
             registradoPor: user.id
           });
-          // Aviso en vivo a caja, barra y administración: la cortesía queda
+          // Aviso en vivo a caja, barra y administración: el cover queda
           // pendiente hasta que alguien entregue la bebida.
           notificarEntradaRegistrada({
             id: result.id,

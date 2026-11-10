@@ -35,7 +35,7 @@ export function SaleProductTable({
     >
       {items.map(item => {
         const columns = getSaleProductFormatColumns(item);
-        const fullRow = columns.hasDrink || columns.hasHostess;
+        const fullRow = !collapsed[item.id] && (columns.hasDrink || columns.hasHostess);
         return (
           <div
             key={item.id}

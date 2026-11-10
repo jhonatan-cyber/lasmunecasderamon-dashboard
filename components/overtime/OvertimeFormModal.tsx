@@ -50,7 +50,7 @@ export default function OvertimeFormModal({
       }}
     >
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 sm:p-8 pb-4 border-b bg-white dark:bg-slate-900'>
+        <DialogHeader className='p-4 pb-4 border-b bg-white sm:p-8 sm:pb-4 dark:bg-slate-900'>
           <DialogTitle className='text-xl sm:text-2xl font-bold flex items-center gap-2'>
             <span>Registrar Hora Extra</span>
           </DialogTitle>
@@ -59,7 +59,7 @@ export default function OvertimeFormModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='p-6 sm:p-8 bg-white dark:bg-slate-900'>
+        <div className='p-4 bg-white sm:p-8 dark:bg-slate-900'>
           <form onSubmit={handleSubmit} className='space-y-4 sm:space-y-6'>
             {}
             <div>

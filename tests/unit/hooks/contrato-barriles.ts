@@ -198,6 +198,7 @@ export const BARRILES = {
       'useGenericFetch',
       'useGenericFilters',
       'useGenericMutations',
+      'useIsMobile',
       'useMasterData',
       'useNumberFormatter',
       'usePersistentTab',

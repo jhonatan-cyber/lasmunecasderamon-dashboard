@@ -51,7 +51,7 @@ interface UnidadConsumo {
 }
 
 export interface OpcionesConsumoStock {
-  tipo?: 'venta' | 'cortesia';
+  tipo?: 'venta' | 'cover';
   precio?: number;
   comision?: number;
 }
@@ -640,7 +640,7 @@ export async function consumirCover(
   await sincronizarStockTotal(trx, presentacion.producto_id);
 }
 
-export async function consumirProductoCortesia(
+export async function consumirProductoCover(
   presentacionId: string,
   usuarioId: string,
   fecha: string,
@@ -650,7 +650,7 @@ export async function consumirProductoCortesia(
 ): Promise<void> {
   const trx = resolverTransaccion(contexto);
   const configs = await trx<{ valor: string }[]>(
-    "SELECT valor FROM configuraciones WHERE clave = 'monto_base_trago_cortesia_cliente' LIMIT 1"
+    "SELECT valor FROM configuraciones WHERE clave = 'monto_base_trago_cover_cliente' LIMIT 1"
   );
   const valorBase = Number(configs[0]?.valor ?? 10000);
   const montoBaseConfigurado =
@@ -680,7 +680,7 @@ export async function consumirProductoCortesia(
   if (!presentacion)
     throw new BusinessError('El precio de la bebida supera el monto de entrada más el adicional');
   if (productoDesactivado(presentacion.estado))
-    throw new BusinessError('La bebida de cortesia no esta disponible');
+    throw new BusinessError('La bebida de cover no está disponible');
   const opciones = parseOpcionesVenta(presentacion.opciones_venta) ?? [];
   const unidadesIncluidas = Number(
     opciones.find(opcion => opcion.tipo === 'botella')?.acompanamiento?.unidades ?? 0
@@ -751,7 +751,7 @@ export async function consumirProductoCortesia(
       await trx(
         `INSERT INTO inventario_movimientos
           (id, tipo, estado, producto_id, presentacion_id, cantidad, precio_venta, comision, usuario_id, ml, fecha_crea)
-         VALUES (?, 'cortesia', 'completada', ?, ?, 1, 0, 0, ?, 0, ?)`,
+         VALUES (?, 'cover', 'completada', ?, ?, 1, 0, 0, ?, 0, ?)`,
         [movimientoId, idProducto, idPresentacion, usuarioId, fecha]
       );
       await trx(
@@ -781,7 +781,7 @@ export async function consumirProductoCortesia(
   }
 }
 
-export async function consumirCorteCortesia(
+export async function consumirCorteCover(
   presentacionId: string,
   usuarioId: string,
   fecha: string,
@@ -828,7 +828,7 @@ export async function consumirCorteCortesia(
     ],
     { usuarioId, fecha },
     false,
-    { tipo: 'cortesia', precio: 0, comision: 0 }
+    { tipo: 'cover', precio: 0, comision: 0 }
   );
 
   const ids = [presentacionId, ...reparto.map(sabor => sabor.presentacion_id)].filter(

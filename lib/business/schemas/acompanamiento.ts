@@ -4,7 +4,10 @@ import type { AcompanamientoBotellaItem } from '@/types/venta';
 /** Un sabor elegido como acompañamiento de una botella, con sus unidades. */
 export const acompanamientoBotellaItemSchema = z.object({
   presentacion_id: z.string().min(1),
-  unidades: z.number().int().min(1).max(1000)
+  unidades: z.number().int().min(1).max(1000),
+  // Precio del acompañamiento al momento de la venta: con él se calcula el
+  // recargo sobre el tope configurado.
+  precio: z.number().min(0).optional()
 });
 
 /**

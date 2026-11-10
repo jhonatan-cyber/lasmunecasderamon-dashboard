@@ -1,23 +1,12 @@
 'use client';
 
 import { ErrorState } from '@/components/shared/ErrorState';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSales } from '@/hooks/cash-register/useSales';
 import { useTimer } from '@/contexts/TimerContext';
 import { useAvailableRooms } from '@/hooks/rooms';
 import { useRefreshOnFocus } from '@/hooks/shared';
-import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { formatLongDateEs, formatShortTimeEs } from '@/lib/utils/calendarUtils';
-import { getCardSplit } from '@/components/orders/productModalRules';
 import {
   OrderBaucherPanel,
   OrderDetailInfoPanel,
@@ -25,6 +14,7 @@ import {
 } from '@/components/orders/detail';
 import { useOrderDetailModalState } from '@/hooks/orders/useOrderDetailModalState';
 import { useOrderDetailModal } from '@/hooks/orders/useOrderDetailModal';
+import { ConfirmSaleDialog } from './ConfirmSaleDialog';
 import { OrderProducts } from './OrderProducts';
 import { OrderTimeline } from './OrderTimeline';
 
@@ -84,15 +74,16 @@ export default function OrderDetailModal({
   useRefreshOnFocus(refetchRooms, { enabled: open });
 
   const totalConfirmar = (detail[0]?.total || 0) + state.propina + derived.recargoAnfitrionas;
-  const splitVentaPct = Number(useConfigValue('comisiones', 'split_tarjeta_venta', '51'));
-  const splitPropinaPct = Number(useConfigValue('comisiones', 'split_tarjeta_propina', '49'));
-  const splitTarjeta =
-    state.metodoPago === 'tarjeta' ? getCardSplit(totalConfirmar) : { venta: 0, propina: 0 };
+  const nombreHabitacion =
+    shouldShowRoomSelector && state.habitacionId
+      ? rooms.find((r: any) => String(r.id_habitacion ?? r.id) === state.habitacionId)?.name ||
+        state.habitacionId
+      : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className='flex max-h-[94dvh] w-[calc(100vw-1rem)] max-w-5xl flex-col border border-border/60 bg-white p-0 sm:w-[calc(100vw-3rem)] dark:border-zinc-800 dark:bg-zinc-950'>
-        <DialogHeader className='shrink-0 border-b border-border/60 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 dark:border-zinc-800'>
+      <DialogContent className='flex max-h-[94dvh] w-[calc(100vw-1rem)] max-w-5xl flex-col overflow-hidden border border-border/60 bg-white p-0 [&>button]:top-3 [&>button]:right-3 [&>button]:flex [&>button]:h-10 [&>button]:w-10 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button:hover]:bg-accent sm:w-[calc(100vw-3rem)] dark:border-zinc-800 dark:bg-zinc-950'>
+        <DialogHeader className='shrink-0 border-b border-border/60 px-4 pt-4 pb-4 pr-14 text-left sm:px-6 sm:pt-6 dark:border-zinc-800'>
           <DialogTitle className='text-lg text-gray-900 dark:text-zinc-100 sm:text-xl'>
             Detalles del Pedido - {orderCode}
           </DialogTitle>
@@ -110,7 +101,7 @@ export default function OrderDetailModal({
           </div>
         ) : detail && detail.length > 0 ? (
           <>
-            <div className='flex-1 overflow-y-auto px-4 sm:px-6 py-4'>
+            <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6'>
               <div className='space-y-6'>
                 {/* Info Panels */}
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
@@ -178,95 +169,22 @@ export default function OrderDetailModal({
         )}
       </DialogContent>
 
-      {/* Confirm Sale Dialog */}
-      <Dialog open={state.confirmVentaModalOpen} onOpenChange={setters.setConfirmVentaModalOpen}>
-        <DialogContent className='sm:max-w-md border border-border/60 bg-white dark:border-zinc-800 dark:bg-zinc-950'>
-          <DialogHeader>
-            <DialogTitle className='text-gray-900 dark:text-zinc-100'>
-              Confirmar registro de venta
-            </DialogTitle>
-            <DialogDescription className='text-gray-600 dark:text-zinc-400'>
-              ¿Estás seguro de que deseas registrar esta venta?
-            </DialogDescription>
-          </DialogHeader>
-          <div className='px-6 py-4 text-gray-800 dark:text-zinc-200'>
-            <div className='space-y-2 text-sm'>
-              <div>
-                <strong>Pedido:</strong> {orderCode}
-              </div>
-              <div>
-                <strong>Total:</strong> {formatCurrencyCLP(totalConfirmar)}
-              </div>
-              <div>
-                <strong>Método de pago:</strong> {state.metodoPago}
-              </div>
-              {state.metodoPago === 'tarjeta' && totalConfirmar > 0 && (
-                <div className='mt-3 flex items-center gap-2 rounded-xl border border-amber-200/70 bg-amber-50/80 px-3 py-2 text-xs leading-5 text-slate-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-slate-100'>
-                  <span className='font-black uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300'>
-                    Tarjetero
-                  </span>{' '}
-                  Genera venta por{' '}
-                  <span className='font-black text-emerald-600 dark:text-emerald-300'>
-                    {formatCurrencyCLP(splitTarjeta.venta)}
-                  </span>{' '}
-                  ({splitVentaPct}%) y propina por{' '}
-                  <span className='font-black text-fuchsia-600 dark:text-fuchsia-300'>
-                    {formatCurrencyCLP(splitTarjeta.propina)}
-                  </span>{' '}
-                  ({splitPropinaPct}%). Solo informativo, no afecta la caja.
-                </div>
-              )}
-              {state.propina > 0 && (
-                <div>
-                  <strong>Propina:</strong> {formatCurrencyCLP(state.propina)}
-                </div>
-              )}
-              {shouldShowRoomSelector && state.habitacionId && (
-                <>
-                  <div>
-                    <strong>Habitación:</strong>{' '}
-                    {rooms.find((r: any) => String(r.id_habitacion ?? r.id) === state.habitacionId)
-                      ?.name || state.habitacionId}
-                  </div>
-                  <div>
-                    <strong>Tiempo:</strong> {state.tiempoHabitacion} minutos
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-          <DialogFooter className='flex justify-center items-center gap-3 sm:justify-center'>
-            <Button
-              variant='outline'
-              onClick={e => {
-                e.preventDefault();
-                handleCancelRegistrarVenta();
-              }}
-              disabled={state.isRegistering}
-              className='rounded-full dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800'
-              type='button'
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant='outline'
-              onClick={handleConfirmRegistrarVenta}
-              disabled={state.isRegistering}
-              className='rounded-full bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400'
-              type='button'
-            >
-              {state.isRegistering ? (
-                <>
-                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
-                  Registrando...
-                </>
-              ) : (
-                'Confirmar'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmSaleDialog
+        open={state.confirmVentaModalOpen}
+        onOpenChange={setters.setConfirmVentaModalOpen}
+        onCancel={handleCancelRegistrarVenta}
+        onConfirm={handleConfirmRegistrarVenta}
+        isRegistering={state.isRegistering}
+        orderCode={orderCode}
+        cliente={isClienteRegistrado() ? detail[0]?.cliente : undefined}
+        totalPedido={detail[0]?.total || 0}
+        propina={state.propina}
+        recargoAnfitrionas={derived.recargoAnfitrionas}
+        total={totalConfirmar}
+        metodoPago={state.metodoPago}
+        habitacion={nombreHabitacion}
+        tiempoHabitacion={state.tiempoHabitacion}
+      />
     </Dialog>
   );
 }

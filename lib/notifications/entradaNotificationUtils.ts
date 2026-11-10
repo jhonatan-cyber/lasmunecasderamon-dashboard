@@ -30,7 +30,7 @@ export type EntradaActualizadaAviso = {
   entradaId: string;
   accion: 'entregada' | 'anulada';
   clienteNombre: string | null;
-  tipo?: 'cortesia' | 'upgrade';
+  tipo?: 'cover' | 'upgrade';
   montoCobrarBarra?: number;
   entregadaPorNombre?: string;
 };

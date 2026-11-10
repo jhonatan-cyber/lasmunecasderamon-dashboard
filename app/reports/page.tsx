@@ -85,14 +85,16 @@ export default function ReportsPage() {
   return (
     <PermissionGuard module='reports' action='view'>
       <BoneyardSkeleton name='reports-main' loading={false}>
-        <div className='p-6 space-y-6'>
+        <div className='p-4 space-y-6 sm:p-6 lg:p-8'>
           {}
-          <div className='flex items-center justify-between'>
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
             <div>
-              <h1 className='text-3xl font-bold text-gray-900'>Reportes</h1>
-              <p className='text-gray-600 mt-2'>Análisis detallado y estadísticas del negocio</p>
+              <h1 className='text-2xl font-bold text-gray-900 sm:text-3xl'>Reportes</h1>
+              <p className='mt-1 text-sm text-gray-600 sm:mt-2 sm:text-base'>
+                Análisis detallado y estadísticas del negocio
+              </p>
             </div>
-            <div className='flex items-center gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
               <Button
                 variant='ghost'
                 size='icon'

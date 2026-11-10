@@ -45,6 +45,10 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
     handleMouseDown,
     handleMouseEnter,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleTouchCancel,
     clearSelection,
     setSelectedDataType,
     setIsModalOpen,
@@ -58,15 +62,25 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
   const renderMonthView = () => {
     return (
       <div className='bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-xs border border-gray-200 dark:border-gray-700'>
-        <div className='flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700'>
-          <div className='flex items-center gap-4'>
-            <Button variant='ghost' size='sm' onClick={() => navigate(-1)}>
+        <div className='flex flex-wrap items-center justify-between gap-2 p-3 border-b border-gray-200 dark:border-gray-700 sm:p-4'>
+          <div className='flex items-center gap-2 sm:gap-4'>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={() => navigate(-1)}
+              aria-label='Mes anterior'
+            >
               <ChevronLeft className='w-4 h-4' />
             </Button>
             <h2 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
               {formatMonthYearLabel(currentDate)}
             </h2>
-            <Button variant='ghost' size='sm' onClick={() => navigate(1)}>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={() => navigate(1)}
+              aria-label='Mes siguiente'
+            >
               <ChevronRight className='w-4 h-4' />
             </Button>
           </div>
@@ -88,7 +102,7 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
           {weekdays.map(day => (
             <div
               key={day}
-              className='p-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700'
+              className='p-1.5 text-center text-[10px] font-semibold text-gray-700 dark:text-gray-300 sm:p-3 sm:text-sm bg-gray-50 dark:bg-gray-700'
             >
               {day}
             </div>
@@ -96,10 +110,12 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
         </div>
 
         <div
-          className='grid grid-cols-7'
-          style={{ minHeight: '500px' }}
+          className='grid grid-cols-7 min-h-[360px] sm:min-h-[500px]'
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchMove={e => handleTouchMove(e.touches[0].clientX, e.touches[0].clientY)}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
         >
           {days.map((day, index) => (
             <CalendarDayCell
@@ -113,6 +129,7 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
               getDataForDate={getDataForDate}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
+              onTouchStart={handleTouchStart}
               onClick={handleDateClick}
             />
           ))}
@@ -144,12 +161,12 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
 
   return (
     <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
-      <div className='flex items-center justify-between mb-6'>
+      <div className='flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between'>
         <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>
           Calendario de {titleRole}
         </h1>
         <div className='flex items-center gap-4'>
-          <Link href={backLink}>
+          <Link href={backLink} className='w-full sm:w-auto'>
             <Button
               variant='outline'
               size='sm'

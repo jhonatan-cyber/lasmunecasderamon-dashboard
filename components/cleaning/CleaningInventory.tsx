@@ -171,9 +171,9 @@ export default function CleaningInventory() {
     }
   };
 
-  if (userLoading) return <p className='p-6'>Cargando sesión…</p>;
+  if (userLoading) return <p className='p-4 sm:p-6'>Cargando sesión…</p>;
   if (!acceso.ubicaciones.length)
-    return <p className='p-6'>Tu rol no tiene acceso al inventario de limpieza.</p>;
+    return <p className='p-4 sm:p-6'>Tu rol no tiene acceso al inventario de limpieza.</p>;
   const items = (data?.articulos || []).filter(a =>
     a.nombre.toLowerCase().includes(search.toLowerCase())
   );
@@ -226,6 +226,7 @@ export default function CleaningInventory() {
               <Button
                 key={m}
                 variant={mode === m ? 'default' : 'outline'}
+                aria-pressed={mode === m}
                 className={buttonClass}
                 onClick={() => setMode(m)}
                 disabled={busy}

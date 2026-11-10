@@ -59,13 +59,13 @@ export function ReportToolbar<T extends string>({
           </Button>
         ))}
       </div>
-      <div className='flex flex-wrap items-center gap-3'>
+      <div className='flex w-full flex-wrap items-center gap-3 md:w-auto'>
         {period === 'custom' && (
-          <div className='flex items-center gap-2'>
+          <div className='flex w-full flex-wrap items-center gap-2 sm:w-auto'>
             <DatePicker
               ariaLabel='Fecha inicial'
               displayFormat='short'
-              className='w-[9.5rem]'
+              className='w-full max-w-[9.5rem]'
               value={startDate}
               onChange={onStartDateChange}
             />
@@ -75,13 +75,13 @@ export function ReportToolbar<T extends string>({
             <DatePicker
               ariaLabel='Fecha final'
               displayFormat='short'
-              className='w-[9.5rem]'
+              className='w-full max-w-[9.5rem]'
               value={endDate}
               onChange={onEndDateChange}
             />
           </div>
         )}
-        <Button type='button' onClick={onExport} className='rounded-full px-6'>
+        <Button type='button' onClick={onExport} className='w-full rounded-full px-6 sm:w-auto'>
           <Download className='mr-2 h-4 w-4' />
           Exportar
         </Button>

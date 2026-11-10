@@ -98,7 +98,7 @@ export function CajaVentasTable({
                       <TableCell>
                         <Badge variant='outline' className='text-xs'>
                           {venta.habitacion_nombre ||
-                            (venta.habitacion_id ? 'Habitacion' : 'Barra')}
+                            (venta.habitacion_id ? 'Habitación' : 'Barra')}
                         </Badge>
                       </TableCell>
                       <TableCell className='capitalize'>{venta.item_count || 0} items</TableCell>

@@ -11,10 +11,13 @@ import logger from '@/lib/utils/logger';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import { saleInventoryFields } from '@/lib/sales/saleInventoryFields';
 import { accountCartKey } from '@/lib/sales/accountCartKey';
+import { recargoAcompanamientoDeProducto } from '@/lib/sales/recargoAcompanamiento';
+import { useConfigValue } from '@/hooks/shared/useConfigValue';
 
 export function useAccountForm() {
   const { createCuenta } = useCuentas();
   const [loading, setLoading] = useState(false);
+  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0));
 
   const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);
@@ -89,16 +92,22 @@ export function useAccountForm() {
     if (!Number.isInteger(cantidad) || cantidad < 1) return;
     const precio = producto.precio ?? producto.price ?? 0;
     const comision = producto.comision ?? producto.commission ?? 0;
+    const recargo = recargoAcompanamientoDeProducto(producto, topeAcompanamiento);
+    const productoConRecargo = { ...producto, recargo_acompanamiento: recargo };
 
     setProductos(prev => {
-      const existente = prev.findIndex(p => accountCartKey(p) === accountCartKey(producto));
+      const existente = prev.findIndex(
+        p => accountCartKey(p) === accountCartKey(productoConRecargo)
+      );
       if (existente !== -1) {
         return prev.map((p, i) =>
           i === existente
             ? {
                 ...p,
                 cantidad: p.cantidad + cantidad,
-                subtotal: (p.cantidad + cantidad) * p.precio
+                subtotal:
+                  (Number(p.precio || 0) + Number(p.recargo_acompanamiento || 0)) *
+                  (p.cantidad + cantidad)
               }
             : p
         );
@@ -106,12 +115,12 @@ export function useAccountForm() {
       return [
         ...prev,
         {
-          ...producto,
+          ...productoConRecargo,
           id_producto: producto.producto_id ?? producto.id_producto ?? producto.id,
           cantidad,
           precio,
           comision,
-          subtotal: precio * cantidad
+          subtotal: (precio + recargo) * cantidad
         }
       ];
     });
@@ -147,7 +156,7 @@ export function useAccountForm() {
       nuevosProductos[index] = {
         ...producto,
         cantidad: nuevaCantidad,
-        subtotal: precio * nuevaCantidad,
+        subtotal: (Number(precio) + Number(producto.recargo_acompanamiento || 0)) * nuevaCantidad,
         comision: comisionPorUnidad
       };
       return nuevosProductos;

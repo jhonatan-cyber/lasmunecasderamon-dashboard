@@ -61,7 +61,7 @@ beforeEach(() => {
   );
   entradas.registrarEntrada.mockResolvedValue({ id: 'e1', ids: ['e1'], monto_total: 10000 });
   entradas.listarPendientes.mockResolvedValue([]);
-  entradas.entregarEntrada.mockResolvedValue({ tipo: 'cortesia', montoCobrarBarra: 0 });
+  entradas.entregarEntrada.mockResolvedValue({ tipo: 'cover', montoCobrarBarra: 0 });
   entradas.anularEntrada.mockResolvedValue({ entradaId: 'e1', monto: 10000 });
 });
 

@@ -2,17 +2,31 @@
 
 import { ErrorState } from '@/components/shared/ErrorState';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { InteractiveProductPhoto } from '@/components/shared/InteractiveProductPhoto';
 import { StaggeredEntrance } from '@/components/shared/StaggeredEntrance';
-import { ArrowRight, ArrowRightLeft, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  Check,
+  Clock,
+  Eye,
+  PackageOpen,
+  SearchX,
+  X
+} from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useRefreshOnFocus } from '@/hooks/shared';
 import { useTransferPermissions } from '@/hooks/transfers';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { TransferModal, type BarStockItem } from '@/components/bar/TransferModal';
-import { SalePrices } from '@/components/bar/SalePrices';
-import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
+import { TransferCategoryCard } from '@/components/bar/transfer/TransferCategoryCard';
+import {
+  TransferHistoryDetailModal,
+  estadoLabel
+} from '@/components/bar/transfer/TransferHistoryDetailModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -71,6 +85,8 @@ function TransferPhoto({ item }: { item: BarStockItem }) {
 
 const PAGE_SIZE_OPTIONS = [12, 24, 36, 48];
 const PAGE_SIZE_LABEL = 'POR PÁGINA';
+const SIN_CATEGORIA = 'Sin categoría';
+const categoryKey = (item: BarStockItem) => item.categoria_nombre?.trim() || SIN_CATEGORIA;
 
 function buildPageItems(current: number, total: number): Array<number | 'left' | 'right'> {
   const items: Array<number | 'left' | 'right'> = [];
@@ -90,6 +106,31 @@ function buildPageItems(current: number, total: number): Array<number | 'left' |
   if (current < total - 2) items.push('right');
   items.push(total);
   return items;
+}
+
+function TransferDetailButton({
+  record,
+  onOpen
+}: {
+  record: TransferRecord;
+  onOpen: (record: TransferRecord) => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-8 w-8 shrink-0 rounded-xl p-0 text-blue-600 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/30'
+          aria-label={`Ver detalles de ${record.producto_nombre}`}
+          onClick={() => onOpen(record)}
+        >
+          <Eye className='h-4 w-4' aria-hidden='true' />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Ver detalles</TooltipContent>
+    </Tooltip>
+  );
 }
 
 interface TransferPaginationProps {
@@ -181,6 +222,7 @@ function TransfersContent() {
   const [history, setHistory] = useState<TransferRecord[]>([]);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('products');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState(12);
   const [page, setPage] = useState(1);
   const [pendingPageSize, setPendingPageSize] = useState(12);
@@ -188,6 +230,7 @@ function TransfersContent() {
   const [historyPageSize, setHistoryPageSize] = useState(12);
   const [historyPage, setHistoryPage] = useState(1);
   const [selected, setSelected] = useState<BarStockItem | null>(null);
+  const [detail, setDetail] = useState<TransferRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resolvingId, setResolvingId] = useState<string | null>(null);
@@ -221,18 +264,50 @@ function TransfersContent() {
   useRealtimeRefresh('/api/transfers', refreshSilencioso);
   useRefreshOnFocus(refreshSilencioso, { immediate: false });
 
-  const filtered = useMemo(() => {
+  const groups = useMemo(() => {
+    const map = new Map<string, BarStockItem[]>();
+    for (const item of items) {
+      // Solo se puede transferir lo que hay en bodega.
+      if (item.stock <= 0) continue;
+      const key = categoryKey(item);
+      const list = map.get(key);
+      if (list) list.push(item);
+      else map.set(key, [item]);
+    }
+    return map;
+  }, [items]);
+
+  // Nivel 1: tarjetas de categoría. La búsqueda filtra por nombre de categoría
+  // (igual que Bodega); "Sin categoría" va siempre al final. El contador refleja
+  // las presentaciones que se muestran al entrar, no productos distintos.
+  const categoryCards = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('es');
-    return items.filter(item =>
-      [
-        item.producto_nombre,
-        item.categoria_nombre,
-        item.producto_codigo,
-        item.nombre,
-        item.codigo_barras
-      ].some(value => value?.toLocaleLowerCase('es').includes(term))
+    const cards = [...groups.entries()].map(([name, list]) => ({
+      name,
+      presentationCount: list.length
+    }));
+    const visible = term
+      ? cards.filter(card => card.name.toLocaleLowerCase('es').includes(term))
+      : cards;
+    return visible.sort((a, b) => {
+      if (a.name === SIN_CATEGORIA) return 1;
+      if (b.name === SIN_CATEGORIA) return -1;
+      return a.name.localeCompare(b.name, 'es');
+    });
+  }, [groups, search]);
+
+  // Nivel 2: productos transferibles de la categoría elegida, con búsqueda propia.
+  const categoryItems = useMemo(() => {
+    if (!selectedCategory) return [];
+    const list = groups.get(selectedCategory) ?? [];
+    const term = search.trim().toLocaleLowerCase('es');
+    if (!term) return list;
+    return list.filter(item =>
+      [item.producto_nombre, item.producto_codigo, item.nombre, item.codigo_barras].some(value =>
+        value?.toLocaleLowerCase('es').includes(term)
+      )
     );
-  }, [items, search]);
+  }, [groups, selectedCategory, search]);
 
   const pendientes = useMemo(() => history.filter(h => h.estado === 'pendiente'), [history]);
   const historial = useMemo(() => history.filter(h => h.estado !== 'pendiente'), [history]);
@@ -260,10 +335,10 @@ function TransfersContent() {
     [refresh]
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(categoryItems.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageStart = (currentPage - 1) * pageSize;
-  const visibleItems = filtered.slice(pageStart, pageStart + pageSize);
+  const visibleItems = categoryItems.slice(pageStart, pageStart + pageSize);
 
   const pendingTotalPages = Math.max(1, Math.ceil(pendientes.length / pendingPageSize));
   const pendingCurrentPage = Math.min(pendingPage, pendingTotalPages);
@@ -276,355 +351,448 @@ function TransfersContent() {
   const visibleHistory = historial.slice(historyStart, historyStart + historyPageSize);
 
   return (
-    <main className='flex flex-col gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
-      <header className='flex flex-wrap items-start justify-between gap-4'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-3xl font-bold tracking-tight'>Transferencia</h1>
-          <p className='text-sm text-muted-foreground'>
-            Selecciona una presentación y la cantidad que enviarás al bar.
-          </p>
-        </div>
-      </header>
+    <BoneyardSkeleton name='transfers-main' loading={loading}>
+      <main className='flex flex-col gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+        <header className='flex flex-wrap items-start justify-between gap-4'>
+          <div className='flex min-w-0 flex-col gap-2'>
+            <h1 className='text-3xl font-bold tracking-tight'>Transferencias</h1>
+            <p className='text-sm text-muted-foreground'>
+              {selectedCategory ??
+                'Elige una categoría, luego la presentación y la cantidad que enviarás al bar.'}
+            </p>
+          </div>
+          {tab === 'products' && selectedCategory !== null && (
+            <Button
+              variant='outline'
+              className='shrink-0 rounded-full'
+              onClick={() => {
+                setSelectedCategory(null);
+                setSearch('');
+                setPage(1);
+              }}
+            >
+              <ArrowLeft className='mr-1 h-4 w-4' aria-hidden='true' />
+              Atrás
+            </Button>
+          )}
+        </header>
 
-      {error && <ErrorState size='sm' title='No se pudo actualizar' message={error} />}
+        {error && <ErrorState size='sm' title='No se pudo actualizar' message={error} />}
 
-      <Tabs value={tab} onValueChange={setTab} className='flex flex-col gap-4'>
-        <div className='flex flex-wrap items-end justify-between gap-3'>
-          <TabsList
-            aria-label='Listados de transferencias'
-            className='grid h-auto w-full shrink-0 grid-cols-3 rounded-full sm:w-fit'
-          >
-            <TabsTrigger value='products' className='rounded-full'>
-              Productos
-            </TabsTrigger>
-            <TabsTrigger value='pending' className='rounded-full whitespace-normal text-center'>
-              Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
-            </TabsTrigger>
-            <TabsTrigger value='history' className='rounded-full whitespace-normal text-center'>
-              Historial
-            </TabsTrigger>
-          </TabsList>
-          <div className='flex min-w-0 flex-1 items-center justify-end gap-3'>
-            {tab === 'products' && (
-              <div className='flex min-w-0 flex-1 flex-col gap-1 sm:max-w-80'>
-                <Label
-                  htmlFor='transfer-search'
-                  className='text-xs font-medium text-muted-foreground'
-                >
-                  Buscar producto
-                </Label>
-                <Input
-                  id='transfer-search'
-                  aria-label='Buscar producto, categoría, presentación o código'
-                  placeholder='Producto, categoría, presentación o código'
-                  value={search}
-                  onChange={event => {
-                    setSearch(event.target.value);
-                    setPage(1);
-                  }}
-                  className='h-10 min-w-0 w-full rounded-full'
-                />
-              </div>
-            )}
-            <div className='shrink-0'>
-              <SelectElements
-                value={
-                  tab === 'products'
-                    ? pageSize
-                    : tab === 'pending'
-                      ? pendingPageSize
-                      : historyPageSize
-                }
-                onChange={
-                  tab === 'products'
-                    ? setPageSize
-                    : tab === 'pending'
-                      ? setPendingPageSize
-                      : setHistoryPageSize
-                }
-                setPage={
-                  tab === 'products' ? setPage : tab === 'pending' ? setPendingPage : setHistoryPage
-                }
-                options={PAGE_SIZE_OPTIONS}
-                label={PAGE_SIZE_LABEL}
-              />
+        <Tabs value={tab} onValueChange={setTab} className='flex flex-col gap-4'>
+          <div className='flex flex-wrap items-end justify-between gap-3'>
+            <TabsList
+              aria-label='Listados de transferencias'
+              className='grid h-auto w-full shrink-0 grid-cols-3 rounded-full sm:w-fit'
+            >
+              <TabsTrigger value='products' className='rounded-full'>
+                Productos
+              </TabsTrigger>
+              <TabsTrigger value='pending' className='rounded-full whitespace-normal text-center'>
+                Pendientes{pendientes.length > 0 ? ` (${pendientes.length})` : ''}
+              </TabsTrigger>
+              <TabsTrigger value='history' className='rounded-full whitespace-normal text-center'>
+                Historial
+              </TabsTrigger>
+            </TabsList>
+            <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-3'>
+              {tab === 'products' && (
+                <div className='flex min-w-0 flex-1 flex-col gap-1 sm:max-w-80'>
+                  <Label
+                    htmlFor='transfer-search'
+                    className='text-xs font-medium text-gray-500 uppercase tracking-wide dark:text-gray-400'
+                  >
+                    {selectedCategory ? 'Buscar producto' : 'Buscar categoría'}
+                  </Label>
+                  <Input
+                    id='transfer-search'
+                    aria-label={
+                      selectedCategory
+                        ? 'Buscar producto, presentación o código'
+                        : 'Buscar categoría'
+                    }
+                    placeholder={
+                      selectedCategory
+                        ? 'Producto, presentación o código'
+                        : 'Nombre de la categoría'
+                    }
+                    value={search}
+                    onChange={event => {
+                      setSearch(event.target.value);
+                      setPage(1);
+                    }}
+                    className='h-10 min-w-0 w-full rounded-full'
+                  />
+                </div>
+              )}
+              {(tab !== 'products' || selectedCategory !== null) && (
+                <div className='w-full sm:w-auto'>
+                  <SelectElements
+                    value={
+                      tab === 'products'
+                        ? pageSize
+                        : tab === 'pending'
+                          ? pendingPageSize
+                          : historyPageSize
+                    }
+                    onChange={
+                      tab === 'products'
+                        ? setPageSize
+                        : tab === 'pending'
+                          ? setPendingPageSize
+                          : setHistoryPageSize
+                    }
+                    setPage={
+                      tab === 'products'
+                        ? setPage
+                        : tab === 'pending'
+                          ? setPendingPage
+                          : setHistoryPage
+                    }
+                    options={PAGE_SIZE_OPTIONS}
+                    label={PAGE_SIZE_LABEL}
+                  />
+                </div>
+              )}
             </div>
           </div>
-        </div>
-        <TabsContent value='products'>
-          <section
-            aria-label='Productos disponibles para transferir'
-            className='flex flex-col gap-4'
-          >
-            {loading ? (
-              <p role='status' className='py-10 text-center text-muted-foreground'>
-                Cargando existencias…
-              </p>
-            ) : (
-              <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'>
-                {filtered.length === 0 ? (
-                  <p className='col-span-full rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
-                    {search
-                      ? 'No hay coincidencias para esta búsqueda.'
-                      : 'Registra productos y presentaciones en Bodega para comenzar.'}
-                  </p>
+          <TabsContent value='products'>
+            <section
+              aria-label='Productos disponibles para transferir'
+              className='flex flex-col gap-4'
+            >
+              {selectedCategory === null ? (
+                categoryCards.length === 0 ? (
+                  <EmptyState
+                    icon={search ? SearchX : PackageOpen}
+                    title={
+                      search
+                        ? 'No hay categorías para esta búsqueda.'
+                        : 'Sin productos transferibles'
+                    }
+                    description={
+                      search
+                        ? undefined
+                        : 'Registra productos y presentaciones en Bodega para comenzar.'
+                    }
+                  />
                 ) : (
-                  visibleItems.map((item, index) => (
-                    <StaggeredEntrance key={item.id} index={index} className='h-full'>
-                      <Card className='flex h-full min-w-0 flex-col rounded-2xl'>
-                        <CardHeader className='flex-row items-start justify-between gap-2 space-y-0 p-3 pb-2'>
-                          <CardTitle
-                            className='min-w-0 flex-1 line-clamp-2 text-sm leading-5'
-                            title={item.producto_nombre}
-                          >
-                            {item.producto_nombre}
-                          </CardTitle>
-                          <Badge
-                            variant='secondary'
-                            className='max-w-[45%] shrink-0 whitespace-normal break-words'
-                          >
-                            {item.nombre}
-                          </Badge>
-                        </CardHeader>
-                        <CardContent className='flex flex-1 flex-col gap-2 px-3 pb-3'>
-                          <CardDescription className='text-xs break-words'>
-                            Categoría: {item.categoria_nombre?.trim() || 'Sin categoría'}
-                          </CardDescription>
-                          <TransferPhoto item={item} />
-                          <CardDescription
-                            className='truncate text-center text-xs'
-                            title={item.codigo_barras || item.producto_codigo}
-                          >
-                            Código: {item.codigo_barras || item.producto_codigo || 'Sin código'}
-                          </CardDescription>
-                          <dl className='mt-auto grid grid-cols-2 gap-2 rounded-lg bg-muted/50 p-2 text-center'>
-                            <div>
-                              <dt className='text-xs text-muted-foreground'>Bodega</dt>
-                              <dd className='text-base font-semibold tabular-nums'>{item.stock}</dd>
-                            </div>
-                            <div>
-                              <dt className='text-xs text-muted-foreground'>Bar</dt>
-                              <dd className='text-base font-semibold tabular-nums'>
-                                {item.stock_bar ?? 0}
-                              </dd>
-                            </div>
-                          </dl>
-                        </CardContent>
-                        <CardFooter className='px-3 pb-3'>
-                          {/* Mismo par que exige el POST (products.create → write en
-                              withRoute), leído de lib/constants/transferPermissions a
-                              través de useTransferPermissions: nada de comparar el rol. */}
-                          {puedeTransferir ? (
+                  <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4'>
+                    {categoryCards.map((category, index) => (
+                      <StaggeredEntrance key={category.name} index={index} className='h-full'>
+                        <TransferCategoryCard
+                          name={category.name}
+                          presentationCount={category.presentationCount}
+                          onClick={() => {
+                            setSelectedCategory(category.name);
+                            setSearch('');
+                            setPage(1);
+                          }}
+                        />
+                      </StaggeredEntrance>
+                    ))}
+                  </div>
+                )
+              ) : (
+                <>
+                  {categoryItems.length === 0 ? (
+                    <EmptyState
+                      icon={search ? SearchX : PackageOpen}
+                      title={
+                        search
+                          ? 'No hay coincidencias para esta búsqueda.'
+                          : 'No hay productos transferibles en esta categoría.'
+                      }
+                    />
+                  ) : (
+                    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4'>
+                      {visibleItems.map((item, index) => (
+                        <StaggeredEntrance key={item.id} index={index} className='h-full'>
+                          <Card className='flex h-full min-w-0 flex-col rounded-2xl'>
+                            <CardHeader className='flex-row items-start justify-between gap-2 space-y-0 p-3 pb-2'>
+                              <CardTitle
+                                className='min-w-0 flex-1 line-clamp-2 text-sm leading-5'
+                                title={item.producto_nombre}
+                              >
+                                {item.producto_nombre}
+                              </CardTitle>
+                              <Badge
+                                variant='secondary'
+                                className='max-w-[45%] shrink-0 whitespace-normal break-words'
+                              >
+                                {item.nombre}
+                              </Badge>
+                            </CardHeader>
+                            <CardContent className='flex flex-1 flex-col gap-2 px-3 pb-3'>
+                              <TransferPhoto item={item} />
+                              <CardDescription
+                                className='truncate text-center text-xs'
+                                title={item.codigo_barras || item.producto_codigo}
+                              >
+                                Código: {item.codigo_barras || item.producto_codigo || 'Sin código'}
+                              </CardDescription>
+                              <dl className='mt-auto grid grid-cols-2 gap-2 rounded-lg bg-muted/50 p-2 text-center'>
+                                <div>
+                                  <dt className='text-xs text-muted-foreground'>Bodega</dt>
+                                  <dd className='text-base font-semibold tabular-nums'>
+                                    {item.stock}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className='text-xs text-muted-foreground'>Bar</dt>
+                                  <dd className='text-base font-semibold tabular-nums'>
+                                    {item.stock_bar ?? 0}
+                                  </dd>
+                                </div>
+                              </dl>
+                            </CardContent>
+                            <CardFooter className='px-3 pb-3'>
+                              {/* Mismo par que exige el POST (products.create → write en
+                                withRoute), leído de lib/constants/transferPermissions a
+                                través de useTransferPermissions: nada de comparar el rol. */}
+                              {puedeTransferir ? (
+                                <Button
+                                  variant='outline'
+                                  className='w-full gap-1 rounded-full px-2 text-xs'
+                                  disabled={item.stock < 1 || !!error}
+                                  onClick={() => setSelected(item)}
+                                  aria-label={[
+                                    'Transferir',
+                                    item.producto_nombre,
+                                    item.nombre
+                                  ].join(' ')}
+                                >
+                                  <ArrowRightLeft aria-hidden='true' />
+                                  {item.stock > 0 ? 'Transferir' : 'Sin stock'}
+                                </Button>
+                              ) : (
+                                <span className='text-sm text-muted-foreground'>Solo consulta</span>
+                              )}
+                            </CardFooter>
+                          </Card>
+                        </StaggeredEntrance>
+                      ))}
+                    </div>
+                  )}
+                  {categoryItems.length > 0 && (
+                    <TransferPagination
+                      page={currentPage}
+                      totalPages={totalPages}
+                      totalItems={categoryItems.length}
+                      pageSize={pageSize}
+                      onPageChange={setPage}
+                      label='Paginación de productos'
+                    />
+                  )}
+                </>
+              )}
+            </section>
+          </TabsContent>
+          <TabsContent value='pending'>
+            <section aria-label='Solicitudes pendientes' className='flex flex-col gap-4'>
+              {pendientes.length === 0 ? (
+                <EmptyState icon={Clock} title='No hay solicitudes pendientes.' />
+              ) : (
+                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+                  {visiblePendientes.map(record => (
+                    <Card key={record.id} className='flex h-full min-w-0 flex-col rounded-2xl'>
+                      <CardHeader className='gap-2'>
+                        <Badge variant='secondary' className='w-fit'>
+                          <Clock className='mr-1 size-3' aria-hidden='true' />
+                          Pendiente
+                        </Badge>
+                        <CardTitle className='break-words'>{record.producto_nombre}</CardTitle>
+                        <CardDescription className='break-words'>
+                          {record.presentacion_nombre} · {record.cantidad} un.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className='flex-1 text-sm text-muted-foreground'>
+                        <p>Solicitada por: {record.usuario_nombre}</p>
+                        <p>{record.fecha_crea.replace('T', ' ').slice(0, 16)}</p>
+                      </CardContent>
+                      <CardFooter className='flex gap-2'>
+                        {puedeAprobar ? (
+                          <>
+                            <Button
+                              className='flex-1'
+                              disabled={resolvingId === record.id}
+                              onClick={() => void resolver(record.id, 'aprobar')}
+                            >
+                              <Check aria-hidden='true' />
+                              Aprobar
+                            </Button>
                             <Button
                               variant='outline'
-                              className='w-full gap-1 rounded-full px-2 text-xs'
-                              disabled={item.stock < 1 || !!error}
-                              onClick={() => setSelected(item)}
-                              aria-label={['Transferir', item.producto_nombre, item.nombre].join(
-                                ' '
-                              )}
+                              className='flex-1'
+                              disabled={resolvingId === record.id}
+                              onClick={() => void resolver(record.id, 'rechazar')}
                             >
-                              <ArrowRightLeft aria-hidden='true' />
-                              {item.stock > 0 ? 'Transferir' : 'Sin stock'}
+                              <X aria-hidden='true' />
+                              Rechazar
                             </Button>
-                          ) : (
-                            <span className='text-sm text-muted-foreground'>Solo consulta</span>
-                          )}
-                        </CardFooter>
-                      </Card>
-                    </StaggeredEntrance>
-                  ))
-                )}
-              </div>
-            )}
-            {!loading && filtered.length > 0 && (
-              <TransferPagination
-                page={currentPage}
-                totalPages={totalPages}
-                totalItems={filtered.length}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                label='Paginación de productos'
-              />
-            )}
-          </section>
-        </TabsContent>
-        <TabsContent value='pending'>
-          <section aria-label='Solicitudes pendientes' className='flex flex-col gap-4'>
-            {pendientes.length === 0 ? (
-              <p className='rounded-2xl border border-dashed py-12 text-center text-muted-foreground'>
-                {loading ? 'Cargando…' : 'No hay solicitudes pendientes.'}
-              </p>
-            ) : (
-              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
-                {visiblePendientes.map(record => (
-                  <Card key={record.id} className='flex h-full min-w-0 flex-col rounded-2xl'>
-                    <CardHeader className='gap-2'>
-                      <Badge variant='secondary' className='w-fit'>
-                        <Clock className='mr-1 size-3' aria-hidden='true' />
-                        Pendiente
-                      </Badge>
-                      <CardTitle className='break-words'>{record.producto_nombre}</CardTitle>
-                      <CardDescription className='break-words'>
-                        {record.presentacion_nombre} · {record.cantidad} un.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className='flex-1 text-sm text-muted-foreground'>
-                      <p>Solicitada por: {record.usuario_nombre}</p>
-                      <p>{record.fecha_crea.replace('T', ' ').slice(0, 16)}</p>
-                    </CardContent>
-                    <CardFooter className='flex gap-2'>
-                      {puedeAprobar ? (
-                        <>
-                          <Button
-                            className='flex-1'
-                            disabled={resolvingId === record.id}
-                            onClick={() => void resolver(record.id, 'aprobar')}
-                          >
-                            <Check aria-hidden='true' />
-                            Aprobar
-                          </Button>
-                          <Button
-                            variant='outline'
-                            className='flex-1'
-                            disabled={resolvingId === record.id}
-                            onClick={() => void resolver(record.id, 'rechazar')}
-                          >
-                            <X aria-hidden='true' />
-                            Rechazar
-                          </Button>
-                        </>
-                      ) : (
-                        <span className='text-sm text-muted-foreground'>
-                          No tienes permiso para aprobar.
-                        </span>
-                      )}
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            )}
-            {pendientes.length > 0 && (
-              <TransferPagination
-                page={pendingCurrentPage}
-                totalPages={pendingTotalPages}
-                totalItems={pendientes.length}
-                pageSize={pendingPageSize}
-                onPageChange={setPendingPage}
-                label='Paginación de pendientes'
-              />
-            )}
-          </section>
-        </TabsContent>
-        <TabsContent value='history'>
-          <section aria-label='Historial de transferencias' className='flex flex-col gap-4'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Presentación</TableHead>
-                  <TableHead>Tipos de venta</TableHead>
-                  <TableHead className='text-right'>Cantidad</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Solicitada por</TableHead>
-                  <TableHead>Recepción / resolución</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {historial.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className='text-center text-muted-foreground'>
-                      <EmptyState
-                        variant='text'
-                        title={
-                          loading
-                            ? 'Cargando historial…'
-                            : 'Todavía no hay transferencias registradas.'
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  visibleHistory.map(record => (
-                    <TableRow key={record.id}>
-                      <TableCell className='whitespace-nowrap'>
-                        {record.fecha_crea.replace('T', ' ').slice(0, 16)}
-                      </TableCell>
-                      <TableCell>{record.producto_nombre}</TableCell>
-                      <TableCell>{record.presentacion_nombre}</TableCell>
-                      <TableCell>
-                        {isTierPricedItem({
-                          categoria_nombre: record.categoria_nombre,
-                          opciones_venta: record.opciones_venta,
-                          precio_venta: record.precio_venta
-                        }) ? (
-                          <BarAnfitrionas
-                            productoId={record.producto_id}
-                            categoriaNombre={record.categoria_nombre}
-                            precio={record.precio_venta}
-                            compact
-                          />
+                          </>
                         ) : (
-                          <SalePrices
-                            options={record.opciones_venta}
-                            price={record.precio_venta}
-                            commission={record.comision}
-                            mlShot={record.ml_shot}
-                            mlShotAnfitriona={record.ml_shot_anfitriona}
-                          />
+                          <span className='text-sm text-muted-foreground'>
+                            No tienes permiso para aprobar.
+                          </span>
                         )}
-                      </TableCell>
-                      <TableCell className='text-right tabular-nums'>{record.cantidad}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={record.estado === 'aceptada' ? 'default' : 'secondary'}
-                          className='whitespace-nowrap'
-                        >
-                          {record.estado === 'aceptada'
-                            ? 'Aprobada'
-                            : record.estado === 'rechazada'
-                              ? 'Rechazada'
-                              : record.estado}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{record.usuario_nombre}</TableCell>
-                      <TableCell>
-                        {record.aceptado_nombre || 'Sin recepción registrada'}
-                        {record.fecha_aceptacion && (
-                          <p className='text-xs text-muted-foreground'>
-                            {record.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
-                          </p>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            {!loading && historial.length > 0 && (
-              <TransferPagination
-                page={historyCurrentPage}
-                totalPages={historyTotalPages}
-                totalItems={historial.length}
-                pageSize={historyPageSize}
-                onPageChange={setHistoryPage}
-                label='Paginación del historial'
-              />
-            )}
-          </section>
-        </TabsContent>
-      </Tabs>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              {pendientes.length > 0 && (
+                <TransferPagination
+                  page={pendingCurrentPage}
+                  totalPages={pendingTotalPages}
+                  totalItems={pendientes.length}
+                  pageSize={pendingPageSize}
+                  onPageChange={setPendingPage}
+                  label='Paginación de pendientes'
+                />
+              )}
+            </section>
+          </TabsContent>
+          <TabsContent value='history'>
+            <section aria-label='Historial de transferencias' className='flex flex-col gap-4'>
+              {historial.length === 0 ? (
+                <EmptyState variant='text' title='Todavía no hay transferencias registradas.' />
+              ) : (
+                <TooltipProvider>
+                  <div className='grid grid-cols-1 gap-3 sm:hidden'>
+                    {visibleHistory.map(record => (
+                      <Card key={record.id} className='flex h-full min-w-0 flex-col rounded-2xl'>
+                        <CardHeader className='flex-row items-start justify-between gap-2 space-y-0'>
+                          <Badge
+                            variant={record.estado === 'aceptada' ? 'default' : 'secondary'}
+                            className='w-fit whitespace-nowrap'
+                          >
+                            {estadoLabel(record.estado)}
+                          </Badge>
+                          <TransferDetailButton record={record} onOpen={setDetail} />
+                        </CardHeader>
+                        <CardContent className='flex-1 space-y-3 pt-0'>
+                          <div className='space-y-1'>
+                            <p className='leading-tight font-semibold break-words'>
+                              {record.producto_nombre}
+                            </p>
+                            <p className='text-sm break-words text-muted-foreground'>
+                              {record.presentacion_nombre} · {record.cantidad} un.
+                            </p>
+                          </div>
+                          <dl className='space-y-1.5 text-sm'>
+                            <div className='flex items-baseline justify-between gap-3'>
+                              <dt className='text-muted-foreground'>Solicitada por</dt>
+                              <dd className='text-right font-medium'>{record.usuario_nombre}</dd>
+                            </div>
+                            <div className='flex items-baseline justify-between gap-3'>
+                              <dt className='text-muted-foreground'>Fecha</dt>
+                              <dd className='text-right tabular-nums'>
+                                {record.fecha_crea.replace('T', ' ').slice(0, 16)}
+                              </dd>
+                            </div>
+                            <div className='flex items-baseline justify-between gap-3'>
+                              <dt className='text-muted-foreground'>Recepción</dt>
+                              <dd className='text-right'>
+                                {record.aceptado_nombre || 'Sin recepción registrada'}
+                              </dd>
+                            </div>
+                            {record.fecha_aceptacion && (
+                              <div className='flex items-baseline justify-between gap-3'>
+                                <dt className='text-muted-foreground'>Recibida</dt>
+                                <dd className='text-right tabular-nums'>
+                                  {record.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
+                                </dd>
+                              </div>
+                            )}
+                          </dl>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  <div className='hidden sm:block'>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Fecha</TableHead>
+                          <TableHead>Producto</TableHead>
+                          <TableHead>Presentación</TableHead>
+                          <TableHead className='text-right'>Cantidad</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead>Solicitada por</TableHead>
+                          <TableHead>Recepción / resolución</TableHead>
+                          <TableHead className='text-center'>Detalle</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {visibleHistory.map(record => (
+                          <TableRow key={record.id}>
+                            <TableCell className='whitespace-nowrap'>
+                              {record.fecha_crea.replace('T', ' ').slice(0, 16)}
+                            </TableCell>
+                            <TableCell>{record.producto_nombre}</TableCell>
+                            <TableCell>{record.presentacion_nombre}</TableCell>
+                            <TableCell className='text-right tabular-nums'>
+                              {record.cantidad}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={record.estado === 'aceptada' ? 'default' : 'secondary'}
+                                className='whitespace-nowrap'
+                              >
+                                {estadoLabel(record.estado)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{record.usuario_nombre}</TableCell>
+                            <TableCell>
+                              {record.aceptado_nombre || 'Sin recepción registrada'}
+                              {record.fecha_aceptacion && (
+                                <p className='text-xs text-muted-foreground'>
+                                  {record.fecha_aceptacion.replace('T', ' ').slice(0, 16)}
+                                </p>
+                              )}
+                            </TableCell>
+                            <TableCell className='text-center'>
+                              <TransferDetailButton record={record} onOpen={setDetail} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TooltipProvider>
+              )}
+              {!loading && historial.length > 0 && (
+                <TransferPagination
+                  page={historyCurrentPage}
+                  totalPages={historyTotalPages}
+                  totalItems={historial.length}
+                  pageSize={historyPageSize}
+                  onPageChange={setHistoryPage}
+                  label='Paginación del historial'
+                />
+              )}
+            </section>
+          </TabsContent>
+        </Tabs>
 
-      <TransferModal
-        open={selected !== null}
-        item={selected}
-        endpoint='/api/transfers'
-        onOpenChange={open => {
-          if (!open) setSelected(null);
-        }}
-        onDone={() => void refresh()}
-      />
-    </main>
+        <TransferModal
+          open={selected !== null}
+          item={selected}
+          endpoint='/api/transfers'
+          onOpenChange={open => {
+            if (!open) setSelected(null);
+          }}
+          onDone={() => void refresh()}
+        />
+
+        <TransferHistoryDetailModal
+          record={detail}
+          onOpenChange={open => {
+            if (!open) setDetail(null);
+          }}
+        />
+      </main>
+    </BoneyardSkeleton>
   );
 }

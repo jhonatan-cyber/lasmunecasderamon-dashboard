@@ -100,6 +100,7 @@ export default function ProductSearch({
                 <Button
                   variant='outline'
                   size='sm'
+                  aria-label='Limpiar búsqueda'
                   className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
                   onClick={handleClear}
                 >

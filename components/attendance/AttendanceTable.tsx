@@ -176,6 +176,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                       variant='ghost'
                       size='sm'
                       onClick={() => handleViewDetail(item)}
+                      aria-label={`Ver detalle de asistencia de ${item.nombre_completo}`}
                       className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200'
                     >
                       <Eye className='w-4 h-4' />
@@ -228,6 +229,7 @@ export default function AttendanceTable({ data }: AttendanceTableProps) {
                 variant='ghost'
                 size='sm'
                 onClick={() => handleViewDetail(item)}
+                aria-label={`Ver detalle de asistencia de ${item.nombre_completo}`}
                 className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30'
               >
                 <Eye className='w-4 h-4' />

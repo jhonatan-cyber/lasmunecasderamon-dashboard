@@ -87,7 +87,7 @@ function ConfirmarAnulacionCuentaContent() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
         <div className='text-center'>
           <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100' />
           <p className='text-gray-900 dark:text-gray-100'>Cargando solicitud...</p>
@@ -138,7 +138,7 @@ function ConfirmarAnulacionCuentaContent() {
               </h4>
               <div className='space-y-2 text-sm'>
                 <div className='flex justify-between'>
-                  <span className='font-medium text-gray-700 dark:text-gray-300'>Codigo:</span>
+                  <span className='font-medium text-gray-700 dark:text-gray-300'>Código:</span>
                   <Badge variant='outline'>{solicitud.codigo}</Badge>
                 </div>
                 <div className='flex justify-between'>
@@ -216,7 +216,7 @@ export default function ConfirmarAnulacionCuentaPage() {
   return (
     <Suspense
       fallback={
-        <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+        <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
           <Loader2 className='h-8 w-8 animate-spin text-gray-900 dark:text-gray-100' />
         </div>
       }

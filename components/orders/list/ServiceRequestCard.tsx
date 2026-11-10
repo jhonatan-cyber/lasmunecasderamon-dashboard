@@ -124,6 +124,7 @@ export const ServiceRequestCard = ({
               variant='ghost'
               className='h-9 w-9 rounded-full p-0 text-gray-300 transition-all duration-300 hover:bg-red-50 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-red-950/40 dark:hover:text-red-300'
               onClick={e => onDeleteClick(e, servicio)}
+              aria-label='Eliminar la solicitud de servicio'
             >
               <Trash2 className='w-4 h-4' />
             </Button>

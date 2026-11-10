@@ -11,6 +11,7 @@ import {
   GlassWater,
   Ticket,
   UserCog,
+  CupSoda,
   AlertTriangle
 } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
@@ -33,12 +34,9 @@ export function SettingsServiceLevelsCard() {
   const configSimple = useConfigValue('comisiones', 'umbral_simple_hasta', 10000);
   const configHostess = useConfigValue('comisiones', 'umbral_anfitriona_desde', 20000);
   const configHabitacion = useConfigValue('comisiones', 'umbral_habitacion_desde', 30000);
-  const configTragoCortesia = useConfigValue(
-    'comisiones',
-    'monto_base_trago_cortesia_cliente',
-    10000
-  );
+  const configTragoCover = useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000);
   const configCostoEntrada = useConfigValue('comisiones', 'costo_entrada', 10000);
+  const configTopeAcompanamiento = useConfigValue('comisiones', 'tope_precio_acompanamiento', 0);
   // Regla "colaciones por rol y turno de caja": map JSON `rol_id → tope` guardado
   // como texto; el rol que no está puesto queda con la regla vigente (1 por
   // trabajador por turno) y 0 significa que el rol no recibe colación.
@@ -48,8 +46,9 @@ export function SettingsServiceLevelsCard() {
   const [simpleValue, setSimpleValue] = useState('');
   const [hostessValue, setHostessValue] = useState('');
   const [habitacionValue, setHabitacionValue] = useState('');
-  const [tragoCortesiaValue, setTragoCortesiaValue] = useState('10000');
+  const [tragoCoverValue, setTragoCoverValue] = useState('10000');
   const [costoEntradaValue, setCostoEntradaValue] = useState('10000');
+  const [topeAcompanamientoValue, setTopeAcompanamientoValue] = useState('0');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -65,12 +64,16 @@ export function SettingsServiceLevelsCard() {
   }, [configHabitacion]);
 
   useEffect(() => {
-    setTragoCortesiaValue(String(configTragoCortesia));
-  }, [configTragoCortesia]);
+    setTragoCoverValue(String(configTragoCover));
+  }, [configTragoCover]);
 
   useEffect(() => {
     setCostoEntradaValue(String(configCostoEntrada));
   }, [configCostoEntrada]);
+
+  useEffect(() => {
+    setTopeAcompanamientoValue(String(configTopeAcompanamiento));
+  }, [configTopeAcompanamiento]);
 
   // Roles activos de /api/roles; la sección de colaciones se dibuja para cada uno.
   useEffect(() => {
@@ -136,8 +139,9 @@ export function SettingsServiceLevelsCard() {
     const simple = Number(simpleValue.trim());
     const hostess = Number(hostessValue.trim());
     const habitacion = Number(habitacionValue.trim());
-    const tragoCortesia = Number(tragoCortesiaValue.trim());
+    const tragoCover = Number(tragoCoverValue.trim());
     const costoEntrada = Number(costoEntradaValue.trim());
+    const topeAcompanamiento = Number(topeAcompanamientoValue.trim());
     if (!Number.isInteger(simple) || simple < 0) {
       toast.error('La venta simple debe ser un entero mayor o igual a 0');
       return;
@@ -150,12 +154,16 @@ export function SettingsServiceLevelsCard() {
       toast.error('El umbral de habitación debe ser un entero mayor o igual a 0');
       return;
     }
-    if (!Number.isInteger(tragoCortesia) || tragoCortesia < 0) {
-      toast.error('El monto base del trago de cortesía debe ser un entero mayor o igual a 0');
+    if (!Number.isInteger(tragoCover) || tragoCover < 0) {
+      toast.error('El monto base del cover debe ser un entero mayor o igual a 0');
       return;
     }
     if (!Number.isInteger(costoEntrada) || costoEntrada < 0) {
       toast.error('El costo de entrada debe ser un entero mayor o igual a 0');
+      return;
+    }
+    if (!Number.isInteger(topeAcompanamiento) || topeAcompanamiento < 0) {
+      toast.error('El tope de acompañamiento debe ser un entero mayor o igual a 0');
       return;
     }
     // Tope de colaciones por rol: sólo los roles con número; '' se descarta (sin tope).
@@ -188,8 +196,9 @@ export function SettingsServiceLevelsCard() {
             { clave: 'umbral_simple_hasta', valor: String(simple) },
             { clave: 'umbral_anfitriona_desde', valor: String(hostess) },
             { clave: 'umbral_habitacion_desde', valor: String(habitacion) },
-            { clave: 'monto_base_trago_cortesia_cliente', valor: String(tragoCortesia) },
+            { clave: 'monto_base_trago_cover_cliente', valor: String(tragoCover) },
             { clave: 'costo_entrada', valor: String(costoEntrada) },
+            { clave: 'tope_precio_acompanamiento', valor: String(topeAcompanamiento) },
             { clave: 'colaciones_por_rol_y_turno', valor: JSON.stringify(topesValores) }
           ]
         })
@@ -211,12 +220,10 @@ export function SettingsServiceLevelsCard() {
   // son el mismo dinero: el cliente paga la entrada en la puerta y esa plata se
   // acredita a la bebida que elige en la barra. Si no coinciden, avisamos sin
   // bloquear el guardado (es una decisión de negocio, no un error de datos).
-  const topeCortesia = Number(tragoCortesiaValue.trim());
+  const topeCover = Number(tragoCoverValue.trim());
   const costoEntrada = Number(costoEntradaValue.trim());
   const avisoTopeDistinto =
-    Number.isInteger(topeCortesia) &&
-    Number.isInteger(costoEntrada) &&
-    topeCortesia !== costoEntrada;
+    Number.isInteger(topeCover) && Number.isInteger(costoEntrada) && topeCover !== costoEntrada;
 
   const reglas = [
     {
@@ -247,12 +254,12 @@ export function SettingsServiceLevelsCard() {
       tone: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
     },
     {
-      id: 'service-trago-cortesia-cliente',
+      id: 'service-trago-cover-cliente',
       title: 'Covers de entradas',
       description: 'El cliente puede elegir una bebida de este precio o menos.',
       icon: GlassWater,
-      value: tragoCortesiaValue,
-      onChange: setTragoCortesiaValue,
+      value: tragoCoverValue,
+      onChange: setTragoCoverValue,
       tone: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
     },
     {
@@ -263,6 +270,16 @@ export function SettingsServiceLevelsCard() {
       value: costoEntradaValue,
       onChange: setCostoEntradaValue,
       tone: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+    },
+    {
+      id: 'service-tope-acompanamiento',
+      title: 'Tope de acompañamiento',
+      description:
+        'Precio máximo por unidad de acompañamiento; el exceso se suma al subtotal. 0 = sin tope.',
+      icon: CupSoda,
+      value: topeAcompanamientoValue,
+      onChange: setTopeAcompanamientoValue,
+      tone: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
     }
   ];
 
@@ -387,8 +404,8 @@ export function SettingsServiceLevelsCard() {
         >
           <AlertTriangle className='h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400' />
           <p className='text-xs text-amber-800 dark:text-amber-200'>
-            Los covers de entradas ($ {topeCortesia.toLocaleString('es-CL')}) no coinciden con el
-            costo de entrada ($ {costoEntrada.toLocaleString('es-CL')}). En Entradas el precio de la
+            Los covers de entradas ($ {topeCover.toLocaleString('es-CL')}) no coinciden con el costo
+            de entrada ($ {costoEntrada.toLocaleString('es-CL')}). En Entradas el precio de la
             entrada se acredita a la bebida que el cliente elige en la barra: con un tope mayor la
             diferencia la absorbe el negocio, y con un tope menor ninguna bebida puede costar menos
             que la entrada y nunca se cobra adicional. Podés guardarlo igual.

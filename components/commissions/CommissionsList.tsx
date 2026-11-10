@@ -252,6 +252,7 @@ export function CommissionsList({
                       <TableCell className='text-center'>
                         <Button
                           onClick={() => onViewDetails(commission)}
+                          aria-label='Ver detalle de la comisión'
                           size='sm'
                           variant='ghost'
                           className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200'

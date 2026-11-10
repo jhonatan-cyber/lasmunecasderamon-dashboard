@@ -204,8 +204,9 @@ export function useOrderDetailModal({
         )
           throw new Error('Tiempo invalido');
 
-        const sub_total = detail.reduce(
-          (acc: number, item: any) => acc + item.precio * item.cantidad,
+        const mappedDetalles = detail.map(orderLineToSaleDetail);
+        const sub_total = mappedDetalles.reduce(
+          (acc: number, detalle: any) => acc + Number(detalle.sub_total || 0),
           0
         );
 
@@ -218,7 +219,7 @@ export function useOrderDetailModal({
           propina: propina,
           sub_total: sub_total,
           total: sub_total + propina,
-          detalles: detail.map(orderLineToSaleDetail),
+          detalles: mappedDetalles,
           usuarios: usuariosIds,
           habitacion_id: shouldShowRoomSelector && habitacionId ? habitacionId : undefined,
           tiempo: shouldShowRoomSelector && habitacionId ? tiempoHabitacion : 0
@@ -242,13 +243,11 @@ export function useOrderDetailModal({
               subtotal: sub_total,
               tip: propina,
               total: sub_total + propina,
-              lines: detail.map(item => ({
+              lines: detail.map((item, index) => ({
                 name: item.producto_nombre || item.nombre || item.name || 'Producto',
                 quantity: Number(item.cantidad ?? 0),
                 unitPrice: Number(item.precio ?? 0),
-                subtotal: Number(
-                  item.sub_total ?? Number(item.precio ?? 0) * Number(item.cantidad ?? 0)
-                ),
+                subtotal: Number(mappedDetalles[index]?.sub_total ?? 0),
                 detail:
                   item.presentacion_nombre || (item.tipo_venta === 'shot' ? 'Corto' : 'Botella')
               }))
@@ -348,8 +347,9 @@ export function useOrderDetailModal({
         const total_comision =
           detail.reduce((acc: number, item: any) => acc + (item.comision || 0), 0) +
           recargoAnfitrionas;
-        const sub_total = detail.reduce(
-          (acc: number, item: any) => acc + item.precio * item.cantidad,
+        const mappedDetalles = detail.map(orderLineToSaleDetail);
+        const sub_total = mappedDetalles.reduce(
+          (acc: number, detalle: any) => acc + Number(detalle.sub_total || 0),
           0
         );
 
@@ -362,7 +362,7 @@ export function useOrderDetailModal({
           sub_total,
           total: sub_total + recargoAnfitrionas,
           habitacion_id: shouldShowRoomSelector && habitacionId ? String(habitacionId) : null,
-          detalles: detail.map(orderLineToSaleDetail),
+          detalles: mappedDetalles,
           usuarios: anfitrionasIds
         };
 

@@ -154,6 +154,7 @@ export const DevolucionVentasTable = ({ ventas, loading, onVerDetalles }: Devolu
                           variant='outline'
                           size='sm'
                           onClick={() => onVerDetalles(venta)}
+                          aria-label='Ver detalles de la venta'
                           className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
                         >
                           <Eye className='w-4 h-4' />

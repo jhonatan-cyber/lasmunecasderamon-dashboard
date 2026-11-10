@@ -56,8 +56,9 @@ export const TransferItemSummary = memo(function TransferItemSummary({
   const disponible = item.stock ?? 0;
   // Cigarrillos: sin anfitrionas ni bebidas; la etiqueta es «cajetilla».
   const esCig = esCigarrillos(item.categoria_nombre);
-  // Analcohólicas: modo simple, tampoco muestran comisión ni bebida de cortesía.
+  // Analcohólicas: modo simple, tampoco muestran comisión ni bebida de cover.
   const esAnalcoholica = esBebidaAnalcoholica(item.categoria_nombre);
+  const esVentaSimple = esAnalcoholica || esCig;
   const amount = (value: string) => Number(value.replace(/\./g, '')) || 0;
   const options: SaleOption[] = configuration
     ? configuration.usarConfigGuardada
@@ -68,15 +69,16 @@ export const TransferItemSummary = memo(function TransferItemSummary({
         )
       : configuration.tipos.map(tipo => ({
           tipo,
-          vender_con_anfitriona: tipo === 'botella' ? configuration.venderConAnfitriona : undefined,
+          vender_con_anfitriona:
+            tipo === 'botella' ? esVentaSimple || configuration.venderConAnfitriona : undefined,
           ml_acompanamiento_anfitriona:
             tipo === 'shot' ? Number(configuration.mlAcompanamientoAnfitriona || 0) : undefined,
           precio:
-            tipo === 'botella' && !configuration.venderConAnfitriona
+            tipo === 'botella' && !esVentaSimple && !configuration.venderConAnfitriona
               ? 0
               : amount(tipo === 'botella' ? configuration.precioVenta : configuration.precioShot),
           comision: amount(
-            tipo === 'botella' && configuration.venderConAnfitriona
+            tipo === 'botella' && (esVentaSimple || configuration.venderConAnfitriona)
               ? configuration.comision
               : tipo === 'shot'
                 ? configuration.comisionShot

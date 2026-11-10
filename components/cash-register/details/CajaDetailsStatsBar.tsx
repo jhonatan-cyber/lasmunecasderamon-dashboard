@@ -26,14 +26,14 @@ export const CajaDetailsStatsBar = memo(function CajaDetailsStatsBar({
   isLoadingSummary: boolean;
 }) {
   return (
-    <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-gray-100 dark:border-gray-800 px-6 py-4 print:hidden'>
-      <div className='flex items-center justify-between gap-4'>
+    <div className='sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-gray-100 dark:border-gray-800 px-4 py-3 sm:px-6 sm:py-4 print:hidden'>
+      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
         <Button
           type='button'
           variant='outline'
           size='sm'
           onClick={onToggle}
-          className='shrink-0 rounded-full gap-2 font-bold'
+          className='w-full shrink-0 justify-between rounded-full gap-2 font-bold sm:w-auto sm:justify-center'
           aria-expanded={statsOpen}
         >
           <BarChart3 className='w-4 h-4 text-slate-500 dark:text-slate-400' />
@@ -44,7 +44,7 @@ export const CajaDetailsStatsBar = memo(function CajaDetailsStatsBar({
         </Button>
 
         {!statsOpen && (
-          <div className='flex items-center gap-3 sm:gap-5 text-sm'>
+          <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:flex sm:items-center sm:gap-5 sm:text-sm'>
             <div className='text-right'>
               <p className='text-[10px] font-bold text-slate-400 uppercase'>Apertura</p>
               <p className='font-black tabular-nums text-slate-700 dark:text-slate-200'>

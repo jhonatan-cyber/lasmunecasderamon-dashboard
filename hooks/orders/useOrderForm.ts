@@ -5,6 +5,7 @@ import { totalUnidadesAcompanamientoBotella } from '@/lib/sales/acompanamientoBo
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
 import { saleInventoryFields, type SaleInventoryFields } from '@/lib/sales/saleInventoryFields';
+import { recargoAcompanamientoDeProducto } from '@/lib/sales/recargoAcompanamiento';
 import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
 import { generateRandomCode } from '@/lib/utils/codeUtils';
 import { useRouter } from 'next/navigation';
@@ -107,6 +108,7 @@ export function useOrderForm({
   }>({});
   const [roomSelections, setRoomSelections] = useState<{ [key: string]: string }>({});
   const configPropina = Number(useConfigValue('facturacion', 'propina_venta', '10'));
+  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0));
   const [propina, setPropina] = useState(configPropina);
   const [propinaHabilitada, setPropinaHabilitada] = useState(false);
   const [error, setError] = useState('');
@@ -230,6 +232,7 @@ export function useOrderForm({
       )
         selectedHostesses = [];
       const commissionTotal = selectedHostesses.length > 0 ? comisionUnitaria * cantidad : 0;
+      const recargo = recargoAcompanamientoDeProducto(producto, topeAcompanamiento);
       if (onAddProducto) {
         onAddProducto({
           ...producto,
@@ -238,7 +241,8 @@ export function useOrderForm({
           comision: commissionTotal,
           comisionUnitaria,
           cantidad,
-          subtotal: precio * cantidad,
+          recargo_acompanamiento: recargo,
+          subtotal: (precio + recargo) * cantidad,
           botella_anfitriona:
             producto.tipo_venta === 'shot' ? undefined : producto.botella_anfitriona !== false,
           generaComision: comisionUnitaria > 0 && selectedHostesses.length > 0 ? 1 : 0,
@@ -267,7 +271,7 @@ export function useOrderForm({
         return n;
       });
     },
-    [cantidades, onAddProducto]
+    [cantidades, onAddProducto, topeAcompanamiento]
   );
 
   const handleSubmitInternal = async () => {

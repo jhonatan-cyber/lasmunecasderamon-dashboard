@@ -1,9 +1,9 @@
 'use client';
 
+import { AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
 import { PaymentMethodSelect } from '@/components/shared/selects';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { ORDER_FIELD_INPUT_CLASS, ORDER_FIELD_LABEL_CLASS } from './orderFieldStyles';
@@ -49,36 +49,53 @@ export function OrderDetailPaymentPanel({
   const prepagoSinSaldo = metodoPago === 'prepago' && !tieneSaldoPrepago;
   return (
     <div className='space-y-4'>
-      <PaymentMethodSelect
-        value={metodoPago}
-        onChange={setMetodoPago}
-        required
-        disabled
-        showPrepago={Boolean(clienteId)}
-        clientes={tieneSaldoPrepago ? [{ id: clienteId, saldo: Number(clienteSaldo) }] : []}
-        selectedClienteId={clienteId}
-      />
+      <div className='space-y-1'>
+        <PaymentMethodSelect
+          value={metodoPago}
+          onChange={setMetodoPago}
+          required
+          disabled
+          showPrepago={Boolean(clienteId)}
+          clientes={tieneSaldoPrepago ? [{ id: clienteId, saldo: Number(clienteSaldo) }] : []}
+          selectedClienteId={clienteId}
+        />
+        <p className='text-xs text-gray-500 dark:text-gray-400'>
+          Método de pago registrado al crear el pedido. No es editable.
+        </p>
+      </div>
       {prepagoParcial && (
-        <div className='rounded-xl border border-dashed p-3 text-sm'>
-          <p className='mb-2 font-black uppercase tracking-wide'>Pago mixto</p>
-          <div className='flex justify-between'>
-            <span className='text-muted-foreground'>Prepago:</span>
-            <span className='font-black text-emerald-600'>
+        <div
+          role='group'
+          aria-labelledby='order-pago-mixto-title'
+          className='rounded-xl border border-dashed p-3 text-sm'
+        >
+          <p id='order-pago-mixto-title' className='mb-2 font-black uppercase tracking-wide'>
+            Pago mixto
+          </p>
+          <div className='flex items-start justify-between gap-3'>
+            <span className='shrink-0 text-muted-foreground'>Prepago:</span>
+            <span className='min-w-0 text-right font-black tabular-nums break-words text-emerald-600 dark:text-emerald-400'>
               -{formatCurrencyCLP(Number(clienteSaldo))}
             </span>
           </div>
-          <div className='flex justify-between'>
-            <span className='text-muted-foreground'>Restante:</span>
-            <span className='font-black'>
+          <div className='flex items-start justify-between gap-3'>
+            <span className='shrink-0 text-muted-foreground'>Restante:</span>
+            <span className='min-w-0 text-right font-black tabular-nums break-words'>
               {formatCurrencyCLP(totalFinal - Number(clienteSaldo))}
             </span>
           </div>
         </div>
       )}
       {prepagoSinSaldo && (
-        <div role='alert' className='text-xs text-red-500'>
-          El cliente del pedido no tiene saldo prepago disponible. No se puede registrar el cobro
-          con este método.
+        <div
+          role='alert'
+          className='flex items-start gap-1.5 text-xs text-red-500 dark:text-red-400'
+        >
+          <AlertTriangle className='mt-0.5 h-3.5 w-3.5 shrink-0' aria-hidden='true' />
+          <span>
+            El cliente del pedido no tiene saldo prepago disponible. No se puede registrar el cobro
+            con este método.
+          </span>
         </div>
       )}
       {habitacionId && (
@@ -101,12 +118,8 @@ export function OrderDetailPaymentPanel({
             <Input
               id='tiempo-habitacion'
               className={ORDER_FIELD_INPUT_CLASS}
-              type='number'
-              min={1}
-              max={1440}
-              step={1}
               value={tiempoHabitacion}
-              onChange={e => setTiempoHabitacion(Number(e.target.value))}
+              readOnly
             />
           </div>
         </>
@@ -124,30 +137,20 @@ export function OrderDetailPaymentPanel({
               readOnly
             />
           </>
-        ) : (
+        ) : agregarPropina ? (
           <>
-            <Label htmlFor='propina-checkbox' className={ORDER_FIELD_LABEL_CLASS}>
+            <Label htmlFor='propina-display' className={ORDER_FIELD_LABEL_CLASS}>
               Propina ({propinaPct}%)
             </Label>
-            <div className='flex items-center gap-3 py-2'>
-              <Checkbox
-                id='propina-checkbox'
-                checked={agregarPropina}
-                onCheckedChange={checked => setAgregarPropina(checked === true)}
-              />
-              <Label
-                htmlFor='propina-checkbox'
-                className='text-sm text-gray-700 cursor-pointer select-none dark:text-zinc-300'
-              >
-                Agregar propina del {propinaPct}%
-                {agregarPropina && (
-                  <span className='ml-2 font-semibold text-blue-600 dark:text-blue-400'>
-                    ({formatCurrencyCLP(propina)})
-                  </span>
-                )}
-              </Label>
-            </div>
+            <Input
+              id='propina-display'
+              className={ORDER_FIELD_INPUT_CLASS}
+              value={formatCurrencyCLP(propina)}
+              readOnly
+            />
           </>
+        ) : (
+          <div className='py-1 text-sm text-muted-foreground'>Sin propina</div>
         )}
       </div>
       {orderTotalCommission > 0 && (

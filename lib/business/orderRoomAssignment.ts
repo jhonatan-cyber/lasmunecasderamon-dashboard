@@ -13,21 +13,21 @@ type OrderDetail = {
 };
 
 export function hasSpecialHostessProducts(detalles: OrderDetail[]) {
-  return detalles.some((d) => {
+  return detalles.some(d => {
     const tieneAnfitrionas = (d.selectedHostesses && d.selectedHostesses.length > 0) || d.hostessId;
     return isExpensiveDrink(d) && tieneAnfitrionas;
   });
 }
 
-export function applyAutoRoomToDetails(detalles: OrderDetail[], roomId: string) {
-  return detalles.map((detalle) => {
+export function applyAutoRoomToDetails<T extends OrderDetail>(detalles: T[], roomId: string): T[] {
+  return detalles.map(detalle => {
     const tieneAnfitrionas =
       detalle.hostessId || (detalle.selectedHostesses && detalle.selectedHostesses.length > 0);
 
     if (isExpensiveDrink(detalle) && tieneAnfitrionas && !detalle.roomId) {
       return {
         ...detalle,
-        roomId,
+        roomId
       };
     }
 

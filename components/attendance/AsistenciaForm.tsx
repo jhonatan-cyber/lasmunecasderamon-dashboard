@@ -117,7 +117,7 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-2 border-b'>
+        <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold'>Registrar Asistencia</DialogTitle>
           <DialogDescription className='sr-only'>
             Formulario para registrar asistencia manual
@@ -128,9 +128,9 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
           <form
             id='asistencia-form'
             onSubmit={form.handleSubmit(handleSubmit)}
-            className='flex flex-col h-full'
+            className='flex min-h-0 flex-1 flex-col'
           >
-            <div className='flex-1 overflow-y-auto p-6 space-y-4'>
+            <div className='min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6'>
               <FormField
                 control={form.control}
                 name='usuario_id'
@@ -212,8 +212,9 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
               </div>
             </div>
 
-            <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+            <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
               <Button
+                type='button'
                 variant='outline'
                 onClick={handleCancel}
                 className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'

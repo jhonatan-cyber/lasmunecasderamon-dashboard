@@ -29,13 +29,13 @@ export function GratificacionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='w-[95vw] max-w-[95vw] sm:w-full sm:max-w-[500px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
             {gratificacion ? 'Editar Gratificación' : 'Nueva Gratificación'}
           </DialogTitle>
           <DialogDescription className='sr-only'>Formulario de gratificación</DialogDescription>
         </DialogHeader>
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <GratificacionesForm
             open={open}
             onSubmit={onSubmit}
@@ -46,7 +46,7 @@ export function GratificacionDialog({
             hideButtons={true}
           />
         </div>
-        <div className='shrink-0 border-t px-6 py-4 bg-white dark:bg-neutral-900'>
+        <div className='shrink-0 border-t bg-white p-4 dark:bg-neutral-900 sm:p-6'>
           <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
             <Button
               type='button'

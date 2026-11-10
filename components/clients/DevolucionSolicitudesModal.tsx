@@ -97,7 +97,7 @@ export function DevolucionSolicitudesButton() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className='max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden'>
-          <DialogHeader className='p-6 pb-2 border-b'>
+          <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
             <DialogTitle className='flex items-center gap-2'>
               <Wallet className='w-5 h-5 text-amber-600' /> Solicitudes de Devolucion
             </DialogTitle>
@@ -105,7 +105,7 @@ export function DevolucionSolicitudesButton() {
               Lista de solicitudes de devolucion de saldo
             </DialogDescription>
           </DialogHeader>
-          <div className='flex-1 overflow-y-auto p-6 space-y-3'>
+          <div className='min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-6'>
             {loading ? (
               <div className='flex justify-center py-8'>
                 <Loader2 className='w-6 h-6 animate-spin' />

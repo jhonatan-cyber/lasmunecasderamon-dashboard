@@ -4,7 +4,7 @@ import { listarParaVenta } from '@/modules/inventario';
 
 /**
  * El catálogo de venta (`/api/products?for_sale=1`) alimenta las pantallas de
- * venta y el modal de cortesías de la app. Un error de sintaxis en su SQL no lo
+ * venta y el modal de covers de la app. Un error de sintaxis en su SQL no lo
  * detecta ningún test unitario —los mocks no ejecutan Postgres— y en el
  * dispositivo solo aparece como "Error interno del servidor".
  *

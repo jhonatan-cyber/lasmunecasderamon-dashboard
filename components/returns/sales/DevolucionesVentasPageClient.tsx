@@ -128,7 +128,7 @@ export function DevolucionesVentasPageClient() {
       <DevolucionHeader title='Devoluciones de Ventas' />
 
       {}
-      <div className='flex justify-center gap-3 border-b pb-1 mb-4'>
+      <div className='mb-4 flex w-full flex-col gap-2 border-b pb-2 sm:flex-row sm:justify-center sm:gap-3 sm:pb-1'>
         <Button
           variant='unstyled'
           onClick={() => setActiveTab('pendientes')}

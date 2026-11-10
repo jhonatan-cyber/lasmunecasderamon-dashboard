@@ -142,6 +142,7 @@ export const OrderCard = ({
               variant='ghost'
               className='rounded-full w-9 h-9 p-0 text-gray-300 hover:text-red-600 hover:bg-red-50 dark:text-zinc-500 dark:hover:text-red-400 dark:hover:bg-red-950/40 transition-all duration-300'
               onClick={e => onDeleteClick(e, order)}
+              aria-label={`Eliminar el pedido ${order.codigo} de ${order.cliente_nombre}`}
             >
               <Trash2 className='w-4 h-4' />
             </Button>

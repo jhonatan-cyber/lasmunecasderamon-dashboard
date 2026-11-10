@@ -6,8 +6,11 @@
  * aquí, en `./registro`, que la fase 6 reubica desde `lib/configuraciones`.
  */
 import {
+  aliasDeClave,
   categoriaDeClave,
+  claveCanonica,
   definicionDe,
+  REGISTRO_CLAVES,
   validarConfig as validarClaveDeRegistro
 } from '../registro';
 import type { ConfiguracionesPorCategoria } from '../contracts';
@@ -50,6 +53,17 @@ export async function listarConfiguracionesAgrupadas(): Promise<ConfiguracionesP
     grouped[categoria][config.clave] = value;
   }
 
+  // La app ya instalada lee claves que fueron renombradas (por ejemplo
+  // `monto_base_trago_cortesia_cliente`). Se exponen como alias de sólo lectura
+  // junto a la clave canónica hasta que todas las versiones migren.
+  for (const [clave, definicion] of Object.entries(REGISTRO_CLAVES)) {
+    const alias = aliasDeClave(clave);
+    if (!alias) continue;
+    const valores = grouped[definicion.categoria];
+    if (!valores || valores[clave] === undefined || valores[alias] !== undefined) continue;
+    valores[alias] = valores[clave];
+  }
+
   return grouped;
 }
 
@@ -63,9 +77,12 @@ export async function obtenerValorConfiguracion(clave: string): Promise<string |
  * valor no cumple la regla, para que la ruta lo muestre tal cual.
  */
 export async function guardarClave(clave: string, valor: string): Promise<string | null> {
-  const error = validarClaveDeRegistro(clave, valor);
+  // Un PUT con el nombre deprecado se guarda en la clave canónica; el GET lo
+  // vuelve a exponer con el alias para los clientes antiguos.
+  const canonica = claveCanonica(clave);
+  const error = validarClaveDeRegistro(canonica, valor);
   if (error) return error;
 
-  await repositorio.guardarConfiguracion(clave, valor, definicionDe(clave) ?? null);
+  await repositorio.guardarConfiguracion(canonica, valor, definicionDe(canonica) ?? null);
   return null;
 }

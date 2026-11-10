@@ -277,7 +277,7 @@ export function CashRegisterReport() {
             </CardTitle>
           </CardHeader>
           <CardContent className='pt-6'>
-            <div className='grid grid-cols-3 gap-4 mb-8'>
+            <div className='mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4'>
               <div className='text-center p-4 rounded-2xl bg-linear-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 transition-transform hover:scale-105'>
                 <TrendingUp className='h-6 w-6 text-green-600 dark:text-green-400 mx-auto mb-2 opacity-80' />
                 <p className='text-xs text-green-600 dark:text-green-400 font-bold uppercase tracking-wider mb-1'>

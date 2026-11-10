@@ -28,13 +28,13 @@ export const CajaDetailsTabs = memo(function CajaDetailsTabs({
   counts
 }: CajaDetailsTabsProps) {
   return (
-    <div className='flex justify-center gap-2 mx-6 mt-4 border-b pb-1 print:hidden'>
+    <div className='mx-3 mt-4 flex flex-wrap justify-center gap-1.5 border-b pb-2 sm:mx-6 sm:gap-2 sm:pb-1 print:hidden'>
       {TABS.map(({ value, label, countKey }) => (
         <Button
           variant='unstyled'
           key={value}
           onClick={() => onTabChange(value)}
-          className={`px-4 py-2 text-sm font-semibold transition-all rounded-full ${
+          className={`px-3 py-1.5 text-xs font-semibold transition-all rounded-full sm:px-4 sm:py-2 sm:text-sm ${
             activeTab === value
               ? 'bg-gray-900 text-white shadow-xs dark:bg-white dark:text-black'
               : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'

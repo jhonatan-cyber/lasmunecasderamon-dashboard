@@ -1,7 +1,7 @@
 import { generateUUID, query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { ValidationError } from '@/lib/errors/errors';
-import { consumirCorteCortesiaBar, consumirProductoCortesiaBar } from '@/modules/inventario';
+import { consumirCorteCoverBar, consumirProductoCoverBar } from '@/modules/inventario';
 import { enUnaUnidad } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { registrarMovimientoCobro } from '@/modules/caja';
@@ -15,7 +15,12 @@ import {
 } from '@/lib/sales/acompanamientoBotella';
 
 export type MetodoPagoEntrada = 'efectivo' | 'tarjeta' | 'transferencia';
-export type EstadoCortesia = 'pendiente' | 'entregada' | 'anulada';
+export type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
+/**
+ * Quién cerró una entrada anulada: a mano (se devuelve el dinero, no entra a la
+ * caja) o el barrido del cierre del turno (la caja postea ese dinero).
+ */
+export type AnulacionOrigen = 'manual' | 'cierre';
 
 const METODOS: readonly MetodoPagoEntrada[] = ['efectivo', 'tarjeta', 'transferencia'];
 
@@ -36,7 +41,8 @@ export type RegistradorVenta = (
 export interface EntradaCliente {
   id: string;
   grupo_registro_id: string | null;
-  cantidad_productos_cortesia: number;
+  productos_cover: string | null;
+  cantidad_productos_cover: number;
   cliente_nombre: string | null;
   monto_entrada: number;
   monto_bebida_adicional: number;
@@ -44,16 +50,18 @@ export interface EntradaCliente {
   baucher_foto: string | null;
   caja_id: string | null;
   venta_id: string | null;
-  bebida_cortesia_presentacion_id: string | null;
-  bebida_cortesia: string | null;
+  bebida_cover_presentacion_id: string | null;
+  bebida_cover: string | null;
   bebida_acompanamiento_presentacion_id: string | null;
   acompanamiento_bebida: string | null;
   fecha: string;
   hora: string;
   registrado_por_nombre: string;
-  cortesia_estado: EstadoCortesia;
-  cortesia_entregada_at: string | null;
-  cortesia_entregada_por_nombre: string | null;
+  cover_estado: EstadoCover;
+  /** `NULL` mientras la entrada no está anulada. */
+  anulacion_origen: AnulacionOrigen | null;
+  cover_entregada_at: string | null;
+  cover_entregada_por_nombre: string | null;
 }
 
 export interface EntradaPendiente {
@@ -70,7 +78,7 @@ export interface EntradaPendiente {
 
 export interface ResultadoEntrega {
   entradaId: string;
-  tipo: 'cortesia' | 'upgrade';
+  tipo: 'cover' | 'upgrade';
   presentacionId: string;
   precio: number;
   montoEntrada: number;
@@ -95,8 +103,8 @@ async function leerCostoEntrada(): Promise<number> {
   return valor;
 }
 
-async function leerTopeCortesia(): Promise<number> {
-  const valor = await leerConfiguracion('monto_base_trago_cortesia_cliente', 10000);
+async function leerTopeCover(): Promise<number> {
+  const valor = await leerConfiguracion('monto_base_trago_cover_cliente', 10000);
   return valor >= 0 ? valor : 10000;
 }
 
@@ -133,16 +141,34 @@ function validarMetodoPago(metodo: string): MetodoPagoEntrada {
   return metodo as MetodoPagoEntrada;
 }
 
+/**
+ * La app ya instalada lee los nombres anteriores (`cortesia_*`). Se mantienen
+ * como alias de sólo lectura en la respuesta hasta que todas las versiones
+ * móviles estén actualizadas.
+ */
+function conAliasLegacy(fila: EntradaCliente) {
+  return {
+    ...fila,
+    cortesia_estado: fila.cover_estado,
+    cortesia_entregada_at: fila.cover_entregada_at,
+    cortesia_entregada_por_nombre: fila.cover_entregada_por_nombre,
+    bebida_cortesia_presentacion_id: fila.bebida_cover_presentacion_id,
+    bebida_cortesia: fila.bebida_cover,
+    productos_cortesia: fila.productos_cover,
+    cantidad_productos_cortesia: fila.cantidad_productos_cover
+  };
+}
+
 export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> {
   const fechaFiltro = fecha || getNowInBusinessTimezone().slice(0, 10);
-  return query<EntradaCliente[]>(
+  const filas = await query<EntradaCliente[]>(
     `SELECT e.id, e.grupo_registro_id, e.cliente_nombre, e.monto_entrada, e.monto_bebida_adicional, e.metodo_pago,
             e.baucher_foto,
             e.caja_id,
             v.id_venta AS venta_id,
-            e.cover_presentacion_id AS bebida_cortesia_presentacion_id,
+            e.cover_presentacion_id AS bebida_cover_presentacion_id,
             CASE WHEN e.cover_presentacion_id IS NULL THEN NULL
-                 ELSE pr.nombre || ' · ' || p.nombre END AS bebida_cortesia,
+                 ELSE pr.nombre || ' · ' || p.nombre END AS bebida_cover,
             CASE WHEN e.bebida_acompanamiento_presentacion_id IS NULL THEN NULL
                  ELSE pra.nombre || ' · ' || pa.nombre END AS acompanamiento_bebida,
             COALESCE((SELECT string_agg(
@@ -156,18 +182,19 @@ export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> 
               LEFT JOIN productos pra2 ON pra2.id_producto = pa2.producto_id
               WHERE d.entrada_id = e.id),
               CASE WHEN e.cover_presentacion_id IS NULL THEN NULL ELSE pr.nombre || ' · ' || p.nombre END
-            ) AS productos_cortesia,
+            ) AS productos_cover,
             COALESCE((SELECT SUM(d.cantidad) FROM entradas_clientes_productos d WHERE d.entrada_id = e.id),
-                     CASE WHEN e.cover_presentacion_id IS NULL THEN 0 ELSE 1 END) AS cantidad_productos_cortesia,
+                     CASE WHEN e.cover_presentacion_id IS NULL THEN 0 ELSE 1 END) AS cantidad_productos_cover,
             e.fecha, to_char(e.hora, 'HH24:MI') AS hora,
             u.nombre || ' ' || u.apellido AS registrado_por_nombre,
-            e.cortesia_estado,
-            to_char(e.cortesia_entregada_at, 'YYYY-MM-DD HH24:MI') AS cortesia_entregada_at,
-            CASE WHEN e.cortesia_entregada_por IS NULL THEN NULL
-                 ELSE eu.nombre || ' ' || eu.apellido END AS cortesia_entregada_por_nombre
+            e.cover_estado,
+            e.anulacion_origen,
+            to_char(e.cover_entregada_at, 'YYYY-MM-DD HH24:MI') AS cover_entregada_at,
+            CASE WHEN e.cover_entregada_por IS NULL THEN NULL
+                 ELSE eu.nombre || ' ' || eu.apellido END AS cover_entregada_por_nombre
        FROM entradas_clientes e
        JOIN usuarios u ON u.id_usuario = e.registrado_por
-       LEFT JOIN usuarios eu ON eu.id_usuario = e.cortesia_entregada_por
+       LEFT JOIN usuarios eu ON eu.id_usuario = e.cover_entregada_por
        LEFT JOIN ventas v ON v.entrada_id = e.id
        LEFT JOIN inventario_presentaciones p ON p.id = e.cover_presentacion_id
        LEFT JOIN productos pr ON pr.id_producto = p.producto_id
@@ -176,6 +203,7 @@ export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> 
       WHERE e.fecha = ? ORDER BY e.hora DESC, e.fecha_crea DESC`,
     [fechaFiltro]
   );
+  return filas.map(conAliasLegacy);
 }
 
 export async function listarPendientes(fecha?: string): Promise<EntradaPendiente[]> {
@@ -186,7 +214,7 @@ export async function listarPendientes(fecha?: string): Promise<EntradaPendiente
             u.nombre || ' ' || u.apellido AS registrado_por_nombre
        FROM entradas_clientes e
        JOIN usuarios u ON u.id_usuario = e.registrado_por
-      WHERE e.cortesia_estado = 'pendiente' AND e.fecha = ?
+      WHERE e.cover_estado = 'pendiente' AND e.fecha = ?
       ORDER BY e.hora ASC, e.fecha_crea ASC`,
     [fechaFiltro]
   );
@@ -252,7 +280,7 @@ export async function registrarEntrada(input: RegistroEntradaInput) {
         await trx(
           `INSERT INTO entradas_clientes
           (id, grupo_registro_id, cliente_nombre, monto_entrada, monto_bebida_adicional, metodo_pago,
-           baucher_foto, fecha, hora, caja_id, registrado_por, cortesia_estado)
+           baucher_foto, fecha, hora, caja_id, registrado_por, cover_estado)
          VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 'pendiente')`,
           [
             id,
@@ -315,7 +343,7 @@ export async function entregarEntrada(
   if (!input.usuarioId) throw new ValidationError('No se pudo identificar al usuario');
 
   const fechaHora = getNowInBusinessTimezone();
-  const tope = await leerTopeCortesia();
+  const tope = await leerTopeCover();
   const tareasConfirmadas: Array<() => void | Promise<void>> = [];
   let resultado: ResultadoEntrega | null = null;
 
@@ -326,16 +354,16 @@ export async function entregarEntrada(
         id: string;
         monto_entrada: number;
         metodo_pago: MetodoPagoEntrada;
-        cortesia_estado: EstadoCortesia;
+        cover_estado: EstadoCover;
       }[]
     >(
-      `SELECT id, monto_entrada, metodo_pago, cortesia_estado
+      `SELECT id, monto_entrada, metodo_pago, cover_estado
          FROM entradas_clientes WHERE id = ? FOR UPDATE`,
       [input.entradaId]
     );
     const entrada = filas[0];
     if (!entrada) throw new ValidationError('La entrada ya no existe');
-    if (entrada.cortesia_estado !== 'pendiente')
+    if (entrada.cover_estado !== 'pendiente')
       throw new ValidationError('Esta entrada ya fue entregada o anulada');
 
     const presentaciones = await trx<
@@ -366,14 +394,14 @@ export async function entregarEntrada(
     if (esCorte && (!Number.isFinite(precioCorte) || precioCorte <= 0))
       throw new ValidationError('La bebida seleccionada no se vende por corte');
 
-    // La cortesía por corte usa el precio del shot; la botella sigue usando el
+    // El cover por corte usa el precio del shot; la botella sigue usando el
     // precio de venta de la presentación, que es el que valida el inventario.
     const precio = esCorte ? Math.floor(precioCorte) : Number(presentacion.precio_venta);
     const montoEntrada = Number(entrada.monto_entrada);
     const umbral = Math.max(tope, montoEntrada);
     const adicionalPorPrecio = precio <= umbral ? 0 : precio - montoEntrada;
     const montoAdicional = normalizarMontoAdicional(input.montoAdicional, adicionalPorPrecio);
-    const esCortesia = montoAdicional <= 0;
+    const esCover = montoAdicional <= 0;
     const unidades = esCorte ? 0 : unidadesAcompanamiento(opciones);
     const reparto = input.acompanamientos?.length
       ? normalizarAcompanamientoBotella(input.acompanamientos)
@@ -412,9 +440,9 @@ export async function entregarEntrada(
     const cajaId = caja[0].id_caja;
 
     let ventaId: string | null = null;
-    if (esCortesia) {
+    if (esCover) {
       if (esCorte) {
-        await consumirCorteCortesiaBar(
+        await consumirCorteCoverBar(
           input.presentacionId,
           input.usuarioId,
           fechaHora,
@@ -422,7 +450,7 @@ export async function entregarEntrada(
           reparto.length ? reparto : null
         );
       } else {
-        await consumirProductoCortesiaBar(
+        await consumirProductoCoverBar(
           input.presentacionId,
           input.usuarioId,
           fechaHora,
@@ -469,9 +497,9 @@ export async function entregarEntrada(
 
     await trx(
       `UPDATE entradas_clientes
-          SET cortesia_estado = 'entregada',
-              cortesia_entregada_por = ?,
-              cortesia_entregada_at = ?,
+          SET cover_estado = 'entregada',
+              cover_entregada_por = ?,
+              cover_entregada_at = ?,
               cover_presentacion_id = ?,
               bebida_acompanamiento_presentacion_id = ?,
               monto_bebida_adicional = ?,
@@ -487,7 +515,7 @@ export async function entregarEntrada(
         entrada.id
       ]
     );
-    if (esCortesia) {
+    if (esCover) {
       await trx(
         `INSERT INTO entradas_clientes_productos
           (entrada_id, presentacion_id, cantidad, acompanamiento_presentacion_id, acompanamientos)
@@ -498,7 +526,7 @@ export async function entregarEntrada(
 
     resultado = {
       entradaId: entrada.id,
-      tipo: esCortesia ? 'cortesia' : 'upgrade',
+      tipo: esCover ? 'cover' : 'upgrade',
       presentacionId: input.presentacionId,
       precio,
       montoEntrada,
@@ -511,6 +539,14 @@ export async function entregarEntrada(
   return resultado as unknown as ResultadoEntrega;
 }
 
+/**
+ * Anula una entrada que nunca se sirvió y devuelve su dinero.
+ *
+ * La puerta cobra la entrada pero no la postea en la caja: ese dinero entra al
+ * libro recién al servirla (`entregarEntrada`) o al cerrar el turno
+ * (`postearPendientesDeCaja`). Por eso anular no registra ningún movimiento:
+ * el importe se devuelve al cliente y la fila queda cerrada sin tocar caja ni stock.
+ */
 export async function anularEntrada(input: {
   entradaId: string;
   usuarioId: string;
@@ -525,29 +561,22 @@ export async function anularEntrada(input: {
       {
         id: string;
         monto_entrada: number;
-        metodo_pago: MetodoPagoEntrada;
-        cortesia_estado: EstadoCortesia;
+        cover_estado: EstadoCover;
       }[]
     >(
-      `SELECT id, monto_entrada, metodo_pago, cortesia_estado
+      `SELECT id, monto_entrada, cover_estado
          FROM entradas_clientes WHERE id = ? FOR UPDATE`,
       [input.entradaId]
     );
     const entrada = filas[0];
     if (!entrada) throw new ValidationError('La entrada ya no existe');
-    if (entrada.cortesia_estado !== 'pendiente')
+    if (entrada.cover_estado !== 'pendiente')
       throw new ValidationError('Esta entrada ya fue entregada o anulada');
-    const caja = await trx<{ id_caja: string }[]>(
-      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
-    );
-    if (!caja.length) throw new ValidationError('Abre una caja antes de anular la entrada');
     monto = Number(entrada.monto_entrada);
-    const pagos = { efectivo: 0, tarjeta: 0, transferencia: 0 };
-    pagos[entrada.metodo_pago] = monto;
-    if (monto > 0) await registrarMovimientoCobro(caja[0].id_caja, pagos, { id: unidad.id });
     await trx(
       `UPDATE entradas_clientes
-          SET cortesia_estado = 'anulada', cortesia_entregada_por = ?, cortesia_entregada_at = ?
+          SET cover_estado = 'anulada', cover_entregada_por = ?, cover_entregada_at = ?,
+              anulacion_origen = 'manual'
         WHERE id = ?`,
       [input.usuarioId, fechaHora, entrada.id]
     );
@@ -570,7 +599,7 @@ export async function postearPendientesDeCaja(input: {
     >(
       `SELECT id, monto_entrada, metodo_pago
          FROM entradas_clientes
-        WHERE caja_id = ? AND cortesia_estado = 'pendiente'
+        WHERE caja_id = ? AND cover_estado = 'pendiente'
         FOR UPDATE`,
       [input.cajaId]
     );
@@ -585,7 +614,8 @@ export async function postearPendientesDeCaja(input: {
     for (const fila of filas) {
       await trx(
         `UPDATE entradas_clientes
-            SET cortesia_estado = 'anulada', cortesia_entregada_por = ?, cortesia_entregada_at = ?
+            SET cover_estado = 'anulada', cover_entregada_por = ?, cover_entregada_at = ?,
+                anulacion_origen = 'cierre'
           WHERE id = ?`,
         [input.usuarioId, fechaHora, fila.id]
       );

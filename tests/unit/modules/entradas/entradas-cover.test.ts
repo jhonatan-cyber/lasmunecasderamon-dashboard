@@ -2,11 +2,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Entradas con solicitud de cortesía diferida.
+ * Entradas con solicitud de cover diferida.
  *
  * Se mockean las fronteras (configuración, inventario, caja, transacción y
  * efectos) y se fija el comportamiento que mueve dinero: la puerta sólo cobra,
- * la barra decide cortesía o adicional, y cada entrada se postea una sola vez.
+ * la barra decide cover o adicional, y cada entrada se postea una sola vez.
  */
 
 const db = vi.hoisted(() => ({ query: vi.fn(), secuencia: 0 }));
@@ -36,8 +36,8 @@ vi.mock('@/lib/business/timezoneService', () => ({
 }));
 
 vi.mock('@/modules/inventario', () => ({
-  consumirProductoCortesiaBar: vi.fn(),
-  consumirCorteCortesiaBar: vi.fn()
+  consumirProductoCoverBar: vi.fn(),
+  consumirCorteCoverBar: vi.fn()
 }));
 
 vi.mock('@/modules/caja', () => ({
@@ -64,8 +64,13 @@ vi.mock('@/lib/utils/image-utils', () => ({
   eliminarFotoBaucher: baucher.eliminarFotoBaucher
 }));
 
-import { entregarEntrada, postearPendientesDeCaja, registrarEntrada } from '@/modules/entradas';
-import { consumirCorteCortesiaBar, consumirProductoCortesiaBar } from '@/modules/inventario';
+import {
+  anularEntrada,
+  entregarEntrada,
+  postearPendientesDeCaja,
+  registrarEntrada
+} from '@/modules/entradas';
+import { consumirCorteCoverBar, consumirProductoCoverBar } from '@/modules/inventario';
 import { registrarMovimientoCobro } from '@/modules/caja';
 
 const registroBase = {
@@ -84,7 +89,7 @@ function entradaPendiente(extra: Record<string, unknown> = {}) {
     id: 'e1',
     monto_entrada: 10000,
     metodo_pago: 'efectivo',
-    cortesia_estado: 'pendiente',
+    cover_estado: 'pendiente',
     ...extra
   };
 }
@@ -104,7 +109,7 @@ beforeEach(() => {
   baucher.guardarFotoBaucher.mockResolvedValue('ticket_1718.webp');
   baucher.eliminarFotoBaucher.mockReset();
   db.query.mockImplementation(async (sql: string) =>
-    String(sql).includes('monto_base_trago_cortesia_cliente')
+    String(sql).includes('monto_base_trago_cover_cliente')
       ? [{ valor: String(estado.tope) }]
       : [{ valor: String(estado.costoEntrada) }]
   );
@@ -112,7 +117,7 @@ beforeEach(() => {
     if (sql.includes('FROM cajas WHERE estado = 1')) return [{ id_caja: 'caja-1' }];
     if (sql.includes('FROM entradas_clientes WHERE id = ? FOR UPDATE'))
       return estado.entrada ? [estado.entrada] : [];
-    if (sql.includes("cortesia_estado = 'pendiente'") && sql.includes('FROM entradas_clientes'))
+    if (sql.includes("cover_estado = 'pendiente'") && sql.includes('FROM entradas_clientes'))
       return estado.pendientes;
     if (sql.includes('FROM inventario_presentaciones'))
       return [
@@ -153,7 +158,7 @@ describe('registro en la puerta', () => {
     expect(estado.inserts).toHaveLength(2);
     expect(estado.inserts[0].sql).toContain("'pendiente'");
     expect(registrarMovimientoCobro).not.toHaveBeenCalled();
-    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
   });
 
   it('guarda la foto del baucher y la deja en cada fila del grupo', async () => {
@@ -276,11 +281,11 @@ describe('registro en la puerta', () => {
   });
 });
 
-describe('entrega como cortesía', () => {
+describe('entrega como cover', () => {
   it('consume el stock, postea el precio de la entrada y cierra la fila', async () => {
     const resultado = await entregarEntrada(entregaBase);
 
-    expect(consumirProductoCortesiaBar).toHaveBeenCalledWith(
+    expect(consumirProductoCoverBar).toHaveBeenCalledWith(
       'pres-1',
       'user-1',
       '2026-10-19 12:00:00',
@@ -294,7 +299,7 @@ describe('entrega como cortesía', () => {
       { id: 'unidad-1' }
     );
     expect(resultado).toMatchObject({
-      tipo: 'cortesia',
+      tipo: 'cover',
       precio: 10000,
       montoEntrada: 10000,
       montoCobrarBarra: 0,
@@ -305,19 +310,19 @@ describe('entrega como cortesía', () => {
     expect(estado.inserts[0].sql).toContain('entradas_clientes_productos');
   });
 
-  it('trata como cortesía lo que no supera lo ya pagado aunque el tope sea menor', async () => {
+  it('trata como cover lo que no supera lo ya pagado aunque el tope sea menor', async () => {
     estado.tope = 8000;
     estado.precio = 10000;
 
     const resultado = await entregarEntrada(entregaBase);
 
-    expect(resultado.tipo).toBe('cortesia');
+    expect(resultado.tipo).toBe('cover');
     expect(registrarMovimientoCobro).toHaveBeenCalledTimes(1);
   });
 
   it('sirve un corte con el precio del shot y descuenta ml, no la botella', async () => {
     // La botella supera el tope, pero el corte del mismo producto entra como
-    // cortesía: es el caso de los destilados de la carta real.
+    // cover: es el caso de los destilados de la carta real.
     estado.precio = 10500;
     estado.opciones = [
       { tipo: 'botella', precio: 10500 },
@@ -326,16 +331,16 @@ describe('entrega como cortesía', () => {
 
     const resultado = await entregarEntrada({ ...entregaBase, tipoEntrega: 'corte' });
 
-    expect(consumirCorteCortesiaBar).toHaveBeenCalledWith(
+    expect(consumirCorteCoverBar).toHaveBeenCalledWith(
       'pres-1',
       'user-1',
       '2026-10-19 12:00:00',
       { id: 'unidad-1' },
       null
     );
-    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
     expect(resultado).toMatchObject({
-      tipo: 'cortesia',
+      tipo: 'cover',
       precio: 3000,
       montoEntrada: 10000,
       montoCobrarBarra: 0
@@ -353,8 +358,8 @@ describe('entrega como cortesía', () => {
 
     const resultado = await entregarEntrada({ ...entregaBase, tipoEntrega: 'corte' }, onVenta);
 
-    expect(consumirCorteCortesiaBar).not.toHaveBeenCalled();
-    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirCorteCoverBar).not.toHaveBeenCalled();
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
     const [plan] = onVenta.mock.calls[0] as unknown as [
       { totalVenta: number; detalles: Array<Record<string, unknown>> }
     ];
@@ -384,7 +389,7 @@ describe('entrega como cortesía', () => {
       acompanamientoPresentacionId: 'mix-1'
     });
 
-    expect(consumirCorteCortesiaBar).toHaveBeenCalledWith(
+    expect(consumirCorteCoverBar).toHaveBeenCalledWith(
       'pres-1',
       'user-1',
       '2026-10-19 12:00:00',
@@ -400,7 +405,7 @@ describe('entrega como cortesía', () => {
     await expect(entregarEntrada({ ...entregaBase, tipoEntrega: 'corte' })).rejects.toThrow(
       /no se vende por corte/
     );
-    expect(consumirCorteCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirCorteCoverBar).not.toHaveBeenCalled();
   });
 });
 
@@ -412,7 +417,7 @@ describe('entrega con adicional', () => {
     const resultado = await entregarEntrada(entregaBase, onVenta);
 
     expect(registrarMovimientoCobro).not.toHaveBeenCalled();
-    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
     expect(onVenta).toHaveBeenCalledTimes(1);
     const [plan] = onVenta.mock.calls[0] as unknown as [
       { totalVenta: number; entradaId: string; detalles: Array<{ precio: number }> }
@@ -439,10 +444,10 @@ describe('entrega con adicional', () => {
     expect(plan.totalVenta).toBe(30000);
     expect(resultado).toMatchObject({ tipo: 'upgrade', montoCobrarBarra: 20000 });
     expect(estado.updates[0].params[4]).toBe(20000);
-    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
   });
 
-  it('cobra el adicional aunque la bebida no supere el tope de cortesía', async () => {
+  it('cobra el adicional aunque la bebida no supere el tope de cover', async () => {
     estado.tope = 10000;
     estado.precio = 8000;
     const onVenta = vi.fn(async () => ({ ventaId: 'venta-1' }));
@@ -452,7 +457,7 @@ describe('entrega con adicional', () => {
     const [plan] = onVenta.mock.calls[0] as unknown as [{ totalVenta: number }];
     expect(plan.totalVenta).toBe(15000);
     expect(resultado).toMatchObject({ tipo: 'upgrade', montoCobrarBarra: 5000 });
-    expect(consumirProductoCortesiaBar).not.toHaveBeenCalled();
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
   });
 
   it('rechaza el adicional si el adaptador no puede registrar la venta', async () => {
@@ -464,7 +469,7 @@ describe('entrega con adicional', () => {
 
 describe('una sola entrega por entrada', () => {
   it('rechaza una fila que ya fue entregada o anulada', async () => {
-    estado.entrada = entradaPendiente({ cortesia_estado: 'entregada' });
+    estado.entrada = entradaPendiente({ cover_estado: 'entregada' });
 
     await expect(entregarEntrada(entregaBase)).rejects.toThrow(/ya fue entregada o anulada/);
     expect(registrarMovimientoCobro).not.toHaveBeenCalled();
@@ -474,6 +479,28 @@ describe('una sola entrega por entrada', () => {
     estado.entrada = null;
 
     await expect(entregarEntrada(entregaBase)).rejects.toThrow(/ya no existe/);
+  });
+});
+
+describe('anulación manual', () => {
+  it('devuelve el dinero sin postear nada en la caja', async () => {
+    const resultado = await anularEntrada({ entradaId: 'e1', usuarioId: 'user-1' });
+
+    expect(resultado).toEqual({ entradaId: 'e1', monto: 10000 });
+    expect(registrarMovimientoCobro).not.toHaveBeenCalled();
+    expect(estado.updates).toHaveLength(1);
+    expect(estado.updates[0].sql).toContain("cover_estado = 'anulada'");
+    expect(estado.updates[0].sql).toContain("anulacion_origen = 'manual'");
+  });
+
+  it('rechaza una entrada que ya fue entregada o anulada sin mover la caja', async () => {
+    estado.entrada = entradaPendiente({ cover_estado: 'entregada' });
+
+    await expect(anularEntrada({ entradaId: 'e1', usuarioId: 'user-1' })).rejects.toThrow(
+      /ya fue entregada o anulada/
+    );
+    expect(registrarMovimientoCobro).not.toHaveBeenCalled();
+    expect(estado.updates).toHaveLength(0);
   });
 });
 
@@ -495,6 +522,9 @@ describe('barrido al cerrar la caja', () => {
     );
     expect(estado.updates).toHaveLength(3);
     expect(estado.updates.every(fila => fila.sql.includes("'anulada'"))).toBe(true);
+    expect(estado.updates.every(fila => fila.sql.includes("anulacion_origen = 'cierre'"))).toBe(
+      true
+    );
   });
 
   it('no escribe nada si la caja no tiene pendientes', async () => {

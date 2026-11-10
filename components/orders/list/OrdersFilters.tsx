@@ -58,8 +58,8 @@ export function AdminOrdersFilters({
   const setCurrentSearchTerm = activeTab === 'productos' ? setSearchTerm : setSearchServiciosTerm;
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
-      <CardContent className='p-6'>
+    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6 sm:mx-8'>
+      <CardContent className='p-4 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end'>
           {}
           <div className='w-full lg:flex-1'>

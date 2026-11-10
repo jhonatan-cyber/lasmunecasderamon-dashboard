@@ -53,11 +53,11 @@ export default function CollapsibleSection({
         role='region'
         aria-labelledby={triggerId}
         className={cn(
-          'overflow-hidden transition-all duration-200 ease-out',
-          isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+          'grid transition-all duration-200 ease-out',
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         )}
       >
-        {children}
+        <div className='min-h-0 overflow-hidden'>{children}</div>
       </div>
     </div>
   );

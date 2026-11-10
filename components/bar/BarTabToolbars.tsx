@@ -320,19 +320,19 @@ export function BarColacionesToolbar({ search, onSearchChange }: BarColacionesTo
   );
 }
 
-interface BarCortesiasToolbarProps {
+interface BarCoversToolbarProps {
   search: string;
   onSearchChange: (value: string) => void;
 }
 
-export function BarCortesiasToolbar({ search, onSearchChange }: BarCortesiasToolbarProps) {
+export function BarCoversToolbar({ search, onSearchChange }: BarCoversToolbarProps) {
   return (
     <SearchToolbar
       search={search}
       onSearchChange={onSearchChange}
       placeholder='Buscar cliente o quién registró la entrada'
-      ariaLabel='Buscar cortesías'
-      clearAriaLabel='Limpiar búsqueda de cortesías'
+      ariaLabel='Buscar covers'
+      clearAriaLabel='Limpiar búsqueda de covers'
     />
   );
 }

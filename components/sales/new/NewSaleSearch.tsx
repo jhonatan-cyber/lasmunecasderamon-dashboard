@@ -31,7 +31,7 @@ import {
   isExpensiveDrink
 } from '@/components/orders';
 import { IndividualHostessSelect } from '@/components/shared/selects';
-import { resolverVentaProducto } from '@/lib/sales/saleChoice';
+import { resolverVentaEnBar } from '@/lib/sales/saleChoice';
 import { SaleFormatQuantities } from '@/components/sales/SaleFormatQuantities';
 import type { SaleChoice } from '@/lib/sales/saleChoice';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
@@ -132,7 +132,7 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                     const id = String(producto.id_producto || producto.id);
                     const isChampagne = props.isChampagneProduct(producto);
                     const champagneLimit = getHostessLimit(producto);
-                    const sale = resolverVentaProducto(producto);
+                    const sale = resolverVentaEnBar(producto);
                     const shotMlCliente = resolveShotMl(producto.ml_shot, shotMl);
                     const shotMlAnfitriona = resolveShotMlAnfitriona(
                       producto.ml_shot_anfitriona,
@@ -220,7 +220,9 @@ export const NewSaleSearch = (props: NewSaleSearchProps) => {
                           className={`${CUENTA_TABLE_CELL_CLASS} min-w-[190px] text-center`}
                         >
                           {!muestraAnfitriona ? (
-                            <span className='text-xs text-gray-400'>Sin comisión</span>
+                            <span className='text-xs text-gray-500 dark:text-gray-400'>
+                              Sin comisión
+                            </span>
                           ) : isChampagne ? (
                             <div className='space-y-2'>
                               <HostessMultiSelect

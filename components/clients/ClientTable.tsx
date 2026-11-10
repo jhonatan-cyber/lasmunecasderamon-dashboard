@@ -144,7 +144,9 @@ const MobileCardView = React.memo(
                 </div>
 
                 <div className='grid grid-cols-2 gap-3'>
-                  <div className='text-xs text-gray-400 uppercase font-bold text-center'>RUT</div>
+                  <div className='text-xs text-gray-500 dark:text-gray-400 uppercase font-bold text-center'>
+                    RUT
+                  </div>
                   <div className='text-xs text-gray-500 text-center'>{renderRun(client.run)}</div>
                   <div className='text-xs text-gray-400 uppercase font-bold text-center'>
                     TELÉFONO
@@ -152,7 +154,9 @@ const MobileCardView = React.memo(
                   <div className='text-xs text-gray-500 text-center'>
                     {renderPhone(client.phone)}
                   </div>
-                  <div className='text-xs text-gray-400 uppercase font-bold text-center'>SALDO</div>
+                  <div className='text-xs text-gray-500 dark:text-gray-400 uppercase font-bold text-center'>
+                    SALDO
+                  </div>
                   <div className='text-xs font-bold text-green-600 text-center'>
                     ${(client.saldo || 0).toLocaleString('es-CL')}
                   </div>

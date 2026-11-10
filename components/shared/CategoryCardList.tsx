@@ -116,9 +116,9 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
         <>
           <div className='flex items-center justify-center gap-2 mb-4'>
             <Loader2 className='w-4 h-4 animate-spin text-gray-400' />
-            <span className='text-sm text-gray-400'>Cargando categorías...</span>
+            <span className='text-sm text-gray-500 dark:text-gray-400'>Cargando categorías...</span>
           </div>
-          <div className='grid grid-cols-4 gap-6 justify-center'>
+          <div className='grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-6'>
             {[...Array(8)].map((_, i) => (
               <CategorySkeleton key={i} />
             ))}
@@ -131,8 +131,8 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
         <div
           className={
             isCatalogVariant
-              ? 'grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-3 sm:gap-4'
-              : 'grid grid-cols-4 gap-6 justify-center'
+              ? 'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] sm:gap-4'
+              : 'grid grid-cols-2 gap-4 justify-center sm:grid-cols-3 sm:gap-6 lg:grid-cols-4'
           }
         >
           {currentCategorias.map((cat, index) => {
@@ -150,7 +150,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
                 }}
                 className={
                   isCatalogVariant
-                    ? 'group flex min-h-36 w-full cursor-pointer flex-col items-start justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-neutral-50 p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-950 dark:hover:border-rose-800 dark:focus-visible:ring-offset-neutral-950'
+                    ? 'group flex min-h-32 w-full cursor-pointer flex-col items-start justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-neutral-50 p-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 dark:border-neutral-800 dark:from-neutral-900 dark:to-neutral-950 dark:hover:border-rose-800 dark:focus-visible:ring-offset-neutral-950 sm:min-h-36 sm:p-4'
                     : 'flex h-28 w-full cursor-pointer flex-col items-center justify-center border-2 border-dashed border-gray-200 bg-gray-50 shadow-none transition-all duration-200 hover:scale-105 hover:border-gray-400'
                 }
                 onClick={() => onSelect(cat)}
@@ -191,7 +191,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
       {}
       {!loading && categoriasFiltradas.length === 0 && (
         <div className='text-center w-full py-8'>
-          <div className='text-gray-400'>No hay categorías disponibles</div>
+          <div className='text-gray-500 dark:text-gray-400'>No hay categorías disponibles</div>
         </div>
       )}
 

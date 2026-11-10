@@ -11,13 +11,15 @@ const inventoryFields = {
       presentacion_id: z.string().min(1),
       unidades: z.number().int().min(1).max(1000).optional(),
       ml_por_corto: z.number().int().min(1).max(10000).optional(),
-      nombre: z.string().max(300).optional()
+      nombre: z.string().max(300).optional(),
+      precio: z.number().min(0).optional()
     })
     .refine(
       value => (value.unidades !== undefined) !== (value.ml_por_corto !== undefined),
       'Selecciona unidades completas del acompa\u00f1amiento'
     )
-    .optional()
+    .optional(),
+  recargo_acompanamiento: z.coerce.number().min(0).optional()
 };
 
 export const DetalleCuentaSchema = z

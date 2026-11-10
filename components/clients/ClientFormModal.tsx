@@ -213,7 +213,7 @@ export function ClientFormModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-2 border-b'>
+        <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold'>
             {isEditMode ? 'Editar Cliente' : 'Nuevo Cliente'}
           </DialogTitle>
@@ -222,7 +222,7 @@ export function ClientFormModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <ClientForm
             clientData={clientData}
             open={isOpen}
@@ -234,7 +234,7 @@ export function ClientFormModal({
           />
         </div>
 
-        <div className='border-t p-4 bg-gray-50 dark:bg-slate-900/50 flex justify-center gap-3 px-6 rounded-b-2xl'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
           <Button
             variant='outline'
             onClick={handleCancel}

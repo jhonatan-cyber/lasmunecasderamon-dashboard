@@ -107,11 +107,11 @@ export function PayrollCalendarDataModal({
   return (
     <Dialog open={open && selectedDatesCount > 0} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-lg font-semibold'>{formattedDates}</DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-6 sm:py-4'>
           <div className='space-y-3 sm:space-y-4 text-center'>
             {ventasData.length > 0 && (
               <div className='flex justify-center mb-3 sm:mb-4'>
@@ -203,7 +203,7 @@ export function PayrollCalendarDataModal({
 
             <div className='mt-6'>
               {currentData.length === 0 ? (
-                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8 text-center'>
+                <div className='overflow-hidden rounded-3xl border-none bg-white p-4 text-center shadow-md backdrop-blur-xs dark:bg-slate-900/40 sm:p-8'>
                   <EmptyState
                     variant='text'
                     title={<>No hay datos de {currentLabel}</>}
@@ -246,6 +246,7 @@ export function PayrollCalendarDataModal({
                               onClick={() =>
                                 onOpenDetail(item, showVentasTable ? 'venta' : 'servicio')
                               }
+                              aria-label='Ver detalle'
                             >
                               <Eye className='w-4 h-4' />
                             </Button>
@@ -345,6 +346,7 @@ export function PayrollCalendarDataModal({
                                     onClick={() =>
                                       onOpenDetail(item, showVentasTable ? 'venta' : 'servicio')
                                     }
+                                    aria-label='Ver detalle'
                                   >
                                     <Eye className='w-4 h-4' />
                                   </Button>
@@ -372,7 +374,7 @@ export function PayrollCalendarDataModal({
           </div>
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t p-4 sm:p-6'>
           <div className='flex justify-center'>
             <Button
               variant='outline'

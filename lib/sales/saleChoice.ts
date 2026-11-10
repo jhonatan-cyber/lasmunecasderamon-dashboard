@@ -143,3 +143,25 @@ export function resolverVentaProducto(producto: any, eleccion?: SaleChoice): Ven
     maxCantidad
   };
 }
+
+/**
+ * Sin unidades selladas solo queda la botella abierta: la presentación sigue a
+ * la venta únicamente por cortos. La elección de botella se descarta aunque
+ * esté configurada.
+ */
+export function resolverVentaEnBar(producto: any, eleccion?: SaleChoice): VentaProductoResuelta {
+  const stockBar = producto?.stock_bar;
+  if (stockBar == null || Number(stockBar) > 0) return resolverVentaProducto(producto, eleccion);
+  const soloCortos = (parseSavedOptions(producto?.opciones_venta) ?? []).filter(
+    opcion => opcion.tipo === 'shot'
+  );
+  return resolverVentaProducto({ ...producto, opciones_venta: soloCortos }, eleccion);
+}
+
+/** Presentación listable en bar: con unidades selladas o con ml abiertos y corto configurado. */
+export function puedeVenderseEnBar(producto: any): boolean {
+  const stockBar = producto?.stock_bar;
+  if (stockBar == null || Number(stockBar) > 0) return true;
+  if (Number(producto?.ml_abierta ?? 0) <= 0) return false;
+  return resolverVentaEnBar(producto).tieneShot;
+}

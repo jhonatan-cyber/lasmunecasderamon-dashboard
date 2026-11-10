@@ -151,7 +151,7 @@ export function ReservaQuinchoModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
-        <DialogHeader className='p-6 pb-3 border-b dark:border-slate-800'>
+        <DialogHeader className='p-4 pb-3 border-b sm:p-6 sm:pb-3 dark:border-slate-800'>
           <DialogTitle className='flex items-center gap-2 text-xl font-bold'>
             <Flame className='h-5 w-5 text-orange-500' />
             Nueva reserva de quincho
@@ -170,7 +170,7 @@ export function ReservaQuinchoModal({
           </Badge>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto p-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           {cajaCerrada && (
             <div className='mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200'>
               La caja está cerrada. Ábrela para cobrar la reserva y acreditar el saldo prepago.

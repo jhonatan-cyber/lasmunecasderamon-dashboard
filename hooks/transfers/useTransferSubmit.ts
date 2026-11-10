@@ -68,6 +68,9 @@ export function useTransferSubmit({
     }
 
     let options: SaleOption[];
+    // Analcohólicas y cigarrillos no se venden "con anfitriona": el precio y la
+    // comisión se guardan siempre, sin el interruptor que solo aplica a licores.
+    const ventaSimple = form.esBebidaAnalcoholicaItem || form.esCigarrillosItem;
     if (form.usarConfigGuardada) {
       options = form.opcionesGuardadas.map(option => {
         const botellaDeshabilitada =
@@ -88,7 +91,7 @@ export function useTransferSubmit({
         if (option.tipo === 'botella') {
           if (!botellaDeshabilitada) {
             reutilizada.vender_con_anfitriona =
-              option.vender_con_anfitriona ?? Number(option.precio ?? 0) > 0;
+              ventaSimple || (option.vender_con_anfitriona ?? Number(option.precio ?? 0) > 0);
           }
           reutilizada.colacion_habilitada = form.colacionHabilitada;
           reutilizada.cover_habilitado = form.coverHabilitado;
@@ -116,8 +119,8 @@ export function useTransferSubmit({
     } else {
       const pv = Number(form.precioVenta.replace(/\./g, ''));
       const com = form.comision.trim() === '' ? 0 : Number(form.comision.replace(/\./g, ''));
-      const pvBottle = form.venderConAnfitriona ? pv : 0;
-      const comBottle = form.venderConAnfitriona ? com : 0;
+      const pvBottle = ventaSimple || form.venderConAnfitriona ? pv : 0;
+      const comBottle = ventaSimple || form.venderConAnfitriona ? com : 0;
       const bottleEnabled = !form.esBebidaAnalcoholicaItem || form.enVenta;
       const bottlePrice = bottleEnabled ? pvBottle : 0;
       const bottleCommission = bottleEnabled ? comBottle : 0;
@@ -132,7 +135,7 @@ export function useTransferSubmit({
           return {
             tipo,
             precio: bottlePrice,
-            vender_con_anfitriona: bottleEnabled && form.venderConAnfitriona,
+            vender_con_anfitriona: bottleEnabled && (ventaSimple || form.venderConAnfitriona),
             ...(bottleEnabled && form.precioSinAnfitriona?.trim()
               ? { precio_sin_anfitriona: Number(form.precioSinAnfitriona.replace(/\./g, '')) }
               : {}),

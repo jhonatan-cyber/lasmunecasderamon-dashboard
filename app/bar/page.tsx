@@ -11,7 +11,7 @@ import { BarHistorialTab, type Movimiento } from '@/components/bar/BarHistorialT
 import { BarEnvasesTab } from '@/components/bar/BarEnvasesTab';
 import {
   BarColacionesToolbar,
-  BarCortesiasToolbar,
+  BarCoversToolbar,
   BarEnvasesToolbar,
   BarHistorialToolbar,
   BarPendientesToolbar,
@@ -31,7 +31,7 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventario/contracts';
 import { useContainerScan } from '@/hooks/products/useContainerScan';
 import { ColacionesTab } from '@/components/meals/ColacionesTab';
-import { CortesiasTab } from '@/components/bar/CortesiasTab';
+import { CoversTab } from '@/components/bar/CoversTab';
 import { ExpiredStockPanel } from '@/components/products/ExpiredStockPanel';
 
 import type { TransferRecord } from '@/types/transfer';
@@ -45,7 +45,7 @@ export default function BarPage() {
   const [filtroTipoMov, setFiltroTipoMov] = useState<FiltroTipoMovimiento>('todos');
   const [searchEnvases, setSearchEnvases] = useState('');
   const [searchColaciones, setSearchColaciones] = useState('');
-  const [searchCortesias, setSearchCortesias] = useState('');
+  const [searchCovers, setSearchCovers] = useState('');
   // El orden manual es el que se arma con drag & drop y se guarda por
   // presentación; cualquier otro criterio solo ordena en pantalla y, si se
   // arrastra desde ahí, se vuelve al manual al soltar.
@@ -69,9 +69,12 @@ export default function BarPage() {
   const shotMl = useConfig<number>('shot_ml');
   const botellaMl = useConfig<number>('botella_ml');
   useEffect(() => {
-    // El aviso de una entrada en la puerta abre directo la cola de cortesías.
+    // El aviso de una entrada en la puerta abre directo la cola de covers.
+    // `cortesias` se mantiene como alias de las URLs que ya están abiertas.
     const tabUrl = new URLSearchParams(window.location.search).get('tab');
-    if (tabUrl === 'pendientes' || tabUrl === 'cortesias' || tabUrl === 'vencidos') setTab(tabUrl);
+    if (tabUrl === 'cortesias') setTab('covers');
+    else if (tabUrl === 'pendientes' || tabUrl === 'covers' || tabUrl === 'vencidos')
+      setTab(tabUrl);
   }, []);
   useEffect(
     () => () => {
@@ -576,8 +579,8 @@ export default function BarPage() {
           {tab === 'colaciones' && (
             <BarColacionesToolbar search={searchColaciones} onSearchChange={setSearchColaciones} />
           )}
-          {tab === 'cortesias' && (
-            <BarCortesiasToolbar search={searchCortesias} onSearchChange={setSearchCortesias} />
+          {tab === 'covers' && (
+            <BarCoversToolbar search={searchCovers} onSearchChange={setSearchCovers} />
           )}
           {tab === 'envases' && (
             <BarEnvasesToolbar
@@ -648,8 +651,8 @@ export default function BarPage() {
             <ColacionesTab searchTerm={searchColaciones} />
           </TabsContent>
 
-          <TabsContent value='cortesias' className='mt-4'>
-            <CortesiasTab searchTerm={searchCortesias} />
+          <TabsContent value='covers' className='mt-4'>
+            <CoversTab searchTerm={searchCovers} />
           </TabsContent>
 
           <TabsContent value='envases' className='mt-4'>

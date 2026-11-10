@@ -162,7 +162,7 @@ export default function NewCuentaPage() {
         />
 
         <div className='mt-8'>
-          <div className='text-center text-gray-400 text-sm mb-2'>Detalles Producto</div>
+          <div className='text-center text-sm text-gray-500 mb-2'>Detalles del producto</div>
           <ProductTable
             productos={productos}
             onCantidadChange={handleCantidadChangeTable}

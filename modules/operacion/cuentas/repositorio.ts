@@ -310,7 +310,7 @@ export async function agregarDetallesCuenta(
               d.producto_id,
               d.precio,
               qty,
-              d.precio * qty,
+              (Number(d.precio) + Number(d.recargo_acompanamiento || 0)) * qty,
               comision,
               selectedHostesses[i],
               nowStr,

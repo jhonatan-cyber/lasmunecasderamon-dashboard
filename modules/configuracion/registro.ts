@@ -36,9 +36,22 @@ export const CLAVES_CON_CACHE = new Set<string>(['admin_whatsapp']);
 /** Todas las claves guardables: la allowlist del endpoint sale de acá. */
 export const CLAVES_CONFIG = Object.keys(REGISTRO_CLAVES);
 
+/**
+ * Clave canónica de un nombre deprecado. Sólo resuelve nombres que ya no están
+ * en el registro: una clave registrada siempre se representa a sí misma.
+ */
+export function claveCanonica(clave: string): string {
+  if (Object.prototype.hasOwnProperty.call(REGISTRO_CLAVES, clave)) return clave;
+  for (const [canonica, definicion] of Object.entries(REGISTRO_CLAVES)) {
+    if (definicion.alias === clave) return canonica;
+  }
+  return clave;
+}
+
 export function definicionDe(clave: string): DefinicionClave | undefined {
-  return Object.prototype.hasOwnProperty.call(REGISTRO_CLAVES, clave)
-    ? REGISTRO_CLAVES[clave]
+  const canonica = claveCanonica(clave);
+  return Object.prototype.hasOwnProperty.call(REGISTRO_CLAVES, canonica)
+    ? REGISTRO_CLAVES[canonica]
     : undefined;
 }
 

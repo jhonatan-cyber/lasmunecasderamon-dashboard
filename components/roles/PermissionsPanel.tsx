@@ -202,11 +202,15 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                 className='border border-gray-200 dark:border-neutral-800 rounded-lg overflow-hidden'
               >
                 {}
-                <div
-                  className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-zinc-50 dark:bg-neutral-800 hover:bg-zinc-100 dark:hover:bg-neutral-700 cursor-pointer transition-colors'
-                  onClick={() => toggleModuleExpansion(module)}
-                >
-                  <div className='flex items-center gap-2 min-w-0'>
+                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-zinc-50 dark:bg-neutral-800 transition-colors'>
+                  <Button
+                    variant='unstyled'
+                    type='button'
+                    onClick={() => toggleModuleExpansion(module)}
+                    aria-expanded={isExpanded}
+                    aria-controls={`permisos-${module}`}
+                    className='flex items-center gap-2 min-w-0 whitespace-normal text-left cursor-pointer rounded-md h-auto p-0 hover:bg-transparent font-normal'
+                  >
                     {isExpanded ? (
                       <ChevronDown className='h-4 w-4 text-zinc-600 dark:text-neutral-400' />
                     ) : (
@@ -218,7 +222,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                     <Badge variant='outline' className='text-xs'>
                       {moduleSelectedCount}/{permissions.length}
                     </Badge>
-                  </div>
+                  </Button>
                   <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
                     <Button
                       variant='outline'
@@ -251,7 +255,10 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
 
                 {}
                 {isExpanded && (
-                  <div className='p-3 space-y-2 bg-white dark:bg-neutral-900'>
+                  <div
+                    id={`permisos-${module}`}
+                    className='p-3 space-y-2 bg-white dark:bg-neutral-900'
+                  >
                     {permissions.map(permission => (
                       <div
                         key={permission.id || `permission-${Math.random()}`}
@@ -261,6 +268,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
                           <div className='flex items-center gap-2'>
                             <Input
                               type='checkbox'
+                              aria-label={`Asignar permiso ${permission.name}`}
                               checked={selectedPermissions.includes(permission.id.toString())}
                               onChange={() => handlePermissionToggle(permission.id.toString())}
                               className='rounded border-zinc-300 dark:border-neutral-600 text-black focus:ring-black'

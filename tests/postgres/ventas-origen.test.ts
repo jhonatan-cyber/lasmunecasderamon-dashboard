@@ -9,7 +9,7 @@ import { SaleService } from '@/workflows/ventas';
  * Origen persistido de la venta (migración 098).
  *
  * El origen se decide en el servidor y se guarda en `ventas.origen`; el caso de
- * la entrada ya se cubre en `entradas-cortesia.test.ts`. Acá se fija el default
+ * la entrada ya se cubre en `entradas-cover.test.ts`. Acá se fija el default
  * real (una venta de barra sin vínculos) y que el esquema no acepte valores que
  * el negocio ya no usa, como `cuenta` (el pospago se reemplazó por prepago).
  */

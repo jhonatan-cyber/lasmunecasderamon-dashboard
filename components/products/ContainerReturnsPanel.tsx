@@ -524,7 +524,9 @@ export function ContainerReturnsPanel() {
                               {confirmandoId === d.id ? 'Aceptando…' : 'Aceptar devolución'}
                             </Button>
                           ) : (
-                            <span className='text-xs text-gray-400'>Completada</span>
+                            <span className='text-xs text-gray-500 dark:text-gray-400'>
+                              Completada
+                            </span>
                           )}
                         </TableCell>
                       </TableRow>

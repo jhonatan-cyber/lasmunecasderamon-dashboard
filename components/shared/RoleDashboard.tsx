@@ -46,7 +46,7 @@ export function RoleDashboard({
 
   if (userLoading || (loadingSummary && !dashboardData)) {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
           <p role='status' className='mt-4 text-gray-600'>
@@ -59,7 +59,7 @@ export function RoleDashboard({
 
   if (user?.role?.toLowerCase() !== role) {
     return (
-      <div className='p-6 flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center p-4 sm:p-6'>
         <div className='text-center'>
           <h1 className='text-2xl font-bold text-red-600 mb-4'>Acceso Denegado</h1>
           <p className='text-gray-600'>No tienes permisos para acceder a esta página.</p>
@@ -70,7 +70,7 @@ export function RoleDashboard({
 
   if (!dashboardData) {
     return (
-      <div className='p-6'>
+      <div className='p-4 sm:p-6'>
         <ErrorState
           title='Error al cargar el dashboard'
           message='No pudimos conectar con el servidor para obtener tus estadísticas.'
@@ -90,10 +90,10 @@ export function RoleDashboard({
       name={skeletonName}
       loading={userLoading || (loadingSummary && !dashboardData)}
     >
-      <div className='p-6 space-y-6'>
+      <div className='space-y-6 p-4 sm:p-6'>
         <div className='space-y-4'>
           <div className='text-left'>
-            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+            <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>
               {user?.name} {user?.lastName} - {roleLabel}
             </h1>
             <p className='text-gray-600 dark:text-gray-400'>{subtitle}</p>

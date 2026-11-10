@@ -227,7 +227,7 @@ export default function AgregarProductosModal({
           startTimer(
             cuentaIdStr,
             String(habitacionId),
-            habitacion?.nombre || 'Habitacion',
+            habitacion?.nombre || 'Habitación',
             tiempoNum,
             cuentaContext.codigo || `CUENTA_${cuentaIdStr}`,
             cuentaContext.cliente_nombre || 'Cliente',
@@ -284,7 +284,7 @@ export default function AgregarProductosModal({
     <>
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className='sm:max-w-6xl max-h-[90vh] flex flex-col p-0'>
-          <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+          <DialogHeader className='shrink-0 px-4 pt-5 pb-4 border-b sm:px-6 sm:pt-6'>
             <div className='flex items-center justify-center'>
               <DialogTitle className='text-xl font-semibold'>
                 Agregar Productos a la Cuenta
@@ -293,10 +293,10 @@ export default function AgregarProductosModal({
           </DialogHeader>
 
           {cuentaActual && (
-            <div className='mx-6 mt-4 rounded-lg border bg-slate-50 p-4 dark:bg-slate-800'>
+            <div className='mx-4 mt-4 rounded-lg border bg-slate-50 p-4 dark:bg-slate-800 sm:mx-6'>
               <div className='grid grid-cols-2 gap-4 text-sm md:grid-cols-4'>
                 <div>
-                  <span className='font-medium text-gray-500 dark:text-gray-400'>Codigo:</span>{' '}
+                  <span className='font-medium text-gray-500 dark:text-gray-400'>Código:</span>{' '}
                   <span className='font-semibold'>{cuentaActual.codigo}</span>
                 </div>
                 <div>
@@ -306,9 +306,9 @@ export default function AgregarProductosModal({
                   </span>
                 </div>
                 <div>
-                  <span className='font-medium text-gray-500 dark:text-gray-400'>Habitacion:</span>{' '}
+                  <span className='font-medium text-gray-500 dark:text-gray-400'>Habitación:</span>{' '}
                   <span className='font-semibold'>
-                    {cuentaActual.habitacion_numero || 'Sin habitacion'}
+                    {cuentaActual.habitacion_numero || 'Sin habitación'}
                   </span>
                 </div>
                 <div>
@@ -330,7 +330,7 @@ export default function AgregarProductosModal({
             </div>
           )}
 
-          <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <div className='min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6'>
             <div className='space-y-6'>
               <div className='w-full'>
                 <ProductSearch
@@ -361,8 +361,8 @@ export default function AgregarProductosModal({
                   habitaciones={habitaciones}
                   value={habitacionId}
                   onChange={setHabitacionId}
-                  label='Habitacion'
-                  placeholder='Seleccionar habitacion'
+                  label='Habitación'
+                  placeholder='Seleccionar habitación'
                   excludeStatuses={[0]}
                   disabled={!requiresRoomTimeSelection}
                 />

@@ -1,6 +1,6 @@
 'use client';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useSaleProductModal } from '@/hooks/sales/useSaleProductModal';
+import { puedeVenderseEnBar } from '@/lib/sales/saleChoice';
+import { useIsMobile } from '@/hooks/shared';
 import { SaleProductViewToggle } from '@/components/sales/product-modal/SaleProductViewToggle';
 import { SaleProductSearch } from '@/components/sales/product-modal/SaleProductSearch';
 import { SaleProductTable } from '@/components/sales/product-modal/SaleProductTable';
@@ -60,12 +62,17 @@ export default function SaleProductModal({
   onOtherProductHostessChange,
   productosEnCarrito
 }: SaleProductModalProps) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleProduct = (id: string) =>
-    setCollapsed(previous => ({ ...previous, [id]: !previous[id] }));
+    setExpanded(previous => ({ ...previous, [id]: !previous[id] }));
+  // Stock 0 no descarta la presentación: la botella abierta se vende por cortos.
+  const productosConStock = useMemo(
+    () => (productos ?? []).filter(puedeVenderseEnBar),
+    [productos]
+  );
   const modal = useSaleProductModal({
     open,
-    productos,
+    productos: productosConStock,
     cantidades,
     handleCantidadChange,
     handleAgregarProducto,
@@ -77,6 +84,14 @@ export default function SaleProductModal({
     productosEnCarrito
   });
 
+  // En móvil la tabla no es usable: se fuerzan tarjetas y se oculta el conmutador.
+  const isMobile = useIsMobile();
+  const viewMode = isMobile ? 'cards' : modal.viewMode;
+
+  // Los detalles parten ocultos: solo se expande lo que el usuario abre.
+  const collapsed: Record<string, boolean> = {};
+  for (const item of modal.items) collapsed[item.id] = !expanded[item.id];
+
   const [adding, setAdding] = useState(false);
   const addingRef = useRef(false);
   const addDisabled =
@@ -86,7 +101,7 @@ export default function SaleProductModal({
     modal.selectedItems.some(item => item.agregarDisabled);
   const closeAndReset = () => {
     modal.resetSelection();
-    setCollapsed({});
+    setExpanded({});
     onClose();
   };
   const addSelected = async () => {
@@ -113,8 +128,8 @@ export default function SaleProductModal({
     >
       <DialogContent className='flex max-h-[94dvh] w-[calc(100vw-1rem)] max-w-[1480px] flex-col gap-0 overflow-hidden p-0 sm:w-[calc(100vw-3rem)] sm:rounded-2xl'>
         <DialogHeader className='shrink-0 border-b bg-muted/30 px-4 pb-4 pt-5 sm:px-6'>
-          <div className='flex flex-wrap items-center justify-between gap-3'>
-            <div className='min-w-0'>
+          <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between'>
+            <div className='min-w-0 pr-10 sm:pr-0'>
               <DialogTitle className='text-lg'>
                 {categoria
                   ? `Productos en bar · ${categoria.nombre || categoria.name}`
@@ -122,22 +137,27 @@ export default function SaleProductModal({
               </DialogTitle>
               <p className='mt-1 text-sm text-muted-foreground'>
                 {modal.queryNorm
-                  ? `${modal.filteredCount} de ${productos?.length || 0} presentaciones`
-                  : productos?.length
-                    ? `${productos.length} ${productos.length === 1 ? 'presentación disponible' : 'presentaciones disponibles'} en bar`
+                  ? `${modal.filteredCount} de ${productosConStock.length} presentaciones`
+                  : productosConStock.length
+                    ? `${productosConStock.length} ${productosConStock.length === 1 ? 'presentación disponible' : 'presentaciones disponibles'} en bar`
                     : 'Sin productos con stock en bar'}
               </p>
             </div>
             <div
               data-testid='product-search-view-controls'
-              className='mr-7 flex min-w-0 flex-1 items-center gap-3 lg:max-w-[720px]'
+              className='flex w-full min-w-0 flex-col gap-2 sm:mr-7 sm:w-auto sm:flex-1 sm:flex-row sm:items-center sm:gap-3 lg:max-w-[720px]'
             >
               <SaleProductSearch
                 value={modal.query}
                 onChange={modal.handleQueryChange}
                 onClear={modal.clearQuery}
               />
-              <SaleProductViewToggle viewMode={modal.viewMode} onValueChange={modal.setViewMode} />
+              <div className='hidden shrink-0 sm:block'>
+                <SaleProductViewToggle
+                  viewMode={modal.viewMode}
+                  onValueChange={modal.setViewMode}
+                />
+              </div>
             </div>
           </div>
         </DialogHeader>
@@ -148,7 +168,7 @@ export default function SaleProductModal({
             </div>
           ) : (
             <div className='w-full'>
-              {!Array.isArray(productos) || productos.length === 0 ? (
+              {productosConStock.length === 0 ? (
                 <EmptyState
                   variant='text'
                   className='w-full'
@@ -162,7 +182,7 @@ export default function SaleProductModal({
                 />
               ) : (
                 <>
-                  {modal.viewMode === 'table' ? (
+                  {viewMode === 'table' ? (
                     <SaleProductTable
                       collapsed={collapsed}
                       onToggle={toggleProduct}

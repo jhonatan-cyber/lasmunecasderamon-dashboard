@@ -52,7 +52,7 @@
   "entradas": [
     "entradas_clientes",
     "entradas_clientes_productos",
-    "solicitudes_entrega_cortesias"
+    "solicitudes_entrega_covers"
   ],
   "operacion": [
     "cuentas",

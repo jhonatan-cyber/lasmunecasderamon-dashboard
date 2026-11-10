@@ -27,14 +27,14 @@ export function CleanDatabaseConfirmModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-[425px] flex flex-col p-0 overflow-hidden rounded-2xl max-h-[90vh]'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b dark:border-slate-800'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-slate-800 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='flex items-center gap-2'>
             <AlertTriangle className='text-red-500 w-5 h-5' />
             <span className='text-gray-900 dark:text-neutral-100'>¿Vaciar base de datos?</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-6'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='text-left'>
             <p className='font-medium text-gray-900 dark:text-neutral-100 mb-4 text-center'>
               ¿Estás seguro de que querés vaciar la base de datos?
@@ -76,7 +76,7 @@ export function CleanDatabaseConfirmModal({
           </div>
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4 bg-gray-50 dark:bg-slate-900/50 rounded-b-2xl'>
+        <div className='shrink-0 rounded-b-2xl border-t bg-gray-50 p-4 dark:bg-slate-900/50 sm:p-6'>
           <div className='flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 w-full'>
             <Button
               variant='outline'

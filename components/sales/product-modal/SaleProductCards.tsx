@@ -28,7 +28,7 @@ export function SaleProductCards({
     <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-5'>
       {items.map(item => {
         const columns = getSaleProductFormatColumns(item);
-        const fullRow = columns.hasDrink || columns.hasHostess;
+        const fullRow = !collapsed[item.id] && (columns.hasDrink || columns.hasHostess);
         return (
           <Card
             key={item.id}

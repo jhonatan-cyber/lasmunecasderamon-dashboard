@@ -92,8 +92,8 @@ function ConfirmarAnticipoContent() {
       if (result.success) {
         toast.success(
           accion === 'aprobar'
-            ? '✅ Anticipo aprobado exitosamente'
-            : '❌ Anticipo rechazado exitosamente'
+            ? 'Anticipo aprobado exitosamente'
+            : 'Anticipo rechazado exitosamente'
         );
 
         toast.info('La ventana se cerrará automáticamente en 2 segundos');
@@ -115,7 +115,7 @@ function ConfirmarAnticipoContent() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
         <div className='text-center'>
           <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4 text-primary' />
           <p className='text-gray-600 dark:text-gray-400'>Cargando solicitud de anticipo...</p>
@@ -200,7 +200,9 @@ function ConfirmarAnticipoContent() {
                   <MessageSquare className='h-6 w-6 text-purple-600 dark:text-purple-400' />
                 </div>
                 <div className='flex-1'>
-                  <p className='text-xs text-gray-400 font-bold uppercase tracking-wider'>Motivo</p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider'>
+                    Motivo
+                  </p>
                   <p className='text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed'>
                     {solicitud.motivo || 'No especificado'}
                   </p>
@@ -261,7 +263,7 @@ export default function ConfirmarAnticipoPage() {
   return (
     <Suspense
       fallback={
-        <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+        <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
           <Loader2 className='animate-spin text-primary h-12 w-12' />
         </div>
       }

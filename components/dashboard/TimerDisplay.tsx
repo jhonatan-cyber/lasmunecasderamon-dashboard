@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 import { useTimer, useCountdown } from '@/contexts/TimerContext';
-import { Clock, Square, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Square, ChevronDown, ChevronUp, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FloatingTimerPanel } from './FloatingTimerPanel';
 import { toast } from 'sonner';
@@ -115,7 +115,12 @@ const TimerItem = memo(
               }`}
             >
               {formatTime(remainingTime)}
-              {timer.isPaused && <span className='ml-1 text-xs text-yellow-600'>⏸️</span>}
+              {timer.isPaused && (
+                <span className='ml-1 inline-flex items-center text-yellow-600'>
+                  <Pause className='h-3 w-3' aria-hidden='true' />
+                  <span className='sr-only'>En pausa</span>
+                </span>
+              )}
             </span>
           </div>
           {!timer.isPaused && (
@@ -124,6 +129,7 @@ const TimerItem = memo(
               variant='ghost'
               onClick={() => onStop(timer.id, timer.roomName)}
               className='h-6 w-6 p-0 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/60 dark:hover:text-red-300'
+              aria-label={`Detener temporizador${timer.roomName ? ` de ${timer.roomName}` : ''}`}
             >
               <Square className='w-3 h-3' />
             </Button>

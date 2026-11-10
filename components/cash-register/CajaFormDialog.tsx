@@ -162,11 +162,11 @@ export const CajaFormDialog = ({
         </Button>
       </DialogTrigger>
       <DialogContent className='max-w-md w-full border-none shadow-2xl bg-white dark:bg-slate-900 rounded-4xl p-0 overflow-hidden'>
-        <DialogHeader className='px-8 pt-8 pb-4 border-b border-slate-100 dark:border-white/5'>
+        <DialogHeader className='px-4 pt-5 pb-4 border-b border-slate-100 dark:border-white/5 sm:px-8 sm:pt-8'>
           <DialogTitle className='text-xl font-black tracking-tight'>Apertura de Caja</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className='flex flex-col'>
-          <div className='px-8 py-6 space-y-6'>
+        <form onSubmit={handleSubmit} className='flex min-h-0 flex-1 flex-col'>
+          <div className='flex-1 overflow-y-auto px-4 py-5 space-y-6 sm:px-8 sm:py-6'>
             <div className='space-y-3'>
               <Label
                 htmlFor='monto_apertura'
@@ -198,6 +198,7 @@ export const CajaFormDialog = ({
                 <Calendar className='absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300' />
                 <Input
                   readOnly
+                  aria-label='Fecha y hora de registro'
                   value={`${formatDateTimeDmyLabel(currentDateTime.toISOString()).date} ${formatDateTimeDmyLabel(currentDateTime.toISOString()).time}`}
                   className='pl-12 h-14 bg-slate-100/50 dark:bg-white/5 border-transparent rounded-2xl text-sm font-medium text-slate-500'
                 />
@@ -205,11 +206,11 @@ export const CajaFormDialog = ({
             </div>
           </div>
 
-          <div className='px-8 py-6 bg-slate-50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row gap-3'>
+          <div className='shrink-0 px-4 py-4 bg-slate-50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5 flex flex-col-reverse sm:flex-row gap-3 sm:px-8 sm:py-6'>
             <Button
               type='button'
               variant='outline'
-              className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+              className='w-full rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105 sm:w-auto'
               onClick={() => setOpen(false)}
               disabled={loading}
             >
@@ -217,7 +218,7 @@ export const CajaFormDialog = ({
             </Button>
             <Button
               type='submit'
-              className='bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 transition-all hover:scale-105'
+              className='w-full bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full px-8 transition-all hover:scale-105 sm:w-auto'
               disabled={loading}
             >
               {loading ? (

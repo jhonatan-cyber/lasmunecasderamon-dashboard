@@ -46,9 +46,11 @@ export function OrderDetailInfoPanel({
       {rows.map((row, index) => (
         <div key={row.label}>
           {index > 0 && <Separator />}
-          <div className='flex items-center justify-between'>
-            <span className='text-xs text-muted-foreground sm:text-sm'>{row.label}</span>
-            <span className='text-xs font-medium sm:text-sm'>{row.value}</span>
+          <div className='flex items-start justify-between gap-3'>
+            <span className='shrink-0 text-xs text-muted-foreground sm:text-sm'>{row.label}</span>
+            <span className='min-w-0 text-right text-xs font-medium break-words sm:text-sm'>
+              {row.value}
+            </span>
           </div>
         </div>
       ))}

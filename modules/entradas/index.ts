@@ -11,18 +11,19 @@ export {
 } from './servicio';
 
 export {
-  listarSolicitudesCortesia,
-  crearSolicitudCortesia,
-  obtenerSolicitudCortesia,
-  aprobarSolicitudCortesia,
-  rechazarSolicitudCortesia
-} from './cortesias/servicio';
+  listarSolicitudesCover,
+  crearSolicitudCover,
+  obtenerSolicitudCover,
+  aprobarSolicitudCover,
+  rechazarSolicitudCover
+} from './covers/servicio';
 
 export type {
+  AnulacionOrigen,
   EntradaCliente,
   EntradaPendiente,
   EntregaEntradaInput,
-  EstadoCortesia,
+  EstadoCover,
   MetodoPagoEntrada,
   PlanVentaEntrada,
   RegistradorVenta,

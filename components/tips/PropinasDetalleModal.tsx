@@ -78,8 +78,8 @@ export default function PropinasDetalleModal({
             <h3 className='text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600'>
               Detalle de las Propinas
             </h3>
-            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
-              <Table className='min-w-full'>
+            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-x-auto'>
+              <Table className='min-w-[580px]'>
                 <TableHeader>
                   <TableRow className='hover:bg-transparent'>
                     <TableHead className='font-normal'>FECHA HORA</TableHead>

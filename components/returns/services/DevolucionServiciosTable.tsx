@@ -236,6 +236,7 @@ export const DevolucionServiciosTable = ({
                           variant='outline'
                           size='sm'
                           onClick={() => onVerDetalles(servicio)}
+                          aria-label='Ver detalles del servicio'
                           className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white'
                         >
                           <Eye className='w-4 h-4' />
@@ -255,6 +256,7 @@ export const DevolucionServiciosTable = ({
                             variant='outline'
                             size='sm'
                             onClick={() => onAnularServicio(servicio)}
+                            aria-label='Anular servicio'
                             className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-red-600 hover:text-white'
                           >
                             <X className='w-4 h-4' />

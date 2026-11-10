@@ -29,24 +29,24 @@ const ANTICIPO = 1500;
 // 1 asistencia × sueldo + hx + gratificación − anticipo − aporte (descuento 0).
 const TOTAL_ESPERADO = SUELDO + HX + GRATIFICACION - ANTICIPO - APORTE;
 
-async function sembrarFixture() {
+async function sembrarFixture({ entregarAnticipo = true }: { entregarAnticipo?: boolean } = {}) {
   const [admin] = await query<{ id_usuario: string }[]>(
     'SELECT id_usuario FROM usuarios ORDER BY fecha_crea ASC LIMIT 1'
   );
   const [rol] = await query<{ id_rol: string }[]>('SELECT id_rol FROM roles LIMIT 1');
   if (!admin || !rol) throw new Error('La base de pruebas no tiene usuarios ni roles');
 
-  // Semilla mínima: `permissions` y `role_permissions` viajan con el esquema,
-  // pero si la base ejecutó `datos.sql` antes que este test se haya preparado,
-  // la expresión asume eso y borra a imitación de los tests de todos los módulos.
-  await query('DELETE FROM role_permissions');
-  await query('DELETE FROM permissions');
+  // Siembra idempotente del mínimo que usa este fixture. La suite postgres
+  // comparte una sola DB y corre en serie: borrar el catálogo rompería a los
+  // archivos que corren después (transfers-custom-role necesita
+  // products/accept_transfer). Insertamos sin pisar lo que ya sembró el setup.
   await query(`
     INSERT INTO permissions (id, name, description, module, action, created_at, updated_at)
     VALUES (gen_random_uuid()::text, 'Ver roles', 'Acceso de prueba', 'roles', 'view', now(), now()),
            (gen_random_uuid()::text, 'Editar roles', 'Acceso de prueba', 'roles', 'edit', now(), now()),
            (gen_random_uuid()::text, 'Ver planilla', 'Acceso de prueba', 'payroll', 'view', now(), now()),
            (gen_random_uuid()::text, 'Crear pagos', 'Acceso de prueba', 'payroll', 'create', now(), now())
+    ON CONFLICT ON CONSTRAINT unique_permission DO NOTHING
   `);
   await query(`
     INSERT INTO role_permissions (id, role_id, permission_id, created_at)
@@ -82,9 +82,9 @@ async function sembrarFixture() {
     [generateUUID(), usuarioId, HX / 2, HX]
   );
   await query(
-    `INSERT INTO anticipos (id_anticipo, usuario_id, monto, motivo, estado, fecha_crea)
-     VALUES (?, ?, ?, 'Anticipo de planilla PRD', 1, now())`,
-    [generateUUID(), usuarioId, ANTICIPO]
+    `INSERT INTO anticipos (id_anticipo, usuario_id, monto, motivo, estado, fecha_entrega, fecha_crea)
+     VALUES (?, ?, ?, 'Anticipo de planilla PRD', 1, ?, now())`,
+    [generateUUID(), usuarioId, ANTICIPO, entregarAnticipo ? new Date().toISOString() : null]
   );
   await query(
     `INSERT INTO gratificaciones (id, usuario_id, monto, descripcion, estado, solicitante_id, fecha_crea)
@@ -220,6 +220,44 @@ it('el pago ceroa los pendientes y deja la liquidación con monto, desglose y ej
         [usuarioId]
       )
     ).toBe(0);
+
+    const [anticipo] = await query<{ estado: number; fecha_cobro: Date | null }[]>(
+      'SELECT estado, fecha_cobro FROM anticipos WHERE usuario_id = ?',
+      [usuarioId]
+    );
+    expect(Number(anticipo.estado)).toBe(4);
+    expect(anticipo.fecha_cobro).toBeTruthy();
+  } finally {
+    await query('DELETE FROM pagos_nomina WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM gratificaciones WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM anticipos WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM horas_extras WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM asistencias WHERE usuario_id = ?', [usuarioId]);
+    await query('DELETE FROM usuarios WHERE id_usuario = ?', [usuarioId]);
+  }
+});
+
+it('no descuenta ni liquida un anticipo aprobado que aún no se entrega', async () => {
+  const { usuarioId, adminId } = await sembrarFixture({ entregarAnticipo: false });
+  const totalSinAnticipo = SUELDO + HX + GRATIFICACION - APORTE;
+  try {
+    const filas = (await PayrollService.getSummary()) as Array<Record<string, unknown>>;
+    const fila = filas.find(f => String(f.id_usuario) === usuarioId);
+
+    expect(fila, 'el trabajador sigue teniendo saldo por otros conceptos').toBeDefined();
+    expect(Number(fila!.anticipos)).toBe(0);
+    expect(Number(fila!.total)).toBe(totalSinAnticipo);
+
+    const resumen = await PayrollService.pay(usuarioId, adminId, totalSinAnticipo);
+    expect(resumen.componentes.anticipos).toBe(0);
+
+    const [anticipo] = await query<{ estado: number; fecha_cobro: Date | null }[]>(
+      'SELECT estado, fecha_cobro FROM anticipos WHERE usuario_id = ?',
+      [usuarioId]
+    );
+    // Sigue pendiente de entrega: se descontará recién en la nómina siguiente.
+    expect(Number(anticipo.estado)).toBe(1);
+    expect(anticipo.fecha_cobro).toBeNull();
   } finally {
     await query('DELETE FROM pagos_nomina WHERE usuario_id = ?', [usuarioId]);
     await query('DELETE FROM gratificaciones WHERE usuario_id = ?', [usuarioId]);

@@ -99,6 +99,7 @@ export const DesktopTableView = React.memo(function DesktopTableView({
                               variant='ghost'
                               size='sm'
                               className='bg-white hover:bg-gray-50 rounded-full'
+                              aria-label='Acciones de la cuenta'
                             >
                               <MoreVertical className='h-4 w-4' />
                             </Button>

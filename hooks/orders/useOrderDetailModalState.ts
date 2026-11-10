@@ -6,6 +6,7 @@ import { computeHostessLimit } from '@/components/orders/detail';
 import { getOrderHostessIds } from '@/components/orders/orderDetailUtils';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { calcularPropina } from '@/lib/business/saleTotals';
+import { orderLineToSaleDetail } from '@/lib/sales/orderSale';
 
 interface UseOrderDetailModalStateParams {
   open: boolean;
@@ -20,7 +21,7 @@ export function useOrderDetailModalState({ open, detail, rooms }: UseOrderDetail
   const propinaOriginal = Number(detail[0]?.propina || 0);
   const propinaPct = Number(useConfigValue('facturacion', 'propina_venta', '10'));
   const subtotalBase = useMemo(
-    () => detail.reduce((sum, d) => sum + Number(d.precio || 0) * Number(d.cantidad || 0), 0),
+    () => detail.reduce((sum, d) => sum + Number(orderLineToSaleDetail(d).sub_total || 0), 0),
     [detail]
   );
 

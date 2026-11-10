@@ -79,8 +79,8 @@ function ConfirmarGratificacionContent() {
 
       toast.success(
         accion === 'aprobar'
-          ? '✅ Gratificación aprobada exitosamente'
-          : '❌ Gratificación rechazada exitosamente'
+          ? 'Gratificación aprobada exitosamente'
+          : 'Gratificación rechazada exitosamente'
       );
 
       setTimeout(() => {
@@ -97,7 +97,7 @@ function ConfirmarGratificacionContent() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+      <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
         <div className='text-center'>
           <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4 text-primary' />
           <p className='text-gray-600 dark:text-gray-400'>Cargando solicitud de gratificación...</p>
@@ -235,7 +235,7 @@ export default function ConfirmarGratificacionPage() {
   return (
     <Suspense
       fallback={
-        <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950'>
+        <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950'>
           <Loader2 className='animate-spin text-primary h-12 w-12' />
         </div>
       }

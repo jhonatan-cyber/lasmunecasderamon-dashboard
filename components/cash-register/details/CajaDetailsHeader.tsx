@@ -57,9 +57,9 @@ export const CajaDetailsHeader = memo(function CajaDetailsHeader({
     ? formatDateTimeLabel(cierrePendiente.solicitadoEn)
     : null;
   return (
-    <DialogHeader className='p-6 pb-2 border-b shrink-0 bg-white dark:bg-slate-900 print:hidden'>
-      <div className='flex items-center justify-between'>
-        <DialogTitle className='text-xl font-bold text-slate-900 dark:text-white flex items-center gap-4'>
+    <DialogHeader className='p-4 pb-2 border-b shrink-0 bg-white dark:bg-slate-900 sm:p-6 sm:pb-2 print:hidden'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+        <DialogTitle className='text-lg font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-2 sm:gap-4 sm:text-xl'>
           <Calendar className='w-5 h-5 text-gray-500' />
           Detalles de Caja - {getDiaSemana(fechaApertura)}{' '}
           <Badge
@@ -69,7 +69,7 @@ export const CajaDetailsHeader = memo(function CajaDetailsHeader({
             {estadoInfo.label}
           </Badge>
         </DialogTitle>
-        <div className='flex items-center gap-3 ml-auto'>
+        <div className='flex flex-wrap items-center justify-end gap-2 sm:ml-auto sm:gap-3'>
           {onSendWhatsApp && (
             <Button
               variant='outline'
@@ -83,7 +83,9 @@ export const CajaDetailsHeader = memo(function CajaDetailsHeader({
               ) : (
                 <MessageCircle className='w-4 h-4' />
               )}
-              <span>{sendingWhatsApp ? 'Enviando…' : 'Enviar reporte PDF'}</span>
+              <span className='hidden sm:inline'>
+                {sendingWhatsApp ? 'Enviando…' : 'Enviar reporte PDF'}
+              </span>
             </Button>
           )}
           <Button variant='outline' size='sm' className='rounded-full gap-2' onClick={onPrint}>

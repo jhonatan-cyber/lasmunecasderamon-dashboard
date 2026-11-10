@@ -12,6 +12,10 @@ import { BusinessError, ConflictError } from '@/lib/errors/errors';
  * de baja siguen apareciendo mientras les quede saldo, que es justamente lo que
  * hay que poder pagarles al irse.
  *
+ * Los anticipos son la excepción: solo se descuentan los que ya se entregaron
+ * (`fecha_entrega`), porque un anticipo aprobado pero nunca pagado en efectivo
+ * no es una deuda del trabajador. Por eso también el pago solo liquida esos.
+ *
  * `ULT` trae la última liquidación registrada en `pagos_nomina` para mostrar en
  * la lista cuándo y por cuánto se pagó por última vez.
  */
@@ -30,7 +34,7 @@ INNER JOIN roles R ON R.id_rol = U.rol_id
 LEFT JOIN (SELECT usuario_id, COUNT(*) AS asistencias FROM asistencias WHERE estado = 1 GROUP BY usuario_id) AS ASIS ON ASIS.usuario_id = U.id_usuario
 LEFT JOIN (SELECT DC.usuario_id, SUM(DC.comision) AS total_venta FROM detalle_comisiones DC INNER JOIN comisiones C ON C.id_comision = DC.comision_id WHERE C.venta_id IS NOT NULL AND C.estado = 1 AND DC.estado = 1 GROUP BY DC.usuario_id) AS VEN ON VEN.usuario_id = U.id_usuario
 LEFT JOIN (SELECT DC.usuario_id, SUM(DC.comision) AS total_servicios FROM detalle_comisiones DC INNER JOIN comisiones C ON C.id_comision = DC.comision_id WHERE C.servicio_id IS NOT NULL AND C.estado = 1 AND DC.estado = 1 GROUP BY DC.usuario_id) AS SERV ON SERV.usuario_id = U.id_usuario
-LEFT JOIN (SELECT usuario_id, SUM(monto) AS total_anticipos FROM anticipos WHERE estado = 1 GROUP BY usuario_id) AS ANT ON ANT.usuario_id = U.id_usuario
+LEFT JOIN (SELECT usuario_id, SUM(monto) AS total_anticipos FROM anticipos WHERE estado = 1 AND fecha_entrega IS NOT NULL GROUP BY usuario_id) AS ANT ON ANT.usuario_id = U.id_usuario
 LEFT JOIN (SELECT usuario_id, SUM(monto) AS total_propinas FROM detalle_propinas WHERE estado = 1 GROUP BY usuario_id) AS PROP ON PROP.usuario_id = U.id_usuario
 LEFT JOIN (SELECT usuario_id, SUM(total) AS total_monto_horas FROM horas_extras WHERE estado = 1 GROUP BY usuario_id) AS HR ON HR.usuario_id = U.id_usuario
 LEFT JOIN (SELECT usuario_id, SUM(monto) AS total_gratificaciones FROM gratificaciones WHERE estado = 1 GROUP BY usuario_id) AS GRAT ON GRAT.usuario_id = U.id_usuario
@@ -146,12 +150,12 @@ export class PayrollRepository {
 
     if (entregadoPor) {
       await trx(
-        'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ?, entregado_por = ? WHERE usuario_id = ? AND estado = 1',
+        'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ?, entregado_por = ? WHERE usuario_id = ? AND estado = 1 AND fecha_entrega IS NOT NULL',
         [now, now, String(entregadoPor), userId]
       );
     } else {
       await trx(
-        'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ? WHERE usuario_id = ? AND estado = 1',
+        'UPDATE anticipos SET estado = 4, fecha_cobro = ?, fecha_mod = ? WHERE usuario_id = ? AND estado = 1 AND fecha_entrega IS NOT NULL',
         [now, now, userId]
       );
     }

@@ -16,7 +16,7 @@ interface OrderProductsProps {
 export function OrderProducts({ detail, propina, recargoAnfitrionas }: OrderProductsProps) {
   const defaultShotMl = useConfigValue<number>('bar', 'shot_ml', 50);
   const subtotal = detail.reduce(
-    (sum, item) => sum + Number(item.precio || 0) * Number(item.cantidad || 0),
+    (sum, item) => sum + Number(orderLineToSaleDetail(item).sub_total || 0),
     0
   );
   return (

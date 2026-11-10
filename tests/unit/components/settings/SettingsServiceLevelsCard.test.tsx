@@ -76,4 +76,19 @@ describe('SettingsServiceLevelsCard · colaciones por rol', () => {
       });
     });
   });
+
+  it('guarda el tope de acompañamiento como entero', async () => {
+    const request = stubFetch(ROLES);
+
+    render(<SettingsServiceLevelsCard />);
+    const input = await screen.findByLabelText('Tope de acompañamiento');
+    fireEvent.change(input, { target: { value: '3000' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/i }));
+
+    await waitFor(() => {
+      const put = request.mock.calls.find(args => args[1]?.method === 'PUT');
+      const body = JSON.parse((put![1] as { body: string }).body);
+      expect(body.configs).toContainEqual({ clave: 'tope_precio_acompanamiento', valor: '3000' });
+    });
+  });
 });

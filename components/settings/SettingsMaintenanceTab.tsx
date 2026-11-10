@@ -15,6 +15,7 @@ import { AlertTriangle, Database, Download, HardDrive, RotateCcw } from 'lucide-
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { CleanDatabaseConfirmModal } from './CleanDatabaseConfirmModal';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import type { BackupItem } from './settings-types';
 import logger from '@/lib/utils/logger';
 
@@ -25,6 +26,7 @@ export function SettingsMaintenanceTab() {
   const [restoringBackupId, setRestoringBackupId] = useState<string | null>(null);
   const [isCleanModalOpen, setIsCleanModalOpen] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [pendingRestoreId, setPendingRestoreId] = useState<string | null>(null);
 
   const fetchBackups = useCallback(async () => {
     try {
@@ -71,14 +73,10 @@ export function SettingsMaintenanceTab() {
     }
   };
 
-  const restoreBackup = async (backupId: string) => {
-    if (
-      !confirm(
-        '¿Estás seguro de que quieres restaurar este backup? Se sobrescribirán todos los datos actuales.'
-      )
-    )
-      return;
-    if (!confirm('¿REALMENTE quieres continuar? Esta acción no se puede deshacer.')) return;
+  const restoreBackup = async () => {
+    if (!pendingRestoreId) return;
+    const backupId = pendingRestoreId;
+    setPendingRestoreId(null);
 
     try {
       setRestoringBackupId(backupId);
@@ -231,7 +229,7 @@ export function SettingsMaintenanceTab() {
                             </Button>
                             <Button
                               variant='unstyled'
-                              onClick={() => restoreBackup(backup.id_backup)}
+                              onClick={() => setPendingRestoreId(backup.id_backup)}
                               disabled={restoringBackupId === backup.id_backup}
                               className='p-1.5 text-green-600 hover:bg-green-50 rounded-full disabled:opacity-50'
                               title='Restaurar'
@@ -323,6 +321,19 @@ export function SettingsMaintenanceTab() {
         onOpenChange={setIsCleanModalOpen}
         onConfirm={cleanDatabase}
         isLoading={isCleaning}
+      />
+
+      <ConfirmModal
+        open={pendingRestoreId !== null}
+        onOpenChange={open => {
+          if (!open) setPendingRestoreId(null);
+        }}
+        title='Restaurar backup'
+        message='Se sobrescribirán todos los datos actuales con el contenido del backup. Esta acción no se puede deshacer.'
+        confirmText='Restaurar'
+        type='warning'
+        isLoading={restoringBackupId !== null}
+        onConfirm={restoreBackup}
       />
     </>
   );

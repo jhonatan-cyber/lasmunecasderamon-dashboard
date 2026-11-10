@@ -48,7 +48,7 @@ export function CodigoVerificacionHeader({ userRole }: CodigoVerificacionHeaderP
   }
 
   return (
-    <div className='flex items-center gap-2'>
+    <div className='hidden items-center gap-2 md:flex'>
       <div className='flex items-center gap-2 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-full px-3 py-1'>
         <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-widest mr-1'>
           Código:

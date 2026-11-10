@@ -42,16 +42,16 @@ export function ServicioDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-neutral-900'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-center text-lg font-bold text-black dark:text-neutral-100'>
             Información del Servicio
           </DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
+        <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
           <div className='space-y-6'>
             {}
-            <div className='grid grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6'>
               <div className='space-y-3'>
                 <div className='flex items-center gap-2'>
                   <Calendar className='text-gray-500 dark:text-neutral-400 w-4' />
@@ -230,7 +230,7 @@ export function ServicioDetailModal({
           </div>
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t p-4 sm:p-6'>
           <div className='flex justify-center gap-4'>
             {mostrarBotonEditar && (
               <Button

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { PersonnelGrid } from '@/components/attendance/PersonnelGrid';
 import { QrCodeDialog } from '@/components/attendance/QrCodeDialog';
 import { ErrorState } from '@/components/shared/ErrorState';
+import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 const AttendanceTable = dynamic(() => import('@/components/attendance/AttendanceTable'), {
   loading: () => <div className='h-48 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />,
@@ -43,14 +44,15 @@ export default function AttendancePage() {
   const [selectedUserForQR, setSelectedUserForQR] = useState<any | null>(null);
   const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
   const [masivoLoading, setMasivoLoading] = useState(false);
+  const [masivoConfirmOpen, setMasivoConfirmOpen] = useState(false);
 
   const handleRegistroMasivo = async () => {
     if (masivoLoading) return;
-    if (
-      !window.confirm('¿Registrar asistencia de hoy a todas las anfitrionas y garzones activos?')
-    ) {
-      return;
-    }
+    setMasivoConfirmOpen(true);
+  };
+
+  const confirmarRegistroMasivo = async () => {
+    if (masivoLoading) return;
     setMasivoLoading(true);
     try {
       const res = await fetch('/api/attendance/bulk', { method: 'POST' });
@@ -208,6 +210,16 @@ export default function AttendancePage() {
         </div>
 
         <QrCodeDialog selectedUser={selectedUserForQR} onClose={() => setSelectedUserForQR(null)} />
+
+        <ConfirmModal
+          open={masivoConfirmOpen}
+          onOpenChange={setMasivoConfirmOpen}
+          title='Entrada masiva de hoy'
+          message='Se registrará la asistencia de hoy para todas las anfitrionas y garzones activos.'
+          confirmText='Registrar'
+          type='question'
+          onConfirm={confirmarRegistroMasivo}
+        />
 
         <AsistenciaForm
           isOpen={asistenciaFormOpen}

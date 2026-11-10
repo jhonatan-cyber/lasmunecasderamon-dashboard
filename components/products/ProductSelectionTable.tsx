@@ -1,5 +1,12 @@
 import React from 'react';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 import { ProductTableRow } from './ProductTableRow';
 import {
   CUENTA_TABLE_CARD_CLASS,
@@ -44,6 +51,13 @@ export const ProductSelectionTable: React.FC<ProductSelectionTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
+            {productos.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className='py-8 text-center text-sm text-gray-500'>
+                  No se encontraron productos.
+                </TableCell>
+              </TableRow>
+            )}
             {productos.map((producto, index) => {
               const id = (producto.id_producto || producto.id).toString();
               const isSelected = showSelection ? !!selectedProducts[id] : false;

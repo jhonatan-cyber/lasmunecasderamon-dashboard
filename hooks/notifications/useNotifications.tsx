@@ -216,7 +216,7 @@ export function useNotifications() {
     }
 
     // La puerta registró una entrada: caja, barra y administración tienen que
-    // entregar la bebida de cortesía. El aviso lleva a la cola del rol.
+    // entregar la bebida del cover. El aviso lleva a la cola del rol.
     if (payload?.type === 'entrada_registrada' && payload?.data) {
       const data = payload.data as {
         id?: string;
@@ -226,7 +226,7 @@ export function useNotifications() {
       };
       const cantidad = Number(data.cantidad || 1);
       const cliente = data.cliente_nombre || 'Cliente sin nombre';
-      const destino = userRole?.toLowerCase() === 'barman' ? '/bar?tab=cortesias' : '/tickets';
+      const destino = userRole?.toLowerCase() === 'barman' ? '/bar?tab=covers' : '/tickets';
       playNotificationSound();
       toast.success(
         cantidad === 1 ? 'Nueva entrada en la puerta' : `${cantidad} entradas en la puerta`,

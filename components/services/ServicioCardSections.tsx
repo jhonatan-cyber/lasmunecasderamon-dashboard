@@ -116,6 +116,7 @@ export function ServicioCardTimerSection({
             <div className='flex items-center gap-2'>
               <Input
                 type='number'
+                aria-label='Editar tiempo del servicio'
                 value={editTiempo}
                 onChange={e => setEditTiempo(Number(e.target.value))}
                 className='h-9 w-20 rounded-full border-zinc-300/80 bg-white text-center text-sm shadow-xs dark:border-zinc-700 dark:bg-zinc-900'
@@ -260,6 +261,7 @@ export function ServicioCardFinancial({
             <Input
               type='text'
               inputMode='numeric'
+              aria-label='Editar precio del servicio'
               value={editPrecio ? formatNumberInput(editPrecio) : ''}
               onChange={e => setEditPrecio(parseNumberInput(e.target.value))}
               className='h-8 w-full rounded-full text-xs'

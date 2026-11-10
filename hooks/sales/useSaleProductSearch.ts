@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { mapForSaleToCartItem } from '@/lib/sales/forSaleMapper';
+import { puedeVenderseEnBar } from '@/lib/sales/saleChoice';
 import logger from '@/lib/utils/logger';
 
 export function useSaleProductSearch(search: string) {
@@ -24,7 +25,7 @@ export function useSaleProductSearch(search: string) {
         });
         const data = await response.json();
         if (!controller.signal.aborted && response.ok && data.success && Array.isArray(data.data)) {
-          setResults(data.data.map(mapForSaleToCartItem));
+          setResults(data.data.filter(puedeVenderseEnBar).map(mapForSaleToCartItem));
         }
       } catch (error) {
         if (!controller.signal.aborted) {

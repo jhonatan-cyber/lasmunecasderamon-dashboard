@@ -36,9 +36,9 @@ export function BarTabsList({ pendientesCount, puedeDevolver }: BarTabsListProps
           <GlassWater className='w-3.5 h-3.5' />
           Colación
         </TabsTrigger>
-        <TabsTrigger value='cortesias' className={barTabClassName}>
+        <TabsTrigger value='covers' className={barTabClassName}>
           <Ticket className='w-3.5 h-3.5' />
-          Cortesías
+          Covers
         </TabsTrigger>
         {puedeDevolver && (
           <TabsTrigger value='envases' className={barTabClassName}>

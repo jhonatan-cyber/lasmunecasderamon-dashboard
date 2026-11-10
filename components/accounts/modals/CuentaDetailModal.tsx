@@ -95,7 +95,7 @@ export default function CuentaDetailModal({
   return (
     <Dialog open={open} onOpenChange={localHandleClose}>
       <DialogContent className='sm:max-w-5xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md'>
-        <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-800'>
+        <DialogHeader className='shrink-0 px-4 pt-5 pb-4 border-b border-slate-200 sm:px-6 sm:pt-6 dark:border-slate-800'>
           <div className='flex items-center justify-center'>
             <DialogTitle className='text-start text-xl font-semibold tracking-tight text-slate-900 dark:text-white'>
               Detalles de Cuenta
@@ -103,7 +103,7 @@ export default function CuentaDetailModal({
           </div>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4 bg-white dark:bg-slate-900'>
+        <div className='min-h-0 flex-1 overflow-y-auto bg-white p-4 dark:bg-slate-900 sm:p-6'>
           {showLoading ? (
             <div className='flex items-center justify-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900' />
@@ -111,11 +111,11 @@ export default function CuentaDetailModal({
             </div>
           ) : cuenta ? (
             <div className='space-y-8 rounded-xl'>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-12 border-b pb-6 rounded-xl'>
+              <div className='grid grid-cols-1 gap-6 border-b pb-6 rounded-xl md:grid-cols-2 md:gap-12'>
                 <div className='space-y-2 text-sm text-gray-700'>
                   <div>
                     <span className='font-medium'>
-                      <b>Codigo:</b>
+                      <b>Código:</b>
                     </span>{' '}
                     <span className='font-normal'>{cuenta.codigo}</span>
                   </div>
@@ -424,7 +424,7 @@ export default function CuentaDetailModal({
           )}
         </div>
 
-        <div className='shrink-0 border-t px-6 py-4'>
+        <div className='shrink-0 border-t p-4 sm:p-6'>
           <div className='flex justify-center gap-2 w-full'>
             <Button
               variant='outline'

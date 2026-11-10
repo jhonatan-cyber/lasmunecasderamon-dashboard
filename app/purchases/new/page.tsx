@@ -100,7 +100,7 @@ export default function NewPurchasePage() {
           Cargando productos...
         </div>
       ) : loadError ? (
-        <div className='mx-auto max-w-xl space-y-4 p-6 text-center'>
+        <div className='mx-auto max-w-xl space-y-4 p-4 text-center sm:p-6'>
           <p className='text-sm text-red-600'>No se pudo cargar el catálogo de productos.</p>
           <Button type='button' onClick={() => void fetchCatalog()} className='rounded-full px-5'>
             Reintentar

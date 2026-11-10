@@ -37,13 +37,13 @@ export const DevolucionVentaModal = ({
     }}
   >
     <DialogContent className='max-h-[90vh] flex flex-col p-0'>
-      <DialogHeader className='shrink-0 px-6 pt-6 pb-4 border-b'>
+      <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
         <DialogTitle>Procesar Devolución</DialogTitle>
         <DialogDescription>
           ¿Está seguro de que desea procesar la devolución de esta venta?
         </DialogDescription>
       </DialogHeader>
-      <div className='flex-1 overflow-y-auto px-6 py-4'>
+      <div className='min-h-0 flex-1 overflow-y-auto p-4 sm:p-6'>
         <div className='space-y-4'>
           <div>
             <Label htmlFor='motivo'>Motivo de la devolución:</Label>
@@ -66,7 +66,7 @@ export const DevolucionVentaModal = ({
           )}
         </div>
       </div>
-      <div className='shrink-0 border-t px-6 py-4'>
+      <div className='shrink-0 border-t p-4 sm:p-6'>
         <div className='flex justify-end gap-2'>
           <Button
             size='sm'

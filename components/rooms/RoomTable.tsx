@@ -146,7 +146,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
         {room.comision_anfitriona ? (
           <span className='text-gray-600'>{formatCurrencyCLP(room.comision_anfitriona)}</span>
         ) : (
-          <span className='text-gray-400 italic text-sm'>sin comisión</span>
+          <span className='text-gray-500 dark:text-gray-400 italic text-sm'>sin comisión</span>
         )}
       </TableCell>
       <TableCell className='text-center'>{getStatusBadge(room.status)}</TableCell>
@@ -254,7 +254,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <span className='text-xs text-gray-400'>Sin acciones</span>
+          <span className='text-xs text-gray-500 dark:text-gray-400'>Sin acciones</span>
         )}
       </TableCell>
     </TableRow>

@@ -123,6 +123,7 @@ const ProductRow = memo(
             <Button
               size='sm'
               variant='outline'
+              aria-label='Quitar una unidad'
               onClick={() => {
                 if (producto.cantidad > 1 && onUpdateCantidad) {
                   onUpdateCantidad(index, producto.cantidad - 1);
@@ -139,6 +140,7 @@ const ProductRow = memo(
             <Button
               size='sm'
               variant='outline'
+              aria-label='Agregar una unidad'
               onClick={() => {
                 if (onUpdateCantidad) {
                   onUpdateCantidad(index, producto.cantidad + 1);
@@ -284,7 +286,9 @@ const ProductRow = memo(
                   })}
                 </div>
               ) : (
-                <span className='text-xs text-gray-400'>Sin anfitrionas asignadas</span>
+                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                  Sin anfitrionas asignadas
+                </span>
               )
             ) : (
               <span className='text-gray-400'>-</span>
@@ -319,6 +323,7 @@ const ProductRow = memo(
         <TableCell className='text-center'>
           <Button
             variant='outline'
+            aria-label='Eliminar producto del pedido'
             className='h-7 w-7 rounded-full bg-red-500 p-0 text-white transition-all duration-200 hover:scale-110 hover:bg-red-600'
             onClick={() => onRemoveProducto?.(index)}
           >
