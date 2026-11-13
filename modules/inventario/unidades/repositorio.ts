@@ -11,7 +11,7 @@
  */
 import { query, withTransaction, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { generarEan13Interno, mapUnidad } from '../helpers';
-import { ESTADO_UNIDAD_ACTIVA } from '../estados';
+import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_INACTIVA } from '../estados';
 import type { UnidadRow } from '../tipos';
 import { BusinessError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -100,6 +100,86 @@ export async function cambiarEstadoUnidades(
     `UPDATE inventario_unidades SET estado = ? WHERE producto_id = ? AND id IN (${placeholders})`,
     [estado, productoId, ...ids]
   );
+}
+
+/**
+ * Baja manual de códigos activos. Sólo toca unidades vigentes: un código
+ * vendido o ya inactivo no se puede "eliminar" otra vez, y una venta que
+ * ocurra en paralelo hace fallar la operación en vez de pisarla.
+ */
+export async function eliminarUnidades(
+  trx: TransactionQuery,
+  unidadIds: string[],
+  productoId: string
+): Promise<number> {
+  const ids = [...new Set(unidadIds.filter(Boolean))];
+  if (ids.length === 0) return 0;
+  const placeholders = ids.map(() => '?').join(',');
+  await trx('SELECT id_producto FROM productos WHERE id_producto = ? FOR UPDATE', [productoId]);
+  // Transferencias también bloquea producto -> movimiento -> unidades.
+  const reservas = await trx<
+    Array<{
+      id: string;
+      producto_id: string;
+      presentacion_id: string;
+      tipo: string;
+      estado: string;
+    }>
+  >(
+    `SELECT id, producto_id, presentacion_id, tipo, estado FROM inventario_movimientos
+      WHERE id IN (SELECT transferencia_id FROM inventario_unidades WHERE id IN (${placeholders}))
+      ORDER BY id FOR UPDATE`,
+    ids
+  );
+  const seleccionadas = await trx<
+    Array<{
+      id: string;
+      producto_id: string;
+      presentacion_id: string | null;
+      estado: string;
+      ubicacion: string;
+      transferencia_id: string | null;
+    }>
+  >(
+    `SELECT id, producto_id, presentacion_id, estado, ubicacion, transferencia_id
+       FROM inventario_unidades WHERE id IN (${placeholders}) ORDER BY id FOR UPDATE`,
+    ids
+  );
+  if (
+    seleccionadas.length !== ids.length ||
+    seleccionadas.some(unidad => unidad.producto_id !== productoId)
+  ) {
+    throw new BusinessError('Los códigos seleccionados deben pertenecer al producto');
+  }
+  if (seleccionadas.some(unidad => unidad.estado !== ESTADO_UNIDAD_ACTIVA)) {
+    throw new BusinessError('Solo se pueden eliminar códigos activos');
+  }
+  for (const unidad of seleccionadas) {
+    const reserva = reservas.find(m => m.id === unidad.transferencia_id);
+    if (
+      reserva?.tipo === 'traspaso' &&
+      reserva.estado === 'pendiente' &&
+      reserva.producto_id === productoId &&
+      reserva.presentacion_id === unidad.presentacion_id
+    )
+      throw new BusinessError(
+        'No se pueden eliminar códigos reservados en una transferencia pendiente'
+      );
+    if (unidad.transferencia_id || !['almacen', 'bar'].includes(unidad.ubicacion))
+      throw new BusinessError(
+        'La ubicación o reserva del código es inconsistente; revisa la transferencia'
+      );
+  }
+  // La baja no borra ml, origen ni movimientos de una botella parcialmente consumida.
+  const actualizadas = await trx<Array<{ id: string }>>(
+    `UPDATE inventario_unidades SET estado = ?
+      WHERE producto_id = ? AND estado = ? AND transferencia_id IS NULL
+        AND ubicacion IN ('almacen', 'bar') AND id IN (${placeholders}) RETURNING id`,
+    [ESTADO_UNIDAD_INACTIVA, productoId, ESTADO_UNIDAD_ACTIVA, ...ids]
+  );
+  if (actualizadas.length !== ids.length)
+    throw new BusinessError('Los códigos cambiaron durante la baja; actualiza el inventario');
+  return actualizadas.length;
 }
 
 export async function listarUnidades(

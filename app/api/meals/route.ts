@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { listarColaciones, registrarColacion } from '@/modules/colaciones';
 import { ValidationError } from '@/lib/errors/errors';
+import { rolSoloRecibeColacion } from '@/lib/business/colacionRoles';
 import logger from '@/lib/utils/logger';
 
 export const GET = withRoute({ auth: true, module: 'products', action: 'read' }, async request => {
@@ -16,6 +17,14 @@ export const GET = withRoute({ auth: true, module: 'products', action: 'read' },
 export const POST = withRoute(
   { auth: true, audit: true, module: 'products', action: 'write' },
   async (request, { user }) => {
+    // Anfitriona y garzón reciben colación, pero no la registran: el registro
+    // tiene que venir de caja o administración aunque llamen directo a la API.
+    if (rolSoloRecibeColacion(user.role)) {
+      return NextResponse.json(
+        { success: false, message: 'Este rol solo recibe colación: no puede registrarla' },
+        { status: 403 }
+      );
+    }
     const body = await request.json();
     const usuarioId = String(body.usuario_id || '');
     const presentacionId = String(body.presentacion_id || '');

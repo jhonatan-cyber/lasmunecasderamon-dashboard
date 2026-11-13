@@ -46,7 +46,7 @@ vi.mock('@/modules/identidad', () => ({
 vi.mock('@/modules/auditoria', () => ({ AuditService: { log: h.operacion('auditoria') } }));
 vi.mock('@/modules/inventario', () => ({
   consumirStockBar: h.operacion('stock', []),
-  validarChampanaConfigurada: h.operacion('validar-champana')
+  validarPreciosVentaBar: h.operacion('validar-precios', [{ isChampagne: false }])
 }));
 vi.mock('@/modules/caja', () => ({
   obtenerCajaActiva: h.operacion('caja', 'caja-1'),
@@ -102,7 +102,7 @@ import { prepararVentaPedido } from '@/modules/operacion';
 import { crearServicioEnUnidad } from '@/modules/operacion/servicios/creacion';
 import { registrarDetallesVenta } from '@/modules/ventas';
 import { registrarMovimientoCobro, obtenerCajaActiva } from '@/modules/caja';
-import { consumirStockBar, validarChampanaConfigurada } from '@/modules/inventario';
+import { consumirStockBar, validarPreciosVentaBar } from '@/modules/inventario';
 import { registrarComisionesServicio } from '@/modules/personal';
 import { obtenerServicioParaConsumo } from '@/modules/operacion/servicios/asignaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
@@ -146,7 +146,7 @@ const servicio = {
   ]
 };
 const ordenVenta = [
-  'validar-champana',
+  'validar-precios',
   'caja',
   'prepago',
   'saldo-agotado',
@@ -272,7 +272,7 @@ describe('orden transaccional de ventas', () => {
       ordenVenta.filter(
         nombre =>
           ![
-            'validar-champana',
+            'validar-precios',
             'prepago',
             'saldo-agotado',
             'cerrar-prepago-venta',
@@ -281,11 +281,91 @@ describe('orden transaccional de ventas', () => {
       )
     );
   });
-  it('una champaña sin configuración corta antes de escribir la cabecera', async () => {
+  it('un precio inválido corta antes de prepago, cabecera y stock', async () => {
     const error = new Error('sin configuracion de champana');
-    vi.mocked(validarChampanaConfigurada).mockRejectedValueOnce(error);
+    vi.mocked(validarPreciosVentaBar).mockRejectedValueOnce(error);
     await expect(registrarVenta(venta, 'cajero', contexto, aplazar)).rejects.toBe(error);
     expect(h.eventos).toEqual([]);
+  });
+  it('coteja SIN vía inventario público y no deja que el request salte la validación', async () => {
+    const detalles = [
+      {
+        producto_id: 'producto',
+        presentacion_id: 'pres',
+        tipo_venta: 'botella' as const,
+        botella_anfitriona: false,
+        precio: 10000,
+        cantidad: 1,
+        comision: 0,
+        sub_total: 10000
+      }
+    ];
+    const error = new Error('precio SIN manipulado');
+    vi.mocked(validarPreciosVentaBar).mockRejectedValueOnce(error);
+    const solicitud = {
+      total: 10000,
+      detalles,
+      entrada_id: 'entrada-falsa',
+      origen: 'entrada',
+      skip_client_prepago: true
+    };
+    await expect(registrarVenta(solicitud, 'cajero', contexto, aplazar)).rejects.toBe(error);
+    expect(validarPreciosVentaBar).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ botella_anfitriona: false, precio: 10000, comision: 0 })
+      ]),
+      contexto
+    );
+    expect(registrarDetallesVenta).not.toHaveBeenCalled();
+    expect(consumirStockBar).not.toHaveBeenCalled();
+    expect(tareas).toEqual([]);
+  });
+  it('usa categoría del servidor y calcula comisión total desde las líneas verificadas', async () => {
+    await registrarVenta(
+      {
+        ...venta,
+        pedido_id: undefined,
+        total_comision: 99999,
+        detalles: venta.detalles.map(d => ({ ...d, isChampagne: true }))
+      },
+      'cajero',
+      contexto,
+      aplazar
+    );
+    expect(registrarDetallesVenta).toHaveBeenCalledWith(contexto, [
+      expect.objectContaining({ cantidad: 1, comision: 3 }),
+      expect.objectContaining({ cantidad: 2, comision: 4 })
+    ]);
+    expect(registrarMovimientoCobro).toHaveBeenCalledWith(
+      'caja-1',
+      expect.objectContaining({ comision: 7 }),
+      contexto
+    );
+  });
+  it('preserva la excepción interna de Entradas con precio configurado y subtotal con crédito', async () => {
+    await registrarVenta(
+      {
+        total: 15000,
+        sub_total: 15000,
+        detalles: [
+          { producto_id: 'producto', precio: 10000, cantidad: 1, comision: 0, sub_total: 15000 }
+        ]
+      },
+      'cajero',
+      contexto,
+      aplazar,
+      { entradaId: 'entrada-real' }
+    );
+    expect(validarPreciosVentaBar).not.toHaveBeenCalled();
+    expect(registrarDetallesVenta).toHaveBeenCalledWith(contexto, [
+      expect.objectContaining({ precio: 10000, cantidad: 1, sub_total: 15000 })
+    ]);
+    expect(consumirStockBar).toHaveBeenCalled();
+    expect(registrarMovimientoCobro).toHaveBeenCalledWith(
+      'caja-1',
+      expect.objectContaining({ venta: 15000, comision: 0 }),
+      contexto
+    );
   });
   it('un fallo de stock corta antes de comisiones, caja, auditoria y avisos', async () => {
     const error = new Error('sin stock');
@@ -402,7 +482,7 @@ describe('prioridad de validaciones respecto a las escrituras', () => {
     await expect(
       registrarVenta({ ...venta, pagos_mixtos: [] }, 'cajero', contexto, aplazar)
     ).rejects.toMatchObject({ code: 'NO_CAJA_ABIERTA' });
-    expect(h.eventos).toEqual(['validar-champana', 'caja']);
+    expect(h.eventos).toEqual(['validar-precios', 'caja']);
   });
   it('servicio sin caja conserva las comprobaciones previas de habitacion y disponibilidad', async () => {
     vi.mocked(obtenerCajaActiva).mockImplementationOnce(async () => {

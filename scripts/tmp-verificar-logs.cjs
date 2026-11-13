@@ -1,12 +1,21 @@
 // Verificación temporal: confirmar el error de /api/products/expired y probar el endpoint.
+require('dotenv/config');
 const { Client } = require('pg');
 
+const password = process.env.DB_PASSWORD;
+if (!password) {
+  throw new Error(
+    'Falta DB_PASSWORD: cargala en .env o exportala antes de correr este script.'
+  );
+}
+
+// Misma conexión que usa el panel: DB_HOST, DB_PORT, DB_USER y DB_NAME.
 const c = new Client({
-  host: '127.0.0.1',
-  port: 5433,
-  user: 'postgres',
-  password: 'Ancasi96nuwe+',
-  database: 'lasmunecasderamon'
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: Number(process.env.DB_PORT || 5432),
+  user: process.env.DB_USER || 'postgres',
+  password,
+  database: process.env.DB_NAME || 'lasmunecasderamon'
 });
 
 (async () => {

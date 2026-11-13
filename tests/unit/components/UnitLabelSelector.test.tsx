@@ -97,6 +97,46 @@ describe('seleccion de etiquetas', () => {
     expect(screen.getByText('No hay códigos con este estado.')).toBeInTheDocument();
   });
 
+  it('solo muestra la baja manual cuando el detalle la habilita', () => {
+    const { unmount } = render(
+      <UnitLabelSelector units={[{ id: '1', codigo: 'LM-1', codigo_barras: '2900000000001' }]} />
+    );
+    expect(screen.queryByRole('button', { name: /Eliminar/ })).not.toBeInTheDocument();
+    unmount();
+
+    render(
+      <UnitLabelSelector
+        units={[{ id: '1', codigo: 'LM-1', codigo_barras: '2900000000001' }]}
+        onDelete={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Eliminar (0)' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Eliminar código 2900000000001' })
+    ).toBeInTheDocument();
+  });
+
+  it('elimina el lote seleccionado o el código individual', () => {
+    const onDelete = vi.fn();
+    render(
+      <UnitLabelSelector
+        units={[
+          { id: '1', codigo: 'LM-1', codigo_barras: '2900000000001' },
+          { id: '2', codigo: 'LM-2', codigo_barras: '2900000000002' }
+        ]}
+        onDelete={onDelete}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar código 2900000000001' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar código 2900000000002' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar (2)' }));
+    expect(onDelete).toHaveBeenLastCalledWith(['1', '2']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar código 2900000000002' }));
+    expect(onDelete).toHaveBeenLastCalledWith(['2']);
+  });
+
   it('adjunta el producto y la presentación a cada etiqueta impresa', () => {
     render(
       <UnitLabelSelector

@@ -46,7 +46,6 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { EntregaCoversDialog, type GrupoCover } from '@/components/bar/EntregaCoversDialog';
-import { EntregaEntradaDialog } from '@/components/entradas/EntregaEntradaDialog';
 import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
@@ -178,7 +177,6 @@ export default function EntradasPage() {
   const [baucherFoto, setBaucherFoto] = useState<string | null>(null);
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [grupoDetalleId, setGrupoDetalleId] = useState<string | null>(null);
-  const [entradaAEntregar, setEntradaAEntregar] = useState<Entrada | null>(null);
   const [grupoAEntregar, setGrupoAEntregar] = useState<GrupoCover | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -400,8 +398,7 @@ export default function EntradasPage() {
     }
   };
 
-  const abrirEntregaMultiple = (grupo: GrupoEntrada) => {
-    const pendientes = grupo.pendientes;
+  const abrirEntregaMultiple = (grupo: GrupoEntrada, pendientes = grupo.pendientes) => {
     if (pendientes.length === 0) return;
     const primero = pendientes[0];
     setGrupoAEntregar({
@@ -673,14 +670,7 @@ export default function EntradasPage() {
                                 ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
                                 : 'Entregar la entrada pendiente'
                             }
-                            onClick={() => {
-                              // Una sola pendiente: se entrega directo. Varias: la
-                              // entrega múltiple reparte los productos en el acto;
-                              // el detalle sigue disponible desde el ojo.
-                              if (grupo.pendientes.length === 1)
-                                setEntradaAEntregar(grupo.pendientes[0]);
-                              else abrirEntregaMultiple(grupo);
-                            }}
+                            onClick={() => abrirEntregaMultiple(grupo)}
                             className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
                           >
                             <Wine className='h-4 w-4' />
@@ -885,8 +875,7 @@ export default function EntradasPage() {
                             size='sm'
                             className='rounded-full'
                             onClick={() => {
-                              setGrupoDetalleId(null);
-                              setEntradaAEntregar(registro);
+                              if (grupoDetalle) abrirEntregaMultiple(grupoDetalle, [registro]);
                             }}
                           >
                             Entregar bebida
@@ -973,11 +962,6 @@ export default function EntradasPage() {
         </DialogContent>
       </Dialog>
 
-      <EntregaEntradaDialog
-        entrada={entradaAEntregar}
-        onClose={() => setEntradaAEntregar(null)}
-        onEntregada={() => cargar(true)}
-      />
       <EntregaCoversDialog
         grupo={grupoAEntregar}
         tope={topeCover}

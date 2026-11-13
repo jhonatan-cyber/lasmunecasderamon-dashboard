@@ -15,6 +15,7 @@ import type { UnidadRow } from '../tipos';
 import type { UnidadesGenerarInput } from '../contracts';
 import {
   cambiarEstadoUnidades as cambiarEstadoEnRepositorio,
+  eliminarUnidades as eliminarEnRepositorio,
   generarUnidades as generarEnRepositorio,
   listarUnidades as listarEnRepositorio,
   marcarImpresas as marcarEnRepositorio,
@@ -114,6 +115,25 @@ export async function cambiarEstadoUnidades(
   await withTransaction(async trx => {
     total = await ejecutar(trx);
   });
+  return total;
+}
+
+/**
+ * Baja manual de códigos: los deja inactivos y recalcula el stock del producto
+ * en la misma unidad, igual que el resto de las bajas del módulo.
+ */
+export async function eliminarUnidades(
+  productoId: string,
+  unidadIds: string[],
+  contexto?: ContextoOperacion
+): Promise<number> {
+  let total = 0;
+  const ejecutar = async (trx: Parameters<typeof eliminarEnRepositorio>[0]) => {
+    total = await eliminarEnRepositorio(trx, unidadIds, productoId);
+    await sincronizarEnRepositorio(trx, productoId);
+  };
+  if (contexto) await ejecutar(resolverTransaccion(contexto));
+  else await withTransaction(ejecutar);
   return total;
 }
 

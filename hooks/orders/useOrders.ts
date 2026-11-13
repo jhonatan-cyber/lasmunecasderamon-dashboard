@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Order } from '@/types/order';
 import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useGenericFetch } from '../shared/useGenericFetch';
@@ -11,6 +11,15 @@ export default function useOrders() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [mutationLoading, setMutationLoading] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const detailRequestRef = useRef<AbortController | null>(null);
+
+  useEffect(
+    () => () => {
+      detailRequestRef.current?.abort();
+      detailRequestRef.current = null;
+    },
+    []
+  );
 
   const {
     data: orders,
@@ -109,20 +118,28 @@ export default function useOrders() {
   );
 
   const fetchOrderDetail = useCallback(async (id: number | string) => {
+    detailRequestRef.current?.abort();
+    const request = new AbortController();
+    detailRequestRef.current = request;
+    const isCurrent = () => detailRequestRef.current === request && !request.signal.aborted;
+    setOrderDetail([]);
     setIsDetailLoading(true);
     setDetailError(null);
     try {
-      const res = await fetch(`/api/orders/detail?id=${id}`);
+      const res = await fetch(`/api/orders/detail?id=${encodeURIComponent(id)}`, {
+        signal: request.signal
+      });
       const data = await res.json();
+      if (!isCurrent()) return;
       if (res.ok && data.success) {
         setOrderDetail(data.data);
       } else {
         setDetailError(data.message || 'Error al obtener el detalle del pedido');
       }
-    } catch (err) {
-      setDetailError('Error de red al obtener el detalle del pedido');
+    } catch {
+      if (isCurrent()) setDetailError('Error de red al obtener el detalle del pedido');
     } finally {
-      setIsDetailLoading(false);
+      if (isCurrent()) setIsDetailLoading(false);
     }
   }, []);
 

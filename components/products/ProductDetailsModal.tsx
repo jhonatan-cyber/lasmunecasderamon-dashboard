@@ -11,7 +11,7 @@ import {
   TableCell
 } from '@/components/ui/table';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 
 interface ProductDetailsModalProps {
   open: boolean;
@@ -256,6 +257,12 @@ export function ProductDetailsModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
+  const [codigosAEliminar, setCodigosAEliminar] = useState<string[] | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+  // Tras una baja el selector se remonta para soltar los ids eliminados.
+  const [selectorKey, setSelectorKey] = useState(0);
+  const { hasPermission } = useUserPermissions();
+  const puedeEliminarCodigos = hasPermission('products', 'delete');
   const productId = product?.id;
   const presentationId = presentation?.id;
 
@@ -335,6 +342,48 @@ export function ProductDetailsModal({
   const unidadesImprimibles = unidadesConEtiqueta.filter(
     unit => !unit.estado || unit.estado === 'almacen'
   );
+  const codigosAEliminarTexto = (codigosAEliminar ?? [])
+    .map(id => visibleUnits.find(unit => unit.id === id)?.codigo)
+    .filter((codigo): codigo is string => Boolean(codigo));
+
+  const eliminarCodigos = useCallback(async () => {
+    const ids = codigosAEliminar ?? [];
+    if (!productId || ids.length === 0 || eliminando) return;
+    setEliminando(true);
+    try {
+      const response = await fetch('/api/products/units', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ producto_id: productId, ids })
+      });
+      const result: unknown = await response.json().catch(() => null);
+      const registro =
+        typeof result === 'object' && result !== null
+          ? (result as { success?: unknown; message?: unknown })
+          : null;
+      if (!response.ok || registro?.success !== true) {
+        throw new Error(
+          typeof registro?.message === 'string'
+            ? registro.message
+            : 'No se pudieron eliminar los códigos'
+        );
+      }
+      toast.success(
+        typeof registro.message === 'string'
+          ? registro.message
+          : ids.length === 1
+            ? 'Código eliminado'
+            : `${ids.length} códigos eliminados`
+      );
+      setCodigosAEliminar(null);
+      setSelectorKey(value => value + 1);
+      setAttempt(value => value + 1);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudieron eliminar los códigos');
+    } finally {
+      setEliminando(false);
+    }
+  }, [codigosAEliminar, eliminando, productId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -490,15 +539,58 @@ export function ProductDetailsModal({
                     Códigos y etiquetas ({unidadesImprimibles.length} disponibles)
                   </h3>
                   <p className='text-xs text-muted-foreground'>
-                    Se muestran códigos activos disponibles para imprimir. Los retirados y vendidos
-                    quedan excluidos.
+                    Se muestran los códigos activos de esta presentación. Selecciónalos para
+                    imprimirlos o eliminar los que no correspondan. Los retirados y vendidos quedan
+                    excluidos.
                   </p>
                   {unidadesImprimibles.length ? (
-                    <UnitLabelSelector key={selectedPrices.id} units={unidadesImprimibles} />
+                    <UnitLabelSelector
+                      key={`${selectedPrices.id}-${selectorKey}`}
+                      units={unidadesImprimibles}
+                      onDelete={puedeEliminarCodigos ? setCodigosAEliminar : undefined}
+                    />
                   ) : (
                     <p className='text-sm text-muted-foreground'>Sin códigos generados.</p>
                   )}
                 </section>
+                <AlertDialog
+                  open={codigosAEliminar !== null}
+                  onOpenChange={abierto => {
+                    if (!abierto && !eliminando) setCodigosAEliminar(null);
+                  }}
+                >
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Eliminar códigos</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {codigosAEliminar?.length === 1
+                          ? 'El código saldrá del stock activo y no podrá volver a imprimirse ni venderse.'
+                          : `Los ${codigosAEliminar?.length ?? 0} códigos saldrán del stock activo y no podrán volver a imprimirse ni venderse.`}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {codigosAEliminarTexto.length ? (
+                      <p className='rounded-lg border bg-muted/40 p-3 font-mono text-xs break-all'>
+                        {codigosAEliminarTexto.slice(0, 6).join(', ')}
+                        {codigosAEliminarTexto.length > 6
+                          ? ` y ${codigosAEliminarTexto.length - 6} más`
+                          : ''}
+                      </p>
+                    ) : null}
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={eliminando} className='rounded-full'>
+                        Cancelar
+                      </AlertDialogCancel>
+                      <Button
+                        type='button'
+                        className='rounded-full bg-red-600 text-white hover:bg-red-700'
+                        onClick={() => void eliminarCodigos()}
+                        disabled={eliminando}
+                      >
+                        {eliminando ? 'Eliminando…' : 'Eliminar'}
+                      </Button>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
           </div>

@@ -7,6 +7,7 @@ import {
   productoPermitidoParaRol,
   reglaColacionPorRol,
   reglasColacion,
+  rolSoloRecibeColacion,
   urlCatalogoColacion
 } from '@/lib/business/colacionRoles';
 import { PRODUCTS_FOR_SALE_ENDPOINT } from '@/lib/constants/api-endpoints';
@@ -87,5 +88,26 @@ describe('reglaColacionPorRol', () => {
     expect(productoPermitidoParaRol(bar, CATEGORIA_BEBIDAS_ANALCOHOLICAS)).toBe(true);
     expect(productoPermitidoParaRol(bar, 'licores')).toBe(false);
     expect(productoPermitidoParaRol(bar, null)).toBe(false);
+  });
+});
+
+describe('rolSoloRecibeColacion', () => {
+  it.each(['anfitriona', ' Anfitriona ', 'garzon', ' Garzon '])(
+    '%s recibe colación pero no puede registrarla',
+    rol => {
+      expect(rolSoloRecibeColacion(rol)).toBe(true);
+    }
+  );
+
+  it.each(['cajero', 'barman', 'supervisor', '', null, undefined])(
+    'no restringe el registro al rol %s',
+    rol => {
+      expect(rolSoloRecibeColacion(rol)).toBe(false);
+    }
+  );
+
+  it('no cambia quién tiene derecho a recibir colación', () => {
+    expect(ROLES_COLACION).toContain('anfitriona');
+    expect(ROLES_COLACION).toContain('garzon');
   });
 });

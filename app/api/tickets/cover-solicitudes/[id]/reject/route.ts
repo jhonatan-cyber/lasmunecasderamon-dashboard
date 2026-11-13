@@ -7,7 +7,7 @@ export const PATCH = withRoute(
   { auth: true, audit: true, module: 'entradas', action: 'deliver' },
   async (request, { params, user }) => {
     const { id } = await params;
-    const body = (await request.json().catch(() => ({}))) as Record<string, any>;
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const motivo = String(body.motivo || '').trim();
     if (!motivo) throw new ValidationError('Indica el motivo del rechazo');
     const solicitud = await obtenerSolicitudCover(id);

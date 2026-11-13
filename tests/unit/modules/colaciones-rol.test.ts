@@ -9,7 +9,9 @@ const state = vi.hoisted(() => ({
   bottle: {
     tipo: 'botella',
     acompanamiento: { unidades: 0 }
-  } as Record<string, unknown>
+  } as Record<string, unknown>,
+  // `opciones_venta` del acompañamiento elegido: undefined = sin configuración.
+  acompanamientoOptions: undefined as unknown
 }));
 
 vi.mock('@/lib/database/db', () => {
@@ -18,6 +20,10 @@ vi.mock('@/lib/database/db', () => {
     if (sql.includes('SELECT u.id_usuario')) {
       return [{ id_usuario: 'w', rol: state.workerRole }];
     }
+    // Acompañamiento: bebida analcohólica con stock en el bar. Va antes que la
+    // consulta de la bebida principal porque ambas seleccionan `opciones_venta`.
+    if (sql.includes('AND c.system_key = ?'))
+      return [{ id: 'mixer-1', opciones_venta: state.acompanamientoOptions }];
     if (sql.includes('p.opciones_venta')) {
       return [
         {
@@ -33,8 +39,6 @@ vi.mock('@/lib/database/db', () => {
     if (sql.includes('FROM cajas') && sql.includes('FOR UPDATE')) return [{ id_caja: 'c1' }];
     // Comprobación preliminar de duplicado: sin colación previa en la caja abierta.
     if (sql.includes('FROM colaciones') && sql.includes('caja_id = (SELECT')) return [];
-    // Acompañamiento: bebida analcohólica con stock en el bar.
-    if (sql.includes('AND c.system_key = ?')) return [{ id: 'mixer-1' }];
     if (sql.includes('INSERT INTO colaciones')) {
       state.inserted = true;
       return undefined;
@@ -74,6 +78,7 @@ beforeEach(() => {
   state.systemKey = null;
   state.inserted = false;
   state.bottle = { tipo: 'botella', acompanamiento: { unidades: 0 } };
+  state.acompanamientoOptions = undefined;
   vi.clearAllMocks();
 });
 
@@ -122,6 +127,9 @@ describe('registrarColacion: producto según rol', () => {
       acompanamiento: { unidades: 0 },
       acompanamiento_colacion: { unidades: 2, ml: 150 }
     };
+    // El acompañamiento se ofrece desde el catálogo de colación, que ya exige
+    // la botella habilitada para colación.
+    state.acompanamientoOptions = [{ tipo: 'botella', colacion_habilitada: true }];
 
     await expect(
       registrarColacion({
@@ -141,6 +149,26 @@ describe('registrarColacion: producto según rol', () => {
         acompanamientoPresentacionId: 'mixer-1'
       })
     ).rejects.toThrow('Esta bebida no tiene acompañamiento configurado');
+    expect(state.inserted).toBe(false);
+  });
+
+  it('rechaza un acompañamiento no habilitado para colación', async () => {
+    // La regla es la misma que arma el catálogo de cajero, garzón y barman:
+    // una bebida sin habilitar para colación no puede acompañar el corto.
+    state.bottle = {
+      tipo: 'botella',
+      acompanamiento: { unidades: 0 },
+      acompanamiento_colacion: { unidades: 2, ml: 150 }
+    };
+    state.acompanamientoOptions = [{ tipo: 'botella', colacion_habilitada: false }];
+
+    await expect(
+      registrarColacion({
+        ...input,
+        acompanamiento: 'gaseosa',
+        acompanamientoPresentacionId: 'mixer-1'
+      })
+    ).rejects.toThrow('Esa bebida no está habilitada para colación como acompañamiento');
     expect(state.inserted).toBe(false);
   });
 

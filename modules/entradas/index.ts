@@ -3,6 +3,7 @@ import 'server-only';
 export {
   anularEntrada,
   entregarEntrada,
+  entregarGrupoEntradas,
   listarEntradas,
   listarPendientes,
   obtenerBaucherEntrada,
@@ -23,6 +24,8 @@ export type {
   EntradaCliente,
   EntradaPendiente,
   EntregaEntradaInput,
+  EntregaGrupoInput,
+  UnidadCover,
   EstadoCover,
   MetodoPagoEntrada,
   PlanVentaEntrada,

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { validarConfiguracionPedido } from '@/modules/inventario/bar/validarPedido';
+import { validarPreciosConfigurados } from '@/modules/inventario/bar/validarConfiguracionVenta';
 import { OrderCreateSchema } from '@/lib/business/schemas/order';
 import type { TransactionQuery } from '@/lib/database/db';
 const options = [
@@ -127,6 +128,137 @@ describe('Configuracion del pedido verificada en servidor', () => {
       ])
     ).rejects.toThrow('precio o la comision no coincide');
   });
+  it.each([true, undefined])(
+    'rechaza CON deshabilitada incluso con tiers y flag request %s',
+    async flag => {
+      const config = trx({
+        categoria: 'Champana',
+        max: 1,
+        opciones: [
+          {
+            tipo: 'botella',
+            precio: 60000,
+            comision: 10000,
+            vender_con_anfitriona: false,
+            precio_sin_anfitriona: 45000
+          }
+        ],
+        tiers: [{ producto_id: 'prod', anfitrionas: 1, precio: 70000, comision: 15000 }]
+      });
+      await expect(
+        validarConfiguracionPedido(config, [
+          {
+            ...bottle,
+            botella_anfitriona: flag,
+            precio: 70000,
+            subtotal: 70000,
+            comision: 15000,
+            generaComision: 1,
+            selectedHostesses: ['ana']
+          }
+        ])
+      ).rejects.toThrow('precio o la comision');
+      expect(
+        vi.mocked(config).mock.calls.some(([sql]) => sql.includes('FROM inventario_unidades'))
+      ).toBe(false);
+    }
+  );
+  it.each([0, -100])('rechaza CON con precio no positivo %s', async precio => {
+    await expect(
+      validarConfiguracionPedido(
+        trx({
+          opciones: [{ tipo: 'botella', precio, comision: 0 }]
+        }),
+        [{ ...bottle, precio, subtotal: precio }]
+      )
+    ).rejects.toThrow('precio o la comision');
+  });
+  it('rechaza un tier con precio cero en vez de vender gratis', async () => {
+    await expect(
+      validarConfiguracionPedido(
+        trx({
+          categoria: 'Champana',
+          max: 1,
+          tiers: [{ producto_id: 'prod', anfitrionas: 1, precio: 0, comision: 10000 }]
+        }),
+        [
+          {
+            ...bottle,
+            precio: 0,
+            subtotal: 0,
+            comision: 10000,
+            generaComision: 1,
+            selectedHostesses: ['ana']
+          }
+        ]
+      )
+    ).rejects.toThrow('precio o la comision');
+  });
+  it('acepta champaña SIN-only sin tiers ni máximo de anfitrionas', async () => {
+    const config = trx({
+      categoria: 'Champana',
+      max: null,
+      opciones: [
+        {
+          tipo: 'botella',
+          precio: 0,
+          comision: 0,
+          vender_con_anfitriona: false,
+          precio_sin_anfitriona: 45000
+        }
+      ]
+    });
+    const detalle = { ...bottle, precio: 45000, subtotal: 45000, botella_anfitriona: false };
+    await expect(validarConfiguracionPedido(config, [detalle])).resolves.toBeUndefined();
+    await expect(
+      validarConfiguracionPedido(config, [
+        {
+          ...detalle,
+          selectedHostesses: ['ana']
+        }
+      ])
+    ).rejects.toThrow('sin comision');
+    await expect(
+      validarConfiguracionPedido(config, [
+        {
+          ...detalle,
+          comision: 1000
+        }
+      ])
+    ).rejects.toThrow('precio o la comision');
+  });
+  it('valida precio unitario SIN de venta directa sin confundirlo con crédito/subtotal', async () => {
+    const config = trx({
+      categoria: 'Champana',
+      max: null,
+      opciones: [
+        {
+          tipo: 'botella',
+          precio: 0,
+          comision: 0,
+          vender_con_anfitriona: false,
+          precio_sin_anfitriona: 45000
+        }
+      ]
+    });
+    const detalle = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      tipo_venta: 'botella',
+      botella_anfitriona: false,
+      precio: 45000,
+      cantidad: 1,
+      comision: 0,
+      sub_total: 5000,
+      isChampagne: false
+    };
+    await expect(validarPreciosConfigurados(config, [detalle])).resolves.toEqual([
+      { isChampagne: true }
+    ]);
+    await expect(
+      validarPreciosConfigurados(config, [{ ...detalle, precio: 5000 }])
+    ).rejects.toThrow('precio o la comision');
+  });
   it.each([
     { precio: 20000, comision: 7000 },
     { precio: 30000, comision: 10000 }
@@ -232,4 +364,83 @@ it('rechaza un producto deshabilitado aunque queden unidades', async () => {
   await expect(validarConfiguracionPedido(trx({ estado: 0 }), [bottle])).rejects.toThrow(
     'no esta disponible'
   );
+});
+
+describe('Ventas directas: precios configurados sin exigir anfitrionas', () => {
+  it('acepta un catálogo legado sin opciones de venta', async () => {
+    const detalle = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      tipo_venta: 'shot' as const,
+      precio: 3000,
+      cantidad: 2,
+      comision: 0
+    };
+    await expect(
+      validarPreciosConfigurados(trx({ opciones: [] }), [detalle], {
+        exigirAnfitrionas: false,
+        permitirSinConfiguracion: true
+      })
+    ).resolves.toEqual([{ isChampagne: false }]);
+  });
+
+  it('permite vender con comisión sin asignar anfitrionas', async () => {
+    const config = trx({
+      opciones: [{ tipo: 'botella', precio: 60000, comision: 40000 }]
+    });
+    const detalle = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      tipo_venta: 'botella' as const,
+      precio: 60000,
+      cantidad: 1,
+      comision: 40000
+    };
+    await expect(
+      validarPreciosConfigurados(config, [detalle], { exigirAnfitrionas: false })
+    ).resolves.toEqual([{ isChampagne: false }]);
+    await expect(validarPreciosConfigurados(config, [detalle])).rejects.toThrow(
+      'Selecciona anfitriona'
+    );
+  });
+
+  it('sigue bloqueando la champaña sin configuración', async () => {
+    const config = trx({ opciones: [], categoria: 'Champana', max: null });
+    const detalle = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      tipo_venta: 'botella' as const,
+      precio: 120000,
+      cantidad: 1,
+      comision: 40000
+    };
+    await expect(
+      validarPreciosConfigurados(config, [detalle], {
+        exigirAnfitrionas: false,
+        permitirSinConfiguracion: true
+      })
+    ).rejects.toThrow('champaña no tiene configurada');
+  });
+});
+
+it('un corto anfitriona legado conserva el precio del formato', async () => {
+  const config = trx({
+    opciones: [{ tipo: 'shot', precio: 3000, comision: 0, ml_acompanamiento_anfitriona: 100 }]
+  });
+  const detalle = {
+    producto_id: 'prod',
+    presentacion_id: 'pres',
+    tipo_venta: 'shot' as const,
+    shot_anfitriona: true,
+    precio: 3000,
+    cantidad: 1,
+    comision: 0,
+    acompanamiento_corto: { presentacion_id: 'soda', ml_por_corto: 100 }
+  };
+  await expect(
+    validarPreciosConfigurados(config, [detalle], {
+      exigirAnfitrionas: false,
+      permitirSinConfiguracion: true
+    })
+  ).resolves.toEqual([{ isChampagne: false }]);
 });

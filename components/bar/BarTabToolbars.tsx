@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
+  ArrowLeft,
   Bell,
   BellOff,
   Grid3X3,
@@ -40,6 +41,8 @@ interface BarProductosToolbarProps {
   onToggleStockFilter: () => void;
   showTableView: boolean;
   onToggleTableView: () => void;
+  selectedCategory?: string | null;
+  onCategoryBack?: () => void;
 }
 
 export function BarProductosToolbar({
@@ -51,10 +54,18 @@ export function BarProductosToolbar({
   stockFilter,
   onToggleStockFilter,
   showTableView,
-  onToggleTableView
+  onToggleTableView,
+  selectedCategory,
+  onCategoryBack
 }: BarProductosToolbarProps) {
   return (
     <div className='flex flex-wrap items-end gap-3 rounded-2xl border bg-card p-3'>
+      {selectedCategory !== null && onCategoryBack && (
+        <Button variant='outline' className='shrink-0 rounded-full' onClick={onCategoryBack}>
+          <ArrowLeft className='mr-1 h-4 w-4' aria-hidden='true' />
+          Atrás
+        </Button>
+      )}
       <SortSelect
         className='w-full sm:w-48'
         field={sortField}
@@ -76,8 +87,10 @@ export function BarProductosToolbar({
         <Input
           value={search}
           onChange={e => onSearchChange(e.target.value)}
-          placeholder='Buscar producto, categoría, presentación o código'
-          aria-label='Buscar productos del bar'
+          placeholder={
+            selectedCategory ? 'Buscar producto, presentación o código' : 'Buscar categoría'
+          }
+          aria-label={selectedCategory ? 'Buscar producto en la categoría' : 'Buscar categoría'}
           className='h-11 rounded-full pl-9 pr-11'
         />
         {search && (

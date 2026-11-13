@@ -1,11 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ean13CheckDigit, generarEan13Interno } from '@/modules/inventario/helpers';
-import { query, withTransaction } from '@/lib/database/db';
+import { query, withTransaction, type TransactionQuery } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import {
   aceptarTransferencia,
   confirmarRecepcionEnvase,
+  consumirCorteCoverBar,
+  consumirProductoCoverBar,
   consumirStockBar,
+  eliminarUnidades,
   generarUnidades,
   listarDevoluciones,
   listarStockBar,
@@ -478,6 +481,151 @@ describe('listarTransferencias historial', () => {
   });
 });
 
+describe('baja manual de unidades con stock mockeado', () => {
+  const unidad = (extra: Record<string, unknown> = {}) => ({
+    id: 'unit-1',
+    producto_id: 'prod-1',
+    presentacion_id: 'pres-1',
+    estado: 'almacen',
+    ubicacion: 'almacen',
+    transferencia_id: null,
+    ml_restante: null,
+    abierta_por_shots: false,
+    compra_id: 'compra-1',
+    ...extra
+  });
+  function mockBaja(unidades: ReturnType<typeof unidad>[], reservas: unknown[] = []) {
+    return vi.fn(async (sql: string, values: unknown[] = []) => {
+      if (sql.startsWith('SELECT id_producto')) return [{ id_producto: 'prod-1' }];
+      if (sql.includes('FROM inventario_movimientos')) return reservas;
+      if (sql.includes('COUNT(*)'))
+        return [
+          {
+            total:
+              4 +
+              unidades.filter(row => row.estado === 'almacen' && row.ubicacion === 'almacen').length
+          }
+        ];
+      if (sql.includes('FROM inventario_unidades')) return unidades;
+      if (sql.startsWith('UPDATE inventario_unidades')) {
+        const ids = values.slice(3);
+        for (const row of unidades) if (ids.includes(row.id)) row.estado = 'inactivo';
+        return unidades.map(row => ({ id: row.id }));
+      }
+      return [];
+    });
+  }
+  function bajaConContexto(trx: ReturnType<typeof mockBaja>, ids = ['unit-1']) {
+    return conContextoOperacionExistente(trx as unknown as TransactionQuery, contexto =>
+      eliminarUnidades('prod-1', ids, contexto)
+    );
+  }
+  it('rechaza una reserva pendiente usando el movimiento real antes de modificar stock', async () => {
+    const trx = mockBaja(
+      [unidad({ ubicacion: 'transito', transferencia_id: 'mov-1' })],
+      [
+        {
+          id: 'mov-1',
+          producto_id: 'prod-1',
+          presentacion_id: 'pres-1',
+          tipo: 'traspaso',
+          estado: 'pendiente'
+        }
+      ]
+    );
+    await expect(bajaConContexto(trx)).rejects.toThrow('transferencia pendiente');
+    expect(trx.mock.calls.every(([sql]) => sql.startsWith('SELECT'))).toBe(true);
+    expect(
+      trx.mock.calls.map(([sql]) => {
+        if (sql.includes('FROM inventario_movimientos')) return 'movimiento';
+        if (sql.includes('FROM inventario_unidades')) return 'unidades';
+        return 'producto';
+      })
+    ).toEqual(['producto', 'movimiento', 'unidades']);
+    expect(trx.mock.calls[1][0]).toContain('ORDER BY id FOR UPDATE');
+    expect(trx.mock.calls[2][0]).toContain('ORDER BY id FOR UPDATE');
+  });
+  it.each([
+    { ubicacion: 'transito', transferencia_id: null },
+    { ubicacion: 'almacen', transferencia_id: 'inexistente' },
+    { ubicacion: 'transito', transferencia_id: 'aceptada' }
+  ])('rechaza ubicación/reserva inconsistente %j', async extra => {
+    const trx = mockBaja(
+      [unidad(extra)],
+      [
+        {
+          id: 'aceptada',
+          producto_id: 'prod-1',
+          presentacion_id: 'pres-1',
+          tipo: 'traspaso',
+          estado: 'aceptada'
+        }
+      ]
+    );
+    await expect(bajaConContexto(trx)).rejects.toThrow('inconsistente');
+    expect(trx.mock.calls.every(([sql]) => sql.startsWith('SELECT'))).toBe(true);
+  });
+  it('preserva contenido parcial e historial y recalcula stock dentro de la misma transacción', async () => {
+    const abierta = unidad({ ubicacion: 'bar', ml_restante: 350, abierta_por_shots: true });
+    const trx = mockBaja([abierta]);
+    await expect(bajaConContexto(trx, ['unit-1', 'unit-1'])).resolves.toBe(1);
+    expect(abierta).toMatchObject({
+      estado: 'inactivo',
+      ml_restante: 350,
+      abierta_por_shots: true,
+      compra_id: 'compra-1'
+    });
+    expect(
+      trx.mock.calls.some(([sql]) => /DELETE|INSERT|UPDATE inventario_movimiento/.test(sql))
+    ).toBe(false);
+    expect(trx).toHaveBeenCalledWith(expect.stringContaining('RETURNING id'), [
+      'inactivo',
+      'prod-1',
+      'almacen',
+      'unit-1'
+    ]);
+    expect(trx).toHaveBeenLastCalledWith(
+      expect.stringContaining('UPDATE productos SET stock_almacen'),
+      expect.arrayContaining([4, 'prod-1'])
+    );
+    const update = trx.mock.calls.find(([sql]) => sql.startsWith('UPDATE inventario_unidades'));
+    expect(update?.[0]).not.toMatch(/SET.*ml_restante|SET.*compra_id/);
+  });
+  it('recuenta unidades activas de bodega después de la baja, sin restar al stock guardado', async () => {
+    const trx = mockBaja([unidad()]);
+    await bajaConContexto(trx);
+    expect(trx).toHaveBeenCalledWith(expect.stringContaining('COUNT(*)'), ['prod-1', 'almacen']);
+    expect(trx).toHaveBeenLastCalledWith(
+      expect.stringContaining('UPDATE productos SET stock_almacen'),
+      expect.arrayContaining([4, 'prod-1'])
+    );
+  });
+  it('un UPDATE incompleto corta antes del recálculo', async () => {
+    const trx = mockBaja([unidad()]);
+    const original = trx.getMockImplementation();
+    trx.mockImplementation(async (sql: string, values: unknown[] = []) =>
+      sql.startsWith('UPDATE inventario_unidades') ? [] : await original!(sql, values)
+    );
+    await expect(bajaConContexto(trx)).rejects.toThrow('cambiaron durante la baja');
+    expect(trx.mock.calls.some(([sql]) => sql.includes('UPDATE productos'))).toBe(false);
+  });
+  it.each([{ estado: 'vendida' }, { estado: 'inactivo' }, { producto_id: 'otro' }])(
+    'no da de baja unidades no activas o ajenas %j',
+    async extra => {
+      const trx = mockBaja([unidad(extra)]);
+      await expect(bajaConContexto(trx)).rejects.toThrow();
+      expect(trx.mock.calls.every(([sql]) => sql.startsWith('SELECT'))).toBe(true);
+    }
+  );
+  it('rechaza un lote incompleto sin escrituras ni recálculo de stock', async () => {
+    const trx = mockBaja([unidad()]);
+    await expect(bajaConContexto(trx, ['unit-1', 'missing'])).rejects.toThrow(
+      'pertenecer al producto'
+    );
+    expect(trx.mock.calls.every(([sql]) => sql.startsWith('SELECT'))).toBe(true);
+  });
+});
+
 describe('ean13CheckDigit', () => {
   it('calcula el dígito del ejemplo oficial GS1 (5901234123457)', () => {
     expect(ean13CheckDigit('590123412345')).toBe(7);
@@ -832,6 +980,106 @@ describe('descuento del bar al registrar una venta', () => {
     );
     expect(trazabilidad![1].slice(-1)).toEqual([0]);
   });
+
+  it('solo marca como envase abierto la botella vaciada por shots en una venta mixta', async () => {
+    const trx = trxCon([
+      { id: 'u1', ml_restante: null },
+      { id: 'u2', ml_restante: null }
+    ]);
+    await consumirStockConTransaccion(
+      trx,
+      [
+        { presentacion_id: 'pres-1', cantidad: 15, tipo_venta: 'shot' },
+        { presentacion_id: 'pres-1', cantidad: 1, tipo_venta: 'botella' }
+      ],
+      contexto
+    );
+    expect(trx).toHaveBeenCalledWith(expect.stringContaining("SET estado = 'vendida'"), [
+      'u1',
+      'u2'
+    ]);
+    expect(trx).toHaveBeenCalledWith(expect.stringContaining('SET abierta_por_shots = true'), [
+      'u1'
+    ]);
+  });
+
+  it('excluye envases abiertos sin contenido del stock disponible', async () => {
+    const trx = vi.fn(async (sql: string) => {
+      if (sql.includes('FROM inventario_presentaciones')) return [presentacion];
+      if (sql.includes('FROM inventario_unidades')) {
+        expect(sql).toContain(
+          'COALESCE(ml_restante, 0) > 0 OR COALESCE(abierta_por_shots, false) = false'
+        );
+        return [];
+      }
+      return [];
+    });
+    await expect(
+      consumirStockConTransaccion(trx, [{ presentacion_id: 'pres-1', cantidad: 1 }], contexto)
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_BAR_STOCK' });
+    expect(trx.mock.calls.every(([sql]) => sql.trim().startsWith('SELECT'))).toBe(true);
+  });
+
+  it.each([1, 2])(
+    'al entregar un corte y una botella usa unidades distintas con %i botella(s)',
+    async cantidad => {
+      const unidades = Array.from({ length: cantidad }, (_, index) => ({
+        id: `u${index + 1}`,
+        ml_restante: null as number | null,
+        abierta_por_shots: false,
+        estado: 'activa'
+      }));
+      const trx = vi.fn(async (sql: string, args?: unknown[]) => {
+        if (sql.includes('FROM inventario_presentaciones')) return [presentacion];
+        if (sql.includes('FROM inventario_unidades')) {
+          if (sql.includes('SELECT id FROM')) {
+            expect(sql).toContain('COALESCE(ml_restante, 0) = 0');
+            expect(sql).toContain('COALESCE(abierta_por_shots, false) = false');
+            return unidades
+              .filter(
+                unidad =>
+                  unidad.estado === 'activa' &&
+                  !unidad.abierta_por_shots &&
+                  Number(unidad.ml_restante ?? 0) === 0
+              )
+              .slice(0, Number(args?.at(-1)));
+          }
+          return unidades.filter(unidad => unidad.estado === 'activa');
+        }
+        if (sql.includes('SET ml_restante = ?')) {
+          const unidad = unidades.find(item => item.id === args?.[1]);
+          if (unidad) {
+            unidad.ml_restante = Number(args?.[0]);
+            unidad.abierta_por_shots = true;
+          }
+        }
+        if (sql.includes("SET estado = 'vendida'")) {
+          const unidad = unidades.find(item => item.id === args?.[0]);
+          if (unidad) unidad.estado = 'vendida';
+        }
+        return [];
+      });
+      await conContextoOperacionExistente(trx as unknown as TransactionQuery, async operacion => {
+        await consumirCorteCoverBar('pres-1', contexto.usuarioId, contexto.fecha, operacion);
+        const botella = consumirProductoCoverBar(
+          'pres-1',
+          contexto.usuarioId,
+          contexto.fecha,
+          operacion,
+          45000
+        );
+        if (cantidad === 1) await expect(botella).rejects.toThrow('No hay suficiente stock');
+        else await expect(botella).resolves.toBeUndefined();
+      });
+      expect(unidades[0]).toMatchObject({
+        ml_restante: 700,
+        abierta_por_shots: true,
+        estado: 'activa'
+      });
+      if (cantidad === 2)
+        expect(unidades[1]).toMatchObject({ abierta_por_shots: false, estado: 'vendida' });
+    }
+  );
 
   it('rechaza la venta sin modificar nada cuando no alcanzan las botellas', async () => {
     const trx = trxCon([{ id: 'u1' }]);

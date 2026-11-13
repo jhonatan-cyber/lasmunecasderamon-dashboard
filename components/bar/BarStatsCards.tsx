@@ -15,20 +15,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import type { CortoVendidoHoy, OrigenCorto, ShotsSummary } from '@/modules/inventario/contracts';
-
-interface BarOpenBottleDetail {
-  foto?: string | null;
-  venta_corto_habilitada?: boolean;
-  id: string;
-  cantidad: number;
-  ml_disponibles: number;
-  ml_cliente: number;
-  ml_anfitriona: number;
-  shots_anfitriona_disponibles: number;
-  shots_disponibles: number;
-  producto_nombre: string;
-  presentacion_nombre: string;
-}
+import type { BarOpenBottleDetail } from '@/components/bar/barOpenBottleDetails';
 
 interface StatCard {
   title: string;
@@ -94,6 +81,22 @@ function detalleAcompanamiento(corto: CortoVendidoHoy): string {
   return `Acompañamiento: ${acompanamiento.nombre ?? 'Bebida'} · ${porCorto} ${unidad} por corte${
     corto.cantidad > 1 ? ` (${etiquetaTotal} en total)` : ''
   }`;
+}
+
+/** Porciones que todavía salen de una botella abierta, con su unidad. */
+function porcionesDe(cantidad: number, unidad: 'corto' | 'colacion'): string {
+  if (unidad === 'colacion') return `${cantidad} ${cantidad === 1 ? 'colación' : 'colaciones'}`;
+  return `${cantidad} ${cantidad === 1 ? 'corto' : 'cortos'}`;
+}
+
+/** Disponible más una columna por cada porción que se puede leer de la botella. */
+function columnasDetalle(botella: BarOpenBottleDetail): string {
+  const columnas = botella.esBebidaAnalcoholica
+    ? 1 + Number(botella.colacion_habilitada) + Number(botella.ml_cliente > 0)
+    : botella.venta_corto_habilitada
+      ? 3
+      : 1;
+  return columnas === 3 ? 'grid-cols-3' : columnas === 2 ? 'grid-cols-2' : 'grid-cols-1';
 }
 
 /**
@@ -287,8 +290,8 @@ export function BarStatsCards({
           <DialogHeader className='shrink-0 border-b px-5 py-5 sm:px-6'>
             <DialogTitle>Mililitros disponibles por botella</DialogTitle>
             <DialogDescription>
-              Contenido disponible por producto y presentación. Los cortos se calculan según su
-              configuración.
+              Contenido disponible por producto y presentación. Los cortos y las colaciones se
+              calculan según su configuración.
             </DialogDescription>
           </DialogHeader>
           <div className='min-h-0 flex-1 divide-y divide-border overflow-y-auto px-5 sm:px-6'>
@@ -318,34 +321,57 @@ export function BarStatsCards({
                         {botella.cantidad === 1 ? 'botella abierta' : 'botellas abiertas'}
                       </p>
                     </div>
-                    <dl
-                      className={`grid gap-x-4 ${botella.venta_corto_habilitada ? 'grid-cols-3' : 'grid-cols-1'}`}
-                    >
+                    <dl className={cn('grid gap-x-4', columnasDetalle(botella))}>
                       <div>
                         <dt className='text-[11px] text-muted-foreground'>Disponible</dt>
                         <dd className='text-base font-semibold tabular-nums text-purple-700 dark:text-purple-300'>
                           {botella.ml_disponibles} ml
                         </dd>
                       </div>
-                      {botella.venta_corto_habilitada && (
+                      {botella.esBebidaAnalcoholica ? (
                         <>
-                          <div>
-                            <dt className='text-[11px] text-muted-foreground'>
-                              Cliente · {botella.ml_cliente} ml
-                            </dt>
-                            <dd className='text-base font-semibold tabular-nums'>
-                              {botella.shots_disponibles} cortos
-                            </dd>
-                          </div>
-                          <div>
-                            <dt className='text-[11px] text-muted-foreground'>
-                              Anfitriona · {botella.ml_anfitriona} ml
-                            </dt>
-                            <dd className='text-base font-semibold tabular-nums'>
-                              {botella.shots_anfitriona_disponibles} cortos
-                            </dd>
-                          </div>
+                          {botella.colacion_habilitada && (
+                            <div>
+                              <dt className='text-[11px] text-muted-foreground'>
+                                Colación · {botella.ml_colacion} ml
+                              </dt>
+                              <dd className='text-base font-semibold tabular-nums'>
+                                {porcionesDe(botella.colaciones_disponibles, 'colacion')}
+                              </dd>
+                            </div>
+                          )}
+                          {botella.ml_cliente > 0 && (
+                            <div>
+                              <dt className='text-[11px] text-muted-foreground'>
+                                Corto · {botella.ml_cliente} ml
+                              </dt>
+                              <dd className='text-base font-semibold tabular-nums'>
+                                {porcionesDe(botella.shots_disponibles, 'corto')}
+                              </dd>
+                            </div>
+                          )}
                         </>
+                      ) : (
+                        botella.venta_corto_habilitada && (
+                          <>
+                            <div>
+                              <dt className='text-[11px] text-muted-foreground'>
+                                Cliente · {botella.ml_cliente} ml
+                              </dt>
+                              <dd className='text-base font-semibold tabular-nums'>
+                                {porcionesDe(botella.shots_disponibles, 'corto')}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className='text-[11px] text-muted-foreground'>
+                                Anfitriona · {botella.ml_anfitriona} ml
+                              </dt>
+                              <dd className='text-base font-semibold tabular-nums'>
+                                {porcionesDe(botella.shots_anfitriona_disponibles, 'corto')}
+                              </dd>
+                            </div>
+                          </>
+                        )
                       )}
                     </dl>
                   </div>

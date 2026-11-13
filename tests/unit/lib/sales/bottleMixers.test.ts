@@ -7,6 +7,7 @@ import { completarOpciones } from '@/modules/inventario/helpers';
 import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 import { resolverVentaProducto } from '@/lib/sales/saleChoice';
 import { parseOpcionesVenta } from '@/modules/inventario/helpers';
+import { esBebidaHabilitadaParaColacion } from '@/lib/business/saleOptions';
 
 it('la configuración exige comisión con precio de botella positivo', () => {
   expect(ConfiguredSaleOptionsSchema.safeParse([{ tipo: 'botella', precio: 50000 }]).success).toBe(
@@ -133,6 +134,23 @@ it('conserva el flag que habilita una bebida para corto anfitriona', () => {
       { tipo: 'shot', precio: 1000, corto_anfitriona_habilitado: false }
     ]).success
   ).toBe(false);
+});
+
+it('solo una botella habilitada para colación sirve como acompañamiento', () => {
+  expect(esBebidaHabilitadaParaColacion([{ tipo: 'botella', colacion_habilitada: true }])).toBe(
+    true
+  );
+  expect(
+    esBebidaHabilitadaParaColacion(JSON.stringify([{ tipo: 'botella', colacion_habilitada: true }]))
+  ).toBe(true);
+  expect(esBebidaHabilitadaParaColacion([{ tipo: 'botella', colacion_habilitada: false }])).toBe(
+    false
+  );
+  // La ausencia del flag o una configuración corrupta no habilitan la bebida.
+  expect(esBebidaHabilitadaParaColacion([{ tipo: 'botella' }])).toBe(false);
+  expect(esBebidaHabilitadaParaColacion([{ tipo: 'shot', precio: 1000 }])).toBe(false);
+  expect(esBebidaHabilitadaParaColacion('no-es-json')).toBe(false);
+  expect(esBebidaHabilitadaParaColacion(undefined)).toBe(false);
 });
 
 it('no vuelve a activar anfitrionas al completar una botella deshabilitada', () => {

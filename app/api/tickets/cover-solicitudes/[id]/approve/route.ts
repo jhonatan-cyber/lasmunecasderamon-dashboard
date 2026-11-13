@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ValidationError } from '@/lib/errors/errors';
-import { aprobarSolicitudCover, entregarEntrada, obtenerSolicitudCover } from '@/modules/entradas';
+import { entregaGrupoCoverSchema } from '@/lib/business/schemas/entrada-cover';
+import { entregarGrupoEntradas, obtenerSolicitudCover } from '@/modules/entradas';
 import { SaleService } from '@/workflows/ventas';
 import { notificarEntradaActualizada } from '@/lib/notifications/entradaNotificationUtils';
 
@@ -11,52 +12,54 @@ export const PATCH = withRoute(
     const { id } = await params;
     const solicitud = await obtenerSolicitudCover(id);
     if (!solicitud) throw new ValidationError('La solicitud ya no existe');
-    if (solicitud.estado !== 'pendiente')
-      throw new ValidationError('La solicitud ya fue respondida');
-
-    const unidades = Array.isArray(solicitud.unidades)
-      ? solicitud.unidades
-      : JSON.parse(solicitud.unidades || '[]');
-
-    for (const unidad of unidades) {
-      const data = await entregarEntrada(
-        {
-          entradaId: unidad.entrada_id,
-          presentacionId: unidad.presentacion_id,
-          acompanamientos: unidad.acompanamientos || null,
-          montoAdicional: unidad.monto_adicional == null ? null : Number(unidad.monto_adicional),
-          tipoEntrega: unidad.tipo_entrega === 'corte' ? 'corte' : 'botella',
-          usuarioId: user.id
-        },
-        async (plan, contexto, asignarTarea) => {
-          const venta = await SaleService.createSale(
-            {
-              total: plan.totalVenta,
-              sub_total: plan.totalVenta,
-              total_comision: 0,
-              metodo_pago: plan.metodoPago,
-              propina: 0,
-              tiempo: 0,
-              usuarios: [],
-              detalles: plan.detalles as never
-            },
-            plan.usuarioId,
-            { contexto, entradaId: plan.entradaId, onAfterCommit: asignarTarea }
-          );
-          return { ventaId: venta?.id ? String(venta.id) : null };
-        }
-      );
+    const body = entregaGrupoCoverSchema.parse({
+      entrada_ids:
+        typeof solicitud.entrada_ids === 'string'
+          ? JSON.parse(solicitud.entrada_ids)
+          : solicitud.entrada_ids,
+      unidades:
+        typeof solicitud.unidades === 'string'
+          ? JSON.parse(solicitud.unidades)
+          : solicitud.unidades,
+      monto_adicional: Number(solicitud.monto_total)
+    });
+    const data = await entregarGrupoEntradas(
+      {
+        entradaIds: body.entrada_ids,
+        unidades: body.unidades,
+        montoAdicional: body.monto_adicional,
+        usuarioId: user.id,
+        solicitudId: id
+      },
+      async (plan, contexto, asignarTarea) => {
+        const venta = await SaleService.createSale(
+          {
+            total: plan.totalVenta,
+            sub_total: plan.totalVenta,
+            total_comision: 0,
+            metodo_pago: plan.metodoPago,
+            propina: 0,
+            tiempo: 0,
+            usuarios: [],
+            detalles: plan.detalles as never
+          },
+          plan.usuarioId,
+          { contexto, entradaId: plan.entradaId, onAfterCommit: asignarTarea }
+        );
+        const ventaId = venta?.id ?? venta?.id_venta;
+        return { ventaId: ventaId ? String(ventaId) : null };
+      }
+    );
+    for (const entradaId of body.entrada_ids) {
       notificarEntradaActualizada({
-        entradaId: unidad.entrada_id,
+        entradaId,
         accion: 'entregada',
         clienteNombre: solicitud.cliente_nombre,
-        tipo: data.tipo,
+        tipo: body.monto_adicional > 0 ? 'upgrade' : 'cover',
         montoCobrarBarra: data.montoCobrarBarra,
         entregadaPorNombre: `${user.name} ${user.lastName}`.trim()
       });
     }
-
-    await aprobarSolicitudCover(id, user.id);
-    return NextResponse.json({ success: true, data: { entregadas: unidades.length } });
+    return NextResponse.json({ success: true, data });
   }
 );

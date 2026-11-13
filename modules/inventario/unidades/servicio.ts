@@ -16,6 +16,9 @@ export function cambiarEstadoUnidades(
 ) {
   return infraestructura.cambiarEstadoUnidades(...args);
 }
+export function eliminarUnidades(...args: Parameters<typeof infraestructura.eliminarUnidades>) {
+  return infraestructura.eliminarUnidades(...args);
+}
 export function listarUnidades(...args: Parameters<typeof infraestructura.listarUnidades>) {
   return infraestructura.listarUnidades(...args);
 }

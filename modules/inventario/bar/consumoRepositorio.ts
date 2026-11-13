@@ -74,6 +74,8 @@ export async function consumirStock(
   soloValidar = false,
   opciones?: OpcionesConsumoStock
 ): Promise<ShotAlert[]> {
+  // Aquí se valida consumo/formato, no montos: también consumen servicios y covers.
+  // Pedidos y ventas normales cotejan precio/comisión en validarPreciosConfigurados.
   const presentacionesBloqueadas = contextoVenta.servicioId
     ? undefined
     : await bloquearYValidarConfiguracionVenta(trx, detalles);
@@ -217,6 +219,7 @@ export async function consumirStock(
     const unidades = await trx<UnidadConsumo[]>(
       `SELECT id, ml_restante, fecha_vencimiento FROM inventario_unidades
         WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
+          AND (COALESCE(ml_restante, 0) > 0 OR COALESCE(abierta_por_shots, false) = false)
         ORDER BY CASE WHEN ml_restante > 0 THEN 0 ELSE 1 END,
                  COALESCE(fecha_vencimiento, ?) ASC NULLS LAST, fecha_crea ASC, codigo ASC
         FOR UPDATE`,
@@ -320,7 +323,7 @@ export async function consumirStock(
             shots_restantes: Math.floor(item.ml_restante / shotMlPresentacion)
           });
         }
-      } else if (pedido.tieneShots) {
+      } else if (item.ml_consumido > 0) {
         vaciadasPorShots.push(item.id);
         vendidas.push(item.id);
       } else {
@@ -729,6 +732,7 @@ export async function consumirProductoCover(
     const unidades = await trx<{ id: string }[]>(
       `SELECT id FROM inventario_unidades
         WHERE presentacion_id = ? AND estado = '${ESTADO_UNIDAD_ACTIVA}' AND ubicacion = 'bar'
+          AND COALESCE(ml_restante, 0) = 0 AND COALESCE(abierta_por_shots, false) = false
           AND (COALESCE(fecha_vencimiento, ?) IS NULL OR COALESCE(fecha_vencimiento, ?) >= ?)
         ORDER BY COALESCE(fecha_vencimiento, ?) ASC NULLS LAST, fecha_crea ASC, codigo ASC LIMIT ? FOR UPDATE`,
       [

@@ -2,6 +2,11 @@ import React from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import BarPage from '@/app/bar/page';
+import { BarProductosTab } from '@/components/bar/BarProductosTab';
+import type { BarStockItem } from '@/components/bar/TransferModal';
+import { isTierPricedItem } from '@/components/bar/BarAnfitrionas';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import type { SaleOption } from '@/types/sale-options';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { seleccionarFecha } from '../helpers/datePicker';
 vi.mock('@/components/auth/PermissionGuard', () => ({
@@ -45,10 +50,9 @@ vi.mock('@/components/bar/BarReorderRow', () => ({
   BarReorderRow: ({ children }: any) => <tr>{children}</tr>
 }));
 vi.mock('@/components/bar/BarStatsCards', () => ({ BarStatsCards: () => null }));
-vi.mock('@/components/bar/SalePrices', () => ({ SalePrices: () => null }));
-vi.mock('@/components/bar/BarAnfitrionas', () => ({
-  BarAnfitrionas: () => null,
-  isTierPricedItem: () => false
+vi.mock('@/components/bar/BarAnfitrionas', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/components/bar/BarAnfitrionas')>()),
+  BarAnfitrionas: () => null
 }));
 vi.mock('@/components/products/EscaneoLote', () => ({ EscaneoLote: () => null }));
 vi.mock('@/components/products/ProductImageLightbox', () => ({ ProductImageLightbox: () => null }));
@@ -63,6 +67,8 @@ vi.mock('@/components/shared/selects/SortSelect', () => ({
 }));
 afterEach(() => {
   cleanup();
+  reorderGroup.enabled = false;
+  reorderGroup.onMove = null;
   vi.unstubAllGlobals();
 });
 const mount = () =>
@@ -72,8 +78,20 @@ const mount = () =>
     </TooltipProvider>
   );
 const stock = [
-  { id: 'a', producto_nombre: 'Ron', nombre: '750 ml', stock_bar: '20' },
-  { id: 'b', producto_nombre: 'Whisky', nombre: '750 ml', stock_bar: '3' }
+  {
+    id: 'a',
+    producto_nombre: 'Ron',
+    nombre: '750 ml',
+    categoria_nombre: 'Licores',
+    stock_bar: '20'
+  },
+  {
+    id: 'b',
+    producto_nombre: 'Whisky',
+    nombre: '750 ml',
+    categoria_nombre: 'Licores',
+    stock_bar: '3'
+  }
 ];
 const response = (data: unknown) => Response.json({ success: true, data });
 it('reintenta el stock y ordena por cantidades numéricas', async () => {
@@ -93,6 +111,10 @@ it('reintenta el stock y ordena por cantidades numéricas', async () => {
   expect(screen.queryByText('Sin productos')).not.toBeInTheDocument();
   failed = false;
   fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+  const category = await screen.findByRole('button', { name: /Licores/ });
+  expect(category).toHaveTextContent('2 presentaciones');
+  expect(screen.queryByRole('list', { name: 'Productos' })).not.toBeInTheDocument();
+  fireEvent.click(category);
   const list = await screen.findByRole('list', { name: 'Productos' });
   expect(screen.getByText('23 unidades en bar')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Ordenar stock ascendente' }));
@@ -102,6 +124,142 @@ it('reintenta el stock y ordena por cantidades numéricas', async () => {
       .map(el => el.textContent)
   ).toEqual(['Whisky', 'Ron']);
 });
+it('navega categorías, busca en cada nivel y vuelve sin perder la agrupación', async () => {
+  const catalog = [
+    ...stock,
+    {
+      id: 'c',
+      producto_nombre: 'Champagne Oro',
+      nombre: '750 ml',
+      categoria_nombre: 'Champagne',
+      stock_bar: 2
+    },
+    {
+      id: 'd',
+      producto_nombre: 'Sin clasificar',
+      nombre: '350 ml',
+      categoria_nombre: '  ',
+      stock_bar: 1
+    }
+  ];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => response(url === '/api/bar' ? catalog : {}))
+  );
+  mount();
+  expect(
+    await screen.findByRole('button', { name: /Champagne.*1 presentación/ })
+  ).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Licores.*2 presentaciones/ })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Sin categoría.*1 presentación/ })).toBeInTheDocument();
+  expect(screen.queryByRole('list', { name: 'Productos' })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('textbox', { name: 'Buscar categoría' }), {
+    target: { value: 'lico' }
+  });
+  expect(screen.queryByRole('button', { name: /Champagne/ })).not.toBeInTheDocument();
+  fireEvent.keyDown(screen.getByRole('button', { name: /Licores/ }), { key: 'Enter' });
+  const list = screen.getByRole('list', { name: 'Productos' });
+  expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+  fireEvent.change(screen.getByRole('textbox', { name: 'Buscar producto en la categoría' }), {
+    target: { value: 'whis' }
+  });
+  expect(
+    within(list)
+      .getAllByRole('listitem')
+      .map(item => item.textContent)
+  ).toEqual(['Whisky']);
+  fireEvent.click(screen.getByRole('button', { name: 'Atrás' }));
+  expect(screen.getByRole('textbox', { name: 'Buscar categoría' })).toHaveValue('');
+  expect(screen.queryByRole('list', { name: 'Productos' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Sin categoría/ }));
+  expect(screen.getByRole('list', { name: 'Productos' })).toHaveTextContent('Sin clasificar');
+});
+
+const champagneItem = (options: SaleOption[] | string): BarStockItem => ({
+  id: 'ch-1',
+  producto_id: 'p-ch',
+  producto_nombre: 'Champagne Oro',
+  producto_codigo: 'CH1',
+  producto_foto: null,
+  categoria_nombre: 'Champagne',
+  nombre: '750 ml',
+  codigo_barras: null,
+  precio_compra: 0,
+  precio_venta: 0,
+  comision: 0,
+  foto: null,
+  stock: 1,
+  stock_bar: 1,
+  opciones_venta: options
+});
+it.each(['array', 'json'])(
+  'muestra el precio SIN-only champagne en tabla (%s), no el precio por N',
+  async format => {
+    const options: SaleOption[] = [
+      {
+        tipo: 'botella',
+        precio: 0,
+        comision: 0,
+        vender_con_anfitriona: false,
+        precio_sin_anfitriona: 35000
+      }
+    ];
+    const item = champagneItem(format === 'json' ? JSON.stringify(options) : options);
+    expect(isTierPricedItem(item)).toBe(false);
+    expect(isTierPricedItem(champagneItem([{ tipo: 'botella', precio: 0, comision: 0 }]))).toBe(
+      true
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => response(url === '/api/bar' ? [item] : {}))
+    );
+    mount();
+    fireEvent.click(await screen.findByRole('button', { name: /Champagne/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tabla' }));
+    const table = screen.getByRole('table');
+    expect(within(table).getByText(formatCurrencyCLP(35000))).toBeInTheDocument();
+    expect(within(table).getAllByText('Botella sin anfitriona')).toHaveLength(2);
+    expect(within(table).queryByText('Según N° anf.')).not.toBeInTheDocument();
+    expect(within(table).queryByText(formatCurrencyCLP(0))).not.toBeInTheDocument();
+  }
+);
+
+it('mantiene el orden de hooks al pasar por carga, datos, error y reintento del listado', () => {
+  const onRetryStock = vi.fn();
+  const props = {
+    stockError: false,
+    onRetryStock,
+    isLoading: true,
+    filtered: [] as BarStockItem[],
+    puedeReordenar: false,
+    savingOrder: false,
+    avisoOrdenManual: false,
+    showTableView: false,
+    search: '',
+    stockFilter: 'todos',
+    onClearFilters: vi.fn(),
+    shotMl: 50,
+    botellaMl: 750,
+    onMove: vi.fn(async () => {}),
+    tablePhoto: null,
+    onTablePhotoChange: vi.fn(),
+    selectedCategory: null,
+    onCategorySelect: vi.fn()
+  };
+  const { rerender } = render(<BarProductosTab {...props} />);
+  expect(screen.getByRole('status')).toHaveTextContent('Cargando productos');
+  const loaded = { ...props, isLoading: false, filtered: [champagneItem([])] };
+  rerender(<BarProductosTab {...loaded} />);
+  expect(screen.getByRole('button', { name: /Champagne/ })).toBeInTheDocument();
+  rerender(<BarProductosTab {...loaded} stockError />);
+  expect(screen.getByRole('alert')).toHaveTextContent('No se pudieron cargar los productos');
+  fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+  expect(onRetryStock).toHaveBeenCalledOnce();
+  rerender(<BarProductosTab {...loaded} />);
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Champagne/ })).toHaveTextContent('1 presentación');
+});
+
 it.each([
   ['pendientes', 'Pendientes', 'las recepciones pendientes'],
   ['historial', 'Historial', 'el historial de movimientos'],
@@ -308,6 +466,7 @@ it('guarda el orden manual de las presentaciones del bar', async () => {
   });
   vi.stubGlobal('fetch', fetcher);
   mount();
+  fireEvent.click(await screen.findByRole('button', { name: /Licores/ }));
   expect(await screen.findByText('Ron')).toBeInTheDocument();
 
   // En la tabla se expone el mismo callback que usan las tarjetas.
@@ -334,6 +493,7 @@ it('permite arrastrar con otro orden y pasa a orden manual al soltar', async () 
   });
   vi.stubGlobal('fetch', fetcher);
   mount();
+  fireEvent.click(await screen.findByRole('button', { name: /Licores/ }));
   expect(await screen.findByText('Ron')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tabla' }));
 

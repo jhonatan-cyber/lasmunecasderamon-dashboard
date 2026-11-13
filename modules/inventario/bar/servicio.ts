@@ -1,12 +1,17 @@
 import type { ContextoOperacion } from '@/lib/transaction/contract';
-import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
+import type {
+  ContextoVentaInventario,
+  ConsumoInventarioDetalle,
+  DetallePrecioInventario,
+  ShotAlert
+} from '../contracts';
 import {
   consumirColacion as consumirColacionInterno,
   consumirCorteCover as consumirCorteCoverInterno,
   consumirCover as consumirCoverInterno,
   consumirProductoCover as consumirProductoCoverInterno
 } from './consumoRepositorio';
-import { consumirStock } from './repositorio';
+import { consumirStock, validarPreciosVenta } from './repositorio';
 
 // Lecturas de la barra (stock abierto y resumen del turno): no abren unidad ni
 // emiten efectos, por eso el servicio las reexporta tal cual.
@@ -28,6 +33,14 @@ export function obtenerResumenShots(...args: Parameters<typeof obtenerResumenSho
 // expone junto a sus lecturas para que la ruta no importe persistencia privada.
 export function reordenarStockBar(...args: Parameters<typeof reordenarStockBarInterno>) {
   return reordenarStockBarInterno(...args);
+}
+
+/** Valida catálogo y devuelve la categoría real; no valida subtotales con créditos. */
+export function validarPreciosVentaBar(
+  detalles: DetallePrecioInventario[],
+  contexto: ContextoOperacion
+) {
+  return validarPreciosVenta(detalles, contexto);
 }
 
 export function consumirStockBar(

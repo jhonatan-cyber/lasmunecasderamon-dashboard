@@ -103,11 +103,6 @@ async function leerCostoEntrada(): Promise<number> {
   return valor;
 }
 
-async function leerTopeCover(): Promise<number> {
-  const valor = await leerConfiguracion('monto_base_trago_cover_cliente', 10000);
-  return valor >= 0 ? valor : 10000;
-}
-
 function parseOpcionesVenta(valor: unknown): Record<string, unknown>[] {
   if (valor == null) return [];
   if (typeof valor === 'string') {
@@ -326,12 +321,288 @@ export interface EntregaEntradaInput {
   tipoEntrega?: 'botella' | 'corte';
 }
 
+export interface UnidadCover {
+  presentacion_id: string;
+  tipo_entrega: 'botella' | 'corte';
+  acompanamientos?: AcompanamientoBotellaItem[] | null;
+}
+
+export interface EntregaGrupoInput {
+  entradaIds: string[];
+  unidades: UnidadCover[];
+  montoAdicional: number;
+  usuarioId: string;
+  solicitudId?: string;
+}
+
+export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: RegistradorVenta) {
+  if (!input.usuarioId || !input.entradaIds.length || input.entradaIds.length > 100)
+    throw new ValidationError('Selecciona las entradas a entregar');
+  const ids = [...new Set(input.entradaIds)].sort();
+  if (ids.length !== input.entradaIds.length || ids.some(id => !id))
+    throw new ValidationError('Las entradas seleccionadas no pueden repetirse');
+  if (!input.unidades.length || input.unidades.length > 500)
+    throw new ValidationError('Selecciona entre 1 y 500 productos');
+  if (
+    !Number.isSafeInteger(input.montoAdicional) ||
+    input.montoAdicional < 0 ||
+    input.montoAdicional > 2147483647
+  )
+    throw new ValidationError('El aporte adicional debe ser un monto entero no negativo');
+  const fecha = getNowInBusinessTimezone();
+  const tareas: Array<() => void | Promise<void>> = [];
+  const resultado = await enUnaUnidad(async unidad => {
+    const contexto = { id: unidad.id };
+    const trx = resolverTransaccion(contexto);
+    if (input.solicitudId) {
+      const solicitudes = await trx<{ estado: string }[]>(
+        'SELECT estado FROM solicitudes_entrega_covers WHERE id = ? FOR UPDATE',
+        [input.solicitudId]
+      );
+      if (solicitudes[0]?.estado !== 'pendiente')
+        throw new ValidationError('La solicitud ya fue respondida');
+    }
+    const entradas = await trx<
+      Array<{
+        id: string;
+        grupo_registro_id: string | null;
+        monto_entrada: number;
+        metodo_pago: MetodoPagoEntrada;
+        cover_estado: EstadoCover;
+      }>
+    >(
+      `SELECT id, grupo_registro_id, monto_entrada, metodo_pago, cover_estado
+         FROM entradas_clientes WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
+      ids
+    );
+    if (
+      entradas.length !== ids.length ||
+      entradas.some(entrada => entrada.cover_estado !== 'pendiente')
+    )
+      throw new ValidationError('Alguna entrada ya fue entregada, anulada o no existe');
+    const primera = entradas[0];
+    if (
+      entradas.length > 1 &&
+      (!primera.grupo_registro_id ||
+        entradas.some(
+          entrada =>
+            entrada.grupo_registro_id !== primera.grupo_registro_id ||
+            entrada.metodo_pago !== primera.metodo_pago
+        ))
+    )
+      throw new ValidationError('Selecciona entradas de una misma compra');
+    const montoEntrada = entradas.reduce(
+      (suma, entrada) => suma + Number(entrada.monto_entrada),
+      0
+    );
+    const presupuesto = montoEntrada + input.montoAdicional;
+    if (!Number.isSafeInteger(presupuesto) || presupuesto > 2147483647)
+      throw new ValidationError('El presupuesto supera el monto permitido');
+    const presentacionIds = [...new Set(input.unidades.map(item => item.presentacion_id))].sort();
+    const presentaciones = await trx<
+      Array<{
+        id: string;
+        producto_id: string;
+        precio_venta: number;
+        opciones_venta: unknown;
+        estado: number | null;
+      }>
+    >(
+      `SELECT p.id, p.producto_id, p.precio_venta, p.opciones_venta, pr.estado
+         FROM inventario_presentaciones p JOIN productos pr ON pr.id_producto = p.producto_id
+        WHERE p.id IN (${presentacionIds.map(() => '?').join(',')}) ORDER BY p.id FOR UPDATE OF p`,
+      presentacionIds
+    );
+    const seleccion = input.unidades.map(item => {
+      const presentacion = presentaciones.find(fila => fila.id === item.presentacion_id);
+      if (!presentacion || Number(presentacion.estado) !== 1)
+        throw new ValidationError('La bebida seleccionada no está disponible');
+      const opciones = parseOpcionesVenta(presentacion.opciones_venta);
+      const botella = opciones.find(opcion => opcion.tipo === 'botella');
+      if (botella?.cover_habilitado === false)
+        throw new ValidationError('La bebida seleccionada no está habilitada como cover');
+      const esCorte = item.tipo_entrega === 'corte';
+      const shot = opciones.find(opcion => opcion.tipo === 'shot');
+      const precioSin = Number(botella?.precio_sin_anfitriona ?? 0);
+      const precio = esCorte
+        ? Number(shot?.precio ?? 0)
+        : precioSin > 0
+          ? precioSin
+          : Number(presentacion.precio_venta);
+      if (!Number.isSafeInteger(precio) || precio <= 0)
+        throw new ValidationError('El precio de la bebida no está configurado');
+      const reparto = normalizarAcompanamientoBotella(item.acompanamientos);
+      const total = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
+      if (
+        new Set(reparto.map(sabor => sabor.presentacion_id)).size !== reparto.length ||
+        reparto.some(sabor => sabor.presentacion_id === item.presentacion_id)
+      )
+        throw new ValidationError('Selecciona sabores distintos de la bebida principal');
+      if (esCorte ? total > 1 : total !== unidadesAcompanamiento(opciones))
+        throw new ValidationError(
+          'El acompañamiento no coincide con la configuración de la bebida'
+        );
+      return { item, presentacion, precio, reparto, esCorte, precioSin };
+    });
+    const precioProductos = seleccion.reduce((suma, item) => suma + item.precio, 0);
+    if (precioProductos > presupuesto)
+      throw new ValidationError(
+        'Los productos superan el presupuesto de entradas más el aporte adicional'
+      );
+    const cajas = await trx<{ id_caja: string }[]>(
+      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1 FOR UPDATE'
+    );
+    if (!cajas.length) throw new ValidationError('Abre una caja antes de entregar las bebidas');
+    let ventaId: string | null = null;
+    if (input.montoAdicional > 0) {
+      if (!onVenta) throw new ValidationError('La entrega con aporte requiere registrar una venta');
+      const detalles = seleccion.map((item, indice) => ({
+        producto_id: item.presentacion.producto_id,
+        presentacion_id: item.item.presentacion_id,
+        tipo_venta: item.esCorte ? 'shot' : 'botella',
+        ...(item.precioSin > 0 && !item.esCorte ? { botella_anfitriona: false } : {}),
+        precio: item.precio,
+        comision: 0,
+        cantidad: 1,
+        sub_total: item.precio + (indice === 0 ? presupuesto - precioProductos : 0),
+        ...(item.esCorte && item.reparto.length
+          ? {
+              acompanamiento_corto: {
+                presentacion_id: item.reparto[0].presentacion_id,
+                unidades: 1
+              }
+            }
+          : {}),
+        ...(!item.esCorte && item.reparto.length ? { acompanamiento_botella: item.reparto } : {})
+      }));
+      const venta = await onVenta(
+        {
+          totalVenta: presupuesto,
+          metodoPago: primera.metodo_pago,
+          usuarioId: input.usuarioId,
+          entradaId: primera.id,
+          detalles
+        },
+        contexto,
+        tarea => tareas.push(tarea)
+      );
+      ventaId = venta?.ventaId ?? null;
+    } else {
+      for (const item of seleccion) {
+        if (item.esCorte) {
+          await consumirCorteCoverBar(
+            item.item.presentacion_id,
+            input.usuarioId,
+            fecha,
+            contexto,
+            item.reparto
+          );
+        } else {
+          await consumirProductoCoverBar(
+            item.item.presentacion_id,
+            input.usuarioId,
+            fecha,
+            contexto,
+            Math.max(item.precio, Number(item.presentacion.precio_venta)),
+            item.reparto
+          );
+        }
+      }
+      const pagos = { efectivo: 0, tarjeta: 0, transferencia: 0 };
+      pagos[primera.metodo_pago] = montoEntrada;
+      await registrarMovimientoCobro(cajas[0].id_caja, pagos, contexto);
+    }
+    for (const [indice, entrada] of entradas.entries()) {
+      const producto = seleccion[indice];
+      const aporte =
+        Math.floor(input.montoAdicional / entradas.length) +
+        (indice < input.montoAdicional % entradas.length ? 1 : 0);
+      await trx(
+        `UPDATE entradas_clientes SET cover_estado = 'entregada', cover_entregada_por = ?,
+          cover_entregada_at = ?, cover_presentacion_id = ?, bebida_acompanamiento_presentacion_id = ?,
+          monto_bebida_adicional = ?, acompanamientos = ? WHERE id = ?`,
+        [
+          input.usuarioId,
+          fecha,
+          producto?.item.presentacion_id ?? null,
+          producto?.reparto[0]?.presentacion_id ?? null,
+          aporte,
+          producto?.reparto.length ? JSON.stringify(producto.reparto) : null,
+          entrada.id
+        ]
+      );
+    }
+    const productos = new Map<
+      string,
+      {
+        entradaId: string;
+        presentacionId: string;
+        cantidad: number;
+        reparto: AcompanamientoBotellaItem[];
+      }
+    >();
+    for (const [indice, item] of seleccion.entries()) {
+      const entradaId = entradas[indice % entradas.length].id;
+      const clave = `${entradaId}:${item.item.presentacion_id}`;
+      const agregado = productos.get(clave) ?? {
+        entradaId,
+        presentacionId: item.item.presentacion_id,
+        cantidad: 0,
+        reparto: []
+      };
+      agregado.cantidad += 1;
+      for (const sabor of item.reparto) {
+        const existente = agregado.reparto.find(
+          fila => fila.presentacion_id === sabor.presentacion_id
+        );
+        if (existente) existente.unidades += sabor.unidades;
+        else agregado.reparto.push({ ...sabor });
+      }
+      productos.set(clave, agregado);
+    }
+    for (const producto of productos.values()) {
+      await trx(
+        `INSERT INTO entradas_clientes_productos
+          (entrada_id, presentacion_id, cantidad, acompanamiento_presentacion_id, acompanamientos)
+          VALUES (?, ?, ?, ?, ?)`,
+        [
+          producto.entradaId,
+          producto.presentacionId,
+          producto.cantidad,
+          producto.reparto[0]?.presentacion_id ?? null,
+          producto.reparto.length ? JSON.stringify(producto.reparto) : null
+        ]
+      );
+    }
+    if (input.solicitudId) {
+      await trx(
+        `UPDATE solicitudes_entrega_covers SET estado = 'aprobada', autorizado_por = ?, fecha_respuesta = ? WHERE id = ?`,
+        [input.usuarioId, fecha, input.solicitudId]
+      );
+    }
+    return {
+      entradas: entradas.length,
+      productos: seleccion.length,
+      montoEntrada,
+      montoCobrarBarra: input.montoAdicional,
+      presupuesto,
+      ventaId,
+      cajaId: cajas[0].id_caja
+    };
+  });
+  await ejecutarEfectosConfirmados(tareas);
+  return resultado;
+}
+
 function normalizarMontoAdicional(valor: unknown, respaldo: number): number {
   const derivado = Number.isFinite(respaldo) ? Math.max(0, Math.floor(respaldo)) : 0;
   if (valor === null || valor === undefined || valor === '') return derivado;
   const numero = Number(valor);
-  if (!Number.isFinite(numero)) return derivado;
-  return Math.max(0, Math.floor(numero));
+  if (!Number.isSafeInteger(numero) || numero < 0 || numero > 2147483647)
+    throw new ValidationError('Indica un monto adicional entero no negativo');
+  if (numero < derivado)
+    throw new ValidationError('El aporte adicional no cubre el precio de la bebida');
+  return numero;
 }
 
 export async function entregarEntrada(
@@ -343,7 +614,6 @@ export async function entregarEntrada(
   if (!input.usuarioId) throw new ValidationError('No se pudo identificar al usuario');
 
   const fechaHora = getNowInBusinessTimezone();
-  const tope = await leerTopeCover();
   const tareasConfirmadas: Array<() => void | Promise<void>> = [];
   let resultado: ResultadoEntrega | null = null;
 
@@ -394,12 +664,19 @@ export async function entregarEntrada(
     if (esCorte && (!Number.isFinite(precioCorte) || precioCorte <= 0))
       throw new ValidationError('La bebida seleccionada no se vende por corte');
 
-    // El cover por corte usa el precio del shot; la botella sigue usando el
-    // precio de venta de la presentación, que es el que valida el inventario.
-    const precio = esCorte ? Math.floor(precioCorte) : Number(presentacion.precio_venta);
+    const botella = opciones.find(opcion => opcion.tipo === 'botella');
+    if (botella?.cover_habilitado === false)
+      throw new ValidationError('La bebida seleccionada no está habilitada como cover');
+    const precioSin = Number(botella?.precio_sin_anfitriona ?? 0);
+    const precio = esCorte
+      ? precioCorte
+      : precioSin > 0
+        ? precioSin
+        : Number(presentacion.precio_venta);
+    if (!Number.isSafeInteger(precio) || precio <= 0)
+      throw new ValidationError('El precio de la bebida no está configurado');
     const montoEntrada = Number(entrada.monto_entrada);
-    const umbral = Math.max(tope, montoEntrada);
-    const adicionalPorPrecio = precio <= umbral ? 0 : precio - montoEntrada;
+    const adicionalPorPrecio = Math.max(0, precio - montoEntrada);
     const montoAdicional = normalizarMontoAdicional(input.montoAdicional, adicionalPorPrecio);
     const esCover = montoAdicional <= 0;
     const unidades = esCorte ? 0 : unidadesAcompanamiento(opciones);
@@ -455,7 +732,7 @@ export async function entregarEntrada(
           input.usuarioId,
           fechaHora,
           { id: unidad.id },
-          umbral,
+          Math.max(precio, Number(presentacion.precio_venta)),
           reparto.length ? reparto : null
         );
       }
@@ -470,6 +747,7 @@ export async function entregarEntrada(
         producto_id: presentacion.producto_id,
         presentacion_id: input.presentacionId,
         tipo_venta: esCorte ? 'shot' : 'botella',
+        ...(precioSin > 0 && !esCorte ? { botella_anfitriona: false } : {}),
         precio,
         comision: 0,
         cantidad: 1,
@@ -515,14 +793,12 @@ export async function entregarEntrada(
         entrada.id
       ]
     );
-    if (esCover) {
-      await trx(
-        `INSERT INTO entradas_clientes_productos
-          (entrada_id, presentacion_id, cantidad, acompanamiento_presentacion_id, acompanamientos)
-         VALUES (?, ?, 1, ?, ?) ON CONFLICT DO NOTHING`,
-        [entrada.id, input.presentacionId, acompanamientoPrincipalId, acompanamientoJson]
-      );
-    }
+    await trx(
+      `INSERT INTO entradas_clientes_productos
+        (entrada_id, presentacion_id, cantidad, acompanamiento_presentacion_id, acompanamientos)
+       VALUES (?, ?, 1, ?, ?) ON CONFLICT DO NOTHING`,
+      [entrada.id, input.presentacionId, acompanamientoPrincipalId, acompanamientoJson]
+    );
 
     resultado = {
       entradaId: entrada.id,

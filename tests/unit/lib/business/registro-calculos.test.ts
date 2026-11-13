@@ -118,6 +118,14 @@ describe('reparto de ventas', () => {
     expect(filas.commissionMainRows).toEqual([]);
     expect(filas.commissionDetailRows).toEqual([]);
   });
+  it('conserva el presupuesto de entradas en los detalles sin modificar el precio unitario', () => {
+    const d = detalle({ cantidad: 1, hostesses: [], precio: 15000, comision: 0, sub_total: 40001 });
+    const filas = prepararDetallesVenta([d], new Set(), 'v', 'fecha', () => 'id', true);
+    expect(filas.detailRows[0]).toMatchObject({ precio: 15000, cantidad: 1, sub_total: 40001 });
+    const normal = prepararDetallesVenta([d], new Set(), 'v', 'fecha', () => 'id');
+    expect(normal.detailRows[0].sub_total).toBe(15000);
+  });
+
   it.each([0, -1])('comision total %s usa la suma sin redondear los detalles', total_comision => {
     expect(
       calcularTotalComisionVenta(

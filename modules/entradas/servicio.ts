@@ -22,6 +22,12 @@ export function entregarEntrada(...args: Parameters<typeof repositorio.entregarE
   return repositorio.entregarEntrada(...args);
 }
 
+export function entregarGrupoEntradas(
+  ...args: Parameters<typeof repositorio.entregarGrupoEntradas>
+) {
+  return repositorio.entregarGrupoEntradas(...args);
+}
+
 export function anularEntrada(...args: Parameters<typeof repositorio.anularEntrada>) {
   return repositorio.anularEntrada(...args);
 }

@@ -24,6 +24,30 @@ function esRegistro(valor: unknown): valor is Record<string, unknown> {
 }
 
 /**
+ * Una botella sirve como Acompañamiento de una colación si la configuración
+ * la habilita para colación: es la misma regla con la que el catálogo de
+ * colación filtra las bebidas que reciben cajero, garzón y barman.
+ *
+ * Recibe el `opciones_venta` crudo de la presentación (array de jsonb o el
+ * string JSON tal como puede venir guardado) para que el catálogo de la UI y
+ * la validación del servidor lean exactamente la misma regla.
+ */
+export function esBebidaHabilitadaParaColacion(opcionesVenta: unknown): boolean {
+  let opciones = opcionesVenta;
+  if (typeof opciones === 'string') {
+    try {
+      opciones = JSON.parse(opciones);
+    } catch {
+      return false;
+    }
+  }
+  const botella = (Array.isArray(opciones) ? opciones : [])
+    .filter(esRegistro)
+    .find(opcion => opcion.tipo === 'botella');
+  return botella?.colacion_habilitada === true;
+}
+
+/**
  * Copia a la opción normalizada los datos de botella que el servidor y el
  * cliente leen igual. Los valores fuera de rango se descartan: una
  * configuración corrupta no puede habilitar una colación.

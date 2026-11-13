@@ -20,6 +20,8 @@ vi.mock('@/lib/database/db', () => {
   const trx: Trx = vi.fn(async (sql: string, params: unknown[] = []) => {
     estado.consultas.push({ sql, params });
     if (sql.includes('SELECT u.id_usuario')) return [{ id_usuario: 'w', rol: 'anfitriona' }];
+    if (sql.includes('c.system_key = ?'))
+      return [{ id: 'mixer-1', opciones_venta: [{ tipo: 'botella', colacion_habilitada: true }] }];
     if (sql.includes('p.opciones_venta'))
       return [
         {
@@ -31,8 +33,6 @@ vi.mock('@/lib/database/db', () => {
           producto_nombre: 'Whisky'
         }
       ];
-    // Acompañamiento: bebida analcohólica con stock en el bar.
-    if (sql.includes('c.system_key = ?')) return [{ id: 'mixer-1' }];
     if (sql.includes('FROM cajas') && sql.includes('FOR UPDATE')) return [{ id_caja: 'c1' }];
     // Comprobación preliminar de duplicado: sin colación previa en la caja abierta.
     if (sql.includes('FROM colaciones') && sql.includes('caja_id = (SELECT')) return [];

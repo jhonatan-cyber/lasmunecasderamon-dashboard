@@ -2,7 +2,7 @@
 import { Input } from '@/components/ui/input';
 
 import { useId, useState } from 'react';
-import { Printer } from 'lucide-react';
+import { Printer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -28,13 +28,19 @@ const FILTER_LABEL_CLASS =
 export function UnitLabelSelector({
   units,
   defaultGroupBy = 'purchase',
-  buttonClassName = ''
+  buttonClassName = '',
+  onDelete
 }: {
   units: LabelUnit[];
   /** Agrupación inicial; "product" sirve al ingresar stock de varios productos. */
   defaultGroupBy?: LabelGroupBy;
   /** Estilo del módulo que incorpora el selector, si necesita una variante local. */
   buttonClassName?: string;
+  /**
+   * Habilita la baja manual de códigos. Sólo el detalle de producto la ofrece:
+   * el selector de compras se limita a imprimir.
+   */
+  onDelete?: (ids: string[]) => void;
 }) {
   const id = useId();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -54,6 +60,7 @@ export function UnitLabelSelector({
       status === 'all' || (status === 'printed' ? !!unit.fecha_impresion : !unit.fecha_impresion)
   );
   const printable = visible.filter(unit => selected.has(unit.id));
+  const seleccionadasVisibles = visible.filter(unit => selected.has(unit.id));
   const groups = groupLabelUnits(visible, groupBy);
 
   function print() {
@@ -173,6 +180,19 @@ export function UnitLabelSelector({
           >
             Limpiar selección
           </Button>
+          {onDelete ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className={`rounded-full border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950 ${buttonClassName}`}
+              onClick={() => onDelete(seleccionadasVisibles.map(unit => unit.id))}
+              disabled={!seleccionadasVisibles.length}
+            >
+              <Trash2 data-icon='inline-start' />
+              Eliminar ({seleccionadasVisibles.length})
+            </Button>
+          ) : null}
         </div>
         <div className='flex flex-wrap items-center gap-2'>
           <Button
@@ -256,10 +276,7 @@ export function UnitLabelSelector({
             </div>
             <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
               {group.units.map(unit => (
-                <Label
-                  key={unit.id}
-                  className='flex cursor-pointer items-center gap-3 rounded-lg border p-3'
-                >
+                <div key={unit.id} className='flex items-center gap-3 rounded-lg border p-3'>
                   <Input
                     type='checkbox'
                     checked={selected.has(unit.id)}
@@ -274,7 +291,7 @@ export function UnitLabelSelector({
                       });
                     }}
                   />
-                  <span className='flex min-w-0 flex-col gap-1'>
+                  <span className='flex min-w-0 flex-1 flex-col gap-1'>
                     <span className='font-mono text-xs'>{unit.codigo_barras || unit.codigo}</span>
                     <span className='text-xs text-muted-foreground'>
                       {unit.fecha_impresion
@@ -291,7 +308,20 @@ export function UnitLabelSelector({
                       {unit.estado && unit.estado !== 'almacen' ? ' · Inactivo' : ''}
                     </span>
                   </span>
-                </Label>
+                  {onDelete ? (
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon'
+                      className='ml-auto size-8 shrink-0 text-muted-foreground hover:text-red-600'
+                      title='Eliminar código'
+                      aria-label={`Eliminar código ${unit.codigo_barras || unit.codigo}`}
+                      onClick={() => onDelete([unit.id])}
+                    >
+                      <Trash2 className='size-4' aria-hidden='true' />
+                    </Button>
+                  ) : null}
+                </div>
               ))}
             </div>
           </section>

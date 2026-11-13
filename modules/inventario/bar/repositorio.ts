@@ -2,7 +2,26 @@ import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { esCategoriaChampagne } from '@/lib/business/champagne';
 import { consumirStock as consumirStockEnRepositorio } from './consumoRepositorio';
 import type { ContextoOperacion } from '@/lib/transaction/contract';
-import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
+import type {
+  ContextoVentaInventario,
+  ConsumoInventarioDetalle,
+  DetallePrecioInventario,
+  ShotAlert
+} from '../contracts';
+import { validarPreciosConfigurados } from './validarConfiguracionVenta';
+
+export function validarPreciosVenta(
+  detalles: DetallePrecioInventario[],
+  contexto: ContextoOperacion
+) {
+  // Las ventas directas no exigen asignar anfitrionas: solo comparan el precio
+  // contra el formato configurado. Un catálogo legado sin `opciones_venta` se
+  // valida igual en estructura y champaña, pero conserva su precio histórico.
+  return validarPreciosConfigurados(resolverTransaccion(contexto), detalles, {
+    exigirAnfitrionas: false,
+    permitirSinConfiguracion: true
+  });
+}
 
 export function consumirStock(
   detalles: ConsumoInventarioDetalle[],

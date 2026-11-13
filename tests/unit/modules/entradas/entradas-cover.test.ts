@@ -68,7 +68,8 @@ import {
   anularEntrada,
   entregarEntrada,
   postearPendientesDeCaja,
-  registrarEntrada
+  registrarEntrada,
+  type RegistradorVenta
 } from '@/modules/entradas';
 import { consumirCorteCoverBar, consumirProductoCoverBar } from '@/modules/inventario';
 import { registrarMovimientoCobro } from '@/modules/caja';
@@ -458,6 +459,27 @@ describe('entrega con adicional', () => {
     expect(plan.totalVenta).toBe(15000);
     expect(resultado).toMatchObject({ tipo: 'upgrade', montoCobrarBarra: 5000 });
     expect(consumirProductoCoverBar).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un aporte insuficiente sin registrar una venta ni consumir stock', async () => {
+    estado.precio = 16000;
+    const onVenta = vi.fn(async () => ({ ventaId: 'venta-1' }));
+    await expect(
+      entregarEntrada({ ...entregaBase, montoAdicional: 1000 }, onVenta)
+    ).rejects.toThrow(/no cubre el precio/);
+    expect(onVenta).not.toHaveBeenCalled();
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
+  });
+
+  it('usa SIN anfitriona para calcular el adicional', async () => {
+    estado.precio = 30000;
+    estado.opciones = [{ tipo: 'botella', precio_sin_anfitriona: 12000 }];
+    const onVenta = vi.fn<RegistradorVenta>().mockResolvedValue({ ventaId: 'venta-1' });
+    const resultado = await entregarEntrada({ ...entregaBase, montoAdicional: 2000 }, onVenta);
+    expect(resultado).toMatchObject({ precio: 12000, montoCobrarBarra: 2000 });
+    expect((onVenta.mock.calls[0] as unknown as [Record<string, unknown>])[0]).toMatchObject({
+      detalles: [expect.objectContaining({ botella_anfitriona: false, precio: 12000 })]
+    });
   });
 
   it('rechaza el adicional si el adaptador no puede registrar la venta', async () => {

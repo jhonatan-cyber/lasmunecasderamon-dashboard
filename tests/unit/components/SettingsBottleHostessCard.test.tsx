@@ -1,6 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SettingsBottleHostessCard } from '@/components/settings/SettingsBottleHostessCard';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+vi.unmock('@tanstack/react-query');
+vi.mock('@/hooks/shared/useConfigValue', () => ({ useConfigValue: () => 50 }));
+const clients: QueryClient[] = [];
+const mount = () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
+  });
+  clients.push(client);
+  return render(
+    <QueryClientProvider client={client}>
+      <SettingsBottleHostessCard />
+    </QueryClientProvider>
+  );
+};
 
 vi.mock('@/hooks/settings/useSettingsProducts', () => ({
   useSettingsProducts: () => ({
@@ -77,12 +93,13 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  clients.splice(0).forEach(client => client.clear());
   vi.unstubAllGlobals();
 });
 
 describe('comisiones por presentación', () => {
   it('muestra la tabla desde dos anfitrionas y la oculta con una o máximo vacío', async () => {
-    render(<SettingsBottleHostessCard />);
+    mount();
     await screen.findByLabelText('Máximo de anfitrionas');
     expect(await screen.findByText('Precios por cantidad de anfitrionas')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Máximo de anfitrionas'), { target: { value: '1' } });
@@ -94,7 +111,7 @@ describe('comisiones por presentación', () => {
     expect(screen.queryByLabelText('Precio para 4 anfitrionas')).not.toBeInTheDocument();
   });
   it('muestra dos opciones independientes y carga los valores de la presentación elegida', async () => {
-    render(<SettingsBottleHostessCard />);
+    mount();
     await screen.findByRole('button', { name: /Vodka Absolut 1000ml/ });
     // Espera a que el efecto elija la presentación inicial: si se hace clic antes de ese
     // commit, la selección automática pisa lo elegido y la aserción lee el estado viejo.
@@ -111,7 +128,7 @@ describe('comisiones por presentación', () => {
   });
 
   it('guarda únicamente la presentación seleccionada y conserva los precios por shot', async () => {
-    render(<SettingsBottleHostessCard />);
+    mount();
     await waitFor(() => expect(screen.getByRole('combobox')).toHaveTextContent(/Vodka Absolut/));
     fireEvent.click(await screen.findByRole('button', { name: /Vodka Absolut 750ml/ }));
     await screen.findByLabelText('Precio para 2 anfitrionas');
@@ -141,6 +158,7 @@ describe('comisiones por presentación', () => {
           tipo: 'botella',
           precio: 22000,
           comision: 4000,
+          vender_con_anfitriona: true,
           colacion_habilitada: false,
           acompanamiento: { unidades: 0 }
         },

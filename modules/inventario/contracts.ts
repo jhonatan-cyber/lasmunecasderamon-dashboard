@@ -17,6 +17,22 @@ export interface ConsumoInventarioDetalle {
   cantidad?: number | null;
   tipo_venta?: string | null;
   shot_anfitriona?: boolean | null;
+  botella_anfitriona?: boolean | null;
+}
+
+/** Precio unitario de catálogo y comisión total de la línea, sin subtotales ni créditos. */
+export interface DetallePrecioInventario extends ConsumoInventarioDetalle {
+  producto_id: string;
+  cantidad: number;
+  precio: number;
+  comision: number;
+  hostess_id?: string | null;
+  hostesses?: string[];
+  generaComision?: number;
+}
+
+export interface PrecioInventarioValidado {
+  isChampagne: boolean;
 }
 
 /**

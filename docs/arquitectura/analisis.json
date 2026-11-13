@@ -1,18 +1,27 @@
 {
   "resumen": {
-    "commit": "40b49f5c49a87b122074433f0e64c956033ca3d2",
-    "generado": "2026-11-10T20:45:46.725Z",
-    "archivos": 2265,
-    "rutas": 241,
+    "commit": "e0a139db3fce754958ca01bd2f8470f78ad170f9",
+    "generado": "2026-11-13T04:12:04.662Z",
+    "archivos": 2273,
+    "rutas": 242,
     "sqlFueraDeRepositorio": 65,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 20,
-    "caches": 28,
+    "caches": 31,
     "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 23
   },
   "rutas": [
+    {
+      "ruta": "/api/tickets/entregar-grupo",
+      "archivo": "app/api/tickets/entregar-grupo/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -2888,7 +2897,7 @@
     },
     {
       "archivo": "app/tickets/page.tsx",
-      "linea": 198,
+      "linea": 196,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2918,7 +2927,7 @@
     },
     {
       "archivo": "components/meals/ColacionesTab.tsx",
-      "linea": 290,
+      "linea": 311,
       "tipo": "setInterval",
       "texto": "const id = setInterval(() => setAhora(Date.now()), 15_000);"
     },
@@ -3082,7 +3091,22 @@
       "texto": "caché en memoria (new Map + cache)"
     },
     {
+      "archivo": "components/bar/EntregaCoversDialog.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "components/meals/ColacionesTab.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
       "archivo": "components/products/ExpiredStockPanel.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
+      "archivo": "components/settings/SettingsBottleHostessCard.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
     },
@@ -3154,14 +3178,48 @@
   ],
   "ciclos": [],
   "matriz": {
+    "app/api": {
+      "lib/api": 283,
+      "lib/business": 38,
+      "workflows": 25,
+      "lib/otros": 88,
+      "lib/identidad": 15,
+      "modules/aplicacion": 1,
+      "lib/database": 3,
+      "lib/integrations": 4
+    },
     "components": {
+      "lib/business": 58,
+      "hooks": 152,
       "lib/otros": 394,
       "raiz": 92,
-      "hooks": 151,
-      "lib/business": 55,
       "lib/api": 3,
       "modules/aplicacion": 9,
       "app/ui": 1
+    },
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 15,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "raiz": 4,
+      "components": 1
+    },
+    "app/ui": {
+      "hooks": 65,
+      "lib/otros": 56,
+      "lib/api": 7,
+      "components": 6,
+      "modules/aplicacion": 3,
+      "raiz": 14,
+      "lib/business": 6
+    },
+    "raiz": {
+      "lib/otros": 13,
+      "hooks": 4,
+      "lib/api": 2,
+      "lib/identidad": 2,
+      "modules/aplicacion": 1
     },
     "hooks": {
       "raiz": 40,
@@ -3170,32 +3228,6 @@
       "components": 20,
       "lib/business": 19,
       "modules/aplicacion": 2
-    },
-    "app/ui": {
-      "hooks": 65,
-      "lib/otros": 56,
-      "lib/api": 7,
-      "components": 6,
-      "lib/business": 7,
-      "modules/aplicacion": 3,
-      "raiz": 14
-    },
-    "app/api": {
-      "lib/api": 282,
-      "workflows": 24,
-      "lib/otros": 88,
-      "lib/identidad": 15,
-      "lib/business": 34,
-      "modules/aplicacion": 1,
-      "lib/database": 3,
-      "lib/integrations": 4
-    },
-    "raiz": {
-      "lib/otros": 13,
-      "hooks": 4,
-      "lib/api": 2,
-      "lib/identidad": 2,
-      "modules/aplicacion": 1
     },
     "lib/api": {
       "lib/otros": 8,
@@ -3206,14 +3238,6 @@
     },
     "lib/identidad": {
       "lib/otros": 5
-    },
-    "lib/business": {
-      "lib/api": 3,
-      "lib/otros": 15,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "raiz": 4,
-      "components": 1
     },
     "lib/otros": {
       "lib/database": 4,
@@ -3229,8 +3253,8 @@
     "lib/integrations": {},
     "modules/infraestructura": {
       "lib/database": 113,
-      "lib/otros": 168,
-      "lib/business": 75,
+      "lib/otros": 169,
+      "lib/business": 76,
       "modules/aplicacion": 27,
       "lib/api": 9,
       "lib/identidad": 2,
@@ -3238,9 +3262,9 @@
     },
     "modules/aplicacion": {
       "modules/infraestructura": 23,
-      "lib/otros": 106,
+      "lib/otros": 105,
       "lib/database": 48,
-      "lib/business": 46,
+      "lib/business": 47,
       "lib/api": 11,
       "lib/identidad": 3,
       "raiz": 8
