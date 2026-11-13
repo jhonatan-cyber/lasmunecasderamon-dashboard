@@ -422,3 +422,25 @@ describe('Ventas directas: precios configurados sin exigir anfitrionas', () => {
     ).rejects.toThrow('champaña no tiene configurada');
   });
 });
+
+it('un corto anfitriona legado conserva el precio del formato', async () => {
+  const config = trx({
+    opciones: [{ tipo: 'shot', precio: 3000, comision: 0, ml_acompanamiento_anfitriona: 100 }]
+  });
+  const detalle = {
+    producto_id: 'prod',
+    presentacion_id: 'pres',
+    tipo_venta: 'shot' as const,
+    shot_anfitriona: true,
+    precio: 3000,
+    cantidad: 1,
+    comision: 0,
+    acompanamiento_corto: { presentacion_id: 'soda', ml_por_corto: 100 }
+  };
+  await expect(
+    validarPreciosConfigurados(config, [detalle], {
+      exigirAnfitrionas: false,
+      permitirSinConfiguracion: true
+    })
+  ).resolves.toEqual([{ isChampagne: false }]);
+});

@@ -188,6 +188,10 @@ export async function validarPreciosConfigurados(
         : shot
           ? [{ precio: shot.precio, comision: 0 }]
           : [];
+      // Formatos legados sin tarifa propia de anfitriona: el corto conserva el
+      // precio configurado del formato en lugar de quedar sin referencia.
+      if (!prices.length && permitirSinConfiguracion && shot)
+        prices = [{ precio: Number(shot.precio), comision: 0 }];
     } else {
       const bottle = options.find(o => o.tipo === 'botella');
       if (

@@ -242,6 +242,12 @@ it('anular una venta sin presentación no inventa stock ni falla', async () => {
   try {
     await abrirCajaSiHaceFalta();
     const [usuario] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
+    const productoId = crypto.randomUUID();
+    await query(
+      `INSERT INTO productos (id_producto, codigo, nombre, precio, comision, fecha_crea)
+       VALUES (?, ?, 'Producto sin presentación', 5000, 0, now())`,
+      [productoId, `PGANSP${Date.now().toString(36)}`]
+    );
     const venta = await SaleService.createSale(
       {
         codigo: 'PGAN-SIN-PRES',
@@ -250,7 +256,7 @@ it('anular una venta sin presentación no inventa stock ni falla', async () => {
         metodo_pago: 'efectivo',
         detalles: [
           {
-            producto_id: crypto.randomUUID(),
+            producto_id: productoId,
             precio: 5000,
             cantidad: 1,
             sub_total: 5000,
