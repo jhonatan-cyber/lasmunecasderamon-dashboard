@@ -59,7 +59,11 @@ export function obtenerAnfitrionasVenta(venta: VentaValidada): string[] {
 }
 
 /** Conserva cantidades, redondeo y asignación del resto a las primeras anfitrionas. */
-export function repartirDetalleVenta(d: DetalleVenta, validatedHostessSet: ReadonlySet<string>) {
+export function repartirDetalleVenta(
+  d: DetalleVenta,
+  validatedHostessSet: ReadonlySet<string>,
+  conservarSubtotal = false
+) {
   const requestedHostesses = d.hostesses?.length ? d.hostesses : d.hostess_id ? [d.hostess_id] : [];
   const hostesses =
     requestedHostesses.length > 0
@@ -107,6 +111,11 @@ export function repartirDetalleVenta(d: DetalleVenta, validatedHostessSet: Reado
     }
   }
 
+  if (conservarSubtotal && d.sub_total !== undefined) {
+    subtotalByIndex[0] +=
+      d.sub_total - subtotalByIndex.reduce((suma, subtotal) => suma + subtotal, 0);
+  }
+
   return effectiveHostesses.map((hostessId, i) => ({
     hostessId,
     commPart: commissionByIndex[i],
@@ -121,7 +130,8 @@ export function prepararDetallesVenta(
   validatedHostessSet: ReadonlySet<string>,
   ventaId: string,
   now: string,
-  generarId: () => string
+  generarId: () => string,
+  conservarSubtotales = false
 ) {
   const detailRows: Array<Record<string, unknown>> = [];
   const commissionMainRows: ComisionVenta[] = [];
@@ -129,7 +139,8 @@ export function prepararDetallesVenta(
   for (const d of detalles) {
     for (const { hostessId, commPart, qtyPart, subPart } of repartirDetalleVenta(
       d,
-      validatedHostessSet
+      validatedHostessSet,
+      conservarSubtotales
     )) {
       const detailId = generarId();
       // Cómo se vendió queda en el detalle: un shot puede ser a precio de cliente o
