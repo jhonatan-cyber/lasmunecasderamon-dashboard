@@ -38,6 +38,18 @@ const ROLES_BAR = ['cajero', 'garzon', 'barman'] as const;
 export const ROLES_COLACION = ['anfitriona', ...ROLES_BAR] as const;
 export type RolColacion = (typeof ROLES_COLACION)[number];
 
+/**
+ * Roles que reciben colación pero no pueden registrarla: el registro lo hace
+ * caja o administración por ellos, aunque llamen directo a la API.
+ */
+export const ROLES_SOLO_RECEPTOR_COLACION = ['anfitriona', 'garzon'] as const;
+
+export function rolSoloRecibeColacion(rol?: string | null): boolean {
+  return (ROLES_SOLO_RECEPTOR_COLACION as readonly string[]).includes(
+    (rol ?? '').trim().toLowerCase()
+  );
+}
+
 export function reglaColacionPorRol(rol?: string | null): ReglaColacion | null {
   const normalizado = (rol ?? '').trim().toLowerCase();
   if (normalizado === 'anfitriona')

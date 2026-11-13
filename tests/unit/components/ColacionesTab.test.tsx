@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ColacionesTab, antiguedadActualizacion } from '@/components/meals/ColacionesTab';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -67,32 +67,6 @@ const productosColacion = [
     stock_bar: 4
   }
 ];
-const acompanamientosBar = [
-  {
-    id: 'p-cola',
-    producto_nombre: 'Coca-Cola',
-    nombre: '1.5 L',
-    stock_bar: 10,
-    ml_abierta: 900,
-    ml_botella: 1500
-  },
-  {
-    id: 'p-soda',
-    producto_nombre: 'Soda',
-    nombre: '1 L',
-    stock_bar: 2,
-    ml_abierta: 0,
-    ml_botella: 1000
-  },
-  {
-    id: 'p-whisky',
-    producto_nombre: 'Whisky',
-    nombre: '750 ml',
-    stock_bar: 3,
-    ml_abierta: 0,
-    ml_botella: 750
-  }
-];
 const analcoholicas = [
   {
     presentacion_id: 'p-sprite',
@@ -130,7 +104,6 @@ function stubFetch(onPost: (body: any) => void = () => {}) {
     if (url.startsWith('/api/users')) return ok([anfitriona, cajera]);
     if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
     if (url.includes('solo_colaciones=true')) return ok(productosColacion);
-    if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
     if (url.startsWith('/api/meals')) {
       if (init?.method === 'POST') {
         onPost(JSON.parse(String(init.body)));
@@ -255,7 +228,6 @@ describe('ColacionesTab por rol', () => {
         if (url.includes('solo_colaciones_analcoholicas=true'))
           return ok([{ ...analcoholicas[0], ml_abierta: mlAbierta }]);
         if (url.includes('solo_colaciones=true')) return ok(productosColacion);
-        if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
         if (url.startsWith('/api/meals')) return ok([]);
         throw new Error(`URL inesperada: ${url}`);
       })
@@ -289,15 +261,13 @@ describe('ColacionesTab por rol', () => {
 
     expect(await screen.findByText(/Incluye 3 bebidas de 90 ml por botella\./)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('combobox', { name: 'Acompañamiento' }));
-    expect(await screen.findByRole('option', { name: /Coca-Cola/ })).toBeInTheDocument();
-    // El stock se filtra por las unidades de la colación (Soda tiene 2).
-    expect(screen.queryByRole('option', { name: /Soda/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('option', { name: /Coca-Cola/ }));
+    expect(await screen.findByRole('option', { name: /Sprite/ })).toBeInTheDocument();
+    // El stock se filtra por las unidades de la colación (Gin tiene 2).
+    expect(screen.queryByRole('option', { name: /Gin/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('option', { name: /Sprite/ }));
 
-    // Antes de registrar ya se ve lo que se va a descontar y lo que queda abierto.
-    expect(
-      await screen.findByText('Se descontarán 270 ml · quedan 900 ml en botellas abiertas.')
-    ).toBeInTheDocument();
+    // Antes de registrar ya se ve lo que se va a descontar.
+    expect(await screen.findByText('Se descontarán 270 ml.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Registrar corto' }));
 
@@ -306,7 +276,7 @@ describe('ColacionesTab por rol', () => {
       usuario_id: 'w-anf',
       presentacion_id: 'p-ron',
       ml_bebida: 120,
-      acompanamiento_presentacion_id: 'p-cola'
+      acompanamiento_presentacion_id: 'p-sprite'
     });
   });
 
@@ -323,11 +293,9 @@ describe('ColacionesTab por rol', () => {
     // El selector no se limita a la anfitriona: el servidor cobra el
     // acompañamiento a cualquier rol cuya bebida lo tenga configurado.
     fireEvent.click(await screen.findByRole('combobox', { name: 'Acompañamiento' }));
-    fireEvent.click(await screen.findByRole('option', { name: /Coca-Cola/ }));
+    fireEvent.click(await screen.findByRole('option', { name: /Sprite/ }));
 
-    expect(
-      await screen.findByText('Se descontarán 50 ml · quedan 900 ml en botellas abiertas.')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Se descontarán 50 ml.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Registrar corto' }));
 
@@ -336,7 +304,7 @@ describe('ColacionesTab por rol', () => {
       usuario_id: 'w-caj',
       presentacion_id: 'p-gin',
       ml_bebida: 60,
-      acompanamiento_presentacion_id: 'p-cola'
+      acompanamiento_presentacion_id: 'p-sprite'
     });
   });
 
@@ -350,7 +318,6 @@ describe('ColacionesTab por rol', () => {
         if (url.startsWith('/api/users')) return ok([anfitriona, cajera]);
         if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
         if (url.includes('solo_colaciones=true')) return ok(productosColacion);
-        if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
         if (url.startsWith('/api/meals')) {
           return {
             ok: false,
@@ -389,9 +356,9 @@ describe('ColacionesTab por rol', () => {
       name: 'Acompañamiento'
     });
     fireEvent.click(selectAcompanamiento);
-    const cocaCola = await screen.findByRole('option', { name: /Coca-Cola/ });
+    const sprite = await screen.findByRole('option', { name: /Sprite/ });
     expect(screen.queryByRole('option', { name: /Whisky/ })).not.toBeInTheDocument();
-    fireEvent.click(cocaCola);
+    fireEvent.click(sprite);
 
     fireEvent.click(screen.getByRole('button', { name: 'Registrar corto' }));
 
@@ -399,8 +366,143 @@ describe('ColacionesTab por rol', () => {
     expect(bodies[0]).toMatchObject({
       usuario_id: 'w-anf',
       presentacion_id: 'p-whisky',
-      acompanamiento_presentacion_id: 'p-cola'
+      acompanamiento_presentacion_id: 'p-sprite'
     });
+  });
+
+  it('ofrece como acompañamiento el mismo catálogo de bebidas analcohólicas', async () => {
+    const request = stubFetch();
+    render(<ColacionesTab />);
+    await selectWorker('Ana');
+
+    fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Acompañamiento' }));
+
+    expect(await screen.findByRole('option', { name: /Sprite/ })).toBeInTheDocument();
+    // El catálogo es el de cajero, garzón y barman: no se consulta la lista
+    // de mezcladores de la venta al cliente.
+    expect(request.mock.calls.some(([url]) => String(url).startsWith('/api/bar'))).toBe(false);
+  });
+});
+
+describe('filtro por rol del detalle del turno', () => {
+  const registros = [
+    {
+      id: 'c-1',
+      usuario_id: 'w-anf',
+      trabajador: 'Ana Anfitriona',
+      nick: 'Ana',
+      rol: 'anfitriona',
+      nombre_bebida: 'Whisky 750 ml',
+      ml_bebida: 750,
+      acompanamiento: null,
+      acompanamiento_nombre: null,
+      registrado_por_nombre: 'Jefa Turno',
+      fecha_crea: '2026-11-12T20:00:00.000Z'
+    },
+    {
+      id: 'c-2',
+      usuario_id: 'w-caj',
+      trabajador: 'Carla Cajera',
+      nick: 'Carla',
+      rol: 'cajero',
+      nombre_bebida: 'Sprite 350 ml',
+      ml_bebida: 200,
+      acompanamiento: null,
+      acompanamiento_nombre: null,
+      registrado_por_nombre: 'Jefa Turno',
+      fecha_crea: '2026-11-12T20:05:00.000Z'
+    },
+    {
+      id: 'c-3',
+      usuario_id: 'w-gar',
+      trabajador: 'Willson Garzón',
+      nick: null,
+      rol: 'garzon',
+      nombre_bebida: 'Fanta 1.5 L',
+      ml_bebida: 250,
+      acompanamiento: null,
+      acompanamiento_nombre: null,
+      registrado_por_nombre: 'Jefa Turno',
+      fecha_crea: '2026-11-12T20:10:00.000Z'
+    }
+  ];
+
+  function stubRegistros() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        const ok = (data: unknown) => ({ ok: true, json: async () => ({ success: true, data }) });
+        if (url.startsWith('/api/users')) return ok([anfitriona, cajera]);
+        if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
+        if (url.includes('solo_colaciones=true')) return ok(productosColacion);
+        if (url.startsWith('/api/meals')) return ok(registros);
+        throw new Error(`URL inesperada: ${url}`);
+      })
+    );
+  }
+
+  it('cuenta cada rol y filtra la tabla por el elegido', async () => {
+    stubRegistros();
+    render(<ColacionesTab />);
+
+    const filtros = await screen.findByRole('group', { name: 'Filtrar colaciones por rol' });
+    expect(within(filtros).getByRole('button', { name: 'Todos · 3' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    const anfitriona = within(filtros).getByRole('button', { name: 'Anfitriona · 1' });
+    within(filtros).getByRole('button', { name: 'Cajero · 1' });
+    within(filtros).getByRole('button', { name: 'Garzón · 1' });
+    expect(screen.getByText('3 registrados')).toBeInTheDocument();
+
+    fireEvent.click(anfitriona);
+
+    await waitFor(() => expect(screen.getByText('1 registrados')).toBeInTheDocument());
+    expect(screen.getByText('Ana Anfitriona')).toBeInTheDocument();
+    expect(screen.queryByText('Carla Cajera')).not.toBeInTheDocument();
+    expect(screen.queryByText('Willson Garzón')).not.toBeInTheDocument();
+    expect(anfitriona).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(within(filtros).getByRole('button', { name: 'Todos · 3' }));
+
+    await waitFor(() => expect(screen.getByText('3 registrados')).toBeInTheDocument());
+    expect(screen.getByText('Carla Cajera')).toBeInTheDocument();
+  });
+
+  it('recalcula los roles con la búsqueda aplicada', async () => {
+    stubRegistros();
+    render(<ColacionesTab searchTerm='Carla' />);
+
+    const filtros = await screen.findByRole('group', { name: 'Filtrar colaciones por rol' });
+    expect(within(filtros).getByRole('button', { name: 'Todos · 1' })).toBeInTheDocument();
+    expect(within(filtros).getByRole('button', { name: 'Cajero · 1' })).toBeInTheDocument();
+    expect(within(filtros).queryByRole('button', { name: /Anfitriona/ })).not.toBeInTheDocument();
+    expect(within(filtros).queryByRole('button', { name: /Garzón/ })).not.toBeInTheDocument();
+    expect(screen.getByText('1 registrados')).toBeInTheDocument();
+  });
+
+  it('vuelve a Todos cuando la búsqueda deja sin filas al rol elegido', async () => {
+    stubRegistros();
+    const { rerender } = render(<ColacionesTab />);
+
+    const filtros = await screen.findByRole('group', { name: 'Filtrar colaciones por rol' });
+    fireEvent.click(within(filtros).getByRole('button', { name: 'Anfitriona · 1' }));
+    await waitFor(() => expect(screen.getByText('1 registrados')).toBeInTheDocument());
+
+    rerender(<ColacionesTab searchTerm='Carla' />);
+
+    const filtrosBuscados = await screen.findByRole('group', {
+      name: 'Filtrar colaciones por rol'
+    });
+    await waitFor(() =>
+      expect(within(filtrosBuscados).getByRole('button', { name: 'Todos · 1' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+      )
+    );
+    expect(screen.getByText('Carla Cajera')).toBeInTheDocument();
   });
 });
 
@@ -505,7 +607,6 @@ describe('antigüedad del ml abierto', () => {
         if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
         if (url.includes('solo_colaciones=true'))
           return ok([{ ...productosColacion[0], ml_abierta: mlAbierta }]);
-        if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
         if (url.startsWith('/api/meals')) return ok([]);
         throw new Error(`URL inesperada: ${url}`);
       })

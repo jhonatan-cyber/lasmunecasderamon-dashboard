@@ -44,11 +44,6 @@ const analcoholicas = [
     stock_bar: 8
   }
 ];
-const acompanamientosBar = [
-  { id: 'p-cola', producto_nombre: 'Coca-Cola', nombre: '1.5 L', stock_bar: 10 },
-  { id: 'p-soda', producto_nombre: 'Soda', nombre: '1 L', stock_bar: 2 },
-  { id: 'p-whisky', producto_nombre: 'Whisky', nombre: '750 ml', stock_bar: 3 }
-];
 
 afterEach(() => {
   cleanup();
@@ -64,7 +59,6 @@ function stubFetch(onPost: (body: any) => void = () => {}) {
       if (url.startsWith('/api/users')) return ok(trabajadores);
       if (url.includes('solo_colaciones_analcoholicas=true')) return ok(analcoholicas);
       if (url.includes('solo_colaciones=true')) return ok(productosColacion);
-      if (url.startsWith('/api/bar')) return ok(acompanamientosBar);
       if (url.startsWith('/api/meals')) {
         if (init?.method === 'POST') onPost(JSON.parse(String(init.body)));
         return ok([]);
@@ -102,7 +96,7 @@ describe('módulo /meals con el panel del bar', () => {
       name: 'Acompañamiento'
     });
     fireEvent.click(selectAcompanamiento);
-    fireEvent.click(await screen.findByRole('option', { name: /Coca-Cola/ }));
+    fireEvent.click(await screen.findByRole('option', { name: /Sprite/ }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Registrar corto' }));
 
@@ -110,7 +104,7 @@ describe('módulo /meals con el panel del bar', () => {
     expect(bodies[0]).toMatchObject({
       usuario_id: 'w-anf',
       presentacion_id: 'p-whisky',
-      acompanamiento_presentacion_id: 'p-cola'
+      acompanamiento_presentacion_id: 'p-sprite'
     });
   });
 

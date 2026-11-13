@@ -5,6 +5,7 @@ import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { consumirColacionBar } from '@/modules/inventario';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { acompanamientoDeColacion, mlDeColacion } from '@/lib/business/colacionConfig';
+import { esBebidaHabilitadaParaColacion } from '@/lib/business/saleOptions';
 import { defaultDeClave } from '@/modules/configuracion/contracts';
 import {
   claveColacionesPorRol,
@@ -23,6 +24,8 @@ export interface Colacion {
   usuario_id: string;
   trabajador: string;
   nick: string | null;
+  /** Rol del trabajador que recibió la colación, en minúsculas. */
+  rol: string | null;
   presentacion_id: string | null;
   nombre_bebida: string | null;
   ml_bebida: number;
@@ -43,6 +46,7 @@ export async function listarColaciones(
   return query<Colacion[]>(
     `SELECT c.id, c.usuario_id,
             (u.nombre || ' ' || u.apellido) AS trabajador, u.nick,
+            LOWER(ur.nombre) AS rol,
             c.presentacion_id, c.nombre_bebida, c.ml_bebida, c.acompanamiento,
             c.acompanamiento_presentacion_id,
             CASE WHEN c.acompanamiento_presentacion_id IS NULL THEN NULL
@@ -52,6 +56,7 @@ export async function listarColaciones(
             c.fecha, c.fecha_crea
        FROM colaciones c
        JOIN usuarios u ON u.id_usuario = c.usuario_id
+       LEFT JOIN roles ur ON ur.id_rol = u.rol_id
        JOIN usuarios r ON r.id_usuario = c.registrado_por
        LEFT JOIN inventario_presentaciones ap ON ap.id = c.acompanamiento_presentacion_id
        LEFT JOIN productos apr ON apr.id_producto = ap.producto_id
@@ -198,11 +203,12 @@ export async function registrarColacion(input: {
     if (acompUnidades === 0 && (input.acompanamiento !== null || acompanamientoPresentacionId))
       throw new ValidationError('Esta bebida no tiene acompañamiento configurado');
 
-    // El acompañamiento es una bebida analcohólica con stock en el bar; igual
-    // que el catálogo que ofrece la UI, no puede ser el mismo producto.
+    // El acompañamiento se elige del mismo catálogo que reciben cajero,
+    // garzón y barman: una bebida analcohólica habilitada para colación y con
+    // stock en el bar, distinta de la bebida que se entrega.
     if (acompanamientoPresentacionId) {
-      const acompanamientos = await trx<{ id: string }[]>(
-        `SELECT p.id
+      const acompanamientos = await trx<{ id: string; opciones_venta: unknown }[]>(
+        `SELECT p.id, p.opciones_venta
            FROM inventario_presentaciones p
            INNER JOIN productos pr ON pr.id_producto = p.producto_id AND pr.estado = 1
            LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
@@ -216,6 +222,10 @@ export async function registrarColacion(input: {
       if (!acompanamientos.length)
         throw new ValidationError(
           'Selecciona una bebida analcohólica con stock en el bar como acompañamiento'
+        );
+      if (!esBebidaHabilitadaParaColacion(acompanamientos[0].opciones_venta))
+        throw new ValidationError(
+          'Esa bebida no está habilitada para colación como acompañamiento'
         );
     }
 

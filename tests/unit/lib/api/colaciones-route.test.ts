@@ -31,11 +31,11 @@ import { POST } from '@/app/api/meals/route';
  * valor real y, si el cliente había declarado otro, se avisa.
  */
 
-const call = (body: unknown) =>
+const call = (body: unknown, user: { id: string; role?: string } = { id: 'u-1' }) =>
   (
     POST as unknown as (
       request: Request,
-      context: { params: Record<string, never>; user: { id: string } }
+      context: { params: Record<string, never>; user: { id: string; role?: string } }
     ) => Promise<Response>
   )(
     new Request('http://localhost/api/meals', {
@@ -43,7 +43,7 @@ const call = (body: unknown) =>
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     }),
-    { params: {}, user: { id: 'u-1' } }
+    { params: {}, user }
   );
 
 beforeEach(() => {
@@ -58,6 +58,30 @@ beforeEach(() => {
 });
 
 describe('POST /api/meals', () => {
+  it.each([
+    ['garzón', 'Garzon'],
+    ['anfitriona', 'Anfitriona']
+  ])('rechaza al %s como registrador', async (_rol, role) => {
+    const response = await call({ usuario_id: 'w-1', presentacion_id: 'p-1' }, { id: 'u-r', role });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      message: 'Este rol solo recibe colación: no puede registrarla'
+    });
+    expect(registrarColacion).not.toHaveBeenCalled();
+  });
+
+  it('deja registrar al resto de los roles', async () => {
+    const response = await call(
+      { usuario_id: 'w-1', presentacion_id: 'p-1' },
+      { id: 'u-c', role: 'cajero' }
+    );
+
+    expect(response.status).toBe(201);
+    expect(registrarColacion).toHaveBeenCalledTimes(1);
+  });
+
   it('no le pasa al módulo los ml que declara el cliente', async () => {
     await call({
       usuario_id: 'w-1',

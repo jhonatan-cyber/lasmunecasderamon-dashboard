@@ -110,6 +110,8 @@ async function cajaAbierta(): Promise<string> {
  *
  * `mlColacion` es la configuración real de la bebida: los ml de la colación los
  * calcula el servidor desde ahí, no desde lo que declare quien la registra.
+ * `opcionesExtra` agrega flags a la opción botella (por ejemplo, deshabilitarla
+ * para colación).
  */
 async function crearBebida(
   nombre: string,
@@ -117,7 +119,8 @@ async function crearBebida(
   acompanamiento = false,
   presentacionNombre = '750 ml',
   acompanamientoColacion?: { unidades: number; ml?: number },
-  mlColacion?: number
+  mlColacion?: number,
+  opcionesExtra?: Record<string, unknown>
 ): Promise<Bebida> {
   const productoId = crypto.randomUUID();
   const presentacionId = crypto.randomUUID();
@@ -129,7 +132,8 @@ async function crearBebida(
     colacion_habilitada: true,
     ...(mlColacion !== undefined ? { ml_colacion: mlColacion } : {}),
     ...(acompanamiento ? { acompanamiento: { unidades: 1, nombre: 'Gaseosa' } } : {}),
-    ...(acompanamientoColacion ? { acompanamiento_colacion: acompanamientoColacion } : {})
+    ...(acompanamientoColacion ? { acompanamiento_colacion: acompanamientoColacion } : {}),
+    ...opcionesExtra
   };
 
   await query(
@@ -222,6 +226,7 @@ it('registra la colación de una anfitriona con una bebida habilitada', async ()
       registrado_por: registrador
     });
     expect(registro?.trabajador).toContain(anfitriona.nombre);
+    expect(registro?.rol).toBe('anfitriona');
     expect(registro?.registrado_por_nombre).toBeTruthy();
 
     // La colación descuenta del bar: abre la botella de la bebida y deja los ml
@@ -405,6 +410,46 @@ it('rechaza un acompañamiento que no sea bebida analcohólica', async () => {
         registradoPor: registrador
       })
     ).rejects.toThrow('Selecciona una bebida analcohólica con stock en el bar como acompañamiento');
+
+    const filas = await query<{ id: string }[]>(
+      'SELECT id FROM colaciones WHERE usuario_id = ? AND caja_id = ?',
+      [anfitriona.id, cajaId]
+    );
+    expect(filas).toHaveLength(0);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
+});
+
+it('rechaza un acompañamiento no habilitado para colación', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    const cajaId = await cajaAbierta();
+    const anfitriona = await trabajadorConRol('Anfitriona');
+    const registrador = await primerUsuarioActivo();
+    const bebida = await crearBebida('Ron con mezclador', null, false, '750 ml', {
+      unidades: 1,
+      ml: 200
+    });
+    const mezclador = await crearBebida(
+      'Soda solo para clientes',
+      await categoriaAnalcoholica(),
+      false,
+      '750 ml',
+      undefined,
+      undefined,
+      { colacion_habilitada: false }
+    );
+
+    await expect(
+      registrarColacion({
+        usuarioId: anfitriona.id,
+        presentacionId: bebida.presentacionId,
+        acompanamiento: null,
+        acompanamientoPresentacionId: mezclador.presentacionId,
+        registradoPor: registrador
+      })
+    ).rejects.toThrow('Esa bebida no está habilitada para colación como acompañamiento');
 
     const filas = await query<{ id: string }[]>(
       'SELECT id FROM colaciones WHERE usuario_id = ? AND caja_id = ?',

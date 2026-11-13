@@ -25,7 +25,11 @@ import {
   mlColacionConfigurado,
   mlDeColacion
 } from '@/lib/business/colacionConfig';
-import { reglaColacionPorRol, urlCatalogoColacion } from '@/lib/business/colacionRoles';
+import {
+  reglaColacionPorRol,
+  ROLES_COLACION,
+  urlCatalogoColacion
+} from '@/lib/business/colacionRoles';
 import { cn } from '@/lib/utils/utils';
 import { productImageUrl } from '@/lib/utils/productImage';
 import { horaDeNegocio } from '@/lib/business/timezoneService';
@@ -61,6 +65,8 @@ type RecordRow = {
   usuario_id: string;
   trabajador: string;
   nick?: string | null;
+  /** Rol del trabajador al registrar la colación (en minúsculas). */
+  rol?: string | null;
   nombre_bebida?: string | null;
   ml_bebida: number;
   acompanamiento?: 'gaseosa' | 'soda' | null;
@@ -70,15 +76,30 @@ type RecordRow = {
   fecha_crea: string;
 };
 
-type AcompanamientoOption = {
-  id: string;
-  producto_nombre: string;
-  nombre: string;
-  stock_bar: number;
-  /** Ml que quedan en las botellas ya abiertas de esa presentación. */
-  ml_abierta: number;
-  ml_botella: number | null;
+const ETIQUETA_ROL: Record<string, string> = {
+  anfitriona: 'Anfitriona',
+  cajero: 'Cajero',
+  garzon: 'Garzón',
+  barman: 'Barman'
 };
+
+function rolNormalizado(rol?: string | null): string {
+  return (rol ?? '').trim().toLocaleLowerCase('es');
+}
+
+function etiquetaRol(rol: string): string {
+  if (!rol) return 'Sin rol';
+  return ETIQUETA_ROL[rol] ?? rol.charAt(0).toLocaleUpperCase('es') + rol.slice(1);
+}
+
+/** Roles de colación primero, en el orden del contrato; el resto alfabético. */
+function ordenarRoles(roles: string[]): string[] {
+  const posicion = (rol: string) => {
+    const indice = (ROLES_COLACION as readonly string[]).indexOf(rol);
+    return indice === -1 ? ROLES_COLACION.length : indice;
+  };
+  return [...roles].sort((a, b) => posicion(a) - posicion(b) || a.localeCompare(b, 'es'));
+}
 
 function opcionBotella(drink: Drink) {
   return Array.isArray(drink.opciones_venta)
@@ -265,11 +286,11 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
   const [productosColacion, setProductosColacion] = useState<Drink[]>([]);
   const [analcoholicas, setAnalcoholicas] = useState<Drink[]>([]);
   const [records, setRecords] = useState<RecordRow[]>([]);
+  // Filtro del detalle del turno por rol del trabajador ('todos' = sin filtro).
+  const [rolFiltro, setRolFiltro] = useState('todos');
   const [workerId, setWorkerId] = useState('');
   const [presentacionId, setPresentacionId] = useState('');
   const [acompanamientoId, setAcompanamientoId] = useState('');
-  const [acompanamientos, setAcompanamientos] = useState<AcompanamientoOption[]>([]);
-  const [loadingAcompanamientos, setLoadingAcompanamientos] = useState(false);
   // Error de cada carga por separado: una fuente caída no oculta las demás.
   const [errorUsuarios, setErrorUsuarios] = useState<string | null>(null);
   const [errorProductos, setErrorProductos] = useState<string | null>(null);
@@ -391,7 +412,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
   }, [recargando, refrescarCatalogos]);
 
   const attended = useMemo(() => new Set(records.map(row => row.usuario_id)), [records]);
-  const visibleRecords = useMemo(() => {
+  const registrosBuscados = useMemo(() => {
     const term = searchTerm.trim().toLocaleLowerCase('es');
     return records.filter(
       row =>
@@ -409,6 +430,26 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
         )
     );
   }, [records, searchTerm]);
+  // Cada chip cuenta las colaciones de su rol dentro de lo buscado, así el
+  // número coincide con lo que aparece al elegirlo.
+  const rolesDelTurno = useMemo(() => {
+    const conteo = new Map<string, number>();
+    for (const row of registrosBuscados) {
+      const rol = rolNormalizado(row.rol);
+      conteo.set(rol, (conteo.get(rol) ?? 0) + 1);
+    }
+    return ordenarRoles([...conteo.keys()]).map(rol => ({ rol, total: conteo.get(rol) ?? 0 }));
+  }, [registrosBuscados]);
+  // Si la búsqueda deja el rol elegido sin filas, se vuelve a "Todos" en vez de
+  // dejar la tabla vacía sin un chip que explique el filtro.
+  const rolActivo = rolesDelTurno.some(opcion => opcion.rol === rolFiltro) ? rolFiltro : 'todos';
+  const visibleRecords = useMemo(
+    () =>
+      rolActivo === 'todos'
+        ? registrosBuscados
+        : registrosBuscados.filter(row => rolNormalizado(row.rol) === rolActivo),
+    [registrosBuscados, rolActivo]
+  );
 
   /** Descarga en Excel el detalle visible del turno: una fila por colación. */
   const exportarDetalle = async () => {
@@ -447,51 +488,21 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
   // configurado: el servidor lo valida y lo cobra para todos ellos, así que
   // ocultarlo en la UI dejaba unidades configuradas sin entregar.
   const requiereAcompanamiento = unidadesAcompanamiento > 0;
-  const selectedAcompanamiento = acompanamientos.find(bebida => bebida.id === acompanamientoId);
+  // El Acompañamiento sale del mismo catálogo de bebidas analcohólicas que
+  // reciben cajero, garzón y barman, sin una consulta aparte: lo que la UI
+  // ofrece y lo que el servidor acepta no pueden divergir.
+  const acompanamientosDisponibles = analcoholicas.filter(
+    bebida =>
+      bebida.presentacion_id !== presentacionId &&
+      Number(bebida.stock_bar ?? 0) >= unidadesAcompanamiento
+  );
+  const selectedAcompanamiento = analcoholicas.find(
+    bebida => bebida.presentacion_id === acompanamientoId
+  );
   // Lo que se va a descontar del bar al registrar: el servidor hace el mismo
   // cálculo, así el texto anticipa lo que quedará en las botellas abiertas.
   const mlAcompanamientoAEntregar =
     mlAcompanamientoColacion !== null ? mlAcompanamientoColacion * unidadesAcompanamiento : null;
-
-  useEffect(() => {
-    if (!requiereAcompanamiento) {
-      setAcompanamientos([]);
-      setLoadingAcompanamientos(false);
-      return;
-    }
-    const controller = new AbortController();
-    setLoadingAcompanamientos(true);
-    fetch('/api/bar?acompanamientos=1', { cache: 'no-store', signal: controller.signal })
-      .then(async response => {
-        const result = await response.json();
-        if (!response.ok || !result.success || !Array.isArray(result.data))
-          throw new Error(result.message || 'No se pudieron cargar los acompañamientos');
-        if (controller.signal.aborted) return;
-        setAcompanamientos(
-          result.data.map((bebida: any) => ({
-            id: String(bebida.id),
-            producto_nombre: String(bebida.producto_nombre),
-            nombre: String(bebida.nombre),
-            stock_bar: Number(bebida.stock_bar),
-            ml_abierta: Number(bebida.ml_abierta ?? 0),
-            ml_botella:
-              bebida.ml_botella === null || bebida.ml_botella === undefined
-                ? null
-                : Number(bebida.ml_botella)
-          }))
-        );
-      })
-      .catch(error => {
-        if (!controller.signal.aborted)
-          toast.error(
-            error instanceof Error ? error.message : 'No se pudieron cargar los acompañamientos'
-          );
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoadingAcompanamientos(false);
-      });
-    return () => controller.abort();
-  }, [requiereAcompanamiento]);
 
   const handleWorkerChange = (id: string) => {
     setWorkerId(id);
@@ -697,27 +708,26 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
                   id='bar-colacion-acompanamiento'
                   value={acompanamientoId}
                   onChange={setAcompanamientoId}
-                  placeholder={
-                    loadingAcompanamientos ? 'Cargando acompañamientos…' : 'Sin acompañamiento'
-                  }
+                  placeholder='Sin acompañamiento'
                   searchPlaceholder='Buscar bebida analcohólica…'
                   options={[
                     { value: '', label: 'Sin acompañamiento' },
-                    ...acompanamientos
-                      .filter(
-                        bebida =>
-                          bebida.id !== selectedDrink.presentacion_id &&
-                          bebida.stock_bar >= unidadesAcompanamiento
-                      )
-                      .map(bebida => ({
-                        value: bebida.id,
-                        label: `${bebida.producto_nombre} · ${bebida.nombre} · ${bebida.stock_bar} en bar${
-                          bebida.ml_abierta > 0 ? ` · ${bebida.ml_abierta} ml abiertos` : ''
-                        }`,
-                        keywords: [bebida.producto_nombre, bebida.nombre]
-                      }))
+                    ...acompanamientosDisponibles.map(bebida => ({
+                      value: bebida.presentacion_id,
+                      label: `${bebida.producto_nombre} · ${bebida.presentacion_nombre} · ${Number(
+                        bebida.stock_bar ?? 0
+                      )} en bar${
+                        Number(bebida.ml_abierta ?? 0) > 0
+                          ? ` · ${bebida.ml_abierta} ml abiertos`
+                          : ''
+                      }`,
+                      keywords: [bebida.producto_nombre, bebida.presentacion_nombre]
+                    }))
                   ]}
                 />
+                {errorAnalcoholicas ? (
+                  <p className='text-xs text-destructive'>{errorAnalcoholicas}</p>
+                ) : null}
                 <p className='text-xs text-muted-foreground'>
                   Incluye {unidadesAcompanamiento} bebida
                   {unidadesAcompanamiento === 1 ? '' : 's'}
@@ -733,7 +743,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
                       : `Se descontarán ${unidadesAcompanamiento} unidad${
                           unidadesAcompanamiento === 1 ? '' : 'es'
                         }`}
-                    {selectedAcompanamiento.ml_abierta > 0
+                    {Number(selectedAcompanamiento.ml_abierta ?? 0) > 0
                       ? ` · quedan ${selectedAcompanamiento.ml_abierta} ml en botellas abiertas`
                       : ''}
                     .
@@ -800,6 +810,34 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
             ) : null}
           </div>
         </div>
+        {!loading && !errorRegistros && rolesDelTurno.length > 0 ? (
+          <div
+            role='group'
+            aria-label='Filtrar colaciones por rol'
+            className='flex flex-wrap gap-1.5 border-b p-4'
+          >
+            {[{ rol: 'todos', total: registrosBuscados.length }, ...rolesDelTurno].map(opcion => {
+              const activo = opcion.rol === rolActivo;
+              return (
+                <Button
+                  key={opcion.rol}
+                  type='button'
+                  variant='unstyled'
+                  aria-pressed={activo}
+                  onClick={() => setRolFiltro(opcion.rol)}
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-xs font-semibold tabular-nums transition-colors',
+                    activo
+                      ? 'border-transparent bg-primary text-primary-foreground shadow-xs'
+                      : 'border-border text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  {`${opcion.rol === 'todos' ? 'Todos' : etiquetaRol(opcion.rol)} · ${opcion.total}`}
+                </Button>
+              );
+            })}
+          </div>
+        ) : null}
         {loading ? (
           <div className='flex items-center gap-2 p-6 text-sm text-muted-foreground'>
             <LoaderCircle className='size-4 animate-spin' /> Cargando colaciones…
@@ -811,7 +849,9 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
             variant='text'
             icon={GlassWater}
             title={
-              searchTerm ? 'No hay colaciones que coincidan' : 'Aún no hay colaciones en este turno'
+              searchTerm || rolActivo !== 'todos'
+                ? 'No hay colaciones que coincidan'
+                : 'Aún no hay colaciones en este turno'
             }
             description='Los registros aparecerán aquí al entregar un corto.'
           />
