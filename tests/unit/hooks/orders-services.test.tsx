@@ -61,6 +61,165 @@ describe('pedidos y servicios', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it.each(['success', 'failure', 'rejection'])(
+    'useOrders conserva B ante una respuesta tardía de A (%s)',
+    async outcome => {
+      type DetailResponse = { ok: boolean; json: () => Promise<object> };
+      let finishA!: (value: DetailResponse) => void;
+      let rejectA!: (error: Error) => void;
+      let finishB!: (value: DetailResponse) => void;
+      const responseA = new Promise<DetailResponse>((resolve, reject) => {
+        finishA = resolve;
+        rejectA = reject;
+      });
+      const responseB = new Promise<DetailResponse>(resolve => {
+        finishB = resolve;
+      });
+      const request = vi.fn((url: string, _options?: RequestInit) => {
+        if (url.includes('detail?id=A')) return responseA;
+        if (url.includes('detail?id=B')) return responseB;
+        return Promise.resolve({ ok: true, json: async () => ({ success: true, data: [] }) });
+      });
+      vi.stubGlobal('fetch', request);
+      const { result } = renderHook(useOrders, { wrapper: wrapper() });
+      let loadA!: Promise<void>;
+      let loadB!: Promise<void>;
+      act(() => {
+        loadA = result.current.fetchOrderDetail('A');
+      });
+      const signalA = request.mock.calls.find(([url]) => url.includes('detail?id=A'))?.[1]?.signal;
+      act(() => {
+        loadB = result.current.fetchOrderDetail('B');
+      });
+      expect(signalA?.aborted).toBe(true);
+      await act(async () => {
+        finishB({ ok: true, json: async () => ({ success: true, data: [{ id: 'B' }] }) });
+        await loadB;
+      });
+      await act(async () => {
+        if (outcome === 'rejection') rejectA(new Error('A falló'));
+        else
+          finishA({
+            ok: outcome === 'success',
+            json: async () => ({
+              success: outcome === 'success',
+              data: [{ id: 'A' }],
+              message: 'Error A'
+            })
+          });
+        await loadA;
+      });
+      expect(result.current.orderDetail).toEqual([{ id: 'B' }]);
+      expect(result.current.detailError).toBeNull();
+      expect(result.current.isDetailLoading).toBe(false);
+    }
+  );
+
+  it('useOrders limpia el detalle anterior y A no apaga loading de B', async () => {
+    let finishA!: (value: object) => void;
+    let finishB!: (value: object) => void;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url.includes('detail?id=A'))
+          return new Promise(resolve => {
+            finishA = resolve;
+          });
+        if (url.includes('detail?id=B'))
+          return new Promise(resolve => {
+            finishB = resolve;
+          });
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: url.includes('detail') ? [{ id: 'anterior' }] : []
+          })
+        });
+      })
+    );
+    const { result } = renderHook(useOrders, { wrapper: wrapper() });
+    await act(async () => {
+      await result.current.fetchOrderDetail('anterior');
+    });
+    expect(result.current.orderDetail).toEqual([{ id: 'anterior' }]);
+    let loadA!: Promise<void>;
+    let loadB!: Promise<void>;
+    act(() => {
+      loadA = result.current.fetchOrderDetail('A');
+      loadB = result.current.fetchOrderDetail('B');
+    });
+    expect(result.current.orderDetail).toEqual([]);
+    await act(async () => {
+      finishA({ ok: false, json: async () => ({ success: false, message: 'Error A' }) });
+      await loadA;
+    });
+    expect(result.current.isDetailLoading).toBe(true);
+    expect(result.current.detailError).toBeNull();
+    await act(async () => {
+      finishB({ ok: false, json: async () => ({ success: false, message: 'Error B' }) });
+      await loadB;
+    });
+    expect(result.current.detailError).toBe('Error B');
+    expect(result.current.isDetailLoading).toBe(false);
+  });
+
+  it('useOrders conserva el error vigente de B frente al éxito tardío de A', async () => {
+    let finishA!: (value: object) => void;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url.includes('detail?id=A'))
+          return new Promise(resolve => {
+            finishA = resolve;
+          });
+        return Promise.resolve({
+          ok: !url.includes('detail'),
+          json: async () => ({ success: !url.includes('detail'), data: [], message: 'Error B' })
+        });
+      })
+    );
+    const { result } = renderHook(useOrders, { wrapper: wrapper() });
+    let loadA!: Promise<void>;
+    act(() => {
+      loadA = result.current.fetchOrderDetail('A');
+    });
+    await act(async () => {
+      await result.current.fetchOrderDetail('B');
+    });
+    await act(async () => {
+      finishA({ ok: true, json: async () => ({ success: true, data: [{ id: 'A' }] }) });
+      await loadA;
+    });
+    expect(result.current.orderDetail).toEqual([]);
+    expect(result.current.detailError).toBe('Error B');
+    expect(result.current.isDetailLoading).toBe(false);
+  });
+
+  it('useOrders aborta el detalle al desmontar', async () => {
+    let finish!: (value: object) => void;
+    const request = vi.fn((url: string, _options?: RequestInit) =>
+      url.includes('detail')
+        ? new Promise(resolve => {
+            finish = resolve;
+          })
+        : Promise.resolve({ ok: true, json: async () => ({ success: true, data: [] }) })
+    );
+    vi.stubGlobal('fetch', request);
+    const { result, unmount } = renderHook(useOrders, { wrapper: wrapper() });
+    let loading!: Promise<void>;
+    act(() => {
+      loading = result.current.fetchOrderDetail('A');
+    });
+    const signal = request.mock.calls.find(([url]) => url.includes('detail'))?.[1]?.signal;
+    unmount();
+    expect(signal?.aborted).toBe(true);
+    await act(async () => {
+      finish({ ok: false, json: async () => ({ success: false, message: 'Error tardío' }) });
+      await loading;
+    });
+  });
+
   it.each(['crear', 'editar', 'eliminar'])(
     'pedidos no muestran éxito al %s con HTTP fallido',
     async action => {

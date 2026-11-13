@@ -100,6 +100,8 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
   updateSales: [
     'sales',
     '/api/sales',
+    'rooms',
+    '/api/rooms',
     'dashboard',
     'reports',
     '/api/reports',
@@ -114,6 +116,8 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
   sale_cancelled: [
     'sales',
     '/api/sales',
+    'rooms',
+    '/api/rooms',
     'orders',
     '/api/orders',
     'servicios',
@@ -131,6 +135,8 @@ const EVENT_TARGETS: Record<string, readonly string[]> = {
   anulacion_processed: [
     'sales',
     '/api/sales',
+    'rooms',
+    '/api/rooms',
     'servicios',
     '/api/services',
     'orders',
@@ -264,6 +270,8 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
     '/api/commissions',
     'tips',
     '/api/tips',
+    'rooms',
+    '/api/rooms',
     'dashboard'
   ],
   products: INVENTORY_QUERY_TARGETS,
@@ -309,7 +317,7 @@ const MODULE_TARGETS: Record<string, readonly string[]> = {
     '/api/payroll',
     'dashboard'
   ],
-  accounts: ['/api/accounts', '/api/accounts', 'dashboard'],
+  accounts: ['cuentas', '/api/accounts', 'rooms', '/api/rooms', 'dashboard'],
   categories: INVENTORY_QUERY_TARGETS,
   entradas: ['tickets', '/api/tickets'],
   returns: [

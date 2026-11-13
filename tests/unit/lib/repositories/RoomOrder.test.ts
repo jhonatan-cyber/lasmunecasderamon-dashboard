@@ -20,7 +20,7 @@ beforeEach(() => {
     sql.includes('MAX(display_order)') ? [{ last_order: 8 }] : []
   );
   mocks.query.mockImplementation(async (sql: string) =>
-    sql.includes('SELECT *')
+    sql.includes('h.id_habitacion = ?')
       ? [
           {
             id_habitacion: 'new-room',
@@ -88,7 +88,7 @@ it('rechaza valores negativos en los campos numéricos', () => {
 it('reporta libre una habitación sin precio, comisión ni duración aunque tenga un 2 guardado', async () => {
   // Zustand 0 (desactivada) de una habitación sin configuración: se conserva.
   mocks.query.mockImplementation(async (sql: string) =>
-    sql.includes('SELECT *')
+    sql.includes('h.id_habitacion = ?')
       ? [
           {
             id_habitacion: 'new-room',
@@ -108,7 +108,7 @@ it('reporta libre una habitación sin precio, comisión ni duración aunque teng
   // Un 2 heredado de cuando la regla no existía no la deja ocupada: la
   // habitación solo sirve para ventas, así que siempre se reporta libre.
   mocks.query.mockImplementation(async (sql: string) =>
-    sql.includes('SELECT *')
+    sql.includes('h.id_habitacion = ?')
       ? [
           {
             id_habitacion: 'new-room',
@@ -124,6 +124,28 @@ it('reporta libre una habitación sin precio, comisión ni duración aunque teng
   );
   const ocupada = await RoomRepository.getById('new-room');
   expect(ocupada?.status).toBe(1);
+});
+
+it('reporta ocupada una habitación con actividad derivada aunque su estado guardado sea 1', async () => {
+  mocks.query.mockImplementation(async (sql: string) =>
+    sql.includes('h.id_habitacion = ?')
+      ? [
+          {
+            id_habitacion: 'new-room',
+            nombre: 'Sala',
+            precio: 1000,
+            tiempo: 30,
+            comision_anfitriona: 500,
+            estado: 1,
+            ocupada: 1,
+            display_order: 9
+          }
+        ]
+      : []
+  );
+
+  const room = await RoomRepository.getById('new-room');
+  expect(room?.status).toBe(2);
 });
 
 it('no deja ocupar una habitación sin precio, comisión ni duración', async () => {

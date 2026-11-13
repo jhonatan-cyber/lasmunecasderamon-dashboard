@@ -12,15 +12,35 @@ import { ConflictError, ValidationError } from '@/lib/errors/errors';
 const SQL_SOLO_VENTAS =
   '(COALESCE(h.precio, 0) <= 0 AND COALESCE(h.comision_anfitriona, 0) <= 0 AND COALESCE(h.tiempo, 0) <= 0)';
 
+/**
+ * Ocupación real de la habitación, alineada con `habitacionTieneActividad` y
+ * `validarHabitacionDisponibleParaServicio`: un servicio pausado (3) o una
+ * cuenta abierta con tiempo siguen usando la habitación, aunque `habitaciones`
+ * no tenga el estado 2 guardado.
+ */
+const SQL_OCUPADA = `(
+  EXISTS (SELECT 1 FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado IN (2, 3))
+  OR EXISTS (
+    SELECT 1 FROM ventas v
+    WHERE v.habitacion_id = h.id_habitacion AND v.estado IN (2, 3) AND COALESCE(v.tiempo, 0) > 0
+  )
+  OR EXISTS (
+    SELECT 1 FROM cuentas c
+    WHERE c.habitacion_id = h.id_habitacion AND c.estado = 1 AND COALESCE(c.tiempo_actual, c.tiempo) > 0
+  )
+)`;
+
+const SQL_SELECT_OCUPADA = `CASE WHEN ${SQL_OCUPADA} THEN 1 ELSE 0 END AS ocupada`;
+
 export class RoomRepository {
   private static mapRoomFromDB(row: any): RoomType {
-    const tieneServiciosActivos = row.servicios_activos > 0;
-    const tieneVentasActivas = row.ventas_activas > 0;
-    let estadoHabitacion = row.estado;
+    const estadoGuardado = Number(row.estado);
+    const ocupada = Number(row.ocupada ?? 0) > 0;
+    let estadoHabitacion: number;
+    if (estadoGuardado === 0) estadoHabitacion = 0;
     // Una habitación sin configuración nunca se ocupa: siempre se reporta libre.
-    // Solo la desactivación (0) se conserva.
-    if (esHabitacionSoloVentas(row)) estadoHabitacion = Number(row.estado) === 0 ? 0 : 1;
-    else if (tieneServiciosActivos || tieneVentasActivas) estadoHabitacion = 2;
+    else if (esHabitacionSoloVentas(row)) estadoHabitacion = 1;
+    else estadoHabitacion = ocupada || estadoGuardado === 2 ? 2 : 1;
 
     return RoomSchema.parse({
       id: row.id_habitacion,
@@ -36,60 +56,42 @@ export class RoomRepository {
   }
 
   static async getAll(status?: string): Promise<RoomType[]> {
+    const order = 'ORDER BY h.display_order ASC, h.id_habitacion ASC';
     let results: any[];
-    if (status !== undefined) {
-      if (status === '1') {
-        results = await query<any[]>(
-          `SELECT h.*, 
-            (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
-            (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
-           FROM habitaciones h 
-           WHERE h.estado <> 0
-           AND (
-             ${SQL_SOLO_VENTAS}
-             OR (
-               NOT EXISTS (
-                 SELECT 1 FROM servicios s 
-                 WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2
-               )
-               AND NOT EXISTS (
-                 SELECT 1 FROM ventas v 
-                 WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2
-               )
-             )
-           )
-           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
-          []
-        );
-      } else if (status === '2') {
-        results = await query<any[]>(
-          `SELECT h.*, 
-            (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
-            (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
-           FROM habitaciones h 
-           WHERE h.estado = 2
-           AND NOT ${SQL_SOLO_VENTAS}
-           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
-          []
-        );
-      } else {
-        results = await query<any[]>(
-          `SELECT h.*, 
-            (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
-            (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
-           FROM habitaciones h 
-           WHERE h.estado = ? 
-           ORDER BY h.display_order ASC, h.id_habitacion ASC`,
-          [status]
-        );
-      }
+    if (status === '1') {
+      // Disponibles: activas y sin actividad, más las de solo ventas (nunca se
+      // ocupan) mientras estén activas.
+      results = await query<any[]>(
+        `SELECT h.*, ${SQL_SELECT_OCUPADA}
+         FROM habitaciones h
+         WHERE (${SQL_SOLO_VENTAS} AND h.estado <> 0)
+            OR (h.estado = 1 AND NOT ${SQL_OCUPADA})
+         ${order}`,
+        []
+      );
+    } else if (status === '2') {
+      results = await query<any[]>(
+        `SELECT h.*, ${SQL_SELECT_OCUPADA}
+         FROM habitaciones h
+         WHERE NOT ${SQL_SOLO_VENTAS}
+           AND h.estado <> 0
+           AND (h.estado = 2 OR ${SQL_OCUPADA})
+         ${order}`,
+        []
+      );
+    } else if (status !== undefined) {
+      results = await query<any[]>(
+        `SELECT h.*, ${SQL_SELECT_OCUPADA}
+         FROM habitaciones h
+         WHERE h.estado = ?
+         ${order}`,
+        [status]
+      );
     } else {
       results = await query<any[]>(
-        `SELECT h.*, 
-          (SELECT COUNT(*) FROM servicios s WHERE s.habitacion_id = h.id_habitacion AND s.estado = 2) as servicios_activos,
-          (SELECT COUNT(*) FROM ventas v WHERE v.habitacion_id = h.id_habitacion AND v.estado = 2) as ventas_activas
-         FROM habitaciones h 
-         ORDER BY h.display_order ASC, h.id_habitacion ASC`,
+        `SELECT h.*, ${SQL_SELECT_OCUPADA}
+         FROM habitaciones h
+         ${order}`,
         []
       );
     }
@@ -97,8 +99,11 @@ export class RoomRepository {
   }
 
   static async getById(id: string): Promise<RoomType | null> {
-    const row = await BaseRepository.findOne<any>(query, 'habitaciones', 'id_habitacion', id);
-    return row ? this.mapRoomFromDB(row) : null;
+    const rows = await query<any[]>(
+      `SELECT h.*, ${SQL_SELECT_OCUPADA} FROM habitaciones h WHERE h.id_habitacion = ?`,
+      [id]
+    );
+    return rows[0] ? this.mapRoomFromDB(rows[0]) : null;
   }
 
   static async create(data: any): Promise<RoomType | null> {

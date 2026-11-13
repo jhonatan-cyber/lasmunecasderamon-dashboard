@@ -67,7 +67,7 @@ export class OrderRepository {
   static async getAll(limit: number = 200, estado?: 1): Promise<OrderType[]> {
     try {
       const results = await query<any[]>(
-        `SELECT P.id_pedido, COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente, P.codigo, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon, U.nick as garzon_nick, (SELECT STRING_AGG(U2.nick, ', ') FROM pedidos_usuarios PU INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id WHERE PU.pedido_id = P.id_pedido) AS nicks, P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea FROM pedidos P LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id WHERE ${estado === 1 ? 'P.estado = 1' : 'P.estado IN (1, 2)'} ORDER BY P.fecha_crea DESC LIMIT ?`,
+        `SELECT P.id_pedido, COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente, P.codigo, COALESCE(NULLIF(TRIM(CONCAT_WS(' ', NULLIF(U.nombre, ''), NULLIF(U.apellido, ''))), ''), NULLIF(TRIM(U.nick), '')) AS garzon, U.nick as garzon_nick, (SELECT STRING_AGG(U2.nick, ', ') FROM pedidos_usuarios PU INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id WHERE PU.pedido_id = P.id_pedido) AS nicks, P.subtotal, (COALESCE(P.total, 0) + COALESCE(P.propina, 0)) AS total, P.propina, P.estado, P.fecha_crea FROM pedidos P LEFT JOIN clientes CL ON CL.id_cliente = P.cliente_id LEFT JOIN usuarios U ON U.id_usuario = P.mesero_id WHERE ${estado === 1 ? 'P.estado = 1' : 'P.estado IN (1, 2)'} ORDER BY P.fecha_crea DESC LIMIT ?`,
         [limit]
       );
       return results.map(row => this.mapOrderFromDB(row));
@@ -85,7 +85,7 @@ export class OrderRepository {
         P.id_pedido,
         COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
         P.codigo,
-        (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,
+        COALESCE(NULLIF(TRIM(CONCAT_WS(' ', NULLIF(U.nombre, ''), NULLIF(U.apellido, ''))), ''), NULLIF(TRIM(U.nick), '')) AS garzon,
         U.nick as garzon_nick,
         (SELECT STRING_AGG(U2.nick, ', ')
          FROM pedidos_usuarios PU
@@ -382,7 +382,7 @@ export class OrderRepository {
         P.baucher_foto,
         COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
         P.cliente_id,
-        (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,
+        COALESCE(NULLIF(TRIM(CONCAT_WS(' ', NULLIF(U.nombre, ''), NULLIF(U.apellido, ''))), ''), NULLIF(TRIM(U.nick), '')) AS garzon,
         (SELECT STRING_AGG(U2.nick, ', ')
            FROM pedidos_usuarios PU
            INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id
@@ -455,7 +455,7 @@ export class OrderRepository {
         P.id_pedido,
         COALESCE((CAST(CL.nombre AS text) || CAST(' ' AS text) || CAST(CL.apellido AS text)), 'Sin cliente registrado') AS cliente,
         P.codigo,
-        (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS garzon,
+        COALESCE(NULLIF(TRIM(CONCAT_WS(' ', NULLIF(U.nombre, ''), NULLIF(U.apellido, ''))), ''), NULLIF(TRIM(U.nick), '')) AS garzon,
         (SELECT STRING_AGG(U2.nick, ', ')
          FROM pedidos_usuarios PU
          INNER JOIN usuarios U2 ON U2.id_usuario = PU.usuario_id

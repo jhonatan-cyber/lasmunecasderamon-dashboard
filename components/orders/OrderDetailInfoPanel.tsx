@@ -39,7 +39,9 @@ export function OrderDetailInfoPanel({
     });
   if (hostessName?.trim()) rows.push({ label: 'Anfitriona(s):', value: hostessName });
   if (clientName?.trim()) rows.push({ label: 'Cliente:', value: clientName });
-  if (garzonName?.trim()) rows.push({ label: 'Garzón:', value: garzonName });
+  // El garzón siempre se muestra: si el pedido no lo resolvió, se dice en vez
+  // de esconder la fila (antes desaparecía y parecía que no se capturó).
+  rows.push({ label: 'Garzón:', value: garzonName?.trim() || 'Sin registrar' });
 
   return (
     <div className='space-y-3'>
