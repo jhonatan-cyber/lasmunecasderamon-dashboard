@@ -113,6 +113,7 @@ it('abre el detalle de ml disponibles por cada botella', async () => {
         {
           id: 'pres-1',
           venta_corto_habilitada: true,
+          colacion_habilitada: false,
           producto_nombre: 'Paceña',
           presentacion_nombre: '750 ml',
           cantidad: 2,
@@ -120,7 +121,9 @@ it('abre el detalle de ml disponibles por cada botella', async () => {
           ml_cliente: 50,
           ml_anfitriona: 25,
           shots_anfitriona_disponibles: 5,
-          shots_disponibles: 2
+          shots_disponibles: 2,
+          ml_colacion: 0,
+          colaciones_disponibles: 0
         }
       ]}
     />
@@ -136,6 +139,80 @@ it('abre el detalle de ml disponibles por cada botella', async () => {
   expect(screen.getByText('Anfitriona · 25 ml')).toBeInTheDocument();
   expect(within(screen.getByRole('dialog')).getByText('5 cortos')).toBeInTheDocument();
   expect(screen.queryByText(/LM-/)).not.toBeInTheDocument();
+});
+
+it('muestra colaciones y cortos de una botella analcohólica', async () => {
+  render(
+    <BarStatsCards
+      resumen={resumenBase}
+      botellasAbiertas={[
+        {
+          id: 'pres-1',
+          venta_corto_habilitada: false,
+          colacion_habilitada: true,
+          producto_nombre: 'Coca-Cola Original',
+          presentacion_nombre: '1500 ml',
+          cantidad: 1,
+          ml_disponibles: 600,
+          ml_cliente: 50,
+          ml_anfitriona: 50,
+          shots_anfitriona_disponibles: 12,
+          shots_disponibles: 12,
+          ml_colacion: 200,
+          colaciones_disponibles: 3,
+          esBebidaAnalcoholica: true
+        }
+      ]}
+    />
+  );
+
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Ver las botellas abiertas y sus mililitros disponibles' })
+  );
+
+  const dialogo = within(await screen.findByRole('dialog'));
+  // Los mismos 600 ml se leen como colaciones y como cortos.
+  expect(dialogo.getByText('Colación · 200 ml')).toBeInTheDocument();
+  expect(dialogo.getByText('3 colaciones')).toBeInTheDocument();
+  expect(dialogo.getByText('Corto · 50 ml')).toBeInTheDocument();
+  expect(dialogo.getByText('12 cortos')).toBeInTheDocument();
+  // La anfitriona sigue siendo exclusiva de los licores.
+  expect(dialogo.queryByText(/Anfitriona/)).not.toBeInTheDocument();
+});
+
+it('lee solo los cortos cuando la analcohólica no habilita colación', async () => {
+  render(
+    <BarStatsCards
+      resumen={resumenBase}
+      botellasAbiertas={[
+        {
+          id: 'pres-1',
+          venta_corto_habilitada: false,
+          colacion_habilitada: false,
+          producto_nombre: 'Coca-Cola Original',
+          presentacion_nombre: '1500 ml',
+          cantidad: 1,
+          ml_disponibles: 600,
+          ml_cliente: 50,
+          ml_anfitriona: 50,
+          shots_anfitriona_disponibles: 12,
+          shots_disponibles: 12,
+          ml_colacion: 0,
+          colaciones_disponibles: 0,
+          esBebidaAnalcoholica: true
+        }
+      ]}
+    />
+  );
+
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Ver las botellas abiertas y sus mililitros disponibles' })
+  );
+
+  const dialogo = within(await screen.findByRole('dialog'));
+  expect(dialogo.queryByText(/^Colación/)).not.toBeInTheDocument();
+  expect(dialogo.getByText('Corto · 50 ml')).toBeInTheDocument();
+  expect(dialogo.getByText('12 cortos')).toBeInTheDocument();
 });
 
 it('abre el listado de cortos servidos hoy con su origen, venta y precios', async () => {

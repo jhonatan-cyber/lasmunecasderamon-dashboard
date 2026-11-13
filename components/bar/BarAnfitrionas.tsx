@@ -31,8 +31,9 @@ export function isTierPricedItem(item: {
   return (
     isChampagneProduct({ categoria: item.categoria_nombre ?? '' }) &&
     !(
-      parseSavedOptions(item.opciones_venta)?.some(o => Number(o.precio) > 0) ??
-      Number(item.precio_venta ?? 0) > 0
+      parseSavedOptions(item.opciones_venta)?.some(
+        o => Number(o.precio) > 0 || Number(o.precio_sin_anfitriona) > 0
+      ) ?? Number(item.precio_venta ?? 0) > 0
     )
   );
 }

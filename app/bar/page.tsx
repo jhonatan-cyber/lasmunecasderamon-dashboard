@@ -1,6 +1,5 @@
 'use client';
 import { fetchCollection } from '@/lib/api/fetchCollection';
-import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BarPageHeader, BarSummaryRow } from '@/components/bar/BarPageHeader';
@@ -25,8 +24,8 @@ import { useTransferPermissions } from '@/hooks/transfers/useTransferPermissions
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { type BarStockItem } from '@/components/bar/TransferModal';
 import { moverEnListadoFiltrado } from '@/components/bar/barOrder';
+import { detalleBotellasAbiertas } from '@/components/bar/barOpenBottleDetails';
 import { useConfig } from '@/hooks/shared/useConfigValue';
-import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import type { DevolucionEnvaseRegistro, ShotsSummary } from '@/modules/inventario/contracts';
 import { useContainerScan } from '@/hooks/products/useContainerScan';
@@ -63,6 +62,7 @@ export default function BarPage() {
   const [pendingError, setPendingError] = useState(false);
   const [summaryError, setSummaryError] = useState(false);
   const [stockFilter, setStockFilter] = useState('todos');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showTableView, setShowTableView] = useState(false);
   const [tablePhoto, setTablePhoto] = useState<{ src: string; alt: string } | null>(null);
   const [tab, setTab] = useState('productos');
@@ -398,32 +398,7 @@ export default function BarPage() {
   const puedeReordenar = canReorder;
 
   const botellasAbiertasDetalle = useMemo(
-    () =>
-      items
-        .filter(item => (item.botellas_abiertas?.length ?? 0) > 0 || Number(item.ml_abierta) > 0)
-        .map(item => {
-          const mlCliente = resolveShotMl(item.ml_shot, shotMl);
-          const mlAnfitriona = resolveShotMlAnfitriona(item.ml_shot_anfitriona, mlCliente);
-          const abiertas = item.botellas_abiertas ?? [];
-          const disponibles = abiertas.length
-            ? abiertas.reduce((total, botella) => total + Number(botella.ml_restante || 0), 0)
-            : Number(item.ml_abierta || 0);
-          return {
-            id: item.id,
-            producto_nombre: item.producto_nombre,
-            foto: item.foto || item.producto_foto,
-            presentacion_nombre: item.nombre,
-            cantidad: abiertas.length || 1,
-            ml_disponibles: disponibles,
-            venta_corto_habilitada: (parseSavedOptions(item.opciones_venta) ?? []).some(
-              option => option.tipo === 'shot'
-            ),
-            ml_cliente: mlCliente,
-            ml_anfitriona: mlAnfitriona,
-            shots_anfitriona_disponibles: Math.floor(disponibles / mlAnfitriona),
-            shots_disponibles: Math.floor(disponibles / mlCliente)
-          };
-        }),
+    () => detalleBotellasAbiertas(items, shotMl),
     [items, shotMl]
   );
 
@@ -515,6 +490,17 @@ export default function BarPage() {
   const handleClearProductFilters = () => {
     setSearch('');
     setStockFilter('todos');
+    setSelectedCategory(null);
+  };
+
+  const handleCategorySelect = (name: string) => {
+    setSearch('');
+    setSelectedCategory(name);
+  };
+
+  const handleCategoryBack = () => {
+    setSearch('');
+    setSelectedCategory(null);
   };
   const handleLimpiarFechasHistorial = () => {
     setDesdeHistorial('');
@@ -558,6 +544,8 @@ export default function BarPage() {
               }
               showTableView={showTableView}
               onToggleTableView={() => setShowTableView(value => !value)}
+              selectedCategory={selectedCategory}
+              onCategoryBack={handleCategoryBack}
             />
           )}
           {tab === 'pendientes' && (
@@ -615,6 +603,8 @@ export default function BarPage() {
               onMove={moverPresentacion}
               tablePhoto={tablePhoto}
               onTablePhotoChange={setTablePhoto}
+              selectedCategory={selectedCategory}
+              onCategorySelect={handleCategorySelect}
             />
           </TabsContent>
 
