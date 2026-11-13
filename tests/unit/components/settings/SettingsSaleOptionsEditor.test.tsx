@@ -5,6 +5,7 @@ import {
   SettingsSaleOptionsEditor,
   type SettingsSaleOptionsHandle
 } from '@/components/settings/SettingsSaleOptionsEditor';
+import type { SaleOption } from '@/types/sale-options';
 import {
   ConfiguredSaleOptionsSchema,
   SaleOptionsSchema
@@ -34,6 +35,35 @@ it('exige comisión positiva al habilitar botella con anfitriona y permite solo 
   rerender(<SettingsSaleOptionsEditor {...props} precio='0' comision='' />);
   expect(screen.getByLabelText('Comisión')).not.toBeRequired();
   expect(ref.current!.getConfig().opciones_venta[0].comision).toBe(0);
+});
+
+it('guarda precio y comisión con anfitriona en cero si esa venta está desactivada', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  render(
+    <SettingsSaleOptionsEditor
+      ref={ref}
+      options={[
+        {
+          tipo: 'botella',
+          precio: 50000,
+          comision: 0,
+          vender_con_anfitriona: false,
+          precio_sin_anfitriona: 12000
+        }
+      ]}
+      precio='50000'
+      comision=''
+      onPrecio={vi.fn()}
+      onComision={vi.fn()}
+      saving={false}
+    />
+  );
+  expect(ref.current!.getConfig().opciones_venta[0]).toMatchObject({
+    precio: 0,
+    comision: 0,
+    vender_con_anfitriona: false,
+    precio_sin_anfitriona: 12000
+  });
 });
 
 it('con colación deshabilitada guarda cero si la cantidad queda vacía', () => {
@@ -265,6 +295,7 @@ it('edita todos los precios de corto, sus ml y la bebida de botella sin perder c
         tipo: 'botella',
         precio: 50000,
         comision: 5000,
+        vender_con_anfitriona: true,
         colacion_habilitada: false,
         acompanamiento: { unidades: 3 }
       },
@@ -288,6 +319,158 @@ it('edita todos los precios de corto, sus ml y la bebida de botella sin perder c
     target: { value: '4000' }
   });
   expect(() => ref.current!.getConfig()).toThrow(/No repitas/);
+});
+
+it('sin remontar sincroniza SIN, CON, tipos, precios extra y ml desde los props persistidos', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  const props = {
+    ref,
+    precio: '50000',
+    comision: '5000',
+    saving: false,
+    onPrecio: vi.fn(),
+    onComision: vi.fn()
+  };
+  const { rerender } = render(
+    <SettingsSaleOptionsEditor
+      {...props}
+      options={[{ tipo: 'botella', precio: 50000, comision: 5000 }]}
+    />
+  );
+  const persisted: SaleOption[] = [
+    {
+      tipo: 'botella',
+      precio: 0,
+      comision: 0,
+      vender_con_anfitriona: false,
+      precio_sin_anfitriona: 35000,
+      colacion_habilitada: true,
+      ml_colacion: 40,
+      acompanamiento: { unidades: 3 }
+    },
+    {
+      tipo: 'shot',
+      precio: 4000,
+      comision: 0,
+      acompanamiento_cliente: false,
+      ml_acompanamiento_anfitriona: 150,
+      precio_anfitriona: 6000,
+      precios_anfitriona: [
+        { precio: 6000, comision: 1000 },
+        { precio: 8000, comision: 2000 }
+      ]
+    }
+  ];
+  rerender(
+    <SettingsSaleOptionsEditor
+      {...props}
+      precio='0'
+      comision='0'
+      options={persisted}
+      mlCliente={60}
+      mlAnfitriona={40}
+    />
+  );
+  expect(screen.getByLabelText('Vender con anfitriona')).not.toBeChecked();
+  expect(screen.getByLabelText('Precio de botella sin anfitriona')).toHaveValue('35.000');
+  expect(screen.getByLabelText('Habilitar bebida para colación')).toBeChecked();
+  expect(screen.getByLabelText('Precio corto cliente')).toHaveValue('4.000');
+  expect(screen.getByLabelText('Precio corto anfitriona 2')).toHaveValue('8.000');
+  expect(screen.getByLabelText('Ml corto cliente')).toHaveValue('60');
+  expect(screen.getByLabelText('Ml corto anfitriona')).toHaveValue('40');
+  const config = ref.current!.getConfig();
+  expect(config).toMatchObject({ opciones_venta: persisted, ml_shot: 60, ml_shot_anfitriona: 40 });
+  rerender(
+    <SettingsSaleOptionsEditor
+      {...props}
+      precio='0'
+      comision='0'
+      options={config.opciones_venta}
+      mlCliente={60}
+      mlAnfitriona={40}
+    />
+  );
+  expect(ref.current!.getConfig()).toEqual(config);
+  rerender(
+    <SettingsSaleOptionsEditor
+      {...props}
+      options={[{ tipo: 'botella', precio: 50000, comision: 5000 }]}
+    />
+  );
+  expect(screen.getByLabelText('Vender con anfitriona')).toBeChecked();
+  expect(screen.getByLabelText('Precio de botella sin anfitriona')).toHaveValue('');
+  expect(screen.getByLabelText('Habilitar bebida para colación')).not.toBeChecked();
+  expect(screen.queryByLabelText('Precio corto cliente')).not.toBeInTheDocument();
+});
+
+it('no borra los cambios de SIN y flags al editar precio o comisión controlados por el padre', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  const options: SaleOption[] = [{ tipo: 'botella', precio: 50000, comision: 5000 }];
+  const props = {
+    ref,
+    options,
+    precio: '50000',
+    comision: '5000',
+    saving: false,
+    onPrecio: vi.fn(),
+    onComision: vi.fn()
+  };
+  const { rerender } = render(<SettingsSaleOptionsEditor {...props} />);
+  fireEvent.change(screen.getByLabelText('Precio de botella sin anfitriona'), {
+    target: { value: '30000' }
+  });
+  fireEvent.click(screen.getByLabelText('Vender con anfitriona'));
+  rerender(<SettingsSaleOptionsEditor {...props} precio='60000' comision='6000' />);
+  expect(screen.getByLabelText('Precio de botella sin anfitriona')).toHaveValue('30.000');
+  expect(ref.current!.getConfig().opciones_venta[0]).toMatchObject({
+    precio: 0,
+    comision: 0,
+    vender_con_anfitriona: false,
+    precio_sin_anfitriona: 30000
+  });
+});
+
+it('sin remontar sincroniza los flags de usos analcohólicos y conserva un segundo roundtrip', () => {
+  const ref = createRef<SettingsSaleOptionsHandle>();
+  const props = {
+    ref,
+    categoria: 'Bebidas analcohólicas',
+    precio: '2900',
+    comision: '500',
+    saving: false,
+    onPrecio: vi.fn(),
+    onComision: vi.fn()
+  };
+  const { rerender } = render(
+    <SettingsSaleOptionsEditor
+      {...props}
+      options={[{ tipo: 'botella', precio: 2900, comision: 500 }]}
+    />
+  );
+  const options: SaleOption[] = [
+    {
+      tipo: 'botella',
+      precio: 0,
+      comision: 0,
+      en_venta: false,
+      cover_habilitado: true,
+      colacion_habilitada: true,
+      corto_anfitriona_habilitado: false,
+      ml_colacion: 250
+    }
+  ];
+  rerender(<SettingsSaleOptionsEditor {...props} options={options} />);
+  expect(screen.getByLabelText('Poner la bebida a la venta')).not.toBeChecked();
+  expect(screen.getByLabelText('Habilitar bebida para cover de clientes')).toBeChecked();
+  expect(screen.getByLabelText('Habilitar bebida para colación')).toBeChecked();
+  expect(screen.getByLabelText('Habilitar bebida para corto anfitriona')).not.toBeChecked();
+  expect(screen.getByLabelText('Ml de la colación')).toHaveValue('250');
+  const config = ref.current!.getConfig();
+  expect(config.opciones_venta[0]).toMatchObject(options[0]);
+  rerender(
+    <SettingsSaleOptionsEditor {...props} precio='0' comision='0' options={config.opciones_venta} />
+  );
+  expect(ref.current!.getConfig()).toEqual(config);
 });
 
 describe('configuración de colación, igual que al transferir', () => {

@@ -32,6 +32,7 @@ import {
 } from '@/modules/inventario/productos/servicio';
 import {
   cambiarEstadoUnidades,
+  eliminarUnidades,
   listarUnidades,
   registrarUnidades
 } from '@/modules/inventario/unidades/servicio';
@@ -669,6 +670,16 @@ export class ProductService {
     const producto = await obtenerProductoPorId(productoId);
     if (!producto) throw new NotFoundError('Producto', productoId);
     return await cambiarEstadoUnidades(productoId, ids, estado);
+  }
+
+  static async deleteUnits(productoId: string, unidadIds: unknown): Promise<number> {
+    const ids = Array.isArray(unidadIds) ? unidadIds.map(String).filter(Boolean) : [];
+    if (ids.length === 0 || ids.length > 1000) {
+      throw new ValidationError('Debes seleccionar entre 1 y 1000 códigos');
+    }
+    const producto = await obtenerProductoPorId(productoId);
+    if (!producto) throw new NotFoundError('Producto', productoId);
+    return await eliminarUnidades(productoId, ids);
   }
 
   static async addUnits(

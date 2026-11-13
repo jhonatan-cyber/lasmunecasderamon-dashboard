@@ -2,7 +2,20 @@ import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { esCategoriaChampagne } from '@/lib/business/champagne';
 import { consumirStock as consumirStockEnRepositorio } from './consumoRepositorio';
 import type { ContextoOperacion } from '@/lib/transaction/contract';
-import type { ContextoVentaInventario, ConsumoInventarioDetalle, ShotAlert } from '../contracts';
+import type {
+  ContextoVentaInventario,
+  ConsumoInventarioDetalle,
+  DetallePrecioInventario,
+  ShotAlert
+} from '../contracts';
+import { validarPreciosConfigurados } from './validarConfiguracionVenta';
+
+export function validarPreciosVenta(
+  detalles: DetallePrecioInventario[],
+  contexto: ContextoOperacion
+) {
+  return validarPreciosConfigurados(resolverTransaccion(contexto), detalles);
+}
 
 export function consumirStock(
   detalles: ConsumoInventarioDetalle[],

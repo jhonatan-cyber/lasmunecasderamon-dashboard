@@ -8,6 +8,10 @@ import { useConfig } from '@/hooks/shared/useConfigValue';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import { parseSavedOptions } from './TransferModal';
 
+/** Precio configurado para vender la botella sin anfitriona (0 = no se ofrece). */
+const precioSinAnfitriona = (option: SaleOption) =>
+  option.tipo === 'botella' ? Number(option.precio_sin_anfitriona ?? 0) : 0;
+
 export function SalePrices({
   options,
   price,
@@ -41,6 +45,10 @@ export function SalePrices({
       <div className='space-y-4 text-sm'>
         {values.map(option => {
           const hostPrices = preciosCortoAnfitriona(option);
+          const sinAnfitriona = precioSinAnfitriona(option);
+          // Sin precio "con anfitriona" solo queda la venta sin anfitriona: mostrar
+          // el $0 de la botella deshabilitada sería engañoso.
+          const mostrarBotella = !sinAnfitriona || Number(option.precio) > 0;
           return (
             <section key={option.tipo} className='min-w-0 space-y-2'>
               <h4 className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
@@ -50,15 +58,34 @@ export function SalePrices({
                 <span className='text-xs text-muted-foreground'>Venta</span>
                 <span className='text-right text-xs text-muted-foreground'>Precio</span>
                 <span className='text-right text-xs text-muted-foreground'>Comisión</span>
-                <span>{option.tipo === 'shot' ? 'Cliente' : 'Botella'}</span>
-                <span className='text-right font-semibold tabular-nums'>
-                  {formatCurrencyCLP(option.precio)}
-                </span>
-                <span className='text-right text-xs tabular-nums text-muted-foreground'>
-                  {option.tipo === 'shot' || !option.comision
-                    ? '—'
-                    : formatCurrencyCLP(option.comision)}
-                </span>
+                {mostrarBotella && (
+                  <>
+                    <span>
+                      {option.tipo === 'shot'
+                        ? 'Cliente'
+                        : sinAnfitriona > 0
+                          ? 'Con anfitriona'
+                          : 'Botella'}
+                    </span>
+                    <span className='text-right font-semibold tabular-nums'>
+                      {formatCurrencyCLP(option.precio)}
+                    </span>
+                    <span className='text-right text-xs tabular-nums text-muted-foreground'>
+                      {option.tipo === 'shot' || !option.comision
+                        ? '—'
+                        : formatCurrencyCLP(option.comision)}
+                    </span>
+                  </>
+                )}
+                {sinAnfitriona > 0 && (
+                  <>
+                    <span className='text-xs'>Sin anfitriona</span>
+                    <span className='text-right font-semibold tabular-nums'>
+                      {formatCurrencyCLP(sinAnfitriona)}
+                    </span>
+                    <span className='text-right text-xs tabular-nums text-muted-foreground'>—</span>
+                  </>
+                )}
                 {option.tipo === 'shot' &&
                   hostPrices.map((row, index) => (
                     <React.Fragment key={index}>
@@ -105,64 +132,95 @@ export function SalePrices({
           : 'flex flex-col gap-2 text-sm'
       }
     >
-      {orderedValues.map(option => (
-        <div key={option.tipo} className='flex min-w-0 flex-col gap-0.5 break-words'>
-          {option.tipo === 'botella' ? (
-            <span className='text-xs font-medium text-muted-foreground'>Botella</span>
-          ) : shotMlAnf !== shotMl ? (
-            <span className='grid grid-cols-2 gap-1 rounded-lg bg-gray-100 px-2 py-1.5 dark:bg-white/5'>
-              <span className='flex flex-col leading-tight'>
-                <span className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
-                  Cliente
+      {orderedValues.map(option => {
+        const sinAnfitriona = precioSinAnfitriona(option);
+        // Sin precio "con anfitriona" solo queda la venta sin anfitriona: mostrar
+        // el $0 de la botella deshabilitada sería engañoso.
+        const mostrarBotella = !sinAnfitriona || Number(option.precio) > 0;
+        const acompanamiento = option.acompanamiento ? (
+          <span className='text-xs text-muted-foreground'>
+            Incluye {option.acompanamiento.unidades}{' '}
+            {option.acompanamiento.tipo === 'gaseosa'
+              ? 'gaseosas'
+              : option.acompanamiento.tipo === 'soda'
+                ? 'sodas'
+                : 'bebidas'}{' '}
+            por botella
+          </span>
+        ) : null;
+        return (
+          <React.Fragment key={option.tipo}>
+            {mostrarBotella && (
+              <div className='flex min-w-0 flex-col gap-0.5 break-words'>
+                {option.tipo === 'botella' ? (
+                  <span className='text-xs font-medium text-muted-foreground'>
+                    {sinAnfitriona > 0 ? 'Con anfitriona' : 'Botella'}
+                  </span>
+                ) : shotMlAnf !== shotMl ? (
+                  <span className='grid grid-cols-2 gap-1 rounded-lg bg-gray-100 px-2 py-1.5 dark:bg-white/5'>
+                    <span className='flex flex-col leading-tight'>
+                      <span className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
+                        Cliente
+                      </span>
+                      <span className='text-xs font-bold tabular-nums'>{shotMl} ml</span>
+                    </span>
+                    <span className='flex flex-col leading-tight'>
+                      <span className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
+                        Anfitriona
+                      </span>
+                      <span className='text-xs font-bold tabular-nums'>{shotMlAnf} ml</span>
+                    </span>
+                  </span>
+                ) : (
+                  <span className='text-xs font-medium text-muted-foreground'>
+                    Corto · {shotMl} ml
+                  </span>
+                )}
+                {option.tipo === 'shot' && (
+                  <span className='flex flex-col gap-1'>
+                    {preciosCortoAnfitriona(option).map((row, index) => (
+                      <span key={index} className='text-xs'>
+                        Anfitriona {field !== 'comision' && formatCurrencyCLP(row.precio)}{' '}
+                        {field !== 'precio' && `· Comisión ${formatCurrencyCLP(row.comision)}`}
+                      </span>
+                    ))}
+                  </span>
+                )}
+                {acompanamiento}
+                {field !== 'comision' && (
+                  <span className='font-semibold tabular-nums'>
+                    {option.tipo === 'shot' ? 'Cliente ' : ''}
+                    {formatCurrencyCLP(option.precio)}
+                  </span>
+                )}
+                {field !== 'precio' && (
+                  <span className='text-xs text-muted-foreground'>
+                    {option.tipo !== 'shot' && option.comision > 0
+                      ? `${field ? '' : 'Comisión: '}${formatCurrencyCLP(option.comision)}`
+                      : 'Sin comisión'}
+                  </span>
+                )}
+              </div>
+            )}
+            {sinAnfitriona > 0 && (
+              <div className='flex min-w-0 flex-col gap-0.5 break-words'>
+                <span className='text-xs font-medium text-muted-foreground'>
+                  Botella sin anfitriona
                 </span>
-                <span className='text-xs font-bold tabular-nums'>{shotMl} ml</span>
-              </span>
-              <span className='flex flex-col leading-tight'>
-                <span className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
-                  Anfitriona
-                </span>
-                <span className='text-xs font-bold tabular-nums'>{shotMlAnf} ml</span>
-              </span>
-            </span>
-          ) : (
-            <span className='text-xs font-medium text-muted-foreground'>Corto · {shotMl} ml</span>
-          )}
-          {option.tipo === 'shot' && (
-            <span className='flex flex-col gap-1'>
-              {preciosCortoAnfitriona(option).map((row, index) => (
-                <span key={index} className='text-xs'>
-                  Anfitriona {field !== 'comision' && formatCurrencyCLP(row.precio)}{' '}
-                  {field !== 'precio' && `· Comisión ${formatCurrencyCLP(row.comision)}`}
-                </span>
-              ))}
-            </span>
-          )}
-          {option.acompanamiento && (
-            <span className='text-xs text-muted-foreground'>
-              Incluye {option.acompanamiento.unidades}{' '}
-              {option.acompanamiento.tipo === 'gaseosa'
-                ? 'gaseosas'
-                : option.acompanamiento.tipo === 'soda'
-                  ? 'sodas'
-                  : 'bebidas'}{' '}
-              por botella
-            </span>
-          )}
-          {field !== 'comision' && (
-            <span className='font-semibold tabular-nums'>
-              {option.tipo === 'shot' ? 'Cliente ' : ''}
-              {formatCurrencyCLP(option.precio)}
-            </span>
-          )}
-          {field !== 'precio' && (
-            <span className='text-xs text-muted-foreground'>
-              {option.tipo !== 'shot' && option.comision > 0
-                ? `${field ? '' : 'Comisión: '}${formatCurrencyCLP(option.comision)}`
-                : 'Sin comisión'}
-            </span>
-          )}
-        </div>
-      ))}
+                {!mostrarBotella && acompanamiento}
+                {field !== 'comision' && (
+                  <span className='font-semibold tabular-nums'>
+                    {formatCurrencyCLP(sinAnfitriona)}
+                  </span>
+                )}
+                {field !== 'precio' && (
+                  <span className='text-xs text-muted-foreground'>Sin comisión</span>
+                )}
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }

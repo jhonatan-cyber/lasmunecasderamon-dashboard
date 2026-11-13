@@ -2,7 +2,17 @@ import type { TransactionQuery } from '@/lib/database/db';
 import { BusinessError } from '@/lib/errors/errors';
 import { normalizarAcompanamientoBotella } from '@/lib/sales/acompanamientoBotella';
 import { parseOpcionesVenta } from '../helpers';
-import type { ConsumoInventarioDetalle } from '../contracts';
+import type {
+  ConsumoInventarioDetalle,
+  DetallePrecioInventario,
+  PrecioInventarioValidado
+} from '../contracts';
+import {
+  esCategoriaChampagne,
+  faltaConfiguracionChampagne,
+  MENSAJE_CHAMPAGNE_SIN_CONFIGURAR
+} from '@/lib/business/champagne';
+import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 export interface PresentacionVentaBloqueada {
   id: string;
   producto_id: string;
@@ -97,6 +107,133 @@ export async function bloquearYValidarConfiguracionVenta(
     }
   }
   return new Map(rows.map(row => [row.id, row]));
+}
+
+interface ProductoPrecio {
+  id_producto: string;
+  precio: number;
+  comision: number;
+  max_anfitrionas: number | null;
+  estado: number;
+  tiene_presentaciones: boolean;
+  categoria: string | null;
+}
+
+interface TramoPrecio {
+  producto_id: string;
+  anfitrionas: number;
+  precio: number;
+  comision: number;
+}
+
+/** No compara subtotales: Entradas/Covers aplican sus créditos fuera de inventario. */
+export async function validarPreciosConfigurados(
+  trx: TransactionQuery,
+  detalles: DetallePrecioInventario[]
+): Promise<PrecioInventarioValidado[]> {
+  if (!detalles.length) return [];
+  const presentations = await bloquearYValidarConfiguracionVenta(trx, detalles);
+  const ids = [...new Set(detalles.map(d => d.producto_id))];
+  const products = await trx<ProductoPrecio[]>(
+    `SELECT P.id_producto, P.precio, P.comision, P.max_anfitrionas, P.estado,
+            EXISTS (SELECT 1 FROM inventario_presentaciones IP WHERE IP.producto_id = P.id_producto) AS tiene_presentaciones,
+            C.nombre AS categoria
+       FROM productos P LEFT JOIN categorias C ON C.id_categoria = P.categoria_id
+      WHERE P.id_producto IN (${ids.map(() => '?').join(',')})`,
+    ids
+  );
+  const tiers = await trx<TramoPrecio[]>(
+    `SELECT producto_id, anfitrionas, precio, comision FROM producto_champagne_tiers
+      WHERE producto_id IN (${ids.map(() => '?').join(',')})`,
+    ids
+  );
+  const drinkHosts = new Set<string>();
+  const champagneHosts = new Set<string>();
+  return detalles.map(d => {
+    const product = products.find(p => String(p.id_producto) === d.producto_id);
+    if (!product || Number(product.estado) === 0)
+      throw new BusinessError('El producto del pedido no esta disponible');
+    if (!d.presentacion_id && product.tiene_presentaciones)
+      throw new BusinessError('Selecciona la presentacion del producto para comprobar el stock');
+    const presentation = d.presentacion_id ? presentations.get(d.presentacion_id) : undefined;
+    if (d.presentacion_id && (!presentation || presentation.producto_id !== d.producto_id))
+      throw new BusinessError('La presentacion no pertenece al producto');
+    const options = parseOpcionesVenta(presentation?.opciones_venta) ?? [];
+    const hosts = [...new Set([...(d.hostesses ?? []), ...(d.hostess_id ? [d.hostess_id] : [])])];
+    const productTiers = tiers.filter(t => String(t.producto_id) === d.producto_id);
+    let prices: { precio: number; comision: number }[];
+    if (d.tipo_venta === 'shot') {
+      const shot = options.find(o => o.tipo === 'shot');
+      prices = d.shot_anfitriona
+        ? preciosCortoAnfitriona(shot)
+        : shot
+          ? [{ precio: shot.precio, comision: 0 }]
+          : [];
+    } else {
+      const bottle = options.find(o => o.tipo === 'botella');
+      if (
+        bottle?.en_venta === false ||
+        (d.botella_anfitriona !== false && bottle?.vender_con_anfitriona === false)
+      ) {
+        prices = [];
+      } else if (d.botella_anfitriona === false) {
+        prices = [{ precio: Number(bottle?.precio_sin_anfitriona ?? 0), comision: 0 }];
+      } else {
+        const tier = productTiers.find(t => Number(t.anfitrionas) === hosts.length);
+        prices = [
+          tier && hosts.length
+            ? tier
+            : {
+                precio: Number(bottle?.precio ?? presentation?.precio_venta ?? product.precio),
+                comision: Number(bottle?.comision ?? presentation?.comision ?? product.comision)
+              }
+        ];
+      }
+    }
+    const price = prices.find(
+      p =>
+        Number.isFinite(Number(p.precio)) &&
+        Number(p.precio) > 0 &&
+        Number.isFinite(Number(p.comision)) &&
+        Number(p.comision) >= 0 &&
+        Number(p.precio) === d.precio &&
+        Number(p.comision) * d.cantidad === d.comision
+    );
+    if (!price || !Number.isFinite(d.cantidad) || d.cantidad < 1)
+      throw new BusinessError('El precio o la comision no coincide con el formato seleccionado');
+    if (Number(price.comision) > 0 && (!hosts.length || (d.generaComision ?? 1) !== 1))
+      throw new BusinessError('Selecciona anfitriona para cada producto con comision');
+    if (Number(price.comision) === 0 && hosts.length)
+      throw new BusinessError('Un producto sin comision no admite anfitriona');
+    const champagne = d.tipo_venta !== 'shot' && esCategoriaChampagne(product.categoria);
+    if (
+      champagne &&
+      d.botella_anfitriona !== false &&
+      faltaConfiguracionChampagne(product.max_anfitrionas, productTiers)
+    )
+      throw new BusinessError(MENSAJE_CHAMPAGNE_SIN_CONFIGURAR);
+    const limit =
+      d.tipo_venta === 'shot'
+        ? d.cantidad
+        : Number(product.max_anfitrionas) > 0
+          ? Number(product.max_anfitrionas)
+          : champagne
+            ? Math.max(1, ...productTiers.map(t => Number(t.anfitrionas)))
+            : Math.max(1, d.cantidad, ...productTiers.map(t => Number(t.anfitrionas)));
+    if (hosts.length > limit)
+      throw new BusinessError('El producto excede el maximo de anfitrionas');
+    for (const id of hosts) {
+      if (
+        (champagne && drinkHosts.has(id)) ||
+        (!champagne && (drinkHosts.has(id) || champagneHosts.has(id)))
+      )
+        throw new BusinessError(
+          'Cada bebida debe tener anfitrionas unicas; no pueden repetirse con champanas'
+        );
+      (champagne ? champagneHosts : drinkHosts).add(id);
+    }
+    return { isChampagne: champagne };
+  });
 }
 
 export async function validarConfiguracionVenta(

@@ -71,3 +71,28 @@ export const PATCH = withRoute(
     });
   }
 );
+
+/** Baja manual de códigos desde el detalle de producto. */
+export const DELETE = withRoute(
+  { auth: true, audit: true, module: 'products', action: 'delete' },
+  async (request: Request) => {
+    const payload: unknown = await request.json().catch(() => null);
+    const registro =
+      typeof payload === 'object' && payload !== null
+        ? (payload as { producto_id?: unknown; ids?: unknown })
+        : null;
+    const productoId = typeof registro?.producto_id === 'string' ? registro.producto_id.trim() : '';
+    if (!productoId || !Array.isArray(registro?.ids) || registro.ids.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'producto_id e ids son requeridos' },
+        { status: 400 }
+      );
+    }
+    const total = await ProductService.deleteUnits(productoId, registro.ids);
+    return NextResponse.json({
+      success: true,
+      message: total === 1 ? '1 código eliminado' : `${total} códigos eliminados`,
+      data: { total }
+    });
+  }
+);

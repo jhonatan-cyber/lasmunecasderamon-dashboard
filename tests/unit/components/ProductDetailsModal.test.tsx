@@ -1,6 +1,6 @@
 vi.mock('@/hooks/realtime/useRealtimeRefresh', () => ({ useRealtimeRefresh: () => {} }));
 import React from 'react';
-import { render, screen, cleanup } from '@testing-library/react';
+import { fireEvent, render, screen, cleanup, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProductDetailsModal } from '@/components/products/ProductDetailsModal';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
@@ -8,9 +8,25 @@ import { formatCurrencyCLP } from '@/lib/utils/formatters';
 vi.mock('next/image', () => ({
   default: ({ alt }: { alt: string }) => <span role='img' aria-label={alt} />
 }));
+vi.mock('@/hooks/auth/useUserPermissions', () => ({
+  useUserPermissions: () => ({ hasPermission: () => true })
+}));
 vi.mock('@/components/products/UnitLabelSelector', () => ({
-  UnitLabelSelector: ({ units }: { units: unknown[] }) => (
-    <div>{units.length} etiquetas disponibles</div>
+  UnitLabelSelector: ({
+    units,
+    onDelete
+  }: {
+    units: { id: string }[];
+    onDelete?: (ids: string[]) => void;
+  }) => (
+    <div>
+      <span>{units.length} etiquetas disponibles</span>
+      {onDelete ? (
+        <button type='button' onClick={() => onDelete(units.slice(0, 1).map(unit => unit.id))}>
+          Eliminar código
+        </button>
+      ) : null}
+    </div>
   )
 }));
 afterEach(() => {
@@ -96,6 +112,59 @@ describe('detalle completo del producto', () => {
       '/api/products/units?producto_id=p1&presentacion_id=pres1',
       expect.anything()
     );
+  });
+
+  it('elimina un código tras confirmar y recarga el detalle', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === 'DELETE') {
+        return {
+          ok: true,
+          json: async () => ({ success: true, message: '1 código eliminado' })
+        };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: url.includes('/bar?')
+            ? presentations
+            : url.includes('/units?')
+              ? {
+                  total: 1,
+                  unidades: [
+                    { id: 'u1', presentacion_id: 'pres1', codigo: 'LM-000001', estado: 'almacen' }
+                  ]
+                }
+              : url.endsWith('/tiers')
+                ? []
+                : { ...product, max_anfitrionas: 4 }
+        })
+      };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <ProductDetailsModal
+        open
+        onOpenChange={vi.fn()}
+        product={product}
+        presentation={presentations[0]}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Eliminar código' }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('LM-000001');
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/products/units',
+        expect.objectContaining({
+          method: 'DELETE',
+          body: JSON.stringify({ producto_id: 'p1', ids: ['u1'] })
+        })
+      )
+    );
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
   });
 
   it('informa un fallo de carga sin mostrar stock cero como si fuera real', async () => {

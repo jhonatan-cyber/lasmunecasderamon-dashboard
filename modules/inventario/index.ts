@@ -3,6 +3,7 @@ export { listarLimpieza, operarLimpieza } from './limpieza/servicio';
 
 export {
   consumirStockBar,
+  validarPreciosVentaBar,
   consumirColacionBar,
   consumirCorteCoverBar,
   consumirCoverBar,
@@ -52,6 +53,7 @@ export {
 export { darDeBajaVencidos, listarVencidos, listarVencidosRetirados } from './mermas/servicio';
 export {
   cambiarEstadoUnidades,
+  eliminarUnidades,
   generarUnidades,
   listarUnidades,
   marcarUnidadesImpresas,

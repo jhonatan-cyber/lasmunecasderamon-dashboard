@@ -24,7 +24,7 @@ import { validarAnfitrionasConfirmadas } from '@/lib/business/registroOperacion'
 import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverOrigenVenta } from '@/lib/business/ventasOrigen';
 import type { EntradaRegistroVenta } from '@/modules/ventas/contracts';
-import { consumirStockBar, validarChampanaConfigurada } from '@/modules/inventario';
+import { consumirStockBar, validarPreciosVentaBar } from '@/modules/inventario';
 import { obtenerCajaActiva, registrarMovimientoCobro } from '@/modules/caja';
 import { registrarComisionesVenta, registrarPropinaVenta } from '@/modules/personal';
 import { actualizarDisponibilidadTrasVenta } from '@/modules/identidad';
@@ -65,9 +65,16 @@ export async function registrarVenta(
   }
   const validated = SaleCreateSchema.parse(body);
   validarCambioAnfitrionasVenta(validated);
-  if (!options.desdeCuenta) {
-    await validarChampanaConfigurada(validated.detalles, contexto);
+  // Cuenta cobra líneas ya registradas; Entradas construye precio/crédito en servidor.
+  // Estas excepciones son opciones internas, nunca flags del body.
+  if (!options.desdeCuenta && !options.entradaId) {
+    const precios = await validarPreciosVentaBar(validated.detalles, contexto);
+    validated.detalles = validated.detalles.map((detalle, index) => ({
+      ...detalle,
+      isChampagne: precios[index].isChampagne
+    }));
   }
+  validated.total_comision = validated.detalles.reduce((total, d) => total + d.comision, 0);
   const skipClientPrepago = Boolean(body?.skip_client_prepago || body?.origen === 'cuenta');
   const skipCashRegisterPosting = body?.origen === 'cuenta';
 
@@ -217,7 +224,8 @@ export async function registrarVenta(
     validatedHostessSet,
     ventaId,
     now,
-    generateUUID
+    generateUUID,
+    Boolean(options.entradaId)
   );
 
   if (detailRows.length > 0) {

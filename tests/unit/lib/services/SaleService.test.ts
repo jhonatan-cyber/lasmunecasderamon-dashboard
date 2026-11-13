@@ -16,7 +16,9 @@ vi.mock('@/lib/database/db', () => ({
 
 vi.mock('@/modules/inventario', () => ({
   consumirStockBar: vi.fn().mockResolvedValue([]),
-  validarChampanaConfigurada: vi.fn().mockResolvedValue(undefined)
+  validarPreciosVentaBar: vi.fn(async (detalles: { isChampagne?: boolean }[]) =>
+    detalles.map(detalle => ({ isChampagne: detalle.isChampagne === true }))
+  )
 }));
 
 vi.mock('@/lib/business/shotAlerts', () => ({
