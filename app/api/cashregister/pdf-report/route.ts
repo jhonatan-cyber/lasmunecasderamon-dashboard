@@ -46,6 +46,9 @@ export const GET = withPublicRoute(async request => {
     ...caja,
     caja_id: caja.id_caja,
     estado,
+    resuelto_por:
+      caja.estado !== 1 && !caja.cierre_pendiente ? (caja.cajero_cierre_nombre ?? null) : null,
+    solicitado_por: caja.cierre_solicitado_por ?? null,
     venta: caja.ventas,
     servicio: caja.servicios,
     devolucion: caja.devoluciones,
