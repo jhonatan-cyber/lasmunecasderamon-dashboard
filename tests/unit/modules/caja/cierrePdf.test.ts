@@ -35,7 +35,7 @@ vi.mock('jspdf', async importOriginal => {
       super(options);
       capture.document = this;
       const text = this.text.bind(this);
-      vi.spyOn(this, 'text').mockImplementation((...args: Parameters<jsPDF['text']>) => {
+      vi.spyOn(this as jsPDF, 'text').mockImplementation((...args: Parameters<jsPDF['text']>) => {
         const [content, x, y, options] = args;
         const lines = Array.isArray(content) ? content : [content];
         lines.forEach(line =>
@@ -52,9 +52,9 @@ vi.mock('jspdf', async importOriginal => {
         );
         return text(...args);
       });
-      const fillColor = vi.spyOn(this, 'setFillColor');
+      const fillColor = vi.spyOn(this as jsPDF, 'setFillColor');
       const roundedRect = this.roundedRect.bind(this);
-      vi.spyOn(this, 'roundedRect').mockImplementation(
+      vi.spyOn(this as jsPDF, 'roundedRect').mockImplementation(
         (...args: Parameters<jsPDF['roundedRect']>) => {
           capture.shapes.push({
             x: args[0],
