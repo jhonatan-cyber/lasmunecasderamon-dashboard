@@ -126,11 +126,20 @@ interface TramoPrecio {
   comision: number;
 }
 
+export interface OpcionesPreciosVenta {
+  /** Los pedidos exigen asignación de anfitrionas; las ventas directas no. */
+  exigirAnfitrionas?: boolean;
+  /** Catálogo legado sin `opciones_venta`: solo se valida estructura y champaña. */
+  permitirSinConfiguracion?: boolean;
+}
+
 /** No compara subtotales: Entradas/Covers aplican sus créditos fuera de inventario. */
 export async function validarPreciosConfigurados(
   trx: TransactionQuery,
-  detalles: DetallePrecioInventario[]
+  detalles: DetallePrecioInventario[],
+  opciones: OpcionesPreciosVenta = {}
 ): Promise<PrecioInventarioValidado[]> {
+  const { exigirAnfitrionas = true, permitirSinConfiguracion = false } = opciones;
   if (!detalles.length) return [];
   const presentations = await bloquearYValidarConfiguracionVenta(trx, detalles);
   const ids = [...new Set(detalles.map(d => d.producto_id))];
@@ -161,6 +170,16 @@ export async function validarPreciosConfigurados(
     const options = parseOpcionesVenta(presentation?.opciones_venta) ?? [];
     const hosts = [...new Set([...(d.hostesses ?? []), ...(d.hostess_id ? [d.hostess_id] : [])])];
     const productTiers = tiers.filter(t => String(t.producto_id) === d.producto_id);
+    if (!options.length && permitirSinConfiguracion) {
+      const champagne = d.tipo_venta !== 'shot' && esCategoriaChampagne(product.categoria);
+      if (
+        champagne &&
+        d.botella_anfitriona !== false &&
+        faltaConfiguracionChampagne(product.max_anfitrionas, productTiers)
+      )
+        throw new BusinessError(MENSAJE_CHAMPAGNE_SIN_CONFIGURAR);
+      return { isChampagne: champagne };
+    }
     let prices: { precio: number; comision: number }[];
     if (d.tipo_venta === 'shot') {
       const shot = options.find(o => o.tipo === 'shot');
@@ -201,10 +220,12 @@ export async function validarPreciosConfigurados(
     );
     if (!price || !Number.isFinite(d.cantidad) || d.cantidad < 1)
       throw new BusinessError('El precio o la comision no coincide con el formato seleccionado');
-    if (Number(price.comision) > 0 && (!hosts.length || (d.generaComision ?? 1) !== 1))
-      throw new BusinessError('Selecciona anfitriona para cada producto con comision');
-    if (Number(price.comision) === 0 && hosts.length)
-      throw new BusinessError('Un producto sin comision no admite anfitriona');
+    if (exigirAnfitrionas) {
+      if (Number(price.comision) > 0 && (!hosts.length || (d.generaComision ?? 1) !== 1))
+        throw new BusinessError('Selecciona anfitriona para cada producto con comision');
+      if (Number(price.comision) === 0 && hosts.length)
+        throw new BusinessError('Un producto sin comision no admite anfitriona');
+    }
     const champagne = d.tipo_venta !== 'shot' && esCategoriaChampagne(product.categoria);
     if (
       champagne &&

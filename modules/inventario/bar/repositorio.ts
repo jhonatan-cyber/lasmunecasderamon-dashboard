@@ -14,7 +14,13 @@ export function validarPreciosVenta(
   detalles: DetallePrecioInventario[],
   contexto: ContextoOperacion
 ) {
-  return validarPreciosConfigurados(resolverTransaccion(contexto), detalles);
+  // Las ventas directas no exigen asignar anfitrionas: solo comparan el precio
+  // contra el formato configurado. Un catálogo legado sin `opciones_venta` se
+  // valida igual en estructura y champaña, pero conserva su precio histórico.
+  return validarPreciosConfigurados(resolverTransaccion(contexto), detalles, {
+    exigirAnfitrionas: false,
+    permitirSinConfiguracion: true
+  });
 }
 
 export function consumirStock(

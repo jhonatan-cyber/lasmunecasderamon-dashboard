@@ -365,3 +365,60 @@ it('rechaza un producto deshabilitado aunque queden unidades', async () => {
     'no esta disponible'
   );
 });
+
+describe('Ventas directas: precios configurados sin exigir anfitrionas', () => {
+  it('acepta un catálogo legado sin opciones de venta', async () => {
+    const detalle = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      tipo_venta: 'shot' as const,
+      precio: 3000,
+      cantidad: 2,
+      comision: 0
+    };
+    await expect(
+      validarPreciosConfigurados(trx({ opciones: [] }), [detalle], {
+        exigirAnfitrionas: false,
+        permitirSinConfiguracion: true
+      })
+    ).resolves.toEqual([{ isChampagne: false }]);
+  });
+
+  it('permite vender con comisión sin asignar anfitrionas', async () => {
+    const config = trx({
+      opciones: [{ tipo: 'botella', precio: 60000, comision: 40000 }]
+    });
+    const detalle = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      tipo_venta: 'botella' as const,
+      precio: 60000,
+      cantidad: 1,
+      comision: 40000
+    };
+    await expect(
+      validarPreciosConfigurados(config, [detalle], { exigirAnfitrionas: false })
+    ).resolves.toEqual([{ isChampagne: false }]);
+    await expect(validarPreciosConfigurados(config, [detalle])).rejects.toThrow(
+      'Selecciona anfitriona'
+    );
+  });
+
+  it('sigue bloqueando la champaña sin configuración', async () => {
+    const config = trx({ opciones: [], categoria: 'Champana', max: null });
+    const detalle = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      tipo_venta: 'botella' as const,
+      precio: 120000,
+      cantidad: 1,
+      comision: 40000
+    };
+    await expect(
+      validarPreciosConfigurados(config, [detalle], {
+        exigirAnfitrionas: false,
+        permitirSinConfiguracion: true
+      })
+    ).rejects.toThrow('champaña no tiene configurada');
+  });
+});
