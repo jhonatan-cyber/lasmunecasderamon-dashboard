@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -168,17 +168,25 @@ export function KioskDevices() {
   const vinculadas = devices.filter(d => !d.revocado_en);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <MonitorSmartphone className='h-5 w-5' /> Pantallas de asistencia
-        </CardTitle>
-        <CardDescription>
-          Vincula los dispositivos del local sin claves. La autorización se renueva automáticamente
-          mientras se utilizan.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className='flex flex-col gap-6'>
+    <>
+      <CollapsibleCard
+        defaultOpen
+        aria-label='Pantallas de asistencia'
+        className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+        headerClassName='p-4 sm:px-5 sm:py-4'
+        contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+        title={
+          <div className='flex items-center gap-3'>
+            <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+              <MonitorSmartphone className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+            </div>
+            <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+              Pantallas de asistencia
+            </span>
+          </div>
+        }
+        description='Vincula los dispositivos del local sin claves. La autorización se renueva automáticamente mientras se utilizan.'
+      >
         <KioskActivation />
 
         <div className='flex flex-col gap-3'>
@@ -243,7 +251,7 @@ export function KioskDevices() {
           Si borras las cookies o la pantalla permanece sin uso durante 30 días, vuelve a activarla
           con una sesión de administrador.
         </p>
-      </CardContent>
+      </CollapsibleCard>
 
       <DeleteConfirmModal
         open={revokeTarget !== null}
@@ -258,6 +266,6 @@ export function KioskDevices() {
         fieldName='Pantalla'
         isLoading={revokeTarget !== null && revoking === revokeTarget.id}
       />
-    </Card>
+    </>
   );
 }

@@ -72,7 +72,7 @@ describe('sseManager', () => {
     it('el evento operativo llega a todo el personal y no al kiosko', () => {
       const [c1, c2, c3, c4] = withClients([cajero, anfitriona, admin, kiosk]);
 
-      sendNotificationToAll('new_order', { id: 'p-1', total: 32000 });
+      sendNotificationToAll('new_order', { id: 'p-1', total: 32000 } as any);
 
       expect(tipos(c1)).toContain('new_order');
       expect(tipos(c2)).toContain('new_order');
@@ -118,7 +118,7 @@ describe('sseManager', () => {
       sendNotificationToAll('attendance_registered', {
         user: { id: 'u-2', nombre: 'Ana', apellido: 'Perez' },
         qrToken: 'credencial-que-no-debe-salir'
-      });
+      } as any);
 
       expect(tipos(kioskClient)).toContain('attendance_registered');
       expect(kioskClient.raw.join('')).not.toContain('credencial-que-no-debe-salir');

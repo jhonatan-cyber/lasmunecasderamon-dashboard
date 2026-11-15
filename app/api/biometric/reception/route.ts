@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { configurarRecepcionBiometrica, recepcionAutomaticaHabilitada } from '@/modules/asistencia';
 import { guardarClave } from '@/modules/configuracion';
+import { BiometricReceptionUpdateSchema } from '@/lib/business/schemas';
+import { validateOrResponse } from '@/lib/api/validate';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,14 +21,10 @@ export const PUT = withRoute(
   { auth: true, access: 'administrator', audit: true },
   async (request: Request) => {
     const body = await request.json();
-    if (typeof body?.habilitado !== 'boolean') {
-      return NextResponse.json(
-        { success: false, message: 'El estado de recepción debe ser booleano.' },
-        { status: 400 }
-      );
-    }
+    const validated = validateOrResponse(BiometricReceptionUpdateSchema, body);
+    if (validated instanceof NextResponse) return validated;
 
-    const habilitado = body.habilitado as boolean;
+    const habilitado = validated.habilitado;
     const error = await guardarClave('biometric_recepcion_activa', String(habilitado));
     if (error) {
       return NextResponse.json({ success: false, message: error }, { status: 400 });

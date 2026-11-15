@@ -171,7 +171,7 @@ export async function anularVentaTotalEnUnidad(
   });
   aplazar(() => {
     try {
-      sendNotificationToAll('sale_cancelled', { ventaId, total, cajaId: cajaId ?? null });
+      sendNotificationToAll('sale_cancelled', { ventaId, total, cajaId: cajaId ?? null } as any);
     } catch (error) {
       logger.warn('[ventas/anulaciones] No se pudo emitir sale_cancelled', { ventaId, error });
     }

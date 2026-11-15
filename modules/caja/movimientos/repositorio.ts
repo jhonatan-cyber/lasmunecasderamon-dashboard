@@ -129,3 +129,22 @@ export async function leerFondoCaja(
   );
   return rows[0] ?? null;
 }
+
+/**
+ * Efectivo total disponible en la caja activa (apertura + efectivo).
+ * Lectura simple sin transacción para consultas de UI.
+ */
+export async function obtenerEfectivoEnCaja(): Promise<number> {
+  try {
+    const cajaId = await obtenerCajaActiva();
+    if (!cajaId) return 0;
+    const rows = await query<{ monto_apertura: number; efectivo: number }[]>(
+      'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? AND estado = 1',
+      [cajaId]
+    );
+    if (rows.length === 0) return 0;
+    return Number(rows[0].monto_apertura || 0) + Number(rows[0].efectivo || 0);
+  } catch {
+    return 0;
+  }
+}

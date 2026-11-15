@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { getAnticipoBalances, tieneSolicitudPendiente } from '@/modules/personal';
+import { obtenerEfectivoEnCaja } from '@/modules/caja';
 
 export const GET = withRoute(
   { auth: true, access: 'authenticated', audit: true },
@@ -9,6 +10,9 @@ export const GET = withRoute(
 
     const pendiente = await tieneSolicitudPendiente(user.id.toString());
 
+    // Obtener el efectivo disponible en caja
+    const efectivoEnCaja = await obtenerEfectivoEnCaja();
+
     return NextResponse.json({
       success: true,
       data: {
@@ -16,7 +20,8 @@ export const GET = withRoute(
         monto_comisiones: balances.montoComision,
         monto_propinas: balances.montoPropina,
         monto_maximo: balances.montoMaximo,
-        tiene_solicitud_pendiente: pendiente
+        tiene_solicitud_pendiente: pendiente,
+        efectivo_en_caja: efectivoEnCaja
       }
     });
   }

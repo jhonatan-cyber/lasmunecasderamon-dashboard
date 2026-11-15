@@ -1,5 +1,6 @@
 import type { ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import { query } from '@/lib/database/db';
 import { BusinessError } from '@/lib/errors/errors';
 export async function actualizarDisponibilidadAnfitrionas(
   contexto: ContextoOperacion,
@@ -114,4 +115,43 @@ export async function ocuparAnfitrionasServicio(ids: string[], contexto: Context
     `UPDATE usuarios SET estado_servicio = 1 WHERE id_usuario IN (${ids.map(() => '?').join(',')})`,
     ids
   );
+}
+
+/**
+ * Verifica que un usuario es anfitriona y está ocupada en algún servicio activo.
+ * Llamada desde la ruta de liberar anfitriona para validar antes de liberar.
+ */
+export async function verificarAnfitrionaOcupada(userId: string): Promise<void> {
+  const usuario = await query<any[]>(
+    `SELECT u.id_usuario, u.estado_servicio, u.estado, r.nombre as rol_nombre
+     FROM usuarios u
+     LEFT JOIN roles r ON u.rol_id = r.id_rol
+     WHERE u.id_usuario = ?`,
+    [userId]
+  );
+
+  if (!usuario.length) {
+    throw new BusinessError('No se encontró al usuario', 'USER_NOT_FOUND');
+  }
+
+  const row = usuario[0];
+  const esAnfitriona = row.rol_nombre?.toLowerCase() === 'anfitriona';
+  if (!esAnfitriona) {
+    throw new BusinessError('El usuario no es una anfitriona', 'NOT_HOSTESS');
+  }
+
+  const estaOcupadaPorEstado = Number(row.estado_servicio) === 1;
+  if (estaOcupadaPorEstado) return;
+
+  const activos = await query<any[]>(
+    `SELECT COUNT(*) as total FROM detalle_servicios ds
+     JOIN servicios s ON s.id_servicio = ds.servicio_id
+     WHERE ds.usuario_id = ? AND ds.liberado_en IS NULL AND s.estado IN (2, 3)`,
+    [userId]
+  );
+  const estaOcupadaPorServicio = Number(activos[0]?.total || 0) > 0;
+
+  if (!estaOcupadaPorServicio) {
+    throw new BusinessError('La anfitriona no está ocupada en ningún servicio', 'NOT_OCCUPIED');
+  }
 }

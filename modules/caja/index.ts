@@ -19,7 +19,8 @@ export {
   obtenerCajaActiva,
   registrarMovimientoCobro,
   ajustarIvaCaja,
-  leerFondoCaja
+  leerFondoCaja,
+  obtenerEfectivoEnCaja
 } from './movimientos/servicio';
 
 export { CashRegisterService } from './turnos/servicio';
@@ -31,3 +32,4 @@ export async function generarPdfCierreCaja(data: Record<string, unknown>): Promi
 }
 
 export { WithdrawalService } from './retiros/servicio';
+export type { MovimientoCobro } from './contracts';

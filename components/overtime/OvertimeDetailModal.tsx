@@ -184,7 +184,74 @@ export default function OvertimeDetailModal({
               />
             ) : (
               <div className='space-y-6'>
-                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-x-auto'>
+                {/* Vista móvil: cards */}
+                <div className='lg:hidden space-y-4'>
+                  {paginatedDetails.map((detail, index) => {
+                    const creacion = formatDateTimeDmyLabel(detail.fecha_crea);
+                    return (
+                      <Card
+                        key={index}
+                        className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-slate-900 overflow-hidden'
+                      >
+                        <CardContent className='p-5 space-y-4'>
+                          <div className='flex justify-between items-start'>
+                            <div className='space-y-1'>
+                              <div className='flex items-center gap-2'>
+                                <Calendar className='h-4 w-4 text-gray-400' />
+                                <div className='flex flex-col'>
+                                  <span className='text-sm font-bold text-gray-900 dark:text-white'>
+                                    {creacion.date}
+                                  </span>
+                                  <span className='text-xs text-gray-400'>{creacion.time}</span>
+                                </div>
+                              </div>
+                            </div>
+                            {getStatusBadge(detail.estado)}
+                          </div>
+
+                          <div className='grid grid-cols-2 gap-3'>
+                            <div className='space-y-1'>
+                              <span className='text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
+                                Horas
+                              </span>
+                              <div className='flex items-center gap-1.5'>
+                                <Clock className='h-4 w-4 text-blue-500' />
+                                <span className='font-bold text-sm text-gray-700 dark:text-gray-300'>
+                                  {detail.hora.toFixed(1)} hrs
+                                </span>
+                              </div>
+                            </div>
+                            <div className='space-y-1'>
+                              <span className='text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
+                                Valor Hora
+                              </span>
+                              <div className='flex items-center gap-1.5'>
+                                <DollarSign className='h-4 w-4 text-gray-400' />
+                                <span className='font-bold text-sm text-gray-700 dark:text-gray-300'>
+                                  {formatCurrencyCLP(detail.monto)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className='pt-2 border-t dark:border-gray-700'>
+                            <div className='flex justify-between items-center'>
+                              <span className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                                Total
+                              </span>
+                              <span className='font-black text-base text-emerald-600'>
+                                {formatCurrencyCLP(detail.total)}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Vista desktop: tabla */}
+                <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-x-auto'>
                   <Table className='min-w-[540px]'>
                     <TableHeader>
                       <TableRow className='hover:bg-transparent'>

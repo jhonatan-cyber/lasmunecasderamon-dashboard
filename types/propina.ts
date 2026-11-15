@@ -15,4 +15,5 @@ export interface PropinaResumen {
   total_propinas: number;
   propinas_pendientes?: number;
   propinas_cobradas?: number;
+  propinas_anuladas?: number;
 }

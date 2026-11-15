@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Ban, CalendarDays, Flame, Loader2, Users } from 'lucide-react';
+import { Ban, CalendarDays, CheckCircle2, Flame, Loader2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatLongDateEs } from '@/lib/utils/calendarUtils';
 import { formatCurrencyCLP, formatFechaConHora } from '@/lib/utils/formatters';
+import { getTodayDateKey, toDateKey } from '@/lib/utils/calendarUtils';
 import type { ReservaQuincho } from '@/types/quincho';
 
 interface ReservaQuinchoDetalleModalProps {
@@ -47,6 +48,16 @@ export function ReservaQuinchoDetalleModal({
 }: ReservaQuinchoDetalleModalProps) {
   const [reservaAAnular, setReservaAAnular] = useState<ReservaQuincho | null>(null);
 
+  /**
+   * Una reserva se considera usada si su estado es 'usado' o si su fecha ya pasó.
+   * Esto protege contra el caso donde el backend aún no actualizó el estado.
+   */
+  const esReservaUsada = (reserva: ReservaQuincho) => {
+    if (reserva.estado === 'usado') return true;
+    const fechaReserva = toDateKey(reserva.fecha_reserva);
+    return fechaReserva < getTodayDateKey();
+  };
+
   const cerrar = (abierto: boolean) => {
     if (!abierto) setReservaAAnular(null);
     onOpenChange(abierto);
@@ -73,90 +84,104 @@ export function ReservaQuinchoDetalleModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className='min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6'>
+          <div className='min-h-0 flex-1 overflow-y-auto'>
             {reservas.length === 0 && (
-              <p className='rounded-2xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-slate-700 dark:text-neutral-400'>
+              <p className='px-4 py-6 text-center text-sm text-gray-500 dark:text-neutral-400 sm:px-6'>
                 No hay reservas registradas para esta fecha.
               </p>
             )}
 
-            {reservas.map(reserva => (
-              <article
-                key={reserva.id}
-                className='space-y-4 rounded-2xl border border-gray-200 p-4 dark:border-slate-800'
-              >
-                <header className='flex flex-wrap items-start justify-between gap-2'>
-                  <div className='flex flex-col'>
-                    <span className='font-medium text-gray-900 dark:text-neutral-100'>
-                      {reserva.cliente_nombre} {reserva.cliente_apellido}
+            <div className='divide-y divide-gray-200 dark:divide-slate-800'>
+              {reservas.map(reserva => {
+                const usada = esReservaUsada(reserva);
+                return (
+                  <section key={reserva.id} className='space-y-3 p-4 sm:p-6'>
+                    <div className='flex flex-wrap items-start justify-between gap-2'>
+                      <div className='flex flex-col'>
+                        <span className='font-medium text-gray-900 dark:text-neutral-100'>
+                          {reserva.cliente_nombre} {reserva.cliente_apellido}
+                        </span>
+                        {reserva.cliente_run && (
+                          <span className='text-xs text-gray-500 dark:text-neutral-400'>
+                            {reserva.cliente_run}
+                          </span>
+                        )}
+                      </div>
+                      {usada ? (
+                        <Badge className='flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-gray-700 dark:bg-gray-700 dark:text-gray-200'>
+                          <CheckCircle2 className='h-3 w-3' />
+                          Usado
+                        </Badge>
+                      ) : reserva.estado === 'anulada' ? (
+                        <Badge className='flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-red-700 dark:bg-red-900/40 dark:text-red-300'>
+                          <Ban className='h-3 w-3' />
+                          Anulada
+                        </Badge>
+                      ) : (
+                        <Badge className='rounded-full bg-green-100 px-3 py-1 text-green-700 dark:bg-green-900/40 dark:text-green-300'>
+                          Activa
+                        </Badge>
+                      )}
+                    </div>
+
+                  <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
+                    <DatoReserva
+                      etiqueta='Personas'
+                      valor={reserva.cantidad_personas.toLocaleString('es-CL')}
+                    />
+                    <DatoReserva
+                      etiqueta='Monto por persona'
+                      valor={formatCurrencyCLP(reserva.monto_por_persona)}
+                    />
+                    <DatoReserva etiqueta='Total' valor={formatCurrencyCLP(reserva.total)} />
+                    <DatoReserva etiqueta='Método de pago' valor={reserva.metodo_pago} />
+                  </div>
+
+                  <div className='flex flex-wrap gap-x-6 gap-y-2 text-xs text-gray-600 dark:text-neutral-400'>
+                    <span className='flex items-center gap-1'>
+                      <Users className='h-3.5 w-3.5' />
+                      Registrada el {formatFechaConHora(reserva.fecha_crea)}
                     </span>
-                    {reserva.cliente_run && (
-                      <span className='text-xs text-gray-500 dark:text-neutral-400'>
-                        {reserva.cliente_run}
+                    {reserva.fecha_anulacion && (
+                      <span className='flex items-center gap-1'>
+                        <Ban className='h-3.5 w-3.5' />
+                        Anulada el {formatFechaConHora(reserva.fecha_anulacion)}
+                      </span>
+                    )}
+                    {reserva.fecha_uso && (
+                      <span className='flex items-center gap-1'>
+                        <CheckCircle2 className='h-3.5 w-3.5' />
+                        Usado el {formatFechaConHora(reserva.fecha_uso)}
                       </span>
                     )}
                   </div>
-                  <div className='flex items-center gap-2'>
-                    {reserva.estado === 'activa' ? (
-                      <Badge className='rounded-full bg-green-100 px-3 py-1 text-green-700 dark:bg-green-900/40 dark:text-green-300'>
-                        Activa
-                      </Badge>
-                    ) : (
-                      <Badge className='flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-red-700 dark:bg-red-900/40 dark:text-red-300'>
-                        <Ban className='h-3 w-3' />
-                        Anulada
-                      </Badge>
-                    )}
-                    {canCancel && reserva.estado === 'activa' && (
+
+                  {reserva.observaciones && (
+                    <p className='rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
+                      {reserva.observaciones}
+                    </p>
+                  )}
+
+                  {canCancel && !usada && reserva.estado !== 'anulada' && (
+                    <div className='flex justify-end pt-1'>
                       <Button
                         type='button'
-                        variant='ghost'
+                        variant='outline'
                         size='sm'
                         className='rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40'
                         onClick={() => setReservaAAnular(reserva)}
                         disabled={isCancelling}
                         aria-label={`Anular reserva de ${reserva.cliente_nombre} ${reserva.cliente_apellido}`}
                       >
-                        <Ban className='mr-1 h-4 w-4' />
-                        Anular
+                        <Ban className='mr-1 h-3.5 w-3.5' />
+                        Anular reserva
                       </Button>
-                    )}
-                  </div>
-                </header>
-
-                <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
-                  <DatoReserva
-                    etiqueta='Personas'
-                    valor={reserva.cantidad_personas.toLocaleString('es-CL')}
-                  />
-                  <DatoReserva
-                    etiqueta='Monto por persona'
-                    valor={formatCurrencyCLP(reserva.monto_por_persona)}
-                  />
-                  <DatoReserva etiqueta='Total' valor={formatCurrencyCLP(reserva.total)} />
-                  <DatoReserva etiqueta='Método de pago' valor={reserva.metodo_pago} />
-                </div>
-
-                <div className='flex flex-wrap gap-x-6 gap-y-2 rounded-xl bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-slate-900/60 dark:text-neutral-400'>
-                  <span className='flex items-center gap-1'>
-                    <Users className='h-3.5 w-3.5' />
-                    Registrada el {formatFechaConHora(reserva.fecha_crea)}
-                  </span>
-                  {reserva.fecha_anulacion && (
-                    <span className='flex items-center gap-1'>
-                      <Ban className='h-3.5 w-3.5' />
-                      Anulada el {formatFechaConHora(reserva.fecha_anulacion)}
-                    </span>
+                    </div>
                   )}
-                </div>
-
-                {reserva.observaciones && (
-                  <p className='rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
-                    {reserva.observaciones}
-                  </p>
-                )}
-              </article>
-            ))}
+                </section>
+                );
+              })}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

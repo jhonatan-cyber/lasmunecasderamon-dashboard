@@ -32,7 +32,7 @@ export { contarRoles, obtenerRolPorNombre } from './roles/servicio';
 
 export { actualizarDisponibilidadTrasVenta } from './disponibilidad/servicio';
 
-export { actualizarDisponibilidad, validarAnfitrionasEnLocal } from './disponibilidad/servicio';
+export { actualizarDisponibilidad, validarAnfitrionasEnLocal, verificarAnfitrionaOcupada } from './disponibilidad/servicio';
 export { comprobarAnfitrionasLibresParaServicio } from './disponibilidad/servicio';
 
 export { UserService } from './usuarios/fachada';

@@ -1,4 +1,4 @@
-export type EstadoReservaQuincho = 'activa' | 'anulada';
+export type EstadoReservaQuincho = 'activa' | 'anulada' | 'usado';
 export type MetodoPagoReservaQuincho = 'efectivo' | 'tarjeta' | 'transferencia';
 
 /** Reserva de quincho tal como la devuelve el API, con el cliente ya resuelto. */
@@ -20,6 +20,7 @@ export interface ReservaQuincho {
   fecha_crea: string;
   fecha_anulacion: string | null;
   anulada_por: string | null;
+  fecha_uso: string | null;
 }
 
 /** Cliente que se crea desde el formulario de la reserva. */

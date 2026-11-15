@@ -16,7 +16,7 @@ import { AdvancesHeader } from '@/components/advances/AdvancesHeader';
 import { AdvancesDialog } from '@/components/advances/AdvancesDialog';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
 
-type TabType = 'pending' | 'paid';
+type TabType = 'solicitudes' | 'porCobrar' | 'cobrado';
 
 export default function AdvancesPage() {
   const { hasOpenCaja, efectivoEnCaja, loading: cajaLoading } = useCashRegisterStatus();
@@ -48,15 +48,18 @@ export default function AdvancesPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [advanceError, setAdvanceError] = useState<string | null>(null);
   const [advanceSaving, setAdvanceSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('pending');
+  const [activeTab, setActiveTab] = useState<TabType>('solicitudes');
 
   const canCreate = isAdmin && hasPermission('advances', 'create');
 
-  const pendingCount = (allAnticipos || []).filter(
-    a => (Number(a.estado) === 2 || Number(a.estado) === 1) && !a.fecha_entrega
+  const solicitudesCount = (allAnticipos || []).filter(
+    a => Number(a.estado) === 2 || Number(a.estado) === 3
   ).length;
-  const paidCount = (allAnticipos || []).filter(
-    a => Number(a.estado) === 0 || !!a.fecha_cobro || !!a.fecha_entrega
+  const porCobrarCount = (allAnticipos || []).filter(
+    a => Number(a.estado) === 1 && !!a.fecha_entrega
+  ).length;
+  const cobradoCount = (allAnticipos || []).filter(
+    a => Number(a.estado) === 0 || !!a.fecha_cobro
   ).length;
 
   const handleOpenDialog = () => {
@@ -141,26 +144,35 @@ export default function AdvancesPage() {
               isAdmin={isAdmin}
             />
 
-            {}
             <StatusTabs
               className='mb-4'
               items={[
                 {
-                  label: 'Por Cobrar',
-                  count: pendingCount,
-                  active: activeTab === 'pending',
+                  label: 'Solicitudes',
+                  count: solicitudesCount,
+                  active: activeTab === 'solicitudes',
                   onSelect: () => {
-                    setActiveTab('pending');
+                    setActiveTab('solicitudes');
+                    setPage(1);
+                  },
+                  tone: 'warning'
+                },
+                {
+                  label: 'Por Cobrar',
+                  count: porCobrarCount,
+                  active: activeTab === 'porCobrar',
+                  onSelect: () => {
+                    setActiveTab('porCobrar');
                     setPage(1);
                   },
                   tone: 'warning'
                 },
                 {
                   label: 'Cobrados',
-                  count: paidCount,
-                  active: activeTab === 'paid',
+                  count: cobradoCount,
+                  active: activeTab === 'cobrado',
                   onSelect: () => {
-                    setActiveTab('paid');
+                    setActiveTab('cobrado');
                     setPage(1);
                   },
                   tone: 'success'

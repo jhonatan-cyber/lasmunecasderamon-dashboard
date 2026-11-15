@@ -33,7 +33,7 @@ export async function buscarTodas(
 ): Promise<HoraExtra[]> {
   const trx = ejecutor(contexto);
   let sql = `
-      SELECT HR.*, U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto
+      SELECT HR.*, U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto, U.nick AS usuario_nick
       FROM horas_extras HR
       INNER JOIN usuarios U ON U.id_usuario = HR.usuario_id
       WHERE 1=1
@@ -55,6 +55,7 @@ export async function buscarTodas(
     id_usuario: row.id_usuario,
     usuario: String(row.usuario),
     usuario_foto: String(row.usuario_foto || ''),
+    nick: String(row.usuario_nick || ''),
     hora: Number(row.hora),
     monto: Number(row.monto),
     total: Number(row.total),
@@ -72,7 +73,7 @@ export async function buscarPorFechas(
   if (fechas.length === 0) return [];
   const trx = ejecutor(contexto);
   const sql = `
-      SELECT HR.*, U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto, HR.fecha_crea, HR.estado
+      SELECT HR.*, U.id_usuario, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS usuario, U.foto AS usuario_foto, U.nick AS usuario_nick, HR.fecha_crea, HR.estado
       FROM horas_extras HR
       INNER JOIN usuarios U ON U.id_usuario = HR.usuario_id
       WHERE HR.usuario_id = ? AND DATE(HR.fecha_crea) IN (?)
@@ -84,6 +85,7 @@ export async function buscarPorFechas(
     id_usuario: row.id_usuario,
     usuario: String(row.usuario),
     usuario_foto: String(row.usuario_foto || ''),
+    nick: String(row.usuario_nick || ''),
     hora: Number(row.hora),
     monto: Number(row.monto),
     total: Number(row.total),

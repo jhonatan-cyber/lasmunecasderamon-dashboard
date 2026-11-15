@@ -13,6 +13,7 @@ export interface HoraExtra {
   id_usuario: string;
   usuario: string;
   usuario_foto: string;
+  nick: string;
   hora: number;
   monto: number;
   total: number;

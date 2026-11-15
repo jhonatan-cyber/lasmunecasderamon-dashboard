@@ -1,8 +1,8 @@
 import { generateUUID, query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { ValidationError } from '@/lib/errors/errors';
+import { ValidationError, BusinessError } from '@/lib/errors/errors';
 import { consumirCorteCoverBar, consumirProductoCoverBar } from '@/modules/inventario';
-import { enUnaUnidad } from '@/lib/transaction/contract';
+import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { registrarMovimientoCobro } from '@/modules/caja';
 import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
@@ -13,6 +13,127 @@ import {
   normalizarAcompanamientoBotella,
   type AcompanamientoBotellaItem
 } from '@/lib/sales/acompanamientoBotella';
+
+export type MetodoDevolucion = 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago';
+
+export interface SolicitudAnulacionEntrada {
+  id: string;
+  entrada_id: string;
+  token: string;
+  estado: 'pendiente' | 'confirmada' | 'rechazada';
+  fecha_solicitud: string;
+  solicitado_por: string;
+  motivo: string | null;
+  monto: number;
+  cliente_nombre: string | null;
+  metodo_pago_original: MetodoPagoEntrada;
+  metodo_devolucion: MetodoDevolucion | null;
+  procesado_por: string | null;
+  fecha_procesamiento: string | null;
+}
+
+/** Verifica si ya existe una solicitud pendiente para esta entrada. */
+export async function existeSolicitudAnulacionEntrada(entradaId: string): Promise<boolean> {
+  const rows = await query<{ id: string }[]>(
+    `SELECT id FROM solicitudes_anulacion_entradas
+     WHERE entrada_id = ? AND estado = 'pendiente'
+     LIMIT 1`,
+    [entradaId]
+  );
+  return rows.length > 0;
+}
+
+/** Crea una solicitud de anulación y devuelve el token. */
+export async function crearSolicitudAnulacionEntrada(
+  entradaId: string,
+  motivo: string,
+  solicitadoPor: string,
+  monto: number,
+  contexto: ContextoOperacion
+): Promise<string> {
+  const idSolicitud = generateUUID();
+  const token = generateUUID();
+  const trx = resolverTransaccion(contexto);
+  await trx(
+    `INSERT INTO solicitudes_anulacion_entradas
+      (id, entrada_id, token, estado, fecha_solicitud, solicitado_por, motivo, monto)
+     VALUES (?, ?, ?, 'pendiente', ?, ?, ?, ?)`,
+    [idSolicitud, entradaId, token, getNowInBusinessTimezone(), solicitadoPor, motivo, monto]
+  );
+  return token;
+}
+
+/** Obtiene una solicitud por token (para la página de confirmación). */
+export async function obtenerSolicitudAnulacionEntradaPorToken(
+  token: string
+): Promise<SolicitudAnulacionEntrada | null> {
+  const rows = await query<SolicitudAnulacionEntrada[]>(
+    `SELECT sae.id, sae.entrada_id, sae.token, sae.estado, sae.fecha_solicitud,
+            sae.solicitado_por, sae.motivo, sae.monto, sae.metodo_devolucion,
+            sae.procesado_por, sae.fecha_procesamiento,
+            ec.cliente_nombre, ec.metodo_pago AS metodo_pago_original
+     FROM solicitudes_anulacion_entradas sae
+     INNER JOIN entradas_clientes ec ON ec.id = sae.entrada_id
+     WHERE sae.token = ? AND sae.estado = 'pendiente'
+     LIMIT 1`,
+    [token]
+  );
+  return rows[0] ?? null;
+}
+
+/** Actualiza el estado de una solicitud y el método de devolución. */
+export async function actualizarSolicitudAnulacionEntrada(
+  solicitudId: string,
+  estado: 'confirmada' | 'rechazada',
+  metodoDevolucion: MetodoDevolucion | null,
+  procesadoPor: string,
+  contexto: ContextoOperacion
+): Promise<void> {
+  const trx = resolverTransaccion(contexto);
+  const rows = await trx<Array<{ estado: string }>>(
+    `SELECT estado FROM solicitudes_anulacion_entradas WHERE id = ? FOR UPDATE`,
+    [solicitudId]
+  );
+  if (!rows[0] || rows[0].estado !== 'pendiente')
+    throw new BusinessError('La solicitud ya fue procesada');
+  await trx(
+    `UPDATE solicitudes_anulacion_entradas
+      SET estado = ?, metodo_devolucion = ?, procesado_por = ?, fecha_procesamiento = ?
+      WHERE id = ?`,
+    [estado, metodoDevolucion, procesadoPor, getNowInBusinessTimezone(), solicitudId]
+  );
+}
+
+/** Lee la solicitud para procesarla dentro de una transacción. */
+export async function leerSolicitudAnulacionEntrada(
+  solicitudId: string,
+  contexto: ContextoOperacion
+): Promise<{
+  entrada_id: string;
+  monto: number;
+  metodo_devolucion: MetodoDevolucion | null;
+  estado: string;
+} | null> {
+  const rows = await resolverTransaccion(contexto)<
+    Array<{
+      entrada_id: string;
+      monto: number;
+      metodo_devolucion: string | null;
+      estado: string;
+    }>
+  >(
+    `SELECT entrada_id, monto, metodo_devolucion, estado
+     FROM solicitudes_anulacion_entradas WHERE id = ?`,
+    [solicitudId]
+  );
+  if (!rows[0]) return null;
+  return {
+    entrada_id: rows[0].entrada_id,
+    monto: Number(rows[0].monto),
+    metodo_devolucion: (rows[0].metodo_devolucion as MetodoDevolucion) ?? null,
+    estado: rows[0].estado
+  };
+}
 
 export type MetodoPagoEntrada = 'efectivo' | 'tarjeta' | 'transferencia';
 export type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
@@ -181,7 +302,7 @@ export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> 
             COALESCE((SELECT SUM(d.cantidad) FROM entradas_clientes_productos d WHERE d.entrada_id = e.id),
                      CASE WHEN e.cover_presentacion_id IS NULL THEN 0 ELSE 1 END) AS cantidad_productos_cover,
             e.fecha, to_char(e.hora, 'HH24:MI') AS hora,
-            u.nombre || ' ' || u.apellido AS registrado_por_nombre,
+            COALESCE(u.nick, u.nombre || ' ' || u.apellido) AS registrado_por_nombre,
             e.cover_estado,
             e.anulacion_origen,
             to_char(e.cover_entregada_at, 'YYYY-MM-DD HH24:MI') AS cover_entregada_at,
@@ -206,7 +327,7 @@ export async function listarPendientes(fecha?: string): Promise<EntradaPendiente
   return query<EntradaPendiente[]>(
     `SELECT e.id, e.grupo_registro_id, e.cliente_nombre, e.monto_entrada, e.metodo_pago,
             e.fecha, to_char(e.hora, 'HH24:MI') AS hora, e.caja_id,
-            u.nombre || ' ' || u.apellido AS registrado_por_nombre
+            COALESCE(u.nick, u.nombre || ' ' || u.apellido) AS registrado_por_nombre
        FROM entradas_clientes e
        JOIN usuarios u ON u.id_usuario = e.registrado_por
       WHERE e.cover_estado = 'pendiente' AND e.fecha = ?

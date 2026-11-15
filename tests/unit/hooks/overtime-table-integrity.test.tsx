@@ -3,13 +3,18 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { useOvertimeTable } from '@/hooks/staff/useOvertimeTable';
 import type { Overtime } from '@/types/overtime';
 afterEach(cleanup);
-const row = (id: string, hours: number | string = 2, total: number | string = 10) =>
+const row = (
+  id: string,
+  hours: number | string = 2,
+  total: number | string = 10,
+  estado: number = 1
+) =>
   ({
     id_usuario: id,
     usuario: `Empleado ${id}`,
     hora: hours,
     total,
-    estado: 1,
+    estado,
     fecha_crea: '2026-10-10'
   }) as Overtime;
 describe('tabla de horas extras', () => {
@@ -27,6 +32,17 @@ describe('tabla de horas extras', () => {
     act(() => result.current.setSearchTerm(' Empleado 11 '));
     expect(result.current.page).toBe(1);
     expect(result.current.paginatedData[0].id_usuario).toBe('11');
+  });
+  it('no suma al total a pagar los registros ya pagados (estado 0)', () => {
+    const data = [
+      row('1', 2, 100, 1),  // por pagar
+      row('1', 3, 200, 0),  // pagado
+      row('1', 1, 50, 1)    // por pagar
+    ];
+    const { result } = renderHook(() => useOvertimeTable({ overtime: data }));
+    const grouped = result.current.processedData[0];
+    expect(grouped.hora).toBe(6);  // suma todas las horas
+    expect(grouped.total).toBe(150); // solo suma los no pagados: 100 + 50
   });
   it('una lista reducida conserva una página válida y rechaza tamaños inválidos', () => {
     const { result, rerender } = renderHook(({ data }) => useOvertimeTable({ overtime: data }), {

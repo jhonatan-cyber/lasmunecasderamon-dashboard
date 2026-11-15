@@ -7,11 +7,29 @@ import {
   insertarReservaQuincho,
   listarReservasQuincho,
   marcarReservaAnulada,
+  marcarReservaUsado,
+  marcarTodasLasPasadasComoUsado,
   reclamarReservaParaAnular
 } from './repositorio';
 
-/** Listado completo de reservas con el cliente ya resuelto. */
-export function listarReservas(): Promise<ReservaQuincho[]> {
+/**
+ * Listado completo de reservas con el cliente ya resuelto. Antes de devolver,
+ * marca automáticamente como "usado" las reservas activas cuya fecha ya pasó,
+ * para que no se puedan anular. Si el proceso de marcado falla (por ejemplo,
+ * la migración de fecha_uso no se ha ejecutado), se registra la advertencia
+ * pero sigue devolviendo el listado.
+ */
+export async function listarReservas(): Promise<ReservaQuincho[]> {
+  try {
+    await marcarTodasLasPasadasComoUsado();
+  } catch (error) {
+    // Si la columna fecha_uso no existe (migración pendiente) u otro error
+    // de BD, se registra pero no se bloquea el listado.
+    console.warn(
+      '[Quinchos] No se pudieron marcar reservas pasadas como usadas:',
+      error instanceof Error ? error.message : error
+    );
+  }
   return listarReservasQuincho();
 }
 
@@ -64,4 +82,12 @@ export function marcarAnuladaEnUnidad(
   contexto: ContextoOperacion
 ): Promise<ReservaQuincho> {
   return marcarReservaAnulada(id, usuarioId, contexto);
+}
+
+/** Marca una reserva activa como usada (su fecha ya pasó). */
+export function marcarUsadoEnUnidad(
+  id: string,
+  contexto: ContextoOperacion
+): Promise<ReservaQuincho> {
+  return marcarReservaUsado(id, contexto);
 }

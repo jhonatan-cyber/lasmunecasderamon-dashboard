@@ -1,5 +1,5 @@
 import { generateUUID, query } from '@/lib/database/db';
-import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import { fechaDeNegocio, getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { formatFechaISO } from '@/lib/utils/fechaSql';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import type { ContextoOperacion } from '@/lib/transaction/contract';
@@ -40,7 +40,8 @@ function mapReserva(row: Record<string, unknown>): ReservaQuincho {
     usuario_id: row.usuario_id ? String(row.usuario_id) : null,
     fecha_crea: timestampISO(row.fecha_crea) ?? '',
     fecha_anulacion: timestampISO(row.fecha_anulacion),
-    anulada_por: row.anulada_por ? String(row.anulada_por) : null
+    anulada_por: row.anulada_por ? String(row.anulada_por) : null,
+    fecha_uso: timestampISO(row.fecha_uso)
   };
 }
 
@@ -92,8 +93,8 @@ export async function insertarReservaQuincho(
 }
 
 /**
- * Bloquea la reserva para anularla dentro de la unidad: si ya está anulada no
- * hay nada que devolver y se corta antes de mover saldo.
+ * Bloquea la reserva para anularla dentro de la unidad: si ya está anulada,
+ * usada, o su fecha ya pasó, no se permite anular.
  */
 export async function reclamarReservaParaAnular(
   id: string,
@@ -107,6 +108,17 @@ export async function reclamarReservaParaAnular(
   const reserva = mapReserva(rows[0]);
   if (reserva.estado === 'anulada')
     throw new ConflictError('La reserva ya está anulada', { reserva_id: id });
+  if (reserva.estado === 'usado')
+    throw new ConflictError('No se puede anular una reserva que ya se usó', { reserva_id: id });
+
+  // Doble protección: si la fecha de la reserva ya pasó, no se permite anular
+  // aunque el estado no se haya actualizado a "usado" aún.
+  const hoy = fechaDeNegocio();
+  const fechaReserva = formatFechaISO(reserva.fecha_reserva) ?? '';
+  if (fechaReserva && fechaReserva < hoy) {
+    throw new ConflictError('No se puede anular una reserva de fecha pasada', { reserva_id: id });
+  }
+
   return reserva;
 }
 
@@ -122,4 +134,47 @@ export async function marcarReservaAnulada(
   );
   const rows = await trx<Record<string, unknown>[]>(`${SELECT_RESERVA} WHERE r.id = ?`, [id]);
   return mapReserva(rows[0]);
+}
+
+/**
+ * Marca la reserva como usada cuando su fecha ya pasó. No se puede anular
+ * una reserva usada porque el servicio ya se consumió.
+ */
+export async function marcarReservaUsado(
+  id: string,
+  contexto: ContextoOperacion
+): Promise<ReservaQuincho> {
+  const trx = resolverTransaccion(contexto);
+  await trx(
+    'UPDATE reservas_quincho SET estado = ?, fecha_uso = ? WHERE id = ? AND estado = ?',
+    ['usado', getNowInBusinessTimezone(), id, 'activa']
+  );
+  const rows = await trx<Record<string, unknown>[]>(`${SELECT_RESERVA} WHERE r.id = ?`, [id]);
+  return mapReserva(rows[0]);
+}
+
+/**
+ * Devuelve todas las reservas activas cuya fecha ya pasó para marcarlas como
+ * usadas. Solo actualiza las que todavía están activas.
+ */
+export async function buscarReservasPasadasActivas(): Promise<ReservaQuincho[]> {
+  const hoy = fechaDeNegocio();
+  const rows = await query<Record<string, unknown>[]>(
+    `${SELECT_RESERVA} WHERE r.fecha_reserva < ? AND r.estado = ?`,
+    [hoy, 'activa']
+  );
+  return rows.map(mapReserva);
+}
+
+/**
+ * Marca de una sola vez todas las reservas activas cuya fecha ya pasó como usadas.
+ */
+export async function marcarTodasLasPasadasComoUsado(): Promise<number> {
+  const hoy = fechaDeNegocio();
+  const result = await query(
+    'UPDATE reservas_quincho SET estado = ?, fecha_uso = ? WHERE fecha_reserva < ? AND estado = ?',
+    ['usado', getNowInBusinessTimezone(), hoy, 'activa']
+  );
+  // PostgreSQL returns { affectedRows } or similar; use changeRows if available
+  return Number((result as any).affectedRows ?? (result as any).changeRows ?? 0);
 }

@@ -23,7 +23,7 @@ interface AdvancesTableProps {
   isAdmin?: boolean;
   canDeliver?: boolean;
   onAction?: (id: string | number, action: 'approve' | 'reject' | 'deliver') => Promise<any>;
-  activeTab?: 'pending' | 'paid';
+  activeTab?: 'solicitudes' | 'porCobrar' | 'cobrado';
 }
 
 function MobileSkeletons({ count = 5 }: { count?: number }) {
@@ -189,6 +189,12 @@ function AdvancesSection({
   );
 }
 
+const TAB_LABELS: Record<string, string> = {
+  solicitudes: 'Solicitudes',
+  porCobrar: 'Por Cobrar',
+  cobrado: 'Cobrados'
+};
+
 export default function AdvancesTable({
   loading,
   advances,
@@ -196,53 +202,31 @@ export default function AdvancesTable({
   isAdmin = false,
   canDeliver = false,
   onAction,
-  activeTab = 'pending'
+  activeTab = 'solicitudes'
 }: AdvancesTableProps) {
-  const { filteredAdvances, paidAdvances, pendingAdvances, getStatusBadge } = useAdvancesTable(
-    advances,
-    activeTab
-  );
+  const { filteredAdvances, getStatusBadge } = useAdvancesTable(advances, activeTab);
 
   if (filteredAdvances.length === 0 && !loading) {
     return (
       <Card className='border-none shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
         <CardContent className='flex flex-col items-center justify-center py-16 text-gray-500'>
           <Wallet className='h-12 w-12 mb-4 opacity-20' />
-          <p className='text-lg font-medium'>
-            No hay anticipos {activeTab === 'pending' ? 'por cobrar' : 'cobrados'}
-          </p>
+          <p className='text-lg font-medium'>No hay {TAB_LABELS[activeTab] ?? 'anticipos'}</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className='space-y-6'>
-      {(pendingAdvances.length > 0 || loading) && (
-        <AdvancesSection
-          title={activeTab === 'pending' ? 'Por Cobrar' : 'Cobrados'}
-          advancesToRender={pendingAdvances}
-          loading={loading}
-          pageSize={pageSize}
-          isAdmin={isAdmin}
-          canDeliver={canDeliver}
-          onAction={onAction}
-          getStatusBadge={getStatusBadge}
-        />
-      )}
-
-      {(paidAdvances.length > 0 || loading) && (
-        <AdvancesSection
-          title={activeTab === 'pending' ? 'Entregados' : 'Cobrados en Planilla'}
-          advancesToRender={paidAdvances}
-          loading={loading}
-          pageSize={pageSize}
-          isAdmin={isAdmin}
-          canDeliver={canDeliver}
-          onAction={onAction}
-          getStatusBadge={getStatusBadge}
-        />
-      )}
-    </div>
+    <AdvancesSection
+      title={TAB_LABELS[activeTab]}
+      advancesToRender={filteredAdvances}
+      loading={loading}
+      pageSize={pageSize}
+      isAdmin={isAdmin}
+      canDeliver={canDeliver}
+      onAction={onAction}
+      getStatusBadge={getStatusBadge}
+    />
   );
 }

@@ -37,16 +37,20 @@ export function useOvertimeTable({ overtime }: UseOvertimeTableProps) {
       const existing = groupedMap.get(item.id_usuario);
       if (existing) {
         existing.hora += Number(item.hora) || 0;
-        existing.total += Number(item.total) || 0;
+        // Solo sumar al total a pagar los registros que faltan por pagar (estado === 1)
+        if (Number(item.estado) === 1) {
+          existing.total += Number(item.total) || 0;
+        }
 
         if (new Date(item.fecha_crea) > new Date(existing.fecha_crea)) {
           existing.fecha_crea = item.fecha_crea;
         }
       } else {
+        const initialTotal = Number(item.estado) === 1 ? (Number(item.total) || 0) : 0;
         groupedMap.set(item.id_usuario, {
           ...item,
           hora: Number(item.hora) || 0,
-          total: Number(item.total) || 0
+          total: initialTotal
         });
       }
     });

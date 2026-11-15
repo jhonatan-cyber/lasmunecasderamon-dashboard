@@ -9,7 +9,9 @@ import { ApiResponse } from './api-response';
 import { normalizeJsonResponseDates } from './date-response';
 import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
 import { sendNotificationToAll } from './sseService';
-import logger from '@/lib/utils/logger';
+import logger, { setRequestId, getRequestId, clearRequestId } from '@/lib/utils/logger';
+import { withRateLimit, rateLimiters } from './rateLimit';
+import { sanitizeBody, scanForSQLInjection } from './sanitize';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -144,8 +146,29 @@ export function withRoute<M extends PermissionModule>(
       : null;
 
   return async (request: Request, context: { params: any }): Promise<Response> => {
+    // ─── Request ID: trazabilidad en todos los logs ───────────────────
+    // Reutiliza el ID si el cliente lo envía (ej: desde el app), o genera uno.
+    const incomingRequestId = request.headers.get('x-request-id');
+    setRequestId(incomingRequestId || null);
+    const requestId = getRequestId();
+
     try {
       let user: AuthenticatedUser | undefined;
+
+      // ─── Rate Limiting ──────────────────────────────────────────────
+      // Los endpoints de auth usan un límite más estricto para prevenir
+      // fuerza bruta; las mutaciones usan un límite medio; el resto, general.
+      const isAuthPath = /\/api\/auth\//.test(new URL(request.url).pathname);
+      const limiter = isAuthPath
+        ? rateLimiters.auth
+        : ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)
+          ? rateLimiters.mutation
+          : rateLimiters.general;
+
+      const rateLimitResult = withRateLimit(request, limiter);
+      if (rateLimitResult?.response) {
+        return rateLimitResult.response;
+      }
 
       // ─── Input validation (all routes, not just auth'd) ────────────
       if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
@@ -187,6 +210,24 @@ export function withRoute<M extends PermissionModule>(
           // Reconstruct request with sanitized URL
           const sanitizedUrl = url.toString();
           request = new Request(sanitizedUrl, request);
+        }
+
+        // Sanitización avanzada del body JSON: null bytes, XSS en claves,
+        // y detección de patrones de inyección SQL (solo alerta, no bloquea).
+        if (contentType.includes('application/json')) {
+          try {
+            const bodyPreview = await request.clone().json();
+            const sqlWarnings = scanForSQLInjection(bodyPreview);
+            if (sqlWarnings.length > 0) {
+              logger.warn('[SQL_INJECTION_DETECTED]', {
+                endpoint: `${request.method} ${url.pathname}`,
+                fields: sqlWarnings,
+                ip: request.headers.get('x-forwarded-for')
+              });
+            }
+          } catch {
+            // Si no se puede parsear JSON, el handler lo manejará
+          }
         }
       }
 
@@ -320,6 +361,9 @@ export function withRoute<M extends PermissionModule>(
       if (perfilActivo()) {
         normalizada.headers.set('x-lmr-consultas', JSON.stringify(instantaneaPerfil(pedirPerfil)));
       }
+      // Request ID en la respuesta para trazabilidad del cliente
+      normalizada.headers.set('x-request-id', requestId);
+      clearRequestId();
       return normalizada;
     } catch (error: unknown) {
       const url = new URL(request.url);
@@ -352,6 +396,8 @@ export function withRoute<M extends PermissionModule>(
       }
 
       return ApiResponse.error(error);
+    } finally {
+      clearRequestId();
     }
   };
 }

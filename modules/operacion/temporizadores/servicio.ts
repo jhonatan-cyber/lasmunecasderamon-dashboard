@@ -53,7 +53,7 @@ export async function revisarTemporizadores(ahora: Date): Promise<ResultadoTempo
         id: item.id,
         type: item.type,
         room_name: item.room_name
-      });
+      } as any);
     }
 
     if (remainingMin <= 0 && !item.push_notified_end) {
@@ -84,7 +84,7 @@ export async function revisarTemporizadores(ahora: Date): Promise<ResultadoTempo
           id: item.id,
           type: item.type,
           room_name: item.room_name
-        });
+        } as any);
       });
       await ejecutarEfectosConfirmados(tareas);
     }

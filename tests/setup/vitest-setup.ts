@@ -16,9 +16,11 @@ const loggerMock = {
   debug: vi.fn(),
   captureException: vi.fn()
 };
+const setRequestIdMock = vi.fn();
 vi.mock('@/lib/utils/logger', () => ({
   default: loggerMock,
-  logger: loggerMock
+  logger: loggerMock,
+  setRequestId: setRequestIdMock
 }));
 
 vi.mock('next/navigation', () => ({

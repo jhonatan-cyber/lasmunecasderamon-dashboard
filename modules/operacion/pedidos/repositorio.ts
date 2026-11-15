@@ -302,7 +302,7 @@ export class OrderRepository {
         meseroId,
         total: totalBasePedido + propinaNormalizada
       });
-      sendNotificationToAll('new_order', notificationData);
+      sendNotificationToAll('new_order', notificationData as any);
 
       const pushBody = buildOrderPushBody({
         codigo,
@@ -339,7 +339,7 @@ export class OrderRepository {
 
       sendNotificationToAll(
         'order_deleted',
-        buildOrderDeletionNotificationData(id, String(pedido.mesero_id))
+        buildOrderDeletionNotificationData(id, String(pedido.mesero_id)) as any
       );
     } catch (err) {
       logger.error('[OrderRepository] Error en delete:', { id, err });

@@ -28,7 +28,7 @@ async function processPresentacionFotos(
   return fotos;
 }
 
-function countPresentaciones(payload: any): number {
+function countPresentaciones(payload: Record<string, unknown>): number {
   try {
     const raw = payload.presentaciones;
     const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -76,7 +76,7 @@ export const POST = withRoute(
   { auth: true, audit: true, module: 'products', action: 'write' },
   async (request: Request) => {
     const contentType = request.headers.get('content-type') || '';
-    let payload: any = {};
+    let payload: Record<string, unknown> = {};
     let fotoName = 'default.png';
 
     if (contentType.includes('multipart/form-data')) {
@@ -101,13 +101,13 @@ export const POST = withRoute(
       );
     } else {
       payload = await request.json();
-      fotoName = payload.foto || 'default.png';
+      fotoName = (payload.foto as string) || 'default.png';
       if (fotoName.startsWith('http')) {
         fotoName = await processAndSaveImage(fotoName, 'product');
       }
     }
 
-    const data = await ProductService.createProduct(payload, fotoName);
+    const data = await ProductService.createProduct(payload as any, fotoName);
     return NextResponse.json(
       { success: true, message: 'Producto creado correctamente', data },
       { status: 201 }
@@ -122,7 +122,7 @@ export const PUT = withRoute(
     const id = searchParams.get('id');
 
     let targetId = id;
-    let payload: any = {};
+    let payload: Record<string, unknown> = {};
     let fotoName: string | undefined;
 
     const contentType = request.headers.get('content-type') || '';
@@ -151,9 +151,9 @@ export const PUT = withRoute(
       );
     } else {
       payload = await request.json();
-      targetId = targetId || payload.id;
+      targetId = targetId || (payload.id as string);
       delete payload.id;
-      fotoName = payload.foto;
+      fotoName = payload.foto as string;
       if (fotoName && fotoName.startsWith('http')) {
         fotoName = await processAndSaveImage(fotoName, `product_${targetId}`);
       }

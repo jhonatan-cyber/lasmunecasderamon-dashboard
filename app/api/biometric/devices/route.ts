@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { createBiometricDevice, listBiometricDevices } from '@/modules/asistencia';
-import type { BiometricMarca } from '@/modules/asistencia';
+import { BiometricDeviceCreateSchema } from '@/lib/business/schemas';
+import { validateOrResponse } from '@/lib/api/validate';
 
 export const dynamic = 'force-dynamic';
 export const GET = withRoute({ auth: true, access: 'administrator' }, async () => {
@@ -15,21 +16,16 @@ export const POST = withRoute(
   { auth: true, access: 'administrator', audit: true },
   async (request, { user }) => {
     const body = await request.json();
-    const marca: BiometricMarca = body?.marca === 'dahua' ? 'dahua' : 'zkteco';
-    if (!body?.nombre || !body?.serial) {
-      return NextResponse.json(
-        { success: false, message: 'Nombre y serial son requeridos', code: 'VALIDATION' },
-        { status: 400 }
-      );
-    }
+    const validated = validateOrResponse(BiometricDeviceCreateSchema, body);
+    if (validated instanceof NextResponse) return validated;
 
     const device = await createBiometricDevice(
       {
-        nombre: String(body.nombre),
-        marca,
-        modelo: body.modelo ? String(body.modelo) : undefined,
-        serial: String(body.serial),
-        ip: body.ip ? String(body.ip) : undefined
+        nombre: validated.nombre,
+        marca: validated.marca,
+        modelo: validated.modelo || undefined,
+        serial: validated.serial ?? '',
+        ip: validated.ip || undefined
       },
       user.id
     );

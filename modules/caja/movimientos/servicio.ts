@@ -2,7 +2,8 @@ import {
   obtenerCajaActiva as obtenerCajaActivaInterno,
   registrarMovimientoCobro as registrarMovimientoCobroInterno,
   ajustarIvaCaja as ajustarIvaCajaInterno,
-  leerFondoCaja as leerFondoCajaInterno
+  leerFondoCaja as leerFondoCajaInterno,
+  obtenerEfectivoEnCaja as obtenerEfectivoEnCajaInterno
 } from './repositorio';
 
 export function obtenerCajaActiva(...args: Parameters<typeof obtenerCajaActivaInterno>) {
@@ -21,4 +22,8 @@ export function ajustarIvaCaja(...args: Parameters<typeof ajustarIvaCajaInterno>
 
 export function leerFondoCaja(...args: Parameters<typeof leerFondoCajaInterno>) {
   return leerFondoCajaInterno(...args);
+}
+
+export function obtenerEfectivoEnCaja(...args: Parameters<typeof obtenerEfectivoEnCajaInterno>) {
+  return obtenerEfectivoEnCajaInterno(...args);
 }

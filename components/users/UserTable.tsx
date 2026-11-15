@@ -30,6 +30,7 @@ interface UserTableProps {
   onActivate: (userId: string | number) => void;
   onDeactivate: (userId: string | number) => void;
   onDelete: (userId: string | number) => void;
+  onRelease?: (userId: string | number) => void;
   formatCurrency: (
     value: number | string | undefined,
     type: 'sueldo' | 'aporte' | 'descuento'
@@ -49,6 +50,7 @@ export function UserTable({
   onActivate,
   onDeactivate,
   onDelete,
+  onRelease,
   formatDate,
   getRoleBadgeColor,
   currentPage,
@@ -111,6 +113,7 @@ export function UserTable({
                     onActivate={onActivate}
                     onDeactivate={onDeactivate}
                     onDelete={onDelete}
+                    onRelease={onRelease}
                     {...permissions}
                     hasAnyAction={hasAnyAction}
                   />
@@ -206,6 +209,7 @@ export function UserTable({
                     onActivate={onActivate}
                     onDeactivate={onDeactivate}
                     onDelete={onDelete}
+                    onRelease={onRelease}
                     {...permissions}
                     hasAnyAction={hasAnyAction}
                   />

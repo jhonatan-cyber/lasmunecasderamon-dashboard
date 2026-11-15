@@ -33,7 +33,8 @@ const reservaDelDia: ReservaQuincho = {
   usuario_id: null,
   fecha_crea: '2026-10-01T10:00:00.000Z',
   fecha_anulacion: null,
-  anulada_por: null
+  anulada_por: null,
+  fecha_uso: null
 };
 
 const reservaAnulada: ReservaQuincho = {

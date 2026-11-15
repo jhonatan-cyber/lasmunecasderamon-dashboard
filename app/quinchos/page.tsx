@@ -41,9 +41,11 @@ export default function QuinchosPage() {
    * registro con esa fecha ya cargada. En días pasados no se registra nada.
    */
   const handleSelectDay = (fecha: string, reservasDelDia: ReservaQuincho[]) => {
-    const activas = reservasDelDia.filter(reserva => reserva.estado === 'activa');
+    const activasOUsadas = reservasDelDia.filter(
+      reserva => reserva.estado === 'activa' || reserva.estado === 'usado'
+    );
     const esPasado = fecha < getTodayDateKey();
-    const verDetalle = activas.length > 0 || (esPasado && reservasDelDia.length > 0);
+    const verDetalle = activasOUsadas.length > 0 || (esPasado && reservasDelDia.length > 0);
 
     if (verDetalle || !puedeCrear) {
       setFechaDetalle(fecha);
