@@ -9,6 +9,24 @@ process.env.JWT_REFRESH_SECRET ??= 'unit-test-refresh-68fe2975b0a1c43d';
  * evita fallos parciales («default.info is not a function») en helpers que
  * registran por consola o reportan a Sentry (lib/utils/logger.ts).
  */
+vi.mock('@/lib/utils/logger', () => ({
+  default: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    captureException: vi.fn()
+  },
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    captureException: vi.fn()
+  },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id')
+}));
 const loggerMock = {
   info: vi.fn(),
   warn: vi.fn(),
@@ -16,12 +34,6 @@ const loggerMock = {
   debug: vi.fn(),
   captureException: vi.fn()
 };
-const setRequestIdMock = vi.fn();
-vi.mock('@/lib/utils/logger', () => ({
-  default: loggerMock,
-  logger: loggerMock,
-  setRequestId: setRequestIdMock
-}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
