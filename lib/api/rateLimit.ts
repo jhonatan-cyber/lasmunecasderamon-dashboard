@@ -20,8 +20,7 @@ export class InMemoryRateLimiter {
     // Limpiar entradas expiradas periódicamente
     if (typeof window === 'undefined') {
       this.cleanupInterval = setInterval(() => this.cleanup(), this.cleanupMs);
-      // @ts-ignore - Node.js timer
-      this.cleanupInterval?.unref?.();
+      (this.cleanupInterval as NodeJS.Timeout).unref();
     }
   }
 
