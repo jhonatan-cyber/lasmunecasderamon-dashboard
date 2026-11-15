@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { toast } from 'sonner';
 import {
   Ban,
+  ChevronDown,
   DollarSign,
   Eye,
   LoaderCircle,
@@ -20,8 +21,10 @@ import { DatePicker } from '@/components/shared/DatePicker';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -52,6 +55,16 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { fechaDeNegocio } from '@/lib/business/timezoneService';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
+import {
+  CreditCard,
+  Clock
+} from 'lucide-react';
 
 type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
 /** Anulada a mano se devuelve; anulada por el cierre del turno se cobra en caja. */
@@ -143,18 +156,10 @@ const estadoGrupo = (grupo: GrupoEntrada) => {
   const anuladas = grupo.anuladasManuales.length + grupo.anuladasCierre.length;
   if (grupo.pendientes.length === 0 && anuladas === 0) return 'Entregada';
   const partes: string[] = [];
-  if (grupo.pendientes.length > 0)
-    partes.push(`${grupo.pendientes.length} pendiente${grupo.pendientes.length === 1 ? '' : 's'}`);
-  if (grupo.entregadas.length > 0)
-    partes.push(`${grupo.entregadas.length} entregada${grupo.entregadas.length === 1 ? '' : 's'}`);
-  if (grupo.anuladasManuales.length > 0)
-    partes.push(
-      `${grupo.anuladasManuales.length} devuelta${grupo.anuladasManuales.length === 1 ? '' : 's'}`
-    );
-  if (grupo.anuladasCierre.length > 0)
-    partes.push(
-      `${grupo.anuladasCierre.length} anulada${grupo.anuladasCierre.length === 1 ? '' : 's'} al cierre`
-    );
+  if (grupo.pendientes.length > 0) partes.push('Pendiente');
+  if (grupo.entregadas.length > 0) partes.push('Entregada');
+  if (grupo.anuladasManuales.length > 0) partes.push('Devuelta');
+  if (grupo.anuladasCierre.length > 0) partes.push('Anulada al cierre');
   return partes.join(' · ');
 };
 
@@ -182,6 +187,8 @@ export default function EntradasPage() {
   const [saving, setSaving] = useState(false);
   const [anulandoGrupoId, setAnulandoGrupoId] = useState<string | null>(null);
   const [grupoAAnular, setGrupoAAnular] = useState<GrupoEntrada | null>(null);
+  const [motivoAnulacion, setMotivoAnulacion] = useState('');
+  const [formExpanded, setFormExpanded] = useState(true);
   const operacionEntrada = useRef<{ signature: string; key: string } | null>(null);
   const { hasOpenCaja } = useCashRegisterStatus();
   const { hasPermission } = useUserPermissions();
@@ -364,33 +371,43 @@ export default function EntradasPage() {
   const anularPendientes = (grupo: GrupoEntrada) => {
     if (grupo.pendientes.length === 0) return;
     setGrupoAAnular(grupo);
+    setMotivoAnulacion('');
   };
 
   const confirmarAnulacion = async () => {
     const grupo = grupoAAnular;
     if (!grupo || grupo.pendientes.length === 0) return;
+    if (!motivoAnulacion.trim()) {
+      toast.error('Debes ingresar el motivo de la anulación');
+      return;
+    }
     setAnulandoGrupoId(grupo.id);
-    let anuladas = 0;
+    let solicitadas = 0;
     try {
       for (const pendiente of grupo.pendientes) {
-        const response = await fetch(`/api/tickets/${pendiente.id}/anular`, { method: 'POST' });
+        const response = await fetch(`/api/tickets/${pendiente.id}/anular`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motivo: motivoAnulacion.trim() })
+        });
         const result = await response.json();
         if (!response.ok || !result.success)
-          throw new Error(result.message || 'No se pudo anular la entrada');
-        anuladas += 1;
+          throw new Error(result.message || 'No se pudo solicitar la anulación');
+        solicitadas += 1;
       }
       toast.success(
-        anuladas === 1
-          ? 'Entrada anulada y dinero devuelto'
-          : `${anuladas} entradas anuladas y dinero devuelto`
+        solicitadas === 1
+          ? 'Solicitud enviada al administrador'
+          : `${solicitadas} solicitudes enviadas al administrador`
       );
       setGrupoAAnular(null);
+      setMotivoAnulacion('');
       await cargar();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al anular las entradas');
-      // Si una parte ya se anuló, el grupo del diálogo quedó desactualizado.
-      if (anuladas > 0) {
+      toast.error(error instanceof Error ? error.message : 'Error al solicitar la anulación');
+      if (solicitadas > 0) {
         setGrupoAAnular(null);
+        setMotivoAnulacion('');
         await cargar();
       }
     } finally {
@@ -435,7 +452,7 @@ export default function EntradasPage() {
         </div>
       </header>
 
-      <section aria-label='Resumen de entradas' className='grid gap-3 sm:grid-cols-2'>
+      <section aria-label='Resumen de entradas' className='grid gap-3 grid-cols-2'>
         <MetricCard
           icon={<Ticket />}
           badge='Registros'
@@ -455,17 +472,30 @@ export default function EntradasPage() {
       </section>
 
       {canCreate && (
-        <form
-          onSubmit={registrar}
-          className='space-y-4 rounded-2xl border bg-card p-4 shadow-xs sm:p-5'
-        >
-          <div>
-            <h2 className='font-semibold'>Registrar entrada</h2>
-            <p className='text-xs text-muted-foreground'>
-              En la puerta sólo se cobra la entrada; la bebida se elige y se entrega en la barra.
-            </p>
-          </div>
-          <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-5'>
+        <div className='rounded-2xl border bg-card shadow-xs overflow-hidden'>
+          <button
+            type='button'
+            onClick={() => setFormExpanded(expanded => !expanded)}
+            className='w-full flex items-center justify-between p-4 sm:p-5 hover:bg-muted/50 transition-colors'
+          >
+            <div>
+              <h2 className='font-semibold'>Registrar entrada</h2>
+              <p className='text-xs text-muted-foreground'>
+                En la puerta sólo se cobra la entrada; la bebida se elige y se entrega en la barra.
+              </p>
+            </div>
+            <ChevronDown
+              className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                formExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+          {formExpanded && (
+            <form
+              onSubmit={registrar}
+              className='px-4 pb-4 pt-0 space-y-4 sm:px-5 sm:pb-5'
+            >
+              <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-5'>
             <div className='space-y-2'>
               <Label htmlFor='entrada-cliente'>Cliente (opcional)</Label>
               <Input
@@ -582,7 +612,9 @@ export default function EntradasPage() {
               {saving ? 'Registrando…' : 'Registrar entrada'}
             </Button>
           </div>
-        </form>
+            </form>
+          )}
+        </div>
       )}
 
       <section className='space-y-4'>
@@ -606,7 +638,125 @@ export default function EntradasPage() {
             No hay entradas registradas para esta fecha.
           </p>
         ) : (
-          <Table className='w-full min-w-[820px] text-sm'>
+          <>
+            {/* Mobile card view */}
+            <div className='space-y-3 lg:hidden'>
+              {gruposEntradas.map(grupo => {
+                const primero = grupo.registros[0];
+                return (
+                  <Card key={grupo.id} className='shadow-xs hover:shadow-md transition-shadow'>
+                    <CardContent className='p-4'>
+                      <div className='space-y-3'>
+                        <div className='flex items-center justify-between'>
+                          <div className='space-y-1'>
+                            <h3 className='font-semibold text-base'>
+                              {primero.cliente_nombre || 'Sin nombre'}
+                            </h3>
+                            <p className='text-xs text-muted-foreground'>
+                              {primero.registrado_por_nombre} · {primero.hora}
+                            </p>
+                          </div>
+                          <Badge variant={varianteGrupo(grupo)} className='px-2 py-0 text-[11px]'>
+                            {estadoGrupo(grupo)}
+                          </Badge>
+                        </div>
+
+                        <div className='grid grid-cols-2 gap-2 text-sm'>
+                          <div className='flex items-center gap-2'>
+                            <Ticket className='text-muted-foreground h-4 w-4 shrink-0' />
+                            <span className='text-muted-foreground'>Entradas:</span>
+                            <span className='font-medium tabular-nums'>
+                              {grupo.registros.length}
+                            </span>
+                          </div>
+
+                          <div className='flex items-center gap-2'>
+                            <CreditCard className='text-muted-foreground h-4 w-4 shrink-0' />
+                            <span className='text-muted-foreground'>Pago:</span>
+                            <span className='font-medium capitalize'>{primero.metodo_pago}</span>
+                          </div>
+
+                          <div className='flex items-center gap-2 col-span-2'>
+                            <DollarSign className='text-muted-foreground h-4 w-4 shrink-0' />
+                            <span className='text-muted-foreground'>Monto:</span>
+                            <span className='font-semibold tabular-nums'>
+                              {formatCurrencyCLP(grupo.monto_entrada)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {grupo.entregadas.length > 0 && (
+                          <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+                            <Clock className='h-3.5 w-3.5 shrink-0' />
+                            {grupo.entregadas.map(entrega => (
+                              <span key={entrega.id}>
+                                {formatoEntrega(entrega.cover_entregada_at)}
+                                {entrega.cover_entregada_por_nombre
+                                  ? ` · ${entrega.cover_entregada_por_nombre}`
+                                  : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {grupo.venta_id && (
+                          <p className='text-xs text-muted-foreground'>
+                            Adicional {formatCurrencyCLP(grupo.monto_bebida_adicional)}
+                          </p>
+                        )}
+
+                        <div className='flex items-center gap-2 pt-2 border-t'>
+                          {canDeliver && grupo.pendientes.length > 0 && (
+                            <>
+                              <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                disabled={anulandoGrupoId === grupo.id}
+                                onClick={() => abrirEntregaMultiple(grupo)}
+                                className='flex-1 rounded-full bg-emerald-50 border-emerald-200 hover:bg-emerald-700 hover:text-white text-xs dark:border-emerald-900/40 dark:bg-emerald-950/20'
+                              >
+                                <Wine className='w-3 h-3 mr-1' />
+                                Entregar
+                              </Button>
+                              <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                disabled={anulandoGrupoId === grupo.id}
+                                onClick={() => anularPendientes(grupo)}
+                                className='flex-1 rounded-full bg-red-50 border-red-200 hover:bg-red-700 hover:text-white text-xs dark:border-red-900/40 dark:bg-red-950/20'
+                              >
+                                {anulandoGrupoId === grupo.id ? (
+                                  <LoaderCircle className='w-3 h-3 mr-1 animate-spin' />
+                                ) : (
+                                  <Ban className='w-3 h-3 mr-1' />
+                                )}
+                                Anular
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() => setGrupoDetalleId(grupo.id)}
+                            className='flex-1 rounded-full bg-blue-50 border-blue-200 hover:bg-blue-700 hover:text-white text-xs dark:border-blue-900/40 dark:bg-blue-950/20'
+                          >
+                            <Eye className='w-3 h-3 mr-1' />
+                            Detalle
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Desktop table view */}
+            <div className='hidden lg:block'>
+              <Table className='w-full min-w-[820px] text-sm'>
             <TableHeader className='bg-muted/50 text-muted-foreground'>
               <TableRow>
                 <TableHead>Cliente</TableHead>
@@ -634,7 +784,7 @@ export default function EntradasPage() {
                     <TableCell className='capitalize'>{primero.metodo_pago}</TableCell>
                     <TableCell>
                       <div className='space-y-1'>
-                        <Badge variant={varianteGrupo(grupo)}>{estadoGrupo(grupo)}</Badge>
+                        <Badge variant={varianteGrupo(grupo)} className='px-2 py-0 text-[11px]'>{estadoGrupo(grupo)}</Badge>
                         {grupo.entregadas.map(entrega => (
                           <p key={entrega.id} className='text-xs text-muted-foreground'>
                             {formatoEntrega(entrega.cover_entregada_at)}
@@ -653,82 +803,101 @@ export default function EntradasPage() {
                     <TableCell>{primero.registrado_por_nombre}</TableCell>
                     <TableCell className='tabular-nums'>{primero.hora}</TableCell>
                     <TableCell className='text-right'>
-                      <div className='flex flex-wrap items-center justify-end gap-2'>
-                        {canDeliver && grupo.pendientes.length > 0 && (
-                          <Button
-                            type='button'
-                            variant='ghost'
-                            size='icon'
-                            disabled={anulandoGrupoId === grupo.id}
-                            title={
-                              grupo.pendientes.length > 1
-                                ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
-                                : 'Entregar la entrada pendiente'
-                            }
-                            aria-label={
-                              grupo.pendientes.length > 1
-                                ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
-                                : 'Entregar la entrada pendiente'
-                            }
-                            onClick={() => abrirEntregaMultiple(grupo)}
-                            className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
-                          >
-                            <Wine className='h-4 w-4' />
-                            {grupo.pendientes.length > 1 && (
-                              <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground'>
-                                {grupo.pendientes.length}
-                              </span>
-                            )}
-                          </Button>
-                        )}
-                        {canDeliver && grupo.pendientes.length > 0 && (
-                          <Button
-                            type='button'
-                            variant='ghost'
-                            size='icon'
-                            disabled={anulandoGrupoId === grupo.id}
-                            title={
-                              grupo.pendientes.length > 1
-                                ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
-                                : 'Anular y devolver la entrada pendiente'
-                            }
-                            aria-label={
-                              grupo.pendientes.length > 1
-                                ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
-                                : 'Anular y devolver la entrada pendiente'
-                            }
-                            onClick={() => anularPendientes(grupo)}
-                            className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-destructive/10 hover:text-destructive hover:shadow-md active:scale-95'
-                          >
-                            {anulandoGrupoId === grupo.id ? (
-                              <LoaderCircle className='h-4 w-4 animate-spin' />
-                            ) : (
-                              <Ban className='h-4 w-4' />
-                            )}
-                            {grupo.pendientes.length > 1 && anulandoGrupoId !== grupo.id && (
-                              <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-white'>
-                                {grupo.pendientes.length}
-                              </span>
-                            )}
-                          </Button>
-                        )}
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='icon'
-                          aria-label={`Ver detalle de ${grupo.registros.length} entrada(s)`}
-                          onClick={() => setGrupoDetalleId(grupo.id)}
-                          className='rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
-                        >
-                          <Eye className='h-4 w-4' />
-                        </Button>
-                      </div>
+                      <TooltipProvider delayDuration={300}>
+                        <div className='flex flex-wrap items-center justify-end gap-2'>
+                          {canDeliver && grupo.pendientes.length > 0 && (
+                            <Tooltip key='entregar'>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type='button'
+                                  variant='ghost'
+                                  size='icon'
+                                  disabled={anulandoGrupoId === grupo.id}
+                                  aria-label={
+                                    grupo.pendientes.length > 1
+                                      ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
+                                      : 'Entregar la entrada pendiente'
+                                  }
+                                  onClick={() => abrirEntregaMultiple(grupo)}
+                                  className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
+                                >
+                                  <Wine className='h-4 w-4' />
+                                  {grupo.pendientes.length > 1 && (
+                                    <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground'>
+                                      {grupo.pendientes.length}
+                                    </span>
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side='left'>
+                                {grupo.pendientes.length > 1
+                                  ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
+                                  : 'Entregar la entrada pendiente'}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {canDeliver && grupo.pendientes.length > 0 && (
+                            <Tooltip key='anular'>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type='button'
+                                  variant='ghost'
+                                  size='icon'
+                                  disabled={anulandoGrupoId === grupo.id}
+                                  aria-label={
+                                    grupo.pendientes.length > 1
+                                      ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
+                                      : 'Anular y devolver la entrada pendiente'
+                                  }
+                                  onClick={() => anularPendientes(grupo)}
+                                  className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-destructive/10 hover:text-destructive hover:shadow-md active:scale-95'
+                                >
+                                  {anulandoGrupoId === grupo.id ? (
+                                    <LoaderCircle className='h-4 w-4 animate-spin' />
+                                  ) : (
+                                    <Ban className='h-4 w-4' />
+                                  )}
+                                  {grupo.pendientes.length > 1 && anulandoGrupoId !== grupo.id && (
+                                    <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-white'>
+                                      {grupo.pendientes.length}
+                                    </span>
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side='left'>
+                                {grupo.pendientes.length > 1
+                                  ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
+                                  : 'Anular y devolver la entrada pendiente'}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type='button'
+                                variant='ghost'
+                                size='icon'
+                                aria-label={`Ver detalle de ${grupo.registros.length} entrada(s)`}
+                                onClick={() => setGrupoDetalleId(grupo.id)}
+                                className='rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
+                              >
+                                <Eye className='h-4 w-4' />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side='left'>
+                              Ver detalle de {grupo.registros.length} entrada(s)
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TooltipProvider>
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
+            </div>
+          </>
         )}
       </section>
       <Dialog open={Boolean(grupoDetalle)} onOpenChange={open => !open && setGrupoDetalleId(null)}>
@@ -894,15 +1063,18 @@ export default function EntradasPage() {
       <Dialog
         open={Boolean(grupoAAnular)}
         onOpenChange={open => {
-          if (!open && !anulandoGrupoId) setGrupoAAnular(null);
+          if (!open && !anulandoGrupoId) {
+            setGrupoAAnular(null);
+            setMotivoAnulacion('');
+          }
         }}
       >
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle>Anular entradas pendientes</DialogTitle>
+            <DialogTitle>Solicitar anulación de entradas</DialogTitle>
             <DialogDescription>
-              El dinero de estas entradas se devuelve al cliente y no entra a la caja. Esta acción
-              no se puede deshacer.
+              Se enviará una solicitud al administrador para que apruebe la devolución. La entrada
+              permanece pendiente hasta que sea aprobada.
             </DialogDescription>
           </DialogHeader>
           {grupoAAnular && (
@@ -934,12 +1106,26 @@ export default function EntradasPage() {
                   )}
                 </span>
               </div>
+              <div className='space-y-2'>
+                <Label htmlFor='motivo-anulacion'>Motivo de la anulación</Label>
+                <Textarea
+                  id='motivo-anulacion'
+                  placeholder='Ej: El cliente no asistió'
+                  value={motivoAnulacion}
+                  onChange={e => setMotivoAnulacion(e.target.value)}
+                  rows={3}
+                  disabled={Boolean(anulandoGrupoId)}
+                />
+              </div>
             </div>
           )}
           <DialogFooter className='gap-2 sm:justify-end'>
             <Button
               variant='outline'
-              onClick={() => setGrupoAAnular(null)}
+              onClick={() => {
+                setGrupoAAnular(null);
+                setMotivoAnulacion('');
+              }}
               disabled={Boolean(anulandoGrupoId)}
             >
               Cancelar
@@ -947,15 +1133,15 @@ export default function EntradasPage() {
             <Button
               variant='destructive'
               onClick={() => void confirmarAnulacion()}
-              disabled={Boolean(anulandoGrupoId)}
+              disabled={Boolean(anulandoGrupoId) || !motivoAnulacion.trim()}
             >
               {anulandoGrupoId ? (
                 <>
                   <LoaderCircle className='mr-2 h-4 w-4 animate-spin' />
-                  Anulando…
+                  Enviando…
                 </>
               ) : (
-                'Devolver y anular'
+                'Solicitar anulación'
               )}
             </Button>
           </DialogFooter>

@@ -35,8 +35,8 @@ export type SseUserId = string | number;
 export type SseAudience =
   | { readonly channel: 'staff' }
   | { readonly channel: 'role'; readonly roles: readonly StaffRole[] }
-  | { readonly channel: 'user'; readonly idFrom: (data: any) => SseUserId | null | undefined }
-  | { readonly channel: 'kiosk'; readonly project: (data: any) => Record<string, unknown> };
+  | { readonly channel: 'user'; readonly idFrom: (data: Record<string, unknown> | undefined) => SseUserId | null | undefined }
+  | { readonly channel: 'kiosk'; readonly project: (data: Record<string, unknown> | undefined) => Record<string, unknown> };
 
 export interface SseEventPolicy {
   readonly audiences: readonly SseAudience[];
@@ -51,7 +51,7 @@ const ADMIN_ONLY: readonly SseAudience[] = [{ channel: 'role', roles: ['administ
 /**
  * Evento dirigido a una sola persona (el payload trae su id).
  */
-const ownUser = (): SseAudience => ({ channel: 'user', idFrom: data => data?.userId ?? data?.id });
+const ownUser = (): SseAudience => ({ channel: 'user', idFrom: (data: Record<string, unknown> | undefined) => (data?.userId as SseUserId) ?? (data?.id as SseUserId) });
 
 /** El personal que no administra: consume permisos y roles, no los edita. */
 const NON_ADMIN_STAFF: readonly SseAudience[] = [
@@ -189,13 +189,16 @@ export const SSE_EVENTS = {
       { channel: 'staff' },
       {
         channel: 'kiosk',
-        project: data => ({
-          user: {
-            id: data?.user?.id,
-            nombre: data?.user?.nombre,
-            apellido: data?.user?.apellido
-          }
-        })
+        project: data => {
+          const user = data?.user as Record<string, unknown> | undefined;
+          return {
+            user: {
+              id: user?.id,
+              nombre: user?.nombre,
+              apellido: user?.apellido
+            }
+          };
+        }
       }
     ]
   },
@@ -238,7 +241,7 @@ export function isSseEventType(type: string): type is SseEventType {
  */
 export interface SseEventInput {
   type: SseEventType;
-  data?: any;
+  data?: Record<string, unknown>;
   subscriber: SseSubscriberContext;
 }
 

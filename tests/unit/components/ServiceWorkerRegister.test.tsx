@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ServiceWorkerRegister, {
   debeRegistrarServiceWorker
@@ -26,8 +26,8 @@ const createRegistration = () => ({
   scope: 'http://localhost:3000/',
   addEventListener: vi.fn(),
   unregister: vi.fn(() => Promise.resolve(true)),
-  installing: null,
-  waiting: null,
+  installing: null as ServiceWorker | null,
+  waiting: null as ServiceWorker | null,
   active: null
 });
 
@@ -56,7 +56,7 @@ describe('ServiceWorkerRegister', () => {
     getRegistrations: ReturnType<typeof vi.fn>;
     addEventListener: ReturnType<typeof vi.fn>;
     removeEventListener: ReturnType<typeof vi.fn>;
-    controller: null;
+    controller: ServiceWorker | null;
   };
   let cacheKeys: string[];
   let deleteCache: ReturnType<typeof vi.fn>;
@@ -104,6 +104,38 @@ describe('ServiceWorkerRegister', () => {
     await waitFor(() => expect(register).toHaveBeenCalledTimes(1));
     expect(register.mock.calls[0][0]).toBe('/sw.js');
   });
+
+  it.each([true, false])(
+    'no muestra avisos al instalar una actualización (en espera: %s)',
+    async enEspera => {
+      const worker = Object.assign(new EventTarget(), {
+        state: 'installed',
+        postMessage: vi.fn()
+      }) as unknown as ServiceWorker;
+      serviceWorker.controller = worker;
+      registration.installing = worker;
+      registration.waiting = enEspera ? worker : null;
+
+      const { container } = render(<ServiceWorkerRegister />);
+
+      await waitFor(() =>
+        expect(registration.addEventListener).toHaveBeenCalledWith(
+          'updatefound',
+          expect.any(Function)
+        )
+      );
+      const onUpdateFound = registration.addEventListener.mock.calls.find(
+        ([type]) => type === 'updatefound'
+      )![1] as () => void;
+
+      await act(async () => {
+        onUpdateFound();
+        worker.dispatchEvent(new Event('statechange'));
+      });
+
+      expect(container).toBeEmptyDOMElement();
+    }
+  );
 
   it('no desregistra el SW cuando la promesa resuelve con el efecto ya limpiado', async () => {
     let resolver: (value: ReturnType<typeof createRegistration>) => void = () => {};

@@ -6,6 +6,7 @@ export {
   enviarPdfCierreCajaWhatsApp,
   enviarReporteCajaWhatsApp,
   enviarMensajeSolicitudAnulacion,
+  enviarMensajeSolicitudAnulacionEntrada,
   construirMensajeSolicitudCierreCaja,
   enviarMensajeSolicitudCierreCaja,
   enviarRecordatorioDevolucionSaldo

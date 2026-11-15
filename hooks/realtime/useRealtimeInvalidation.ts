@@ -48,8 +48,10 @@ export function useRealtimeInvalidation(): void {
   useSharedSSE(sseUrl, payload => {
     if (typeof payload?.type !== 'string') return;
 
+    // Al reconectar, no invalidar todas las queries: eso fuerza un refetch masivo
+    // que hace parecer que el dashboard "se recarga". Solo se sincronizan los
+    // datos realmente afectados por eventos posteriores.
     if (payload.type === 'connected') {
-      void queryClient.invalidateQueries();
       return;
     }
     schedule(realtimeTargets(payload));

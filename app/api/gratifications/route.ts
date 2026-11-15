@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { GratificacionService } from '@/modules/personal';
-import { ValidationError } from '@/lib/errors/errors';
+import { GratificacionCreateSchema } from '@/lib/business/schemas';
+import { validateOrResponse } from '@/lib/api/validate';
 
 // GET: el filtrado vive en el handler. Solo el administrador consulta listados
 // ajenos (con ?userId= o el completo); el resto —incluido el cajero— ve lo suyo
@@ -26,18 +27,17 @@ export const GET = withRoute(
 export const POST = withRoute(
   { auth: true, audit: true, module: 'gratificaciones', action: 'write' },
   async (request: Request, { user }: { params: any; user: any }) => {
-    const { usuario_id, monto, descripcion } = await request.json();
-    if (!usuario_id || !monto) {
-      throw new ValidationError('usuario_id y monto son requeridos', { usuario_id, monto });
-    }
+    const body = await request.json();
+    const validated = validateOrResponse(GratificacionCreateSchema, body);
+    if (validated instanceof NextResponse) return validated;
 
     const role = user.role?.toLowerCase() || '';
 
     if (role === 'cajero') {
       const created = await GratificacionService.request(
-        usuario_id,
-        Number(monto),
-        descripcion,
+        validated.usuario_id as string,
+        validated.monto,
+        validated.descripcion as string,
         // Se persiste como solicitante_id: es lo que permite al GET del cajero
         // devolver «lo suyo y lo que él solicitó» en vez del listado completo.
         user.id
@@ -47,7 +47,7 @@ export const POST = withRoute(
         {
           success: true,
           pendingApproval: true,
-          message: 'Solicitud de gratificaci?n enviada al administrador por WhatsApp',
+          message: 'Solicitud de gratificación enviada al administrador por WhatsApp',
           id: created?.id || null
         },
         { status: 201 }
@@ -55,16 +55,16 @@ export const POST = withRoute(
     }
 
     const created = await GratificacionService.create({
-      usuario_id,
-      monto: Number(monto),
-      descripcion,
+      usuario_id: validated.usuario_id as string,
+      monto: validated.monto,
+      descripcion: validated.descripcion as string,
       solicitante_id: user.id
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Gratificaci?n creada',
+        message: 'Gratificación creada',
         id: created?.id || null
       },
       { status: 201 }

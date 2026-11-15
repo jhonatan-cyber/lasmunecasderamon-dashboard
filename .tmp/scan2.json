@@ -1,0 +1,72 @@
+{
+  "schema": "floorplan/scan-result@1",
+  "ok": true,
+  "root": "D:/dev/lasmunecasderamon/lasmunecasderamon-dashboard",
+  "rootName": "lasmunecasderamon-dashboard",
+  "scanFile": "floorplan/.cache/scan.json",
+  "seconds": 31.1,
+  "repos": [
+    {
+      "path": ".",
+      "name": "lasmunecasderamon-dashboard",
+      "branch": "main",
+      "head": "e0a139db3fce754958ca01bd2f8470f78ad170f9",
+      "files": 2873,
+      "listed": true
+    }
+  ],
+  "skipped": [],
+  "counts": {
+    "files": 2873,
+    "outsideRepos": 0,
+    "byCategory": {
+      "code": 2429,
+      "asset": 145,
+      "other": 12,
+      "data": 64,
+      "docs": 201,
+      "config": 21,
+      "lock": 1
+    },
+    "code": {
+      "files": 2429,
+      "loc": 275111
+    },
+    "byLanguage": {
+      "javascript": {
+        "files": 136,
+        "loc": 19422
+      },
+      "typescript": {
+        "files": 2160,
+        "loc": 249756
+      },
+      "css": {
+        "files": 6,
+        "loc": 1590
+      },
+      "shell": {
+        "files": 2,
+        "loc": 76
+      },
+      "sql": {
+        "files": 122,
+        "loc": 4186
+      },
+      "powershell": {
+        "files": 3,
+        "loc": 81
+      }
+    },
+    "routes": 357,
+    "httpMatches": 853,
+    "importEdges": 7215,
+    "unresolvedImports": 39,
+    "externalPackages": 78,
+    "notRead": 0
+  },
+  "errors": [],
+  "warnings": [],
+  "problems": [],
+  "summary": "Floorplan scan of lasmunecasderamon-dashboard  (31.0s) -> floorplan/.cache/scan.json\n\nREPOS (1)\n  .                                          2873 files  main@e0a139db\n\nFILES  code 2429 · docs 201 · asset 145 · data 64 · config 21 · other 12 · lock 1\nCODE   typescript 2160 files/250k loc · javascript 136 files/19k loc · sql 122 files/4.2k loc · css 6 files/1.6k loc · powershell 3 files/81 loc · shell 2 files/76 loc\n\nCODE TREE (files / loc; dirs under 2% of code collapsed)\n  tests/                                                          564     80k\n    unit/                                                         443     60k\n      lib/                                                        202     28k\n        biometric/                                                 37    6.9k\n        api/                                                       44    6.2k\n        … 14 smaller dir(s), 118 files\n      components/                                                 106     14k\n        … 9 smaller dir(s), 23 files\n      hooks/                                                       64    7.6k\n        … 7 smaller dir(s), 17 files\n      modules/                                                     37    6.3k\n        … 9 smaller dir(s), 16 files\n      … 5 smaller dir(s), 33 files\n    postgres/                                                      48    9.7k\n      … 1 smaller dir(s), 1 files\n    integration/                                                   45    6.9k\n      … 1 smaller dir(s), 33 files\n    … 4 smaller dir(s), 26 files\n  components/                                                     533     79k\n    bar/                                                           34    7.3k\n      … 1 smaller dir(s), 12 files\n    settings/                                                      22    5.9k\n    shared/                                                        64    5.7k\n      … 3 smaller dir(s), 18 files\n    products/                                                      27    5.7k\n    … 38 smaller dir(s), 386 files\n  modules/                                                        288     37k\n    inventario/                                                    49    7.5k\n      … 14 smaller dir(s), 42 files\n    asistencia/                                                    56    7.3k\n      biometrico/                                                  41    6.2k\n        … 1 smaller dir(s), 2 files\n      … 2 smaller dir(s), 10 files\n    operacion/                                                     43    5.9k\n      … 9 smaller dir(s), 41 files\n    … 14 smaller dir(s), 140 files\n  app/                                                            412     23k\n    api/                                                          241    8.0k\n      … 59 smaller dir(s), 241 files\n    … 73 smaller dir(s), 164 files\n  hooks/                                                          166     17k\n    … 24 smaller dir(s), 166 files\n  lib/                                                            169     15k\n    … 19 smaller dir(s), 169 files\n  scripts/                                                         60    7.8k\n    … 4 smaller dir(s), 8 files\n  … 12 smaller dir(s), 220 files\n\nENTRYPOINT / DEPLOY CANDIDATES (62)\n  app/app/page.tsx\n  app/layout.tsx\n  app/page.tsx\n  components/accounts/index.ts\n  components/cash-register/details/index.ts\n  components/cash-register/index.ts\n  components/commissions/index.ts\n  components/gratifications/index.ts\n  components/header/index.ts\n  components/notifications/index.ts\n  components/orders/detail/index.ts\n  components/orders/forms/index.ts\n  components/orders/index.ts\n  components/orders/list/index.ts\n  components/sales/index.ts\n  components/shared/selects/index.ts\n  components/sidebar/index.ts\n  components/users/fields/index.ts\n  hooks/accounts/index.ts\n  hooks/api-docs/index.ts\n  hooks/attendance/index.ts\n  hooks/auth/index.ts\n  hooks/calendar/index.ts\n  hooks/cash-register/index.ts\n  hooks/clients/index.ts\n  hooks/hostess/index.ts\n  hooks/notifications/index.ts\n  hooks/orders/index.ts\n  hooks/private-rooms/index.ts\n  hooks/products/index.ts\n  … 32 more\n\nIMPORT EDGES  7215 file->file resolved, 39 unresolved. Heaviest directory->directory:\n     83  tests/unit/lib -> modules/asistencia/biometrico\n     77  tests/postgres -> lib/database\n     72  components/products -> components/ui\n     69  components/settings -> components/ui\n     65  tests/integration/legacy-db -> scripts\n     45  components/bar -> components/ui\n     43  components/shared -> components/ui\n     40  tests/unit/lib -> lib/business\n     37  components/attendance -> components/ui\n     37  components/cash-register -> components/ui\n     37  components/users -> components/ui\n     33  components/clients -> components/ui\n     32  components/sales -> components/ui\n     30  components/services -> components/ui\n     30  components/shared/selects -> components/ui\n     29  components/advances -> components/ui\n     29  components/ui -> lib/utils\n     27  components/orders -> components/ui\n     25  modules/asistencia -> modules/asistencia/biometrico\n     24  tests/unit/lib -> lib/utils\n     23  components/bar/transfer -> components/ui\n     23  components/gratifications -> components/ui\n     23  modules/asistencia/biometrico -> lib/database\n     22  app/api/cashregister -> lib/api\n     22  components/bar -> components/shared\n\nHTTP  357 route definitions, 853 call->route matches (cross-file links not visible to imports)\n     18  mcp/tests -> mcp/src\n     17  tests/unit/components -> app/api/products\n     13  tests/unit/lib -> app/api/auth\n     10  components/settings -> app/api/biometric\n      9  hooks/orders -> app/api/orders\n      9  tests/unit/components -> app/api/bar\n      8  hooks/products -> app/api/products\n      8  tests/unit/lib -> app/api/sales\n      8  tests/unit/lib -> app/api/services\n      8  tests/unit/lib -> app/api/accounts\n      7  hooks/cash-register -> app/api/cashregister\n      7  tests/unit/lib -> app/api/orders\n\nEXTERNAL PACKAGES (top 25 by importing files)\n  npm:vitest(510)  npm:react(503)  npm:lucide-react(376)  npm:next(345)  npm:@testing-library/react(159)  npm:sonner(109)  npm:dotenv(78)  npm:zod(77)  npm:@tanstack/react-query(40)  npm:pg(39)  npm:boneyard-js(33)  npm:server-only(33)  npm:react-hook-form(16)  npm:ioredis(14)  npm:@dnd-kit/sortable(12)  npm:@dnd-kit/core(11)  npm:@modelcontextprotocol/sdk(9)  npm:@playwright/test(9)  npm:@dnd-kit/utilities(8)  npm:recharts(7)  npm:argon2(7)  npm:class-variance-authority(6)  npm:sharp(6)  npm:typescript(6)  npm:@hookform/resolvers(5)\nEXTERNAL HOSTS called from code\n  192.168.0.11:3000(4)  github.com(2)  127.0.0.1:(2)  www.xn--lasmuecasderamon-bub.com(2)  wa.me(1)  ...(1)  xn--lasmuecasderamon-bub.com(1)  www.w3.org(1)  192.168.0.12:3001(1)  dashboard.xn--lasmuecasderamon-bub.com(1)\n\nLARGEST FILES\n    1.6k  tests/unit/modules/inventario-dominio.test.ts\n\nNext: read references/schema.md, explore entrypoints, then write floorplan/architecture.json and run build.mjs."
+}

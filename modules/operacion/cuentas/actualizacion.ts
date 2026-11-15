@@ -145,7 +145,7 @@ export async function actualizarCuentaEnUnidad(
           clienteNombre,
           tipoTransaccion: 'cuenta',
           status: 1
-        });
+        } as any);
       });
     }
   }
@@ -227,7 +227,7 @@ export async function actualizarCuentaEnUnidad(
             clienteNombre,
             tipoTransaccion: 'cuenta',
             status: 1
-          });
+          } as any);
         });
         aplazar(() => {
           sendNotificationToAll('timers_updated', { timestamp: bizNow });

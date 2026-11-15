@@ -241,6 +241,54 @@ Si hay varias solicitudes pendientes, responde "1 SI" o "1 NO" sobre la mas reci
   return resultado.enviados > 0;
 }
 
+export async function enviarMensajeSolicitudAnulacionEntrada(datos: {
+  clienteNombre: string;
+  cantidadEntradas: number;
+  metodoPago: string;
+  total: number;
+  solicitadoPor: string;
+  cajaApertura: number;
+  cajaEfectivo: number;
+  cajaTarjeta: number;
+  cajaTransferencia: number;
+  cajaDevoluciones: number;
+  token?: string;
+  baseUrl?: string;
+}): Promise<boolean> {
+  const efectivoEnCaja =
+    datos.cajaApertura + datos.cajaEfectivo + datos.cajaTarjeta + datos.cajaTransferencia - datos.cajaDevoluciones;
+
+  const routePath = ROUTES.CONFIRMAR_ANULACION_ENTRADA;
+  const actionUrl =
+    datos.token && datos.baseUrl
+      ? `${datos.baseUrl}${routePath}?token=${encodeURIComponent(datos.token)}`
+      : null;
+
+  const mensaje = `*ANULACION DE ENTRADA - PENDIENTE DE DEVOLUCION*
+
+• Cliente: ${datos.clienteNombre}
+• Entradas anuladas: ${datos.cantidadEntradas}
+• Metodo de pago: ${datos.metodoPago}
+• Total a devolver: ${formatCurrencyCLP(datos.total)}
+
+*Efectivo en caja:* ${formatCurrencyCLP(efectivoEnCaja)}
+• Apertura: ${formatCurrencyCLP(datos.cajaApertura)}
+• Efectivo acumulado: ${formatCurrencyCLP(
+    datos.cajaEfectivo + datos.cajaTarjeta + datos.cajaTransferencia - datos.cajaDevoluciones
+  )}
+
+*Solicitado por:* ${datos.solicitadoPor}
+
+${
+  actionUrl
+    ? `*Revisar solicitud:* ${actionUrl}`
+    : 'Responde "SI" para aprobar o "NO" para rechazar.'
+}`;
+
+  const resultado = await enviarWhatsAppAAdministradores(mensaje);
+  return resultado.enviados > 0;
+}
+
 /**
  * Datos del aviso de cierre de caja, compartidos por el aviso original y el reenvío.
  */

@@ -11,6 +11,7 @@ import { crearCuentaPrepagoRecarga, cerrarCuentasPrepagoSaldadas } from '@/modul
 import {
   crearReservaEnUnidad,
   marcarAnuladaEnUnidad,
+  marcarUsadoEnUnidad,
   reclamarReserva,
   type ReservaQuincho
 } from '@/modules/quinchos';
@@ -91,6 +92,18 @@ export function anularReservaQuincho(id: string, usuarioId: string): Promise<Res
       }
 
       return anulada;
+    })
+  );
+}
+
+/**
+ * Marca una reserva activa como usada cuando su fecha ya pasó.
+ * Una reserva usada no se puede anular porque el servicio ya se consumió.
+ */
+export function marcarReservaComoUsado(id: string): Promise<ReservaQuincho> {
+  return enUnaUnidad(unidad =>
+    unidad.ejecutar(async contexto => {
+      return marcarUsadoEnUnidad(id, contexto);
     })
   );
 }

@@ -33,6 +33,7 @@ function reserva(overrides: Partial<ReservaQuincho> = {}): ReservaQuincho {
     fecha_crea: '2026-10-01T10:00:00.000Z',
     fecha_anulacion: null,
     anulada_por: null,
+    fecha_uso: null,
     ...overrides
   };
 }
@@ -158,6 +159,23 @@ describe('QuinchosCalendar', () => {
     );
 
     expect(dia(fechaConReserva)).toHaveAccessibleName(/solo reservas anuladas/);
+  });
+
+  it('muestra las reservas usadas en el día y no las cuenta en el resumen', () => {
+    const usada = reserva({ id: 'r-usado', estado: 'usado', fecha_uso: '2026-11-15T10:00:00.000Z' });
+    render(
+      <QuinchosCalendar
+        reservas={[reserva(), usada]}
+        isLoading={false}
+        onSelectDay={vi.fn()}
+      />
+    );
+
+    // El día muestra ambas reservas (activa + usada) con nombres
+    const celda = within(dia(fechaConReserva));
+    expect(celda.getAllByText(/Ana Pérez/)).toHaveLength(2);
+    // El resumen cuenta solo la activa
+    expect(resumen().getByText('1')).toBeInTheDocument();
   });
 
   it('permite abrir el detalle de un día pasado que solo tiene reservas anuladas', () => {

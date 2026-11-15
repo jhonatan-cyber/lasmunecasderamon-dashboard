@@ -109,7 +109,7 @@ export async function cerrarCuenta(
     await trx('UPDATE habitaciones SET estado = 1 WHERE id_habitacion = ?', [
       cuenta[0].habitacion_id
     ]);
-    emitir(() => sendNotificationToAll('room_available', { roomId: cuenta[0].habitacion_id }));
+    emitir(() => sendNotificationToAll('room_available', { roomId: cuenta[0].habitacion_id ?? '' }));
   }
 
   emitir(() =>
@@ -117,7 +117,7 @@ export async function cerrarCuenta(
       servicioId: id,
       status: 0,
       tipoTransaccion: 'cuenta'
-    })
+    } as any)
   );
   emitir(() => sendNotificationToAll('timers_updated', { timestamp: now }));
 }

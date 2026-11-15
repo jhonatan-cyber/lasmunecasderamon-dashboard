@@ -20,3 +20,8 @@ export * from './extra-hours';
 export * from './annulment';
 export * from './category';
 export * from './quincho';
+export * from './gratificacion';
+export * from './permission';
+export * from './biometric';
+export * from './colacion';
+export * from './validationMessages';

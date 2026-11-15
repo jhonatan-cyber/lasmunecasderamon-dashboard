@@ -4,6 +4,7 @@ export interface Overtime {
   usuario: string;
   usuario_id: string; 
   usuario_foto: string;
+  nick: string;
   hora: number;
   monto: number;
   total: number;

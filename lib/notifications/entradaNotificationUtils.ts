@@ -28,7 +28,7 @@ export type EntradaRegistradaAviso = {
 
 export type EntradaActualizadaAviso = {
   entradaId: string;
-  accion: 'entregada' | 'anulada';
+  accion: 'entregada' | 'anulada' | 'solicitud_anulacion';
   clienteNombre: string | null;
   tipo?: 'cover' | 'upgrade';
   montoCobrarBarra?: number;
@@ -39,8 +39,8 @@ export function notificarEntradaRegistrada(entrada: EntradaRegistradaAviso): voi
   try {
     sendNotificationToAll('entrada_registrada', {
       id: entrada.id,
-      grupo_registro_id: entrada.grupoRegistroId,
-      cliente_nombre: entrada.clienteNombre,
+      grupo_registro_id: entrada.grupoRegistroId ?? '',
+      cliente_nombre: entrada.clienteNombre ?? '',
       cantidad: entrada.cantidad,
       monto_entrada: entrada.montoEntrada,
       monto_total: entrada.montoTotal,

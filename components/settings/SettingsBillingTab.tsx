@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Save, Settings as SettingsIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import {
   Select,
   SelectContent,
@@ -110,23 +110,33 @@ export function SettingsBillingTab() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <SettingsIcon className='h-5 w-5' />
-          Configuración de Facturación
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className='text-center py-8'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto'></div>
-            <p aria-live='polite' className='text-sm text-gray-600 mt-2'>
-              Cargando configuración...
-            </p>
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Configuración de Facturación'
+      className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+      title={
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+            <SettingsIcon className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
           </div>
-        ) : (
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+            Configuración de Facturación
+          </span>
+        </div>
+      }
+      description='IVA, propinas, moneda y split de pagos con tarjeta.'
+    >
+      {loading ? (
+        <div className='text-center py-8'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto'></div>
+          <p aria-live='polite' className='text-sm text-gray-600 mt-2'>
+            Cargando configuración...
+          </p>
+        </div>
+      ) : (
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='space-y-4'>
               <div>
                 <Label htmlFor='billing-iva' className='block text-sm font-medium mb-1'>
@@ -231,18 +241,17 @@ export function SettingsBillingTab() {
           </div>
         )}
 
-        <div className='mt-6 flex justify-end'>
-          <Button
-            variant='unstyled'
-            onClick={handleSave}
-            disabled={saving}
-            className='flex items-center gap-2 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:opacity-50'
-          >
-            <Save className='h-4 w-4' />
-            {saving ? 'Guardando...' : 'Guardar Configuración'}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <div className='mt-6 flex justify-end'>
+        <Button
+          variant='unstyled'
+          onClick={handleSave}
+          disabled={saving}
+          className='flex items-center gap-2 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:opacity-50'
+        >
+          <Save className='h-4 w-4' />
+          {saving ? 'Guardando...' : 'Guardar Configuración'}
+        </Button>
+      </div>
+    </CollapsibleCard>
   );
 }

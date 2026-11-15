@@ -6,7 +6,55 @@ interface LogEntry {
   timestamp: string;
   level: string;
   message: string;
+  requestId?: string;
   meta?: Record<string, unknown>;
+}
+
+// ─── Request ID Context ─────────────────────────────────────────────────
+// Permite rastrear una request a través de todos los logs generados durante
+// su procesamiento. Usa AsyncLocalStorage para propagar el ID de forma
+// automática sin tener que pasarlo manualmente en cada llamada.
+
+let requestIdStore: string | null = null;
+
+/**
+ * Genera un ID único para la request actual.
+ * Usa crypto si está disponible, de lo contrario un fallback simple.
+ */
+function generateRequestId(): string {
+  if (typeof window === 'undefined') {
+    try {
+      const { randomBytes } = require('crypto');
+      return `req_${randomBytes(8).toString('hex')}`;
+    } catch {
+      return `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+  }
+  return `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * Establece el request ID para el contexto actual.
+ */
+export function setRequestId(id: string | null) {
+  requestIdStore = id || generateRequestId();
+}
+
+/**
+ * Obtiene el request ID actual, generando uno si no existe.
+ */
+export function getRequestId(): string {
+  if (!requestIdStore) {
+    requestIdStore = generateRequestId();
+  }
+  return requestIdStore;
+}
+
+/**
+ * Limpia el request ID después de procesar la request.
+ */
+export function clearRequestId() {
+  requestIdStore = null;
 }
 
 const formatPayload = (payload: unknown): Record<string, unknown> | undefined => {
@@ -177,13 +225,27 @@ const getLogger = () => {
 };
 
 export const logger = {
-  info: (msg: string, meta?: unknown) => getLogger().info(msg, meta),
-  warn: (msg: string, meta?: unknown) => getLogger().warn(msg, meta),
-  error: (msg: string, meta?: unknown) => getLogger().error(msg, meta),
-  debug: (msg: string, meta?: unknown) => getLogger().debug(msg, meta),
+  info: (msg: string, meta?: unknown) => {
+    const requestId = getRequestId();
+    getLogger().info(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+  },
+  warn: (msg: string, meta?: unknown) => {
+    const requestId = getRequestId();
+    getLogger().warn(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+  },
+  error: (msg: string, meta?: unknown) => {
+    const requestId = getRequestId();
+    getLogger().error(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+  },
+  debug: (msg: string, meta?: unknown) => {
+    const requestId = getRequestId();
+    getLogger().debug(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+  },
 
   captureException: (error: unknown, meta?: Record<string, unknown>) => {
+    const requestId = getRequestId();
     getLogger().error(error instanceof Error ? error.message : String(error), {
+      requestId,
       ...meta,
       stack: error instanceof Error ? error.stack : undefined,
       name: error instanceof Error ? error.name : undefined

@@ -11,6 +11,7 @@ export {
   crearReservaEnUnidad,
   listarReservas,
   marcarAnuladaEnUnidad,
+  marcarUsadoEnUnidad,
   reclamarReserva
 } from './servicio';
 

@@ -4,7 +4,7 @@ import { ErrorState } from '@/components/shared/ErrorState';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Fingerprint, RefreshCw, UserRound, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatFechaConHora } from '@/lib/utils/formatters';
 import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
@@ -107,13 +107,24 @@ export function BiometricStatus() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Fingerprint className='h-5 w-5' /> Asistencia biométrica
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='flex flex-col gap-4' role='status'>
+      <CollapsibleCard
+        defaultOpen
+        aria-label='Asistencia biométrica'
+        className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+        headerClassName='p-4 sm:px-5 sm:py-4'
+        contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+        title={
+          <div className='flex items-center gap-3'>
+            <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+              <Fingerprint className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+            </div>
+            <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+              Asistencia biométrica
+            </span>
+          </div>
+        }
+      >
+        <div className='flex flex-col gap-4' role='status'>
           <div className='grid gap-4 sm:grid-cols-[10rem_1fr]'>
             <Skeleton className='h-24 w-full' />
             <Skeleton className='h-24 w-full' />
@@ -121,26 +132,35 @@ export function BiometricStatus() {
           <Skeleton className='h-16 w-full' />
           <Skeleton className='h-16 w-full' />
           <span className='sr-only'>Cargando estado...</span>
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleCard>
     );
   }
 
   if (error || !estado) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Fingerprint className='h-5 w-5' /> Asistencia biométrica
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ErrorState
-            message={error || 'No se pudo cargar el estado.'}
-            onRetry={() => void load()}
-          />
-        </CardContent>
-      </Card>
+      <CollapsibleCard
+        defaultOpen
+        aria-label='Asistencia biométrica'
+        className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+        headerClassName='p-4 sm:px-5 sm:py-4'
+        contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+        title={
+          <div className='flex items-center gap-3'>
+            <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+              <Fingerprint className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+            </div>
+            <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+              Asistencia biométrica
+            </span>
+          </div>
+        }
+      >
+        <ErrorState
+          message={error || 'No se pudo cargar el estado.'}
+          onRetry={() => void load()}
+        />
+      </CollapsibleCard>
     );
   }
 
@@ -148,17 +168,24 @@ export function BiometricStatus() {
   const ventana = `${pad(estado.ventana.inicio)}:${pad(estado.ventana.minutoInicio ?? 0)} → ${pad(estado.ventana.fin)}:${pad(estado.ventana.minutoFin ?? 0)}`;
 
   return (
-    <Card>
-      <CardHeader className='flex flex-row items-start justify-between space-y-0'>
-        <div className='space-y-1.5'>
-          <CardTitle className='flex items-center gap-2'>
-            <Fingerprint className='h-5 w-5' /> Asistencia biométrica
-          </CardTitle>
-          <CardDescription>
-            Ventana {ventana} · red de seguridad {estado.pollerActivo ? 'activa' : 'inactiva'}
-            {ultimaActualizacion && <> · actualizado {formatFechaConHora(ultimaActualizacion)}</>}
-          </CardDescription>
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Asistencia biométrica'
+      className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+      title={
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+            <Fingerprint className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+          </div>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+            Asistencia biométrica
+          </span>
         </div>
+      }
+      description={`Ventana ${ventana} · red de seguridad ${estado.pollerActivo ? 'activa' : 'inactiva'}${ultimaActualizacion ? ` · actualizado ${formatFechaConHora(ultimaActualizacion)}` : ''}`}
+      headerAction={
         <Button
           className='rounded-full'
           type='button'
@@ -171,8 +198,8 @@ export function BiometricStatus() {
           <RefreshCw className={`h-4 w-4 ${refrescando ? 'animate-spin' : ''}`} />
           <span className='sr-only'>Refrescar</span>
         </Button>
-      </CardHeader>
-      <CardContent className='flex flex-col gap-5'>
+      }
+    >
         <section className='flex flex-col gap-3'>
           <TituloSeccion>Hoy</TituloSeccion>
           <div className='grid gap-4 sm:grid-cols-[10rem_1fr]'>
@@ -313,7 +340,6 @@ export function BiometricStatus() {
             </p>
           )}
         </section>
-      </CardContent>
-    </Card>
+    </CollapsibleCard>
   );
 }

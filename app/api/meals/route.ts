@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { listarColaciones, registrarColacion } from '@/modules/colaciones';
-import { ValidationError } from '@/lib/errors/errors';
 import { rolSoloRecibeColacion } from '@/lib/business/colacionRoles';
+import { ColacionCreateSchema } from '@/lib/business/schemas';
+import { validateOrResponse } from '@/lib/api/validate';
+import { ValidationError } from '@/lib/errors/errors';
 import logger from '@/lib/utils/logger';
 
 export const GET = withRoute({ auth: true, module: 'products', action: 'read' }, async request => {
@@ -26,22 +28,20 @@ export const POST = withRoute(
       );
     }
     const body = await request.json();
-    const usuarioId = String(body.usuario_id || '');
-    const presentacionId = String(body.presentacion_id || '');
-    const acompanamiento = body.acompanamiento == null ? null : String(body.acompanamiento);
-    if (acompanamiento !== null && !['gaseosa', 'soda'].includes(acompanamiento))
-      throw new ValidationError('Selecciona un acompañamiento válido');
-    const acompanamientoPresentacionId = body.acompanamiento_presentacion_id
-      ? String(body.acompanamiento_presentacion_id)
-      : null;
+    const validated = validateOrResponse(ColacionCreateSchema, body);
+    if (validated instanceof NextResponse) return validated;
+
+    const usuarioId = String(validated.usuario_id);
+    const presentacionId = String(validated.presentacion_id);
+    const acompanamiento = validated.acompanamiento ?? null;
+    const acompanamientoPresentacionId = validated.acompanamiento_presentacion_id ?? null;
     // `ml_bebida` y `nombre_bebida` los calcula el servidor desde la
     // configuración de la bebida: el stock que sale del bar no puede depender
     // de lo que declare el cliente. El `ml_bebida` que llega es informativo; no
     // se le pasa al módulo, y si no coincide con el calculado se avisa y la
     // respuesta devuelve el valor que quedó registrado, para que el cliente
     // se corrija.
-    const mlBebida =
-      body.ml_bebida === undefined || body.ml_bebida === null ? null : Number(body.ml_bebida);
+    const mlBebida = validated.ml_bebida ?? null;
     const result = await registrarColacion({
       usuarioId,
       presentacionId,

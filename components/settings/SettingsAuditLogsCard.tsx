@@ -3,7 +3,7 @@
 import { ShieldCheck } from 'lucide-react';
 import Paginate from '@/components/shared/Paginate';
 import SelectElements from '@/components/shared/SelectElements';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import {
   Table,
   TableBody,
@@ -44,14 +44,23 @@ export function SettingsAuditLogsCard({
   getRangeLabel
 }: SettingsAuditLogsCardProps) {
   return (
-    <Card className={cardClass}>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <ShieldCheck className='h-5 w-5 text-blue-600' />
-          Audit Logs
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Audit Logs'
+      className={cardClass}
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+      title={
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950'>
+            <ShieldCheck className='h-4 w-4 text-blue-600 dark:text-blue-400' />
+          </div>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+            Audit Logs
+          </span>
+        </div>
+      }
+    >
         {loading ? (
           <div className='space-y-3'>
             {Array.from({ length: 5 }).map((_, index) => (
@@ -143,7 +152,6 @@ export function SettingsAuditLogsCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+    </CollapsibleCard>
   );
 }

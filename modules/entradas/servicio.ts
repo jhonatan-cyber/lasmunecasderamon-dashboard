@@ -37,3 +37,33 @@ export function postearPendientesDeCaja(
 ) {
   return repositorio.postearPendientesDeCaja(...args);
 }
+
+export function existeSolicitudAnulacionEntrada(
+  ...args: Parameters<typeof repositorio.existeSolicitudAnulacionEntrada>
+) {
+  return repositorio.existeSolicitudAnulacionEntrada(...args);
+}
+
+export function crearSolicitudAnulacionEntrada(
+  ...args: Parameters<typeof repositorio.crearSolicitudAnulacionEntrada>
+) {
+  return repositorio.crearSolicitudAnulacionEntrada(...args);
+}
+
+export function obtenerSolicitudAnulacionEntradaPorToken(
+  ...args: Parameters<typeof repositorio.obtenerSolicitudAnulacionEntradaPorToken>
+) {
+  return repositorio.obtenerSolicitudAnulacionEntradaPorToken(...args);
+}
+
+export function actualizarSolicitudAnulacionEntrada(
+  ...args: Parameters<typeof repositorio.actualizarSolicitudAnulacionEntrada>
+) {
+  return repositorio.actualizarSolicitudAnulacionEntrada(...args);
+}
+
+export function leerSolicitudAnulacionEntrada(
+  ...args: Parameters<typeof repositorio.leerSolicitudAnulacionEntrada>
+) {
+  return repositorio.leerSolicitudAnulacionEntrada(...args);
+}

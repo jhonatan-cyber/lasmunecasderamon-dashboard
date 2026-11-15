@@ -44,9 +44,13 @@ export default function OvertimeFilters({
 }: OvertimeFiltersProps) {
   return (
     <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 rounded-3xl mb-6'>
-      <CardContent className='p-6'>
-        <FilterBar>
-          <div>
+      <CardContent className='p-4 sm:p-6'>
+        <div
+          role='group'
+          aria-label='Filtros'
+          className='flex flex-col sm:flex-row w-full flex-wrap sm:flex-nowrap items-end gap-4 sm:overflow-x-auto sm:pb-2 [&>div]:w-full sm:[&>div]:flex-[1_0_160px]'
+        >
+          <div className='sm:flex-[2_0_200px]'>
             <Label className={SELECT_LABEL_CLASS}>{isAdmin ? 'Buscar usuario' : 'Buscar'}</Label>
             <SearchInput
               value={searchTerm}
@@ -78,18 +82,22 @@ export default function OvertimeFilters({
               setSortOrder(direction);
             }}
           />
-          <SelectElements value={pageSize} onChange={setPageSize} options={[5, 10, 20, 50]} />
-          <Button
-            onClick={onClearFilters}
-            disabled={loading}
-            variant='outline'
-            size='icon'
-            aria-label='Limpiar filtros'
-            className='h-11 w-11 flex-none! rounded-full'
-          >
-            <Trash2 className='h-4 w-4' />
-          </Button>
-        </FilterBar>
+          <div className='flex items-end gap-2 w-full'>
+            <div className='flex-1'>
+              <SelectElements value={pageSize} onChange={setPageSize} options={[5, 10, 20, 50]} />
+            </div>
+            <Button
+              onClick={onClearFilters}
+              disabled={loading}
+              variant='outline'
+              size='icon'
+              aria-label='Limpiar filtros'
+              className='h-11 w-11 flex-none rounded-full'
+            >
+              <Trash2 className='h-4 w-4' />
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

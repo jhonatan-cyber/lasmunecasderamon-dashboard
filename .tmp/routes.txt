@@ -1,0 +1,436 @@
+===== base.datos.json
+===== base.negocio--1.json
+===== base.negocio--2.json
+===== base.servicios.json
+===== base.utilidades--1.json
+===== base.utilidades--2.json
+===== casos.json
+===== chequeos--1.json
+===== chequeos--10.json
+===== chequeos--11.json
+===== chequeos--12.json
+===== chequeos--13.json
+===== chequeos--14.json
+===== chequeos--15.json
+===== chequeos--2.json
+===== chequeos--3.json
+===== chequeos--4.json
+===== chequeos--5.json
+===== chequeos--6.json
+===== chequeos--7.json
+===== chequeos--8.json
+===== chequeos--9.json
+===== conector-ia.json
+POST  /authorize/oauth/consent                       (no route.ts)
+POST  /token/oauth/consent                           (no route.ts)
+POST  /mcp/oauth/consent                             (no route.ts)
+POST  /authorize/mcp                                 (no route.ts)
+POST  /token/mcp                                     (no route.ts)
+POST  /mcp/mcp                                       (no route.ts)
+ALL   /authorize/mcp                                 (no route.ts)
+ALL   /token/mcp                                     (no route.ts)
+ALL   /mcp/mcp                                       (no route.ts)
+===== datos--1.json
+===== datos--2.json
+===== datos--3.json
+===== datos--4.json
+===== negocio.avisos.json
+===== negocio.caja.json
+===== negocio.control.json
+===== negocio.identidad.json
+===== negocio.inventario--1.json
+===== negocio.inventario--2.json
+===== negocio.operacion--1.json
+===== negocio.operacion--2.json
+===== negocio.personal--1.json
+===== negocio.personal--2.json
+===== negocio.ventas.json
+===== panel.acceso.json
+POST  /dahua/push                                    
+GET   /iclock/cdata                                  
+POST  /iclock/cdata                                  
+===== panel.admin.json
+===== panel.caja.json
+===== panel.catalogo.json
+===== panel.json
+===== panel.mesas.json
+===== panel.personal.json
+===== panel.ventas.json
+===== pantalla-logica.base--1.json
+===== pantalla-logica.base--2.json
+===== pantalla-logica.personal.json
+===== pantalla-logica.ventas--1.json
+===== pantalla-logica.ventas--2.json
+===== pantallas.admin--1.json
+===== pantallas.admin--2.json
+===== pantallas.admin--3.json
+===== pantallas.base--1.json
+===== pantallas.base--2.json
+===== pantallas.base--3.json
+===== pantallas.caja--1.json
+===== pantallas.caja--2.json
+===== pantallas.caja--3.json
+===== pantallas.cuentas.json
+===== pantallas.personal.json
+===== pantallas.salon.json
+===== pantallas.ventas--1.json
+===== pantallas.ventas--2.json
+===== pantallas.ventas--3.json
+===== pantallas.ventas--4.json
+===== solicitudes.caja.json
+PUT   /api/advances/[id]                             advances.process
+PUT   /api/advances/approve                          
+GET   /api/advances/balances                         advances.read
+GET   /api/advances/by-dates                         
+GET   /api/advances/max                              
+GET   /api/advances/request-details                  
+GET   /api/advances/requests                         
+POST  /api/advances/requests                         
+GET   /api/advances                                  advances.read,advances.write
+POST  /api/advances                                  advances.read,advances.write
+GET   /api/advances/user                             
+GET   /api/cash-register/bar-sales                   VentasStatsService.getVentasBarras
+GET   /api/cash-register/champagne-sales             VentasStatsService.getVentasChampagne
+GET   /api/cash-register/hostess-drinks              VentasStatsService.getVentasTragosChicas
+GET   /api/cash-register/sales-by-product            VentasStatsService.getVentasPorProducto
+GET   /api/cash-register/stats                       StatsService.getCajaGeneralStats
+GET   /api/cashregister/[id]                         finances.delete | CashRegisterService.getById,CashRegisterService.delete
+DELETE/api/cashregister/[id]                         finances.delete | CashRegisterService.getById,CashRegisterService.delete
+POST  /api/cashregister/[id]/whatsapp                CashRegisterService.getById
+GET   /api/cashregister/closing-pdf                  CashRegisterService.getSolicitudCierreByToken
+GET   /api/cashregister/closing-request              CashRegisterService.getSolicitudCierreByToken
+POST  /api/cashregister/closing/resend               finances.write
+POST  /api/cashregister/closing                      finances.write
+GET   /api/cashregister/pdf-report                   CashRegisterService.getById,VentasStatsService.getVentasPorProducto
+POST  /api/cashregister/process-closing              CashRegisterService.procesarCierreCaja
+GET   /api/cashregister                              finances.read,finances.write | CashRegisterService.summary,CashRegisterService.getAll,CashRegisterService.openCaja,CashRegisterService.updateCaja
+POST  /api/cashregister                              finances.read,finances.write | CashRegisterService.summary,CashRegisterService.getAll,CashRegisterService.openCaja,CashRegisterService.updateCaja
+PUT   /api/cashregister                              finances.read,finances.write | CashRegisterService.summary,CashRegisterService.getAll,CashRegisterService.openCaja,CashRegisterService.updateCaja
+PATCH /api/cashregister                              finances.read,finances.write | CashRegisterService.summary,CashRegisterService.getAll,CashRegisterService.openCaja,CashRegisterService.updateCaja
+GET   /api/cashregister/status                       StatsService.getCajaGeneralStats
+GET   /api/cashregister/withdrawals                  finances.read,finances.write | WithdrawalService.getByCajaId,WithdrawalService.addRetiro
+POST  /api/cashregister/withdrawals                  finances.read,finances.write | WithdrawalService.getByCajaId,WithdrawalService.addRetiro
+GET   /api/payroll                                   payroll.write | PayrollService.getSummary,PayrollService.pay
+POST  /api/payroll                                   payroll.write | PayrollService.getSummary,PayrollService.pay
+POST  /api/transfers/[id]/accept                     products.accept_transfer
+GET   /api/transfers/pending                         products.read
+GET   /api/transfers                                 products.read,products.accept_transfer | ProductService.listBarStock,ProductService.resolverTransferencia
+PATCH /api/transfers                                 products.read,products.accept_transfer | ProductService.listBarStock,ProductService.resolverTransferencia
+===== solicitudes.control.json
+GET   /api/audit-logs                                AuditService.getLatest
+GET   /api/code/current                              
+POST  /api/csp-violation                             
+GET   /api/dashboard/composite                       dashboard.read | StatsService.getDashboardComposite
+GET   /api/error-logs                                ErrorLogService.getAll,ErrorLogService.log
+POST  /api/error-logs                                ErrorLogService.getAll,ErrorLogService.log
+GET   /api/health                                    
+GET   /api/images/products/[filename]                
+GET   /api/images/users/[filename]                   
+GET   /api/monitoring/slow-queries                   
+GET   /api/ping                                      
+POST  /api/ping                                      
+GET   /api/reports/cash-register                     ReportService.getCashRegisterReport
+GET   /api/reports/commissions                       ReportService.getCommissionsReport
+GET   /api/reports/sales                             ReportService.getSalesReport
+GET   /api/stats/dashboard-summary                   dashboard.read | StatsService.getUserDashboardSummary
+GET   /api/stats/logged-users                        StatsService.getLoggedUsers
+GET   /api/stats/sales-by-month                      StatsService.getSalesByMonth
+GET   /api/stats/sales-by-week                       StatsService.getSalesByWeek
+GET   /api/swagger                                   
+GET   /api/sync-operations                           
+GET   /api/test-auth                                 
+===== solicitudes.cuentas--1.json
+POST  /api/accounts/[id]/charge-with-sale            finances.write | wf:cobrar-cuenta
+POST  /api/accounts/[id]/charge                      finances.write | AccountService.cobrar
+GET   /api/accounts/[id]                             finances.write,finances.delete | AccountService.getById,AccountService.updateCuenta,AccountService.delete
+PUT   /api/accounts/[id]                             finances.write,finances.delete | AccountService.getById,AccountService.updateCuenta,AccountService.delete
+DELETE/api/accounts/[id]                             finances.write,finances.delete | AccountService.getById,AccountService.updateCuenta,AccountService.delete
+PATCH /api/accounts/[id]/stop                        finances.write | AccountService.stopTimer
+GET   /api/accounts/cancellation-request             
+POST  /api/accounts/cancellation                     finances.write | AccountService.requestAnulacion
+POST  /api/accounts/process-cancellation             wf:anulaciones-whatsapp
+GET   /api/accounts                                  finances.write | AccountService.getAll,AccountService.create
+POST  /api/accounts                                  finances.write | AccountService.getAll,AccountService.create
+POST  /api/auth/change-password                      
+GET   /api/auth/check-session                        AuthService.checkSession
+GET   /api/auth/check-users                          AuthService.checkUsers
+GET   /api/auth/check                                
+POST  /api/auth/login                                wf:autenticacion
+POST  /api/auth/logout                               AuthService.logout
+GET   /api/auth/logs                                 AuthService.getLogs
+GET   /api/auth/me                                   UserService.getById
+POST  /api/auth/refresh                              
+POST  /api/auth/register-first-user                  AuthService.registerFirstUser
+POST  /api/auth/reset-password                       AuthService.resetPassword,AuthService.resetPassword
+GET   /api/clients/[id]                              clients.write,clients.delete | ClientService.getById,ClientService.updateClient,ClientService.delete | wf:clientes
+PUT   /api/clients/[id]                              clients.write,clients.delete | ClientService.getById,ClientService.updateClient,ClientService.delete | wf:clientes
+DELETE/api/clients/[id]                              clients.write,clients.delete | ClientService.getById,ClientService.updateClient,ClientService.delete | wf:clientes
+GET   /api/clients/history                           ClientService.getHistory | wf:clientes
+POST  /api/clients/prepaid                           clients.write | ClientService.addPrepago | wf:clientes
+POST  /api/clients/return/approve                    clients.write | wf:prepago
+POST  /api/clients/return/reminder                   clients.write | wf:clientes
+GET   /api/clients/return/requests                   clients.read
+POST  /api/clients/return                            clients.write | ClientService.devolverSaldo | wf:clientes
+GET   /api/clients                                   clients.write,clients.write | ClientService.getById,ClientService.getAll,ClientService.createClient,ClientService.updateClient | wf:clientes
+POST  /api/clients                                   clients.write,clients.write | ClientService.getById,ClientService.getAll,ClientService.createClient,ClientService.updateClient | wf:clientes
+PUT   /api/clients                                   clients.write,clients.write | ClientService.getById,ClientService.getAll,ClientService.createClient,ClientService.updateClient | wf:clientes
+DELETE/api/clients                                   clients.write,clients.write | ClientService.getById,ClientService.getAll,ClientService.createClient,ClientService.updateClient | wf:clientes
+GET   /api/configurations                            settings.write
+PUT   /api/configurations                            settings.write
+POST  /api/notifications/assistance/accept           NotificationService.markAsRead
+POST  /api/notifications/assistance                  NotificationService.create
+GET   /api/notifications/kiosk                       
+GET   /api/notifications/pending-count               NotificationService.getPendingCount
+GET   /api/notifications/pending                     NotificationService.getPending
+GET   /api/notifications                             NotificationService.getHistory,NotificationService.getPendingCount,NotificationService.getPending,NotificationService.registerToken
+POST  /api/notifications                             NotificationService.getHistory,NotificationService.getPendingCount,NotificationService.getPending,NotificationService.registerToken
+PATCH /api/notifications                             NotificationService.getHistory,NotificationService.getPendingCount,NotificationService.getPending,NotificationService.registerToken
+GET   /api/notifications/sse                         
+PUT   /api/permissions/[id]                          settings.write,settings.write | PermissionService.update,PermissionService.delete
+DELETE/api/permissions/[id]                          settings.write,settings.write | PermissionService.update,PermissionService.delete
+POST  /api/permissions/invalidate-cache              
+GET   /api/permissions                               settings.write | PermissionService.getAll,PermissionService.create
+POST  /api/permissions                               settings.write | PermissionService.getAll,PermissionService.create
+POST  /api/permissions/setup-cashier                 users.view,users.create
+GET   /api/roles/[id]/permissions                    roles.write
+PUT   /api/roles/[id]/permissions                    roles.write
+===== solicitudes.cuentas--2.json
+GET   /api/roles/[id]                                roles.write,roles.delete | RoleService.getById,RoleService.getById,RoleService.updateRole,RoleService.getById
+PUT   /api/roles/[id]                                roles.write,roles.delete | RoleService.getById,RoleService.getById,RoleService.updateRole,RoleService.getById
+DELETE/api/roles/[id]                                roles.write,roles.delete | RoleService.getById,RoleService.getById,RoleService.updateRole,RoleService.getById
+GET   /api/roles/[id]/users                          RoleService.getUsersByRole
+GET   /api/roles/admin/permissions                   RoleService.getAdminPermissions
+GET   /api/roles                                     roles.write | RoleService.getAll,RoleService.create
+POST  /api/roles                                     roles.write | RoleService.getAll,RoleService.create
+POST  /api/roles/setup                               RoleService.create
+GET   /api/settings/backup/[id]/download             settings.read
+POST  /api/settings/backup/[id]/restore              settings.write
+POST  /api/settings/backup                           settings.write,settings.read
+GET   /api/settings/backup                           settings.write,settings.read
+POST  /api/settings/database-clean                   settings.write
+GET   /api/settings/presence                         settings.read,settings.write
+POST  /api/settings/presence                         settings.read,settings.write
+POST  /api/users/[id]/biometric/capture              users.write | UserService.getById
+POST  /api/users/[id]/biometric/captures             users.write
+GET   /api/users/[id]/biometric/devices              users.read | UserService.getById
+DELETE/api/users/[id]/biometric                      users.write,users.read | UserService.getBiometricStatus,UserService.updateBiometric,UserService.asignarCodigoBiometrico
+GET   /api/users/[id]/biometric                      users.write,users.read | UserService.getBiometricStatus,UserService.updateBiometric,UserService.asignarCodigoBiometrico
+PUT   /api/users/[id]/biometric                      users.write,users.read | UserService.getBiometricStatus,UserService.updateBiometric,UserService.asignarCodigoBiometrico
+POST  /api/users/[id]/biometric                      users.write,users.read | UserService.getBiometricStatus,UserService.updateBiometric,UserService.asignarCodigoBiometrico
+POST  /api/users/[id]/biometric/sync                 users.write,users.write
+PUT   /api/users/[id]/biometric/sync                 users.write,users.write
+DELETE/api/users/[id]/biometric/sync                 users.write,users.write
+POST  /api/users/[id]/biometric/verify               users.write | UserService.getById
+GET   /api/users/[id]/permissions                    
+GET   /api/users/[id]                                users.write,users.delete | UserService.getById,UserService.update | wf:eliminar-usuario
+PUT   /api/users/[id]                                users.write,users.delete | UserService.getById,UserService.update | wf:eliminar-usuario
+DELETE/api/users/[id]                                users.write,users.delete | UserService.getById,UserService.update | wf:eliminar-usuario
+GET   /api/users/me/stats                            TipService.getByUser,ServiceService.getByUser
+GET   /api/users/profile                             UserService.getById
+GET   /api/users                                     users.write,users.write | UserService.asignarCodigoBiometrico,UserService.updateBiometric,UserService.getAll,UserService.createUser | wf:eliminar-usuario
+POST  /api/users                                     users.write,users.write | UserService.asignarCodigoBiometrico,UserService.updateBiometric,UserService.getAll,UserService.createUser | wf:eliminar-usuario
+PATCH /api/users                                     users.write,users.write | UserService.asignarCodigoBiometrico,UserService.updateBiometric,UserService.getAll,UserService.createUser | wf:eliminar-usuario
+PUT   /api/users                                     users.write,users.write | UserService.asignarCodigoBiometrico,UserService.updateBiometric,UserService.getAll,UserService.createUser | wf:eliminar-usuario
+DELETE/api/users                                     users.write,users.write | UserService.asignarCodigoBiometrico,UserService.updateBiometric,UserService.getAll,UserService.createUser | wf:eliminar-usuario
+GET   /api/users/status                              UserService.getById
+===== solicitudes.ia.json
+GET   /api/mcp/admin/requests                        wf:mcp-solicitudes
+POST  /api/mcp/admin/requests                        wf:mcp-solicitudes
+GET   /api/mcp/admin/session                         
+GET   /api/public/users                              
+GET   /api/whatsapp/administradores                  
+PUT   /api/whatsapp/administradores                  
+DELETE/api/whatsapp/administradores                  
+POST  /api/whatsapp/status                           
+POST  /api/whatsapp/webhook                          CashRegisterService.procesarCierreCaja,GratificacionService.processSolicitud,CashRegisterService.procesarCierreCaja,CashRegisterService.procesarCierreCaja | wf:anulaciones-whatsapp
+===== solicitudes.mesas.json
+GET   /api/calendar/data                             CalendarService.getData
+GET   /api/calendar                                  CalendarService.getActions
+GET   /api/cleaning                                  
+POST  /api/cleaning                                  
+GET   /api/events/detail/[id]                        EventService.canReadEvent,EventService.getEventDetail
+GET   /api/events/stats                              EventService.getStats
+GET   /api/events/user                               EventService.getUserEvents
+DELETE/api/quinchos/[id]                             quinchos.delete | wf:reservas-quincho
+GET   /api/quinchos                                  quinchos.read,quinchos.write | wf:reservas-quincho
+POST  /api/quinchos                                  quinchos.read,quinchos.write | wf:reservas-quincho
+GET   /api/rooms/[id]                                rooms.write,rooms.write | RoomService.getAll,RoomService.update,RoomService.updateStatus,RoomService.delete
+PUT   /api/rooms/[id]                                rooms.write,rooms.write | RoomService.getAll,RoomService.update,RoomService.updateStatus,RoomService.delete
+PATCH /api/rooms/[id]                                rooms.write,rooms.write | RoomService.getAll,RoomService.update,RoomService.updateStatus,RoomService.delete
+DELETE/api/rooms/[id]                                rooms.write,rooms.write | RoomService.getAll,RoomService.update,RoomService.updateStatus,RoomService.delete
+PUT   /api/rooms/reorder                             rooms.write | RoomService.reorder
+GET   /api/rooms                                     rooms.write,rooms.write | RoomService.getAll,RoomService.getAll,RoomService.createRoom,RoomService.update
+POST  /api/rooms                                     rooms.write,rooms.write | RoomService.getAll,RoomService.getAll,RoomService.createRoom,RoomService.update
+PUT   /api/rooms                                     rooms.write,rooms.write | RoomService.getAll,RoomService.getAll,RoomService.createRoom,RoomService.update
+PATCH /api/rooms                                     rooms.write,rooms.write | RoomService.getAll,RoomService.getAll,RoomService.createRoom,RoomService.update
+DELETE/api/rooms                                     rooms.write,rooms.write | RoomService.getAll,RoomService.getAll,RoomService.createRoom,RoomService.update
+PATCH /api/service-requests/[id]/approve             orders.process | ServiceRequestService.approve
+PATCH /api/service-requests/[id]/reject              orders.process | ServiceRequestService.reject
+GET   /api/service-requests/pending-count            ServiceRequestService.getPendingCount
+GET   /api/service-requests                          orders.write,orders.delete | ServiceRequestService.getAll,ServiceRequestService.create,ServiceRequestService.delete
+POST  /api/service-requests                          orders.write,orders.delete | ServiceRequestService.getAll,ServiceRequestService.create,ServiceRequestService.delete
+DELETE/api/service-requests                          orders.write,orders.delete | ServiceRequestService.getAll,ServiceRequestService.create,ServiceRequestService.delete
+PATCH /api/services/[id]/hostesses                   private_rooms.write
+GET   /api/services/[id]                             ServiceService.getById,ServiceService.updateService,ServiceService.updateStatus,ServiceService.updateService
+PUT   /api/services/[id]                             ServiceService.getById,ServiceService.updateService,ServiceService.updateStatus,ServiceService.updateService
+PATCH /api/services/[id]                             ServiceService.getById,ServiceService.updateService,ServiceService.updateStatus,ServiceService.updateService
+DELETE/api/services/[id]                             ServiceService.getById,ServiceService.updateService,ServiceService.updateStatus,ServiceService.updateService
+GET   /api/services/by-dates                         ServiceService.getByDates
+GET   /api/services/cancellation-request             
+POST  /api/services/cancellation-request             
+POST  /api/services/cancellation                     ServiceService.processAnulacion,ServiceService.requestAnulacion
+POST  /api/services/process-cancellation             wf:anulaciones-whatsapp
+GET   /api/services                                  ServiceService.getAll,ServiceService.createService
+POST  /api/services                                  ServiceService.getAll,ServiceService.createService
+POST  /api/services/temporary                        ServiceService.createService
+GET   /api/services/user                             ServiceService.getByUser
+===== solicitudes.personal.json
+GET   /api/attendance/[id]/detail                    
+POST  /api/attendance/bulk                           attendance.write
+GET   /api/attendance/by-dates                       
+POST  /api/attendance/qr                             attendance.write
+GET   /api/attendance/ranking                        attendance.read
+POST  /api/attendance/register                       
+GET   /api/attendance                                attendance.write
+POST  /api/attendance                                attendance.write
+GET   /api/attendance/stats                          
+GET   /api/attendance/today                          
+GET   /api/attendance/user                           
+GET   /api/biometric/devices/[id]/credentials        
+POST  /api/biometric/devices/[id]/credentials        
+POST  /api/biometric/devices/[id]/discover           
+PUT   /api/biometric/devices/[id]/poller             
+POST  /api/biometric/devices/[id]/resync             
+DELETE/api/biometric/devices/[id]                    
+GET   /api/biometric/devices/[id]/snapshot           
+GET   /api/biometric/devices/[id]/video              
+GET   /api/biometric/devices                         
+POST  /api/biometric/devices                         
+GET   /api/biometric/reception                       
+PUT   /api/biometric/reception                       
+GET   /api/biometric/records/[id]/photo              
+GET   /api/biometric/records/poll                    
+POST  /api/biometric/records/poll                    
+GET   /api/biometric/status                          
+POST  /api/biometrico/identificar                    users.read
+GET   /api/cron/check-timers                         
+PATCH /api/hostesses/[id]/status                     users.write | UserService.updateServiceStatus
+GET   /api/hostesses/available                       UserService.getAvailableAnfitrionas
+GET   /api/hostesses                                 UserService.getAll
+POST  /api/kiosk/attendance/challenge                
+GET   /api/kiosk/board                               
+DELETE/api/kiosk/devices/[id]                        
+GET   /api/kiosk/devices                             
+GET   /api/kiosk/session                             
+POST  /api/kiosk/session                             
+PATCH /api/kiosk/session                             
+DELETE/api/kiosk/session                             
+GET   /api/overtime/by-dates                         
+GET   /api/overtime                                  overtime.write
+POST  /api/overtime                                  overtime.write
+GET   /api/overtime/user                             
+GET   /api/timers/active                             TimerService.runAutoCleanup,TimerService.getActive
+GET   /api/waiters                                   UserService.getStaff
+===== solicitudes.ventas--1.json
+POST  /api/bar/containers/confirm                    products.confirm_container_return | ProductService.confirmContainerReturn
+GET   /api/bar/containers                            products.read,products.return_container | ProductService.listContainerReturns,ProductService.verifyAndReturnContainers,ProductService.verifyAndReturnContainer
+POST  /api/bar/containers                            products.read,products.return_container | ProductService.listContainerReturns,ProductService.verifyAndReturnContainers,ProductService.verifyAndReturnContainer
+GET   /api/bar/containers/summary                    products.read
+GET   /api/bar/movements                             ProductService.buscarMovimientosRecientes
+PUT   /api/bar/reorder                               products.write
+GET   /api/bar                                       products.write | ProductService.listBarStock,ProductService.listBarStock,ProductService.traspasarAlBar
+POST  /api/bar                                       products.write | ProductService.listBarStock,ProductService.listBarStock,ProductService.traspasarAlBar
+GET   /api/bar/shots                                 ProductService.getShotsSummary
+GET   /api/categories/[id]                           categories.delete,categories.write | CategoryService.deletionPreview,CategoryService.update,CategoryService.updateStatus,CategoryService.delete
+PUT   /api/categories/[id]                           categories.delete,categories.write | CategoryService.deletionPreview,CategoryService.update,CategoryService.updateStatus,CategoryService.delete
+PATCH /api/categories/[id]                           categories.delete,categories.write | CategoryService.deletionPreview,CategoryService.update,CategoryService.updateStatus,CategoryService.delete
+DELETE/api/categories/[id]                           categories.delete,categories.write | CategoryService.deletionPreview,CategoryService.update,CategoryService.updateStatus,CategoryService.delete
+PUT   /api/categories/reorder                        categories.write | CategoryService.reorder
+GET   /api/categories                                categories.write,categories.write | CategoryService.getAll,CategoryService.create,CategoryService.updateStatus,CategoryService.reorder
+POST  /api/categories                                categories.write,categories.write | CategoryService.getAll,CategoryService.create,CategoryService.updateStatus,CategoryService.reorder
+PATCH /api/categories                                categories.write,categories.write | CategoryService.getAll,CategoryService.create,CategoryService.updateStatus,CategoryService.reorder
+PUT   /api/categories                                categories.write,categories.write | CategoryService.getAll,CategoryService.create,CategoryService.updateStatus,CategoryService.reorder
+DELETE/api/categories                                categories.write,categories.write | CategoryService.getAll,CategoryService.create,CategoryService.updateStatus,CategoryService.reorder
+GET   /api/commissions/[id]/details                  CommissionService.getDetails
+PUT   /api/commissions/[id]                          commissions.write,commissions.delete | CommissionService.update,CommissionService.delete
+DELETE/api/commissions/[id]                          commissions.write,commissions.delete | CommissionService.update,CommissionService.delete
+GET   /api/commissions                               commissions.write | CommissionService.summary,CommissionService.list,CommissionService.create
+POST  /api/commissions                               commissions.write | CommissionService.summary,CommissionService.list,CommissionService.create
+GET   /api/commissions/user                          CommissionService.getDetails,CommissionService.list
+PUT   /api/gratifications/[id]                       gratificaciones.edit,gratificaciones.delete | GratificacionService.update,GratificacionService.delete
+DELETE/api/gratifications/[id]                       gratificaciones.edit,gratificaciones.delete | GratificacionService.update,GratificacionService.delete
+PUT   /api/gratifications/approve                    GratificacionService.processSolicitud
+GET   /api/gratifications/me                         GratificacionService.getAll
+GET   /api/gratifications/request-details            GratificacionService.getSolicitudDetalle
+GET   /api/gratifications                            gratificaciones.write | GratificacionService.getAll,GratificacionService.getAll,GratificacionService.request,GratificacionService.create
+POST  /api/gratifications                            gratificaciones.write | GratificacionService.getAll,GratificacionService.getAll,GratificacionService.request,GratificacionService.create
+GET   /api/meals                                     products.read,products.write
+POST  /api/meals                                     products.read,products.write
+GET   /api/meals/rule                                
+GET   /api/orders/[id]/baucher                       orders.read | OrderService.getBaucherFoto
+DELETE/api/orders/[id]                               orders.delete,orders.write | OrderService.delete,OrderService.updateStatus
+PUT   /api/orders/[id]                               orders.delete,orders.write | OrderService.delete,OrderService.updateStatus
+POST  /api/orders/check-active-room                  
+GET   /api/orders/detail                             OrderService.getDetail
+GET   /api/orders                                    orders.write | OrderService.getAll,OrderService.create
+POST  /api/orders                                    orders.write | OrderService.getAll,OrderService.create
+GET   /api/orders/sse                                
+GET   /api/orders/user                               OrderService.getByUser
+PUT   /api/products/[id]                             products.write,products.delete | ProductService.updateProduct,ProductService.delete
+DELETE/api/products/[id]                             products.write,products.delete | ProductService.updateProduct,ProductService.delete
+GET   /api/products/[id]/tiers                       products.write | ProductService.getChampagneTiers,ProductService.saveChampagneTiers
+PUT   /api/products/[id]/tiers                       products.write | ProductService.getChampagneTiers,ProductService.saveChampagneTiers
+GET   /api/products/expired                          products.read,products.write
+POST  /api/products/expired                          products.read,products.write
+GET   /api/products/for-sale                         ProductService.listForSale
+GET   /api/products/presentations                    products.read,products.write | ProductService.listPresentationsMap,ProductService.listPresentations,ProductService.addPresentation,ProductService.updatePresentation
+POST  /api/products/presentations                    products.read,products.write | ProductService.listPresentationsMap,ProductService.listPresentations,ProductService.addPresentation,ProductService.updatePresentation
+PATCH /api/products/presentations                    products.read,products.write | ProductService.listPresentationsMap,ProductService.listPresentations,ProductService.addPresentation,ProductService.updatePresentation
+DELETE/api/products/presentations                    products.read,products.write | ProductService.listPresentationsMap,ProductService.listPresentations,ProductService.addPresentation,ProductService.updatePresentation
+PUT   /api/products/reorder                          products.write | ProductService.reorder
+GET   /api/products                                  products.write,products.write | ProductService.listForSale,ProductService.getById,ProductService.search,ProductService.getAll
+POST  /api/products                                  products.write,products.write | ProductService.listForSale,ProductService.getById,ProductService.search,ProductService.getAll
+PUT   /api/products                                  products.write,products.write | ProductService.listForSale,ProductService.getById,ProductService.search,ProductService.getAll
+PATCH /api/products                                  products.write,products.write | ProductService.listForSale,ProductService.getById,ProductService.search,ProductService.getAll
+DELETE/api/products                                  products.write,products.write | ProductService.listForSale,ProductService.getById,ProductService.search,ProductService.getAll
+POST  /api/products/units/printed                    products.write
+GET   /api/products/units                            products.read,products.write | ProductService.listUnits,ProductService.addUnits,ProductService.setUnitsEstado,ProductService.deleteUnits
+POST  /api/products/units                            products.read,products.write | ProductService.listUnits,ProductService.addUnits,ProductService.setUnitsEstado,ProductService.deleteUnits
+PATCH /api/products/units                            products.read,products.write | ProductService.listUnits,ProductService.addUnits,ProductService.setUnitsEstado,ProductService.deleteUnits
+DELETE/api/products/units                            products.read,products.write | ProductService.listUnits,ProductService.addUnits,ProductService.setUnitsEstado,ProductService.deleteUnits
+GET   /api/purchases/catalog                         products.read
+GET   /api/purchases/replenishment                   products.read
+GET   /api/purchases                                 products.read,products.write
+POST  /api/purchases                                 products.read,products.write
+===== solicitudes.ventas--2.json
+POST  /api/reviews                                   
+GET   /api/sales/[id]/baucher                        sales.read | SaleService.getBaucherFoto | wf:ventas
+GET   /api/sales/[id]                                sales.write,sales.delete | SaleService.getById,SaleService.updateStatus,SaleService.updateStatus | wf:ventas
+PATCH /api/sales/[id]                                sales.write,sales.delete | SaleService.getById,SaleService.updateStatus,SaleService.updateStatus | wf:ventas
+DELETE/api/sales/[id]                                sales.write,sales.delete | SaleService.getById,SaleService.updateStatus,SaleService.updateStatus | wf:ventas
+GET   /api/sales/cancellation-request                
+POST  /api/sales/cancellation                        sales.anulate | SaleService.processAnulacion,SaleService.requestAnulacion | wf:ventas
+POST  /api/sales/process-cancellation                wf:anulaciones-whatsapp
+GET   /api/sales                                     sales.read,sales.write | SaleService.getAll,SaleService.createSale | wf:ventas
+POST  /api/sales                                     sales.read,sales.write | SaleService.getAll,SaleService.createSale | wf:ventas
+GET   /api/sales/stats                               StatsService.getSalesByMonth
+POST  /api/tickets/[id]/anular                       entradas.deliver
+GET   /api/tickets/[id]/baucher                      entradas.view
+POST  /api/tickets/[id]/entregar                     entradas.deliver | SaleService.createSale | wf:ventas
+ANY   /api/tickets/cortesia-solicitudes/[id]/approve 
+ANY   /api/tickets/cortesia-solicitudes/[id]/reject  
+ANY   /api/tickets/cortesia-solicitudes              
+PATCH /api/tickets/cover-solicitudes/[id]/approve    entradas.deliver | SaleService.createSale | wf:ventas
+PATCH /api/tickets/cover-solicitudes/[id]/reject     entradas.deliver
+GET   /api/tickets/cover-solicitudes                 entradas.deliver,entradas.deliver
+POST  /api/tickets/cover-solicitudes                 entradas.deliver,entradas.deliver
+GET   /api/tickets/pendientes                        entradas.deliver
+GET   /api/tickets                                   entradas.view,entradas.create
+POST  /api/tickets                                   entradas.view,entradas.create
+GET   /api/tips/[id]                                 TipService.getByIdWithParticipants
+GET   /api/tips                                      tips.read,tips.write | TipService.getSummary,TipService.getDetails,TipService.register
+POST  /api/tips                                      tips.read,tips.write | TipService.getSummary,TipService.getDetails,TipService.register
+GET   /api/tips/user                                 TipService.getByUser
+===== tareas--1.json
+===== tareas--2.json
+===== unassigned.json

@@ -159,9 +159,9 @@ describe('GET /api/notifications/kiosk', () => {
     sendNotificationToAll('attendance_registered', {
       user: { id: 'u-2', nombre: 'Ana', apellido: 'Perez' },
       qrToken: 'credencial-que-no-debe-salir'
-    });
+    } as any);
     sendNotificationToAll('security_alert', { message: 'intento de acceso' });
-    sendNotificationToAll('new_order', { id: 'p-9', total: 50000 });
+    sendNotificationToAll('new_order', { id: 'p-9', total: 50000 } as any);
 
     const asistencia = await stream.pull();
     expect(asistencia).toMatchObject({

@@ -14,9 +14,9 @@ import TipsStatsCards from '@/components/tips/TipsStatsCards';
 import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { ErrorState } from '@/components/shared/ErrorState';
-import { Clock, CheckCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle } from 'lucide-react';
 
-type TabType = 'pending' | 'paid';
+type TabType = 'pending' | 'paid' | 'cancelled';
 
 export default function TipsPage() {
   const { data: tips, loading, error, fetchTipsResumen } = useTipsResumen();
@@ -97,10 +97,9 @@ export default function TipsPage() {
       };
     }
 
-    const totalTips = filteredTips.reduce(
-      (sum: number, tip: any) => sum + toNumber(tip.total_propinas),
-      0
-    );
+    const totalTips = filteredTips
+      .filter((tip: any) => toNumber(tip.propinas_pendientes) > 0)
+      .reduce((sum: number, tip: any) => sum + toNumber(tip.total_propinas), 0);
     const totalUsuarios = filteredTips.length;
     const totalTipsCajaActiva = filteredTipsCajaActiva.reduce(
       (sum: number, tip: any) => sum + toNumber(tip.total_propinas),
@@ -128,11 +127,13 @@ export default function TipsPage() {
 
   const pendingCount = filteredTips.filter((t: any) => toNumber(t.propinas_pendientes) > 0).length;
   const paidCount = filteredTips.filter((t: any) => toNumber(t.propinas_cobradas) > 0).length;
+  const cancelledCount = filteredTips.filter((t: any) => toNumber(t.propinas_anuladas) > 0).length;
 
   const tabFilteredTips = useMemo(() => {
     return filteredTips.filter((tip: any) => {
       if (activeTab === 'pending') return toNumber(tip.propinas_pendientes) > 0;
       if (activeTab === 'paid') return toNumber(tip.propinas_cobradas) > 0;
+      if (activeTab === 'cancelled') return toNumber(tip.propinas_anuladas) > 0;
       return true;
     });
   }, [filteredTips, activeTab]);
@@ -230,19 +231,28 @@ export default function TipsPage() {
                   setPage(1);
                 },
                 tone: 'success'
+              },
+              {
+                label: 'Anuladas',
+                count: cancelledCount,
+                active: activeTab === 'cancelled',
+                onSelect: () => {
+                  setActiveTab('cancelled');
+                  setPage(1);
+                },
+                tone: 'danger'
               }
             ]}
           />
 
           {}
-          <div className='overflow-x-auto'>
-            <TipsTable
-              loading={loading}
-              rows={tabPaginatedTips}
-              rowsPerPage={rowsPerPage}
-              onVerDetalle={handleVerDetalle}
-            />
-          </div>
+          <TipsTable
+            loading={loading}
+            rows={tabPaginatedTips}
+            rowsPerPage={rowsPerPage}
+            onVerDetalle={handleVerDetalle}
+            activeTab={activeTab}
+          />
           {totalPages > 1 && (
             <div className='flex justify-center mt-4 sm:mt-6'>
               <Paginate page={page} totalPages={totalPages} setPage={setPage} />

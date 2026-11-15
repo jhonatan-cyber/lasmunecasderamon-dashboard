@@ -22,7 +22,7 @@ export const PATCH = withRoute(
       id_solicitud: id,
       estado: 'aprobada',
       servicio_id: result.servicio_id
-    });
+    } as any);
     sendNotificationToAll('timers_updated', { timestamp: new Date().toISOString() });
 
     return NextResponse.json({ success: true, data: result });

@@ -132,12 +132,16 @@ export const useLoginForm = () => {
     setThemeMode(next);
   }, [theme, setThemeMode]);
 
+  // Aplicar tema inicial desde localStorage al montar
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
     const initialTheme =
       saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'system';
     setThemeMode(initialTheme);
+  }, [setThemeMode]);
 
+  // Verificar sesión y usuarios al montar: solo una vez, sin re-ejecutarse
+  useEffect(() => {
     async function fetchData() {
       try {
         const resUsers = await fetch('/api/auth/check-users', { credentials: 'include' });
@@ -157,7 +161,7 @@ export const useLoginForm = () => {
       }
     }
     fetchData();
-  }, [router, setThemeMode]);
+  }, [router]);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (loading) return;

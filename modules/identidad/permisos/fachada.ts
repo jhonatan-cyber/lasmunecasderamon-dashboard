@@ -1,5 +1,6 @@
 import { PermissionRepository } from '@/modules/identidad/permisos/registro';
 import { SecurityAlertService } from '@/modules/auditoria';
+import { PermissionCreateSchema, PermissionUpdateSchema } from '@/lib/business/schemas';
 
 export class PermissionService {
   static async getAll() {
@@ -12,6 +13,8 @@ export class PermissionService {
     module: string;
     action: string;
   }) {
+    // Validación de doble capa con Zod.
+    PermissionCreateSchema.parse(data);
     const id = await PermissionRepository.create(data);
     // 🔒 Alerta de seguridad: permiso creado
     SecurityAlertService.alertPermissionChange({
@@ -45,6 +48,8 @@ export class PermissionService {
     id: string,
     data: { name?: string; description?: string; module?: string; action?: string }
   ) {
+    // Validación de doble capa con Zod.
+    PermissionUpdateSchema.parse(data);
     const oldPerms = await PermissionRepository.getDetails(id);
     const oldPerm = oldPerms[0];
     await PermissionRepository.update(id, data);

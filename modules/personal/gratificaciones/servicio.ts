@@ -1,5 +1,6 @@
 import { GratificacionRepository } from '@/modules/personal/gratificaciones/repositorio';
 import type { GratificacionAction } from '@/modules/personal/gratificaciones/consultas';
+import { GratificacionCreateSchema, GratificacionUpdateSchema } from '@/lib/business/schemas';
 
 export class GratificacionService {
   /** Solicitud pendiente; no confundir con create(), que crea un monto por pagar. */
@@ -9,8 +10,8 @@ export class GratificacionService {
     motivo: string,
     adminId: string
   ) {
-    if (!usuarioId || !Number.isFinite(monto) || monto <= 0)
-      throw new Error('Usuario y monto positivo requeridos');
+    // Validación de doble capa con Zod.
+    GratificacionCreateSchema.parse({ usuario_id: usuarioId, monto, descripcion: motivo });
     return GratificacionRepository.request(usuarioId, monto, motivo, adminId, false);
   }
   static async request(
@@ -20,8 +21,8 @@ export class GratificacionService {
     /** Quién solicita (id de sesión). Se persiste como `solicitante_id` (037). */
     solicitanteId?: string
   ) {
-    if (!usuario_id) throw new Error('Usuario es requerido');
-    if (!Number.isFinite(monto) || monto <= 0) throw new Error('Monto debe ser positivo');
+    // Validación de doble capa: la route ya validó con Zod, el servicio revalida.
+    GratificacionCreateSchema.parse({ usuario_id, monto, descripcion });
     return await GratificacionRepository.create({
       usuario_id,
       monto,
@@ -44,8 +45,8 @@ export class GratificacionService {
     descripcion?: string;
     solicitante_id?: string | null;
   }) {
-    if (!data.usuario_id) throw new Error('Usuario es requerido');
-    if (!Number.isFinite(data.monto) || data.monto <= 0) throw new Error('Monto debe ser positivo');
+    // Validación de doble capa: la route ya validó con Zod, el servicio revalida.
+    GratificacionCreateSchema.parse({ usuario_id: data.usuario_id, monto: data.monto, descripcion: data.descripcion });
     return await GratificacionRepository.create(data);
   }
 
@@ -63,7 +64,8 @@ export class GratificacionService {
   }
 
   static async update(id: string, data: { monto: number; descripcion?: string }) {
-    if (!Number.isFinite(data.monto) || data.monto <= 0) throw new Error('Monto debe ser positivo');
+    // Validación de doble capa con Zod.
+    GratificacionUpdateSchema.parse(data);
     return await GratificacionRepository.update(id, data);
   }
 

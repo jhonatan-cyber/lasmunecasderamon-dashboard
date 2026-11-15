@@ -22,6 +22,7 @@ export interface User {
   biometrico_codigo?: string | null;
   biometrico_huella?: number;
   biometrico_facial?: number;
+  estado_servicio?: number;
   created_at: string;
   updated_at?: string;
   deleted_at?: string;

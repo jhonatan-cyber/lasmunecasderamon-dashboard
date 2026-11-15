@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { DeleteConfirmModal } from '@/components/shared/DeleteConfirmModal';
@@ -355,15 +355,25 @@ export function BiometricDevices() {
   const mostrarAlta = altaAbierta || (!loading && devices.length === 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Lector biométrico de la puerta</CardTitle>
-        <CardDescription>
-          Los equipos ZKTeco y Dahua empujan cada verificación a este sitio. El alta por serial es
-          lo que autoriza al equipo: sin ella, sus eventos se rechazan.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className='flex flex-col gap-6'>
+    <>
+      <CollapsibleCard
+        defaultOpen
+        aria-label='Lector biométrico de la puerta'
+        className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+        headerClassName='p-4 sm:px-5 sm:py-4'
+        contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+        title={
+          <div className='flex items-center gap-3'>
+            <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+              <Wifi className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+            </div>
+            <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+              Lector biométrico de la puerta
+            </span>
+          </div>
+        }
+        description='Los equipos ZKTeco y Dahua empujan cada verificación a este sitio. El alta por serial es lo que autoriza al equipo: sin ella, sus eventos se rechazan.'
+      >
         <div className='flex items-center justify-between gap-4 border-b pb-4'>
           <div className='flex items-start gap-3'>
             <Wifi className='mt-0.5 h-4 w-4 shrink-0 text-muted-foreground' />
@@ -765,7 +775,7 @@ export function BiometricDevices() {
             </div>
           )}
         </div>
-      </CardContent>
+      </CollapsibleCard>
 
       <DeleteConfirmModal
         open={revokeTarget !== null}
@@ -780,6 +790,6 @@ export function BiometricDevices() {
         fieldName='Equipo'
         isLoading={revokeTarget !== null && revoking === revokeTarget.id}
       />
-    </Card>
+    </>
   );
 }

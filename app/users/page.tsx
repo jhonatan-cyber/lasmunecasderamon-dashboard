@@ -65,6 +65,9 @@ export default function Users() {
     nombre: string;
     codigo: string;
   } | null>(null);
+  const [releaseTarget, setReleaseTarget] = useState<User | null>(null);
+  const [releasing, setReleasing] = useState(false);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
   const { user: currentUser, refetch: refetchCurrentUser } = useCurrentUser();
   const { updateImage } = useUserImage();
 
@@ -247,6 +250,37 @@ export default function Users() {
     [users]
   );
 
+  const handleReleaseHostess = useCallback((userId: string | number) => {
+    const user = users?.find(u => u.id === userId);
+    if (user) {
+      setReleaseError(null);
+      setReleaseTarget(user);
+    }
+  }, [users]);
+
+  async function confirmRelease() {
+    if (!releaseTarget || releasing) return;
+    setReleasing(true);
+    setReleaseError(null);
+    try {
+      const response = await fetch(
+        `/api/hostesses/${encodeURIComponent(String(releaseTarget.id))}/release`,
+        { method: 'POST' }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'No se pudo liberar a la anfitriona.');
+      }
+      toast.success(result.message);
+      setReleaseTarget(null);
+    } catch (error) {
+      setReleaseError(error instanceof Error ? error.message : 'Error de conexión. Reintentá.');
+    } finally {
+      setReleasing(false);
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
+  }
+
   const handleConfirmDelete = useCallback(async () => {
     if (!userToDelete) return;
     const r = await deleteUser(String(userToDelete.id));
@@ -323,6 +357,7 @@ export default function Users() {
               onActivate={handleActivateUser}
               onDeactivate={handleDeactivateUser}
               onDelete={handleDeleteUser}
+              onRelease={handleReleaseHostess}
               formatCurrency={formatCurrency}
               formatDate={formatDate}
               getRoleBadgeColor={getRoleBadgeColor}
@@ -408,6 +443,36 @@ export default function Users() {
             }}
           />
         )}
+
+        <AlertDialog
+          open={Boolean(releaseTarget)}
+          onOpenChange={open => {
+            if (!open && !releasing) setReleaseTarget(null);
+          }}
+        >
+          <AlertDialogContent aria-busy={releasing}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Liberar anfitriona</AlertDialogTitle>
+              <AlertDialogDescription>
+                ¿Estás seguro de que querés liberar a {releaseTarget?.name}{' '}
+                {releaseTarget?.lastName} de su servicio actual? La anfitriona quedará disponible
+                para asignaciones nuevas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {releaseError && (
+              <p role='alert' className='text-sm text-destructive'>
+                {releaseError}
+              </p>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={releasing}>Cancelar</AlertDialogCancel>
+              <Button variant='destructive' disabled={releasing} onClick={confirmRelease}>
+                {releasing && <Loader2 className='size-4 animate-spin' />}
+                {releasing ? 'Liberando…' : releaseError ? 'Reintentar' : 'Liberar'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </PermissionGuard>
     </div>
   );

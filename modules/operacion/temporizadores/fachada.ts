@@ -18,7 +18,7 @@ export class TimerService {
         servicioId: cuentaId,
         status: 1,
         tipoTransaccion: 'cuenta'
-      });
+      } as any);
     if (resultado.changed) sendNotificationToAll('timers_updated', { timestamp: fecha });
   }
 }

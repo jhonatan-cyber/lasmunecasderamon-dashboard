@@ -20,7 +20,8 @@ const reserva: ReservaQuincho = {
   usuario_id: null,
   fecha_crea: '2026-10-01T10:00:00.000Z',
   fecha_anulacion: null,
-  anulada_por: null
+  anulada_por: null,
+  fecha_uso: null
 };
 
 afterEach(() => {
@@ -77,6 +78,16 @@ describe('ReservaQuinchoDetalleModal', () => {
     mount({ canCancel: false });
 
     expect(screen.queryByRole('button', { name: /Anular reserva de/i })).not.toBeInTheDocument();
+  });
+
+  it('muestra el badge "Usado" y oculta el botón de anular', () => {
+    mount({
+      reservas: [{ ...reserva, estado: 'usado', fecha_uso: '2026-11-21T10:00:00.000Z' }]
+    });
+
+    expect(screen.getByText('Usado')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Anular reserva de/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Usado el/)).toBeInTheDocument();
   });
 
   it('anula solo después de confirmar y devolviendo el prepago', async () => {

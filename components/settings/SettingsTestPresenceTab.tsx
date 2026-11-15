@@ -4,7 +4,7 @@ import { ErrorState } from '@/components/shared/ErrorState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, LogIn, LogOut, RefreshCw, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -118,19 +118,24 @@ export function SettingsTestPresenceTab() {
   const enLocal = useMemo(() => personal.filter(p => p.en_local).length, [personal]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2 text-xl font-bold'>
-          <UserCheck className='h-5 w-5 text-muted-foreground' />
-          Loguear personal en el local
-        </CardTitle>
-        <CardDescription>
-          Herramienta de pruebas: marca al personal como «en el local» para poder registrar ventas,
-          servicios y pedidos que exigen anfitrionas, garzones y otros conectados. Es el mismo
-          estado que deja un login real; no reemplaza la asistencia.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className='flex flex-col gap-4'>
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Loguear personal en el local'
+      className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+      title={
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+            <UserCheck className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+          </div>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+            Loguear personal en el local
+          </span>
+        </div>
+      }
+      description='Herramienta de pruebas: marca al personal como «en el local» para poder registrar ventas, servicios y pedidos que exigen anfitrionas, garzones y otros conectados. Es el mismo estado que deja un login real; no reemplaza la asistencia.'
+    >
         {loading ? (
           <div className='flex flex-col gap-2' role='status' aria-label='Cargando personal'>
             {Array.from({ length: 5 }).map((_, i) => (
@@ -253,7 +258,6 @@ export function SettingsTestPresenceTab() {
             )}
           </>
         )}
-      </CardContent>
-    </Card>
+    </CollapsibleCard>
   );
 }

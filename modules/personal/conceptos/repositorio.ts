@@ -173,10 +173,10 @@ export async function anularPropinasVenta(
 ): Promise<void> {
   const trx = resolverTransaccion(contexto);
   await trx(
-    'DELETE FROM detalle_propinas WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)',
+    'UPDATE detalle_propinas SET estado = 0 WHERE propina_id IN (SELECT id_propina FROM propinas WHERE venta_id = ?)',
     [ventaId]
   );
-  await trx('DELETE FROM propinas WHERE venta_id = ?', [ventaId]);
+  await trx('UPDATE propinas SET estado = 0 WHERE venta_id = ?', [ventaId]);
 }
 
 /**
@@ -250,8 +250,9 @@ export async function leerResumenPropinas(
              U.foto AS usuario_foto,
              MAX(COALESCE(V.fecha_crea, P.fecha_crea)) AS fecha_crea,
              SUM(DP.monto) AS total_propinas,
-             SUM(CASE WHEN DP.estado = 1 THEN DP.monto ELSE 0 END) AS propinas_pendientes,
-             SUM(CASE WHEN DP.estado = 0 THEN DP.monto ELSE 0 END) AS propinas_cobradas
+             SUM(CASE WHEN P.estado = 1 AND DP.estado = 1 THEN DP.monto ELSE 0 END) AS propinas_pendientes,
+             SUM(CASE WHEN P.estado = 1 AND DP.estado = 0 THEN DP.monto ELSE 0 END) AS propinas_cobradas,
+             SUM(CASE WHEN P.estado = 0 THEN DP.monto ELSE 0 END) AS propinas_anuladas
       FROM propinas P
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
       INNER JOIN usuarios U ON U.id_usuario = DP.usuario_id
@@ -275,6 +276,7 @@ export async function leerPropinasDeUsuario(userId: string): Promise<any[]> {
              V.fecha_crea AS fecha_venta,
              DP.fecha_mod AS propina_fecha_crea,
              V.codigo AS codigo_venta, DP.monto, V.id_venta AS venta_id,
+             V.estado AS venta_estado,
              DP.estado, CASE WHEN DP.estado = 1 THEN 'Por pagar' ELSE 'Pagado' END AS estado_texto
       FROM propinas P
       INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
@@ -307,6 +309,7 @@ export async function leerDetallePropinas(
         v.metodo_pago,
         v.codigo AS codigo_venta,
         v.id_venta AS venta_id,
+        v.estado AS venta_estado,
         dp.fecha_mod AS fecha_pago
       FROM propinas p
       LEFT JOIN ventas v ON v.id_venta = p.venta_id

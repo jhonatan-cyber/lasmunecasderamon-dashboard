@@ -32,9 +32,12 @@ export function QueryProvider({ children }: QueryProviderProps) {
 
             retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
 
-            refetchOnWindowFocus: true,
-            refetchOnReconnect: 'always',
-            refetchOnMount: true,
+            // No refetchear al cambiar de pestaña: con staleTime de 5 min y SSE
+            // invalidando solo lo afectado, un refetch global al volver a la pestaña
+            // hace parecer que el dashboard "se recarga cada rato".
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
+            refetchOnMount: false,
             refetchInterval: false,
             structuralSharing: true,
 

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 
 import { useCallback, useEffect, useState } from 'react';
 import { Clock, Loader2, Save, TriangleAlert } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -210,19 +210,25 @@ export function SettingsAttendanceTab() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2 text-xl font-bold'>
-          <Clock className='h-5 w-5 text-muted-foreground' />
-          Ventana de asistencia
-        </CardTitle>
-        <CardDescription>
-          Rango en el que se aceptan marcas de entrada y salida. Fuera de él el sistema guarda la
-          ubicación pero no computa la asistencia del día.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Ventana de asistencia'
+      className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+      title={
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+            <Clock className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+          </div>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+            Ventana de asistencia
+          </span>
+        </div>
+      }
+      description='Rango en el que se aceptan marcas de entrada y salida. Fuera de él el sistema guarda la ubicación pero no computa la asistencia del día.'
+    >
+      {loading ? (
           <div className='space-y-4 max-w-2xl' role='status' aria-label='Cargando configuración'>
             <Skeleton className='h-6 w-44' />
             <Skeleton className='h-24 w-full' />
@@ -363,7 +369,6 @@ export function SettingsAttendanceTab() {
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </CollapsibleCard>
   );
 }

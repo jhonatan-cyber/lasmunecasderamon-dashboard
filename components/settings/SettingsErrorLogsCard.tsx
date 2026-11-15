@@ -3,7 +3,7 @@
 import { AlertTriangle } from 'lucide-react';
 import Paginate from '@/components/shared/Paginate';
 import SelectElements from '@/components/shared/SelectElements';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -43,14 +43,23 @@ export function SettingsErrorLogsCard({
   getRangeLabel
 }: SettingsErrorLogsCardProps) {
   return (
-    <Card className={cardClass}>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <AlertTriangle className='h-5 w-5 text-red-600' />
-          Error Logs
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <CollapsibleCard
+      defaultOpen
+      aria-label='Error Logs'
+      className={cardClass}
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+      title={
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950'>
+            <AlertTriangle className='h-4 w-4 text-red-600 dark:text-red-400' />
+          </div>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+            Error Logs
+          </span>
+        </div>
+      }
+    >
         {loading ? (
           <div className='space-y-4'>
             {Array.from({ length: 4 }).map((_, index) => (
@@ -164,7 +173,6 @@ export function SettingsErrorLogsCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+    </CollapsibleCard>
   );
 }

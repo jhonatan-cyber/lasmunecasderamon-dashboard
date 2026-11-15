@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Database, Download, HardDrive, RotateCcw } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import { CleanDatabaseConfirmModal } from './CleanDatabaseConfirmModal';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
@@ -176,14 +176,44 @@ export function SettingsMaintenanceTab() {
   return (
     <>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-        <Card className='flex flex-col h-full'>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-lg flex items-center gap-2'>
-              <HardDrive className='h-5 w-5' />
-              Backups
-            </CardTitle>
-          </CardHeader>
-          <CardContent className='flex-1 pb-4'>
+        <CollapsibleCard
+          defaultOpen
+          aria-label='Backups'
+          className='flex flex-col h-full rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+          headerClassName='p-4 sm:px-5 sm:py-4'
+          contentClassName='flex-1 px-4 pb-4 sm:px-5 sm:pb-5'
+          title={
+            <div className='flex items-center gap-3'>
+              <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+                <HardDrive className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+              </div>
+              <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
+                Backups
+              </span>
+            </div>
+          }
+          description='Crea, descarga y restaura respaldos de la base de datos.'
+          headerAction={
+            <Button
+              variant='unstyled'
+              onClick={createBackup}
+              disabled={isCreatingBackup}
+              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
+            >
+              {isCreatingBackup ? (
+                <>
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
+                  Creando...
+                </>
+              ) : (
+                <>
+                  <HardDrive className='h-4 w-4 mr-2' />
+                  Crear Backup
+                </>
+              )}
+            </Button>
+          }
+        >
             <p className='text-sm text-gray-600 dark:text-gray-300 mb-4'>
               Crea un backup antes de vaciar la base de datos para poder restaurar si es necesario.
             </p>
@@ -248,52 +278,26 @@ export function SettingsMaintenanceTab() {
                 </Table>
               </div>
             )}
-          </CardContent>
-          <CardFooter className='flex justify-end border-t pt-4 mt-auto'>
-            <Button
-              variant='unstyled'
-              onClick={createBackup}
-              disabled={isCreatingBackup}
-              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm'
-            >
-              {isCreatingBackup ? (
-                <>
-                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
-                  Creando...
-                </>
-              ) : (
-                <>
-                  <HardDrive className='h-4 w-4 mr-2' />
-                  Crear Backup
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
+        </CollapsibleCard>
 
-        <Card className='border-red-200 dark:border-red-900 flex flex-col h-full'>
-          <CardHeader className='pb-3'>
-            <CardTitle className='text-lg flex items-center gap-2 text-red-600 dark:text-red-400'>
-              <Database className='h-5 w-5' />
-              Mantenimiento de Base de Datos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className='flex-1 pb-4'>
-            <div className='text-sm text-gray-600 dark:text-gray-300'>
-              <p>Esta acción vaciará todas las tablas excepto:</p>
-              <ul className='list-disc list-inside mt-1 text-gray-500'>
-                {DATABASE_CLEAN_PROTECTED_TABLES.map(table => (
-                  <li key={table}>{table}</li>
-                ))}
-              </ul>
-              <p className='mt-2 text-xs'>
-                Se conservan las asignaciones de permisos y el historial técnico de migraciones.
-                También se eliminarán productos, inventario, compras, habitaciones, configuración y
-                respaldos guardados. Se descargará un respaldo antes del vaciado.
-              </p>
+        <CollapsibleCard
+          defaultOpen
+          aria-label='Mantenimiento de Base de Datos'
+          className='border-red-200 dark:border-red-900 flex flex-col h-full rounded-2xl bg-white dark:bg-neutral-900'
+          headerClassName='p-4 sm:px-5 sm:py-4'
+          contentClassName='flex-1 px-4 pb-4 sm:px-5 sm:pb-5'
+          title={
+            <div className='flex items-center gap-3'>
+              <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950'>
+                <Database className='h-4 w-4 text-red-600 dark:text-red-400' />
+              </div>
+              <span className='text-base font-semibold leading-tight text-red-600 dark:text-red-400'>
+                Mantenimiento de Base de Datos
+              </span>
             </div>
-          </CardContent>
-          <CardFooter className='flex justify-end border-t pt-4 mt-auto'>
+          }
+          description='Acciones de mantenimiento con impacto en los datos. Usa con precaución.'
+          headerAction={
             <Button
               variant='unstyled'
               onClick={() => setIsCleanModalOpen(true)}
@@ -312,8 +316,22 @@ export function SettingsMaintenanceTab() {
                 </>
               )}
             </Button>
-          </CardFooter>
-        </Card>
+          }
+        >
+            <div className='text-sm text-gray-600 dark:text-gray-300'>
+              <p>Esta acción vaciará todas las tablas excepto:</p>
+              <ul className='list-disc list-inside mt-1 text-gray-500'>
+                {DATABASE_CLEAN_PROTECTED_TABLES.map(table => (
+                  <li key={table}>{table}</li>
+                ))}
+              </ul>
+              <p className='mt-2 text-xs'>
+                Se conservan las asignaciones de permisos y el historial técnico de migraciones.
+                También se eliminarán productos, inventario, compras, habitaciones, configuración y
+                respaldos guardados. Se descargará un respaldo antes del vaciado.
+              </p>
+            </div>
+        </CollapsibleCard>
       </div>
 
       <CleanDatabaseConfirmModal

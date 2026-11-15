@@ -64,7 +64,7 @@ export default function OvertimeTable({
     <div className='lg:hidden space-y-4'>
       {loading
         ? Array.from({ length: pageSize }).map((_, i) => (
-            <Card key={i} className='rounded-3xl border-none shadow-xs p-4'>
+            <Card key={i} className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'>
               <Skeleton className='h-6 w-1/2 mb-4' />
               <div className='space-y-2'>
                 <Skeleton className='h-4 w-full' />
@@ -75,14 +75,14 @@ export default function OvertimeTable({
         : rows.map(overtime => (
             <Card
               key={overtime.id_hora_extra}
-              className='rounded-3xl border-none shadow-md bg-white dark:bg-slate-900 overflow-hidden group hover:scale-[1.01] transition-transform duration-200'
+              className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-slate-900 overflow-hidden group hover:scale-[1.01] transition-transform duration-200'
             >
               <CardContent className='p-5 space-y-4'>
                 <div className='flex justify-between items-start'>
                   <div className='space-y-1'>
                     {isAdmin && (
-                      <div className='flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white'>
-                        <Avatar className='h-6 w-6'>
+                      <div className='flex items-center gap-2'>
+                        <Avatar className='h-6 w-6 flex-shrink-0'>
                           {overtime.usuario_foto && overtime.usuario_foto !== '' ? (
                             <Image
                               data-themed-photo
@@ -98,7 +98,16 @@ export default function OvertimeTable({
                             </AvatarFallback>
                           )}
                         </Avatar>
-                        {overtime.usuario}
+                        <div className='flex flex-col'>
+                          <span className='text-sm font-bold text-gray-900 dark:text-white'>
+                            {overtime.usuario}
+                          </span>
+                          {overtime.nick && (
+                            <span className='text-[10px] font-medium text-gray-500 dark:text-gray-400'>
+                              @{overtime.nick}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                     <div className='flex items-center gap-2 text-xs text-gray-500'>
@@ -191,7 +200,7 @@ export default function OvertimeTable({
                       {isAdmin && (
                         <TableCell>
                           <div className='flex items-center gap-3'>
-                            <Avatar className='h-8 w-8'>
+                            <Avatar className='h-8 w-8 flex-shrink-0'>
                               {overtime.usuario_foto && overtime.usuario_foto !== '' ? (
                                 <Image
                                   data-themed-photo
@@ -207,9 +216,16 @@ export default function OvertimeTable({
                                 </AvatarFallback>
                               )}
                             </Avatar>
-                            <span className='font-bold text-sm text-gray-900 dark:text-white'>
-                              {overtime.usuario}
-                            </span>
+                            <div className='flex flex-col'>
+                              <span className='font-bold text-sm text-gray-900 dark:text-white'>
+                                {overtime.usuario}
+                              </span>
+                              {overtime.nick && (
+                                <span className='text-[10px] font-medium text-gray-500 dark:text-gray-400'>
+                                  @{overtime.nick}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                       )}

@@ -23,11 +23,14 @@ export const queryClient = new QueryClient({
 
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
 
-      refetchOnWindowFocus: process.env.NODE_ENV === 'production',
+      // No refetchear al cambiar de pestaña ni al montar: con staleTime de 5 min
+      // y SSE invalidando solo lo afectado, un refetch global hace parecer que el
+      // dashboard "se recarga cada rato".
+      refetchOnWindowFocus: false,
 
-      refetchOnReconnect: true,
+      refetchOnReconnect: false,
 
-      refetchOnMount: true
+      refetchOnMount: false
     },
     mutations: {
       retry: 1,

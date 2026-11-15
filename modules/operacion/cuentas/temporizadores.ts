@@ -45,7 +45,7 @@ export async function detenerTemporizadorEnUnidad(
     await finalizarSesionHabitacion(cuentaId, now, contexto);
     await liberarHabitacionPorAnulacion(String(cuenta.habitacion_id), contexto);
     aplazar(() => {
-      sendNotificationToAll('room_available', { roomId: cuenta.habitacion_id });
+      sendNotificationToAll('room_available', { roomId: String(cuenta.habitacion_id) });
     });
   } else {
     await detenerSinHabitacion(cuentaId, now, contexto);
@@ -56,7 +56,7 @@ export async function detenerTemporizadorEnUnidad(
       servicioId: cuentaId,
       status: 1,
       tipoTransaccion: 'cuenta'
-    });
+    } as any);
   });
   aplazar(() => {
     sendNotificationToAll('timers_updated', { timestamp: now });
@@ -149,7 +149,7 @@ export async function solicitarAnulacionCuentaEnUnidad(
         servicioId: cuentaId,
         status: 1,
         tipoTransaccion: 'cuenta'
-      });
+      } as any);
     });
     aplazar(() => {
       sendNotificationToAll('timers_updated', { timestamp: now });

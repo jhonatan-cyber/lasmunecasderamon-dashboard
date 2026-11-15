@@ -20,7 +20,7 @@ export const PATCH = withRoute(
     sendNotificationToAll('service_request_processed', {
       id_solicitud: id,
       estado: 'rechazada'
-    });
+    } as any);
 
     return NextResponse.json({ success: true, data: result });
   }

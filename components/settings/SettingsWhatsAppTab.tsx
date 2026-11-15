@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
 import { MessageCircle, Save, ShieldCheck, Send, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
 import { Label } from '@/components/ui/label';
@@ -411,20 +411,24 @@ export function SettingsWhatsAppTab() {
   ];
 
   return (
-    <div className='space-y-6'>
-      <Card className='border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2 text-xl font-bold dark:text-white'>
-            <MessageCircle className='h-5 w-5 text-neutral-500' />
+    <CollapsibleCard
+      defaultOpen
+      aria-label='WhatsApp / Twilio'
+      className='rounded-2xl border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+      headerClassName='p-4 sm:px-5 sm:py-4'
+      contentClassName='px-4 pb-4 sm:px-5 sm:pb-5'
+      title={
+        <div className='flex items-center gap-3'>
+          <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800'>
+            <MessageCircle className='h-4 w-4 text-neutral-700 dark:text-neutral-300' />
+          </div>
+          <span className='text-base font-semibold leading-tight text-neutral-900 sm:text-lg dark:text-white'>
             WhatsApp / Twilio
-          </CardTitle>
-          <CardDescription className='text-neutral-500 dark:text-neutral-400'>
-            Conexión con Twilio para enviar y recibir WhatsApp. Se guardan en la base de datos y
-            mandan sobre las variables del .env: si un campo queda vacío, se usa la variable de
-            entorno correspondiente.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </span>
+        </div>
+      }
+      description='Conexión con Twilio para enviar y recibir WhatsApp. Se guardan en la base de datos y mandan sobre las variables del .env: si un campo queda vacío, se usa la variable de entorno correspondiente.'
+    >
           {loading ? (
             <div className='text-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto'></div>
@@ -666,8 +670,6 @@ export function SettingsWhatsAppTab() {
                   : 'Guardar Cambios'}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+    </CollapsibleCard>
   );
 }

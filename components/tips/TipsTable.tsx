@@ -11,7 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Eye, Coins } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Eye, Coins, Calendar, User } from 'lucide-react';
 import Image from 'next/image';
 import { formatCurrencyNoDecimals, formatFechaLarga } from '@/lib/utils/formatters';
 import { PropinaResumen } from '@/types/propina';
@@ -22,9 +23,16 @@ interface TipsTableProps {
   rows: PropinaResumen[];
   rowsPerPage: number;
   onVerDetalle: (usuario: PropinaResumen) => void;
+  activeTab?: 'pending' | 'paid' | 'cancelled';
 }
 
-export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: TipsTableProps) {
+export default function TipsTable({
+  loading,
+  rows,
+  rowsPerPage,
+  onVerDetalle,
+  activeTab = 'pending'
+}: TipsTableProps) {
   const { hasPermission } = useUserPermissions();
   const canViewDetail = hasPermission('tips', 'view_details');
 
@@ -53,118 +61,234 @@ export default function TipsTable({ loading, rows, rowsPerPage, onVerDetalle }: 
     );
   }
 
+  const getStatusBadge = (propina: PropinaResumen) => {
+    if (activeTab === 'cancelled') {
+      return (
+        <Badge className='bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded-full px-3 py-1 text-xs font-semibold'>
+          Anulada
+        </Badge>
+      );
+    }
+    if (toNumber(propina.propinas_pendientes) > 0) {
+      return (
+        <Badge className='bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded-full px-3 py-1 text-xs font-semibold'>
+          Pendiente
+        </Badge>
+      );
+    }
+    if (toNumber(propina.propinas_cobradas) > 0) {
+      return (
+        <Badge className='bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-full px-3 py-1 text-xs font-semibold'>
+          Pagado
+        </Badge>
+      );
+    }
+    return (
+      <Badge className='bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded-full px-3 py-1 text-xs font-semibold'>
+        Sin estado
+      </Badge>
+    );
+  };
+
   return (
-    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
-      <div className='overflow-x-auto'>
-        <Table className='min-w-full text-center'>
-          <TableHeader>
-            <TableRow className='hover:bg-transparent'>
-              <TableHead className='text-start'>Usuario</TableHead>
-              <TableHead>Total propinas</TableHead>
-              <TableHead>Última propina</TableHead>
-              <TableHead>Estado</TableHead>
-              {canViewDetail && <TableHead>Detalles</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading
-              ? Array.from({ length: rowsPerPage }).map((_, i) => (
-                  <TableRow key={i} className='border-b'>
-                    <TableCell>
-                      <div className='flex items-center gap-3'>
-                        <Skeleton className='h-10 w-10 rounded-full' />
-                        <div className='flex flex-col gap-1'>
-                          <Skeleton className='h-4 w-36 rounded' />
-                          <Skeleton className='h-3 w-20 rounded' />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className='h-4 w-24 rounded mx-auto' />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className='h-4 w-28 rounded mx-auto' />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className='h-6 w-20 rounded-full mx-auto' />
-                    </TableCell>
-                    {canViewDetail && (
-                      <TableCell>
-                        <Skeleton className='h-8 w-8 rounded-xl mx-auto' />
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))
-              : rows.map((propina, idx) => (
-                  <TableRow
-                    key={propina.id_usuario}
-                    className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
-                  >
-                    <TableCell className='font-medium text-start'>
-                      <div className='flex items-center gap-3'>
-                        <div className='h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center'>
+    <>
+      {/* Vista móvil: cards */}
+      <div className='lg:hidden space-y-4'>
+        {loading
+          ? Array.from({ length: rowsPerPage }).map((_, i) => (
+              <Card key={i} className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'>
+                <Skeleton className='h-6 w-1/2 mb-4' />
+                <div className='space-y-2'>
+                  <Skeleton className='h-4 w-full' />
+                  <Skeleton className='h-4 w-3/4' />
+                </div>
+              </Card>
+            ))
+          : rows.map(propina => (
+              <Card
+                key={propina.id_usuario}
+                className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-slate-900 overflow-hidden group hover:scale-[1.01] transition-transform duration-200'
+              >
+                <CardContent className='p-5 space-y-4'>
+                  <div className='flex justify-between items-start'>
+                    <div className='space-y-1'>
+                      <div className='flex items-center gap-2'>
+                        <div className='h-8 w-8 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center flex-shrink-0'>
                           {propina.usuario_foto && propina.usuario_foto !== '' ? (
                             <Image
                               data-themed-photo
                               src={`/img/users/${propina.usuario_foto}`}
                               alt={propina.nombre_completo || 'Usuario'}
-                              width={40}
-                              height={40}
+                              width={32}
+                              height={32}
                               className='w-full h-full object-cover'
                             />
                           ) : (
-                            <span className='text-purple-700 font-bold text-xs'>
+                            <span className='text-purple-700 font-bold text-[10px]'>
                               {(propina.nombre_completo || 'U').substring(0, 2).toUpperCase()}
                             </span>
                           )}
                         </div>
-                        <div>
-                          <div className='font-medium text-gray-900 dark:text-gray-100'>
+                        <div className='flex flex-col'>
+                          <span className='text-sm font-bold text-gray-900 dark:text-white'>
                             {propina.nombre_completo}
-                          </div>
-                          <div className='text-xs text-gray-500'>@{propina.nick}</div>
+                          </span>
+                          {propina.nick && (
+                            <span className='text-[10px] font-medium text-gray-500 dark:text-gray-400'>
+                              @{propina.nick}
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell className='text-center font-semibold'>
-                      {formatCurrencyNoDecimals(propina.total_propinas)}
-                    </TableCell>
-                    <TableCell className='text-center'>
-                      {formatFechaLarga(propina.fecha_crea)}
-                    </TableCell>
-                    <TableCell className='text-center'>
-                      {toNumber(propina.propinas_pendientes) > 0 ? (
-                        <Badge className='bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 rounded-full px-3 py-1 text-xs font-semibold'>
-                          Pendiente
-                        </Badge>
-                      ) : toNumber(propina.propinas_cobradas) > 0 ? (
-                        <Badge className='bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-full px-3 py-1 text-xs font-semibold'>
-                          Pagado
-                        </Badge>
-                      ) : (
-                        <Badge className='bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded-full px-3 py-1 text-xs font-semibold'>
-                          Sin estado
-                        </Badge>
-                      )}
-                    </TableCell>
-                    {canViewDetail && (
-                      <TableCell className='text-center'>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => onVerDetalle(propina)}
-                          aria-label={`Ver detalle de la propina de ${propina.nombre_completo || propina.nick}`}
-                          className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200'
-                        >
-                          <Eye className='w-4 h-4' />
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-          </TableBody>
-        </Table>
+                    </div>
+                    {getStatusBadge(propina)}
+                  </div>
+
+                  <div className='grid grid-cols-2 gap-3'>
+                    <div className='space-y-1'>
+                      <span className='text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
+                        Total Propinas
+                      </span>
+                      <div className='flex items-center gap-1.5'>
+                        <Coins className='h-4 w-4 text-emerald-500' />
+                        <span className='font-bold text-sm text-gray-700 dark:text-gray-300'>
+                          {formatCurrencyNoDecimals(propina.total_propinas)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className='space-y-1'>
+                      <span className='text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide'>
+                        Última Propina
+                      </span>
+                      <div className='flex items-center gap-1.5'>
+                        <Calendar className='h-4 w-4 text-gray-400' />
+                        <span className='font-bold text-sm text-gray-700 dark:text-gray-300'>
+                          {formatFechaLarga(propina.fecha_crea)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {canViewDetail && (
+                    <div className='pt-2 border-t dark:border-gray-700 flex justify-end'>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => onVerDetalle(propina)}
+                        aria-label={`Ver detalle de la propina de ${propina.nombre_completo || propina.nick}`}
+                        className='h-8 px-3 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200'
+                      >
+                        <Eye className='w-4 h-4 mr-1' />
+                        Ver Detalle
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
       </div>
-    </div>
+
+      {/* Vista desktop: tabla */}
+      <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+        <div className='overflow-x-auto'>
+          <Table className='min-w-full text-center'>
+            <TableHeader>
+              <TableRow className='hover:bg-transparent'>
+                <TableHead className='text-start'>Usuario</TableHead>
+                <TableHead>Total propinas</TableHead>
+                <TableHead>Última propina</TableHead>
+                <TableHead>Estado</TableHead>
+                {canViewDetail && <TableHead>Detalles</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading
+                ? Array.from({ length: rowsPerPage }).map((_, i) => (
+                    <TableRow key={i} className='border-b'>
+                      <TableCell>
+                        <div className='flex items-center gap-3'>
+                          <Skeleton className='h-10 w-10 rounded-full' />
+                          <div className='flex flex-col gap-1'>
+                            <Skeleton className='h-4 w-36 rounded' />
+                            <Skeleton className='h-3 w-20 rounded' />
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-24 rounded mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-28 rounded mx-auto' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-6 w-20 rounded-full mx-auto' />
+                      </TableCell>
+                      {canViewDetail && (
+                        <TableCell>
+                          <Skeleton className='h-8 w-8 rounded-xl mx-auto' />
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                : rows.map((propina, idx) => (
+                    <TableRow
+                      key={propina.id_usuario}
+                      className={`border-b transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/30 border-gray-100 dark:border-gray-800 ${idx === 0 ? 'first:rounded-t-xl' : ''} ${idx === rows.length - 1 ? 'last:rounded-b-xl' : ''}`}
+                    >
+                      <TableCell className='font-medium text-start'>
+                        <div className='flex items-center gap-3'>
+                          <div className='h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center'>
+                            {propina.usuario_foto && propina.usuario_foto !== '' ? (
+                              <Image
+                                data-themed-photo
+                                src={`/img/users/${propina.usuario_foto}`}
+                                alt={propina.nombre_completo || 'Usuario'}
+                                width={40}
+                                height={40}
+                                className='w-full h-full object-cover'
+                              />
+                            ) : (
+                              <span className='text-purple-700 font-bold text-xs'>
+                                {(propina.nombre_completo || 'U').substring(0, 2).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <div className='font-medium text-gray-900 dark:text-gray-100'>
+                              {propina.nombre_completo}
+                            </div>
+                            <div className='text-xs text-gray-500'>@{propina.nick}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className='text-center font-semibold'>
+                        {formatCurrencyNoDecimals(propina.total_propinas)}
+                      </TableCell>
+                      <TableCell className='text-center'>
+                        {formatFechaLarga(propina.fecha_crea)}
+                      </TableCell>
+                      <TableCell className='text-center'>
+                        {getStatusBadge(propina)}
+                      </TableCell>
+                      {canViewDetail && (
+                        <TableCell className='text-center'>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => onVerDetalle(propina)}
+                            aria-label={`Ver detalle de la propina de ${propina.nombre_completo || propina.nick}`}
+                            className='h-8 w-8 p-0 rounded-xl text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200'
+                          >
+                            <Eye className='w-4 h-4' />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </>
   );
 }

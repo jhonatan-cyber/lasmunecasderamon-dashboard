@@ -1,6 +1,7 @@
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { buildFrame, type SseEventType, type SseSubscriberContext } from './sseEvents';
 import { publishSseEvent, startSseBus } from './sseBus';
+import { type SseEventData } from './sseTypes';
 
 interface SSEWriter {
   write(chunk: string): void;
@@ -51,16 +52,16 @@ class SSEManager {
     return this.clients.size;
   }
 
-  public broadcast(type: SseEventType, data: any = {}) {
+  public broadcast<T extends SseEventType>(type: T, data: SseEventData<T> = {} as SseEventData<T>) {
     const timestamp = getNowInBusinessTimezone();
     // Entrega inmediata a los clientes de esta instancia; el bus lleva el evento al resto.
     this.deliver(type, data, timestamp);
     publishSseEvent(type, data, timestamp);
   }
 
-  private deliver(type: SseEventType, data: any, timestamp: string) {
+  private deliver<T extends SseEventType>(type: T, data: SseEventData<T>, timestamp: string) {
     for (const [writer, context] of Array.from(this.clients.entries())) {
-      const frame = buildFrame({ type, data, subscriber: context }, timestamp);
+      const frame = buildFrame({ type, data: data as Record<string, unknown>, subscriber: context }, timestamp);
       if (!frame) continue;
       this.write(writer, frame);
     }
@@ -107,5 +108,5 @@ export const sseManager = new SSEManager();
 /**
  * Emite un evento al catálogo. La audiencia se resuelve por evento en `sseEvents.ts`.
  */
-export const sendNotificationToAll = (type: SseEventType, data: any = {}) =>
+export const sendNotificationToAll = <T extends SseEventType>(type: T, data: SseEventData<T> = {} as SseEventData<T>) =>
   sseManager.broadcast(type, data);

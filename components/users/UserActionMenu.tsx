@@ -9,7 +9,8 @@ import {
   Check,
   MoreVertical,
   Fingerprint,
-  UserMinus
+  UserMinus,
+  Unlock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,6 +30,7 @@ interface UserActionMenuProps {
   onActivate: (userId: string | number) => void;
   onDeactivate: (userId: string | number) => void;
   onDelete: (userId: string | number) => void;
+  onRelease?: (userId: string | number) => void;
   canViewDetails: boolean;
   canEdit: boolean;
   canEnroll: boolean;
@@ -47,6 +49,7 @@ function UserActionMenuComponent({
   onActivate,
   onDeactivate,
   onDelete,
+  onRelease,
   canViewDetails,
   canEdit,
   canEnroll,
@@ -185,6 +188,27 @@ function UserActionMenuComponent({
             </Tooltip>
           </TooltipProvider>
         )}
+
+        {onRelease &&
+          user.role?.toLowerCase() === 'anfitriona' &&
+          Number(user.estado_servicio || 0) === 1 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuItem
+                    onClick={() => onRelease(user.id)}
+                    className='cursor-pointer group'
+                  >
+                    <Unlock className='mr-2 text-amber-600 group-hover:text-amber-700 transition-colors w-3 h-3 sm:w-4 sm:h-4' />
+                    <span className='group-hover:text-amber-700 transition-colors text-xs sm:text-sm'>
+                      Liberar anfitriona
+                    </span>
+                  </DropdownMenuItem>
+                </TooltipTrigger>
+                <TooltipContent>Liberar a la anfitriona de su servicio actual</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

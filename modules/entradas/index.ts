@@ -2,13 +2,18 @@ import 'server-only';
 
 export {
   anularEntrada,
+  crearSolicitudAnulacionEntrada,
   entregarEntrada,
   entregarGrupoEntradas,
+  existeSolicitudAnulacionEntrada,
   listarEntradas,
   listarPendientes,
   obtenerBaucherEntrada,
+  obtenerSolicitudAnulacionEntradaPorToken,
   postearPendientesDeCaja,
-  registrarEntrada
+  registrarEntrada,
+  actualizarSolicitudAnulacionEntrada,
+  leerSolicitudAnulacionEntrada
 } from './servicio';
 
 export {
@@ -28,8 +33,10 @@ export type {
   UnidadCover,
   EstadoCover,
   MetodoPagoEntrada,
+  MetodoDevolucion,
   PlanVentaEntrada,
   RegistradorVenta,
   RegistroEntradaInput,
-  ResultadoEntrega
+  ResultadoEntrega,
+  SolicitudAnulacionEntrada
 } from './repositorio';

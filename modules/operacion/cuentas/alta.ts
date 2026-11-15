@@ -79,7 +79,7 @@ export async function crearCuentaEnUnidad(
         clienteNombre,
         tipoTransaccion: 'cuenta',
         status: 1
-      });
+      } as any);
     });
     aplazar(() => {
       sendNotificationToAll('timers_updated', { timestamp: now });

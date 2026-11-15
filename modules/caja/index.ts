@@ -31,3 +31,4 @@ export async function generarPdfCierreCaja(data: Record<string, unknown>): Promi
 }
 
 export { WithdrawalService } from './retiros/servicio';
+export type { MovimientoCobro } from './contracts';
