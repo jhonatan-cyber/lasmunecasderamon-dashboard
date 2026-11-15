@@ -19,7 +19,8 @@ export {
   obtenerCajaActiva,
   registrarMovimientoCobro,
   ajustarIvaCaja,
-  leerFondoCaja
+  leerFondoCaja,
+  obtenerEfectivoEnCaja
 } from './movimientos/servicio';
 
 export { CashRegisterService } from './turnos/servicio';

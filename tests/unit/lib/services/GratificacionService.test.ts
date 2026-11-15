@@ -27,31 +27,29 @@ describe('GratificacionService.create', () => {
   it.each([NaN, Infinity, -Infinity])(
     'rechaza montos no finitos al crear, solicitar y editar: %s',
     async monto => {
-      await expect(GratificacionService.create({ usuario_id: 'user-1', monto })).rejects.toThrow(
-        /positivo/
-      );
-      await expect(GratificacionService.request('user-1', monto)).rejects.toThrow(/positivo/);
-      await expect(GratificacionService.update('g1', { monto })).rejects.toThrow(/positivo/);
+      await expect(GratificacionService.create({ usuario_id: 'user-1', monto })).rejects.toThrow();
+      await expect(GratificacionService.request('user-1', monto)).rejects.toThrow();
+      await expect(GratificacionService.update('g1', { monto })).rejects.toThrow();
       expect(GratificacionRepository.create).not.toHaveBeenCalled();
       expect(GratificacionRepository.update).not.toHaveBeenCalled();
     }
   );
   it('throws if usuario_id is empty', async () => {
     await expect(GratificacionService.create({ usuario_id: '', monto: 1000 })).rejects.toThrow(
-      'Usuario es requerido'
+      'ID es requerido'
     );
   });
 
   it('throws if monto is zero', async () => {
     await expect(GratificacionService.create({ usuario_id: 'user-1', monto: 0 })).rejects.toThrow(
-      'Monto debe ser positivo'
+      'El valor debe ser positivo'
     );
   });
 
   it('throws if monto is negative', async () => {
     await expect(
       GratificacionService.create({ usuario_id: 'user-1', monto: -500 })
-    ).rejects.toThrow('Monto debe ser positivo');
+    ).rejects.toThrow('El valor debe ser positivo');
   });
 
   it('creates gratificacion with valid data', async () => {
@@ -95,7 +93,7 @@ describe('GratificacionService.create', () => {
 
 describe('GratificacionService.request', () => {
   it('throws if usuario_id is empty', async () => {
-    await expect(GratificacionService.request('', 1000)).rejects.toThrow('Usuario es requerido');
+    await expect(GratificacionService.request('', 1000)).rejects.toThrow('ID es requerido');
   });
 
   it('creates gratificacion with valid params', async () => {

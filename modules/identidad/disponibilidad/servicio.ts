@@ -1,5 +1,5 @@
 import type { ContextoOperacion } from '@/lib/transaction/contract';
-import { actualizarDisponibilidadAnfitrionas, listarAnfitrionasEnLocal } from './repositorio';
+import { actualizarDisponibilidadAnfitrionas, listarAnfitrionasEnLocal, verificarAnfitrionaOcupada as verificarOcupada } from './repositorio';
 import { comprobarAnfitrionasLibresParaServicio as comprobarLibres } from './repositorio';
 
 export function comprobarAnfitrionasLibresParaServicio(
@@ -26,4 +26,8 @@ export function actualizarDisponibilidad(
 
 export function validarAnfitrionasEnLocal(ids: string[], contexto: ContextoOperacion) {
   return listarAnfitrionasEnLocal(ids, contexto);
+}
+
+export function verificarAnfitrionaOcupada(userId: string) {
+  return verificarOcupada(userId);
 }
