@@ -473,10 +473,11 @@ export default function EntradasPage() {
 
       {canCreate && (
         <div className='rounded-2xl border bg-card shadow-xs overflow-hidden'>
-          <button
+          <Button
             type='button'
             onClick={() => setFormExpanded(expanded => !expanded)}
-            className='w-full flex items-center justify-between p-4 sm:p-5 hover:bg-muted/50 transition-colors'
+            className='w-full flex items-center justify-between p-4 sm:p-5 hover:bg-muted/50 transition-colors rounded-none'
+            variant='ghost'
           >
             <div>
               <h2 className='font-semibold'>Registrar entrada</h2>
@@ -489,7 +490,7 @@ export default function EntradasPage() {
                 formExpanded ? 'rotate-180' : ''
               }`}
             />
-          </button>
+          </Button>
           {formExpanded && (
             <form
               onSubmit={registrar}

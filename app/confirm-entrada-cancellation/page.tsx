@@ -6,6 +6,7 @@ import { toast, Toaster } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
@@ -223,9 +224,7 @@ function ConfirmarAnulacionEntradaContent() {
           </div>
 
           <div className='space-y-2'>
-            <label className='text-sm font-medium text-muted-foreground'>
-              Método de devolución
-            </label>
+            <Label>Método de devolución</Label>
             <Select value={metodoDevolucion} onValueChange={setMetodoDevolucion}>
               <SelectTrigger>
                 <SelectValue placeholder='Selecciona método de devolución' />
