@@ -1,1 +1,17 @@
-{}
+{
+  "tabla-unico-propietario|modules/entradas/repositorio.ts|solicitudes_anulacion_entradas (sin propietario)": {
+    "motivo": "El repositorio de entradas lee solicitudes de anulación para procesar el flujo completo de entrada",
+    "responsable": "jhonatan-cyber",
+    "condicion_de_eliminacion": "Cuando solicitudes_anulacion_entradas tenga un módulo propietario definido"
+  },
+  "tabla-unico-propietario|workflows/anulaciones-entrada.ts|entradas_clientes (entradas)": {
+    "motivo": "El workflow de anulaciones de entrada necesita acceder a entradas_clientes para revertir la entrada anulada",
+    "responsable": "jhonatan-cyber",
+    "condicion_de_eliminacion": "Cuando el workflow se mueva al módulo entradas"
+  },
+  "infra-transaccional-autorizada|workflows/anulaciones-entrada.ts|lib/transaction/infrastructure.ts": {
+    "motivo": "El workflow de anulaciones de entrada usa transacciones para garantizar consistencia al anular",
+    "responsable": "jhonatan-cyber",
+    "condicion_de_eliminacion": "Cuando los workflows usen la fachada transaccional en lugar de la infra directa"
+  }
+}
