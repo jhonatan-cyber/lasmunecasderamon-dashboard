@@ -6,7 +6,7 @@ export default [
   ...nextVitals,
   ...nextTypescript,
   {
-    ignores: ['.next/**', 'node_modules/**', 'playwright-report/**', 'coverage/**', '_tmp_real/**']
+    ignores: ['.next/**', 'node_modules/**', 'playwright-report/**', 'coverage/**', '_tmp_real/**', '.tmp/**']
   },
   {
     rules: {
