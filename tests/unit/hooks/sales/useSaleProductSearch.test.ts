@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { useSaleProductSearch } from '@/hooks/sales/useSaleProductSearch';
 
 const capture = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: capture } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: capture } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 const response = (id: string) => ({
   ok: true,

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ query: vi.fn(), notify: vi.fn() }));
 vi.mock('@/lib/database/db', () => ({ query: mocks.query, generateUUID: () => 'test-code-id' }));
-vi.mock('@/lib/utils/logger', () => ({ logger: { error: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ logger: { error: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 vi.mock('@/lib/utils/codeUtils', () => ({ generateRandomCode4: () => '4821' }));
 vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-10-07 12:00:00'

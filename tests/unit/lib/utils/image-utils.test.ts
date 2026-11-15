@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/utils/logger', () => {
   const mocks = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
-  return { logger: mocks, default: mocks };
+  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
 });
 
 // sharp escribe en disco: se reemplaza para poder asertar qué bytes llegaron sin dejar

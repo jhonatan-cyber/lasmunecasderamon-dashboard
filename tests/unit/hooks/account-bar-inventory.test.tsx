@@ -18,7 +18,7 @@ vi.mock('@/hooks/shared/useSingleFlight', () => ({
   useSingleFlight: (handler: unknown) => handler
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 import { useAccountForm } from '@/hooks/accounts/useAccountForm';
 import { useProductCart } from '@/hooks/accounts/useProductCart';
 

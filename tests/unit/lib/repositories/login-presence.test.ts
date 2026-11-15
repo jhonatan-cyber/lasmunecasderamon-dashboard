@@ -21,7 +21,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
 vi.mock('@/lib/utils/logger', () => ({
   default: { error: vi.fn(), info: vi.fn(), captureException: vi.fn() },
   logger: { error: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { loginUser } from '@/modules/identidad/autenticacion/consultas';
 

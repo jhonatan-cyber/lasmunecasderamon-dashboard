@@ -6,7 +6,7 @@ vi.mock('@/lib/utils/logger', () => ({
     warn: vi.fn(),
     error: vi.fn()
   }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 function calculateEntropy(str: string): number {
   if (!str || str.length === 0) return 0;

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthPermissions } from '@/contexts/auth/useAuthPermissions';
 import logger from '@/lib/utils/logger';
 
-vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn(), captureException: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn(), captureException: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 const user = { id: 1, name: 'Prueba', lastName: '', role: 'Barman', status: 1 };
 const getUser = () => user;
 const permission = { id: 1, name: 'Bar', description: '', module: 'products', action: 'view' };

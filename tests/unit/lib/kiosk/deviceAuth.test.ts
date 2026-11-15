@@ -9,7 +9,7 @@ vi.mock('@/lib/database/db', () => ({
 vi.mock('next/headers', () => ({
   cookies: async () => ({ get: () => (harness.cookie ? { value: harness.cookie } : undefined) })
 }));
-vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 import {
   getKioskDevice,
   provisionDevice,

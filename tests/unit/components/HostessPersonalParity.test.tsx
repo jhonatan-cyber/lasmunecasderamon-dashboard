@@ -18,7 +18,7 @@ vi.mock('@/lib/utils/logger', () => ({
     warn: vi.fn(),
     debug: vi.fn()
   }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 const user = { id: 1, name: 'Ana', role: 'anfitriona' };
 afterEach(() => {
   cleanup();

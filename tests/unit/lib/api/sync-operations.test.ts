@@ -15,7 +15,7 @@ vi.mock('@/lib/api/withRoute', () => ({
     (request: Request) =>
       handler(request, { user: { id: 'a' } })
 }));
-vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn(), info: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn(), info: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 import { GET } from '@/app/api/sync-operations/route';
 
 const request = (id = 'offline-test-123') =>

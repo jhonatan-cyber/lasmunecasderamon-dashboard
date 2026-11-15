@@ -30,7 +30,7 @@ vi.mock('@/lib/utils/logger', () => {
     debug: vi.fn(),
     captureException: vi.fn()
   };
-  return { logger: mocks, default: mocks };
+  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
 });
 
 import {

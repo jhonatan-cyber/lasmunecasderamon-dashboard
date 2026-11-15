@@ -38,7 +38,7 @@ const logger = vi.hoisted(() => ({
   info: vi.fn(),
   debug: vi.fn()
 }));
-vi.mock('@/lib/utils/logger', () => ({ logger, default: logger }));
+vi.mock('@/lib/utils/logger', () => ({ logger, default: logger , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { BusinessError } from '@/lib/errors/errors';
 import { ServiceRequestRepository } from '@/modules/operacion/solicitudes/repositorio';

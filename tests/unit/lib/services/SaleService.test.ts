@@ -62,7 +62,7 @@ const mockLogger = vi.hoisted(() => ({
 vi.mock('@/lib/utils/logger', () => ({
   logger: mockLogger,
   default: mockLogger
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 const baucher = vi.hoisted(() => ({
   guardarFotoBaucher: vi.fn(),

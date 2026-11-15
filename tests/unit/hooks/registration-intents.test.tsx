@@ -12,7 +12,7 @@ vi.mock('@/hooks/sales/useChampagneRule', () => ({
     maxAnfitrionas: 1
   })
 }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 import { useAccountForm } from '@/hooks/accounts/useAccountForm';
 import { useSingleFlight } from '@/hooks/shared/useSingleFlight';
 beforeEach(() => mocks.create.mockReset());

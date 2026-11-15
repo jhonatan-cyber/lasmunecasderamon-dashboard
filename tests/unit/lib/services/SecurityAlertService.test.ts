@@ -48,7 +48,7 @@ vi.mock('@/lib/utils/logger', () => ({
     error: vi.fn(),
     info: vi.fn()
   }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { SecurityAlertService } from '@/modules/auditoria/alertas/servicio';
 import { query } from '@/lib/database/db';

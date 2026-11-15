@@ -33,7 +33,7 @@ vi.mock('@/lib/utils/logger', () => {
     warn: vi.fn(),
     debug: vi.fn()
   };
-  return { default: logger, logger };
+  return { default: logger, logger, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn() };
 });
 vi.mock('@/modules/operacion', () => ({
   ServiceService: { updateService: state.update, updateStatus: state.status },

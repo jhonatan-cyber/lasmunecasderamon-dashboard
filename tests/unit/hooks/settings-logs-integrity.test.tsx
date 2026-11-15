@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { useSettingsLogs } from '@/hooks/settings/useSettingsLogs';
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();

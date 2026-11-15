@@ -54,7 +54,7 @@ vi.mock('@/lib/utils/logger', () => {
     warn: vi.fn(),
     debug: vi.fn()
   };
-  return { logger: mocks, default: mocks };
+  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
 });
 
 /** Tabla `sync_operations` en memoria, con la misma semántica del repositorio real. */

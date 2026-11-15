@@ -3,7 +3,7 @@ import path from 'node:path';
 const mocks = vi.hoisted(() => ({ query: vi.fn(), unlink: vi.fn(), captureException: vi.fn() }));
 vi.mock('@/lib/database/db', () => ({ query: mocks.query }));
 vi.mock('node:fs/promises', () => ({ default: { unlink: mocks.unlink } }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: mocks.captureException } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: mocks.captureException } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 import { eliminarFotosProductosSinUso } from '@/modules/inventario/productos/eliminarFotos';
 beforeEach(() => {
   vi.resetAllMocks();

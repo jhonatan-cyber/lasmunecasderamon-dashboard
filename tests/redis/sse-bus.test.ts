@@ -10,7 +10,7 @@ import {
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 const URL = 'redis://127.0.0.1:6379';
 const extra: Redis[] = [];

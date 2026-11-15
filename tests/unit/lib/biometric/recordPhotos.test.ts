@@ -40,7 +40,7 @@ vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => 
 
 vi.mock('@/lib/utils/logger', () => {
   const mocks = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
-  return { logger: mocks, default: mocks };
+  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
 });
 
 // La cadena foto → identificación 1:N tampoco debe tocar el SDK real.

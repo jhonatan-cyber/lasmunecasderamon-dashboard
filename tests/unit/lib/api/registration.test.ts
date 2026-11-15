@@ -36,7 +36,7 @@ vi.mock('@/lib/api/date-response', () => ({
 }));
 vi.mock('@/lib/utils/logger', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), captureException: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 import { withRoute } from '@/lib/api/withRoute';
 import { runIdempotent } from '@/lib/api/idempotency';
 const request = (path = '/api/purchases', key = 'registration-key-one', method = 'POST') =>

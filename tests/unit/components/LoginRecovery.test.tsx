@@ -2,7 +2,7 @@ import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LoginForm } from '@/components/auth/LoginForm';
-vi.mock('@/lib/utils/logger', () => ({ default: { info: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { info: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 afterEach(cleanup);
 const props = (complete = false, modo: 'whatsapp' | 'usuarios' = 'whatsapp') => ({
   form: {

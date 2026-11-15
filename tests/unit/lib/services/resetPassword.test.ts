@@ -17,7 +17,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-10-11'
 }));
 vi.mock('@/modules/auditoria', () => ({ SecurityAlertService: {} }));
-vi.mock('@/lib/utils/logger', () => ({ default: { error: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { error: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 vi.mock('@/modules/identidad/autenticacion/codigos', () => ({ regenerateAttendanceCode: vi.fn() }));
 vi.mock('@/lib/transaction/contract', () => ({
   enUnaUnidad: (fn: any) => fn({ ejecutar: (work: any) => work({}) })

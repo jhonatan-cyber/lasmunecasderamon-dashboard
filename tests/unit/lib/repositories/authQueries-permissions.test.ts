@@ -11,7 +11,7 @@ const logger = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/database/db', () => ({ query: db.query, generateUUID: () => 'uuid' }));
-vi.mock('@/lib/utils/logger', () => ({ logger, default: logger }));
+vi.mock('@/lib/utils/logger', () => ({ logger, default: logger , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 vi.mock('argon2', () => ({ hash: vi.fn(), verify: vi.fn(), argon2id: 2 }));
 vi.mock('@/lib/auth/auth', () => ({ generateToken: vi.fn(), registrarLogin: vi.fn() }));
 
