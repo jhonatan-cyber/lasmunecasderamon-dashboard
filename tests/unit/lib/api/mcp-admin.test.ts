@@ -31,7 +31,7 @@ vi.mock('@/modules/auditoria', () => ({
 vi.mock('@/lib/database/perfilConsultas', () => ({ perfilActivo: () => false }));
 vi.mock('@/lib/utils/logger', () => {
   const logger = { error: vi.fn(), info: vi.fn(), warn: vi.fn(), captureException: vi.fn() };
-  return { logger, default: logger };
+  return { logger, default: logger , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
 });
 vi.mock('@/workflows/mcp-solicitudes', () => ({
   consultarSolicitudes: estado.listar,

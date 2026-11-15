@@ -7,7 +7,7 @@ import { useOvertime } from '@/hooks/staff/useOvertime';
 import { useGratificaciones } from '@/hooks/staff/useGratificaciones';
 vi.unmock('@tanstack/react-query');
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 const clients: QueryClient[] = [];
 function wrapper() {
   const client = new QueryClient({

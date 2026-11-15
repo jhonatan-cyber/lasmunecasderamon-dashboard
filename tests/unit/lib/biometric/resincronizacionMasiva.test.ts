@@ -36,7 +36,7 @@ vi.mock('@/lib/database/db', () => ({
 
 vi.mock('@/lib/utils/logger', () => {
   const mocks = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
-  return { logger: mocks, default: mocks };
+  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
 });
 
 vi.mock('@/modules/asistencia/biometrico/avisosAudio', () => ({

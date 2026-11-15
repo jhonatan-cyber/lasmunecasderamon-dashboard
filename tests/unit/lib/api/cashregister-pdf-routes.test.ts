@@ -23,7 +23,7 @@ vi.mock('@/modules/reportes', () => ({
   VentasStatsService: { getVentasPorProducto: mocks.productos }
 }));
 vi.mock('@/lib/api/cajaReportePdfToken', () => ({ leerTokenCajaReporte: mocks.leerToken }));
-vi.mock('@/lib/utils/logger', () => ({ default: { warn: mocks.warn } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { warn: mocks.warn } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { GET as reportGET } from '@/app/api/cashregister/pdf-report/route';
 import { GET as closingGET } from '@/app/api/cashregister/closing-pdf/route';

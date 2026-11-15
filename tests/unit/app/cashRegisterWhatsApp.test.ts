@@ -20,7 +20,7 @@ vi.mock('@/modules/comunicaciones', () => ({ enviarReporteCajaWhatsApp: mocks.se
 vi.mock('@/lib/api/cajaReportePdfToken', () => ({
   crearTokenCajaReporte: vi.fn().mockResolvedValue('signed-token')
 }));
-vi.mock('@/lib/utils/logger', () => ({ default: { error: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { error: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { POST } from '@/app/api/cashregister/[id]/whatsapp/route';
 

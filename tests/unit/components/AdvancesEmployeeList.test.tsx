@@ -12,7 +12,7 @@ vi.mock('@/lib/utils/logger', () => ({
     error: vi.fn(),
     debug: vi.fn()
   }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 const delivered = {
   id_anticipo: 1,

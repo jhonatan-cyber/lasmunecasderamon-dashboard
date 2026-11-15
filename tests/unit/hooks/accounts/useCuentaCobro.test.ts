@@ -17,7 +17,7 @@ vi.mock('@/lib/utils/logger', () => ({
     error: vi.fn(),
     captureException: vi.fn()
   }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { useCuentaCobro } from '@/hooks/accounts/useCuentaCobro';
 

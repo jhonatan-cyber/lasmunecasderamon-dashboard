@@ -20,7 +20,7 @@ vi.mock('@/lib/utils/logger', () => ({
     debug: vi.fn(),
     captureException: vi.fn()
   }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { POST } from '@/app/api/meals/route';
 

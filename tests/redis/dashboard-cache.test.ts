@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import Redis from 'ioredis';
 import { RedisDashboardCache } from '@/lib/cache/redisDashboardCache';
 
-vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 let direct: Redis;
 let prefix: string;
 let first: RedisDashboardCache;

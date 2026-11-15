@@ -21,7 +21,7 @@ vi.mock('@/lib/utils/logger', () => ({
     warn: vi.fn(),
     debug: vi.fn()
   }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 beforeEach(() => {
   mocks.user.mockReturnValue({ user: { id: 1, name: 'Cajero', role: 'cajero' }, loading: false });
   mocks.refetch.mockClear();

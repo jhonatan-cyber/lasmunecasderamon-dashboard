@@ -46,7 +46,7 @@ vi.mock('@/modules/inventario/bar/servicio', () => productHarness);
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import {
   aceptarTransferencia,

@@ -4,7 +4,7 @@ import { useServiceAnulacionForm } from '@/hooks/services/useServiceAnulacionFor
 import type { ServicioWithDetails } from '@/types/servicio';
 import { showErrorToast, showSuccessToast } from '@/lib/utils/toastUtils';
 vi.mock('@/lib/utils/toastUtils', () => ({ showErrorToast: vi.fn(), showSuccessToast: vi.fn() }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();

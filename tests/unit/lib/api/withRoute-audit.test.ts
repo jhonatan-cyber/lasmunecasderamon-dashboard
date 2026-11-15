@@ -39,7 +39,10 @@ vi.mock('@/lib/utils/logger', () => {
       securityEvent: vi.fn(),
       error: vi.fn()
     },
-    default: mocks
+    default: mocks,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
   };
 });
 

@@ -5,7 +5,7 @@ import { RedisFailedLoginStore } from '@/lib/cache/failedLoginStore';
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 const URL = 'redis://127.0.0.1:6379';
 const CONFIG = { windowMs: 60 * 1000, threshold: 5, lockoutMs: 60 * 1000 };

@@ -6,7 +6,7 @@ import { SettingsServiceLevelsCard } from '@/components/settings/SettingsService
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/lib/utils/logger', () => ({
   default: { captureException: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 vi.mock('@/hooks/shared/useConfigValue', () => ({
   useConfigValue: (_category: string, _key: string, defaultValue: string | number) => defaultValue,
   useConfig: (_clave: string, defaultValue?: string) => defaultValue ?? '',

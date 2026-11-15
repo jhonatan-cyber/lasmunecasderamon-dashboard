@@ -44,7 +44,7 @@ vi.mock('@/lib/api/withRoute', () => ({
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { GET } from '@/app/api/tickets/[id]/baucher/route';
 

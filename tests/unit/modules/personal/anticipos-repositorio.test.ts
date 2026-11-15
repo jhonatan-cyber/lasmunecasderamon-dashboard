@@ -49,7 +49,7 @@ vi.mock('@/modules/comunicaciones/push/servicio', () => ({
 
 vi.mock('@/lib/utils/logger', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 vi.mock('@/lib/database/base-repository', () => {
   const mockInsert = vi.fn();

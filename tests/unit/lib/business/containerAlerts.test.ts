@@ -19,7 +19,7 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-09-25 12:00:00'
 }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: capturar } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: capturar } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import {
   checkWarehouseContainerAlerts,

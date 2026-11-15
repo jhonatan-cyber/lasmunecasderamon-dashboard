@@ -17,7 +17,7 @@ vi.mock('@/modules/caja/turnos/servicio', () => ({
 vi.mock('@/lib/api/cierreCaja', () => ({ avisarCierreAlAdministrador: avisarMock }));
 vi.mock('@/lib/utils/logger', () => ({
   default: { error: errorMock, captureException: capturarMock }
-}));
+, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 
 import { reavisarCierresPendientes } from '@/lib/business/cierreCajaRecordatorios';
 

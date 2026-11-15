@@ -4,7 +4,7 @@ import {
   invalidateSettingsProducts,
   useSettingsProducts
 } from '@/hooks/settings/useSettingsProducts';
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { captureException: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 beforeEach(invalidateSettingsProducts);
 afterEach(() => {
   cleanup();

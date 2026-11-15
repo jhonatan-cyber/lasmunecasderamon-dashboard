@@ -7,7 +7,7 @@ import { useProductForm } from '@/hooks/products/useProductForm';
 import { toast } from 'sonner';
 vi.unmock('@tanstack/react-query');
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
 const clients: QueryClient[] = [];
 function wrapper() {
   const client = new QueryClient();

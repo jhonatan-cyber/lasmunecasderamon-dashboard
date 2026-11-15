@@ -28,7 +28,7 @@ vi.mock('@/lib/middleware/auth', () => ({ isAdministrator: () => false }));
 
 vi.mock('@/lib/utils/logger', () => {
   const mocks = { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() };
-  return { logger: mocks, default: mocks };
+  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
 });
 
 import { reenviarAvisoCierreCaja, respuestaReenvioAviso } from '@/lib/api/cierreCaja';
