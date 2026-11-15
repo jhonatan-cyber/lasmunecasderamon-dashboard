@@ -5,11 +5,46 @@ vi.hoisted(() => {
   process.env.JWT_SECRET = 'test-secret-that-is-long-enough-for-validation';
 });
 
-vi.mock('next/server', () => ({
-  NextResponse: { json: (body: unknown, init?: ResponseInit) => Response.json(body, init) }
-}));
+vi.mock('next/server', () => {
+  class NextResponse extends Response {
+    static json(body: unknown, init?: ResponseInit) {
+      return Response.json(body, init);
+    }
+  }
+  return { NextResponse };
+});
 
 vi.mock('@/lib/api/date-response', () => ({ normalizeJsonResponseDates: (r: any) => r }));
+
+vi.mock('@/lib/api/validate', () => {
+  const mockValidateOrResponse = vi.fn((schema: any, data: unknown) => {
+    const result = schema.safeParse(data);
+    if (!result.success) {
+      // Devolver un objeto que el route.ts pueda detectar como respuesta
+      // usando instanceof Response (que es la superclase de NextResponse)
+      const response = new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Error de validación',
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.error.issues.map((i: any) => i.message).join(', '),
+            details: result.error.issues
+          }
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+      // Marcar como NextResponse para instanceof
+      Object.setPrototypeOf(response, NextResponse.prototype);
+      return response;
+    }
+    return result.data;
+  });
+  return { validateOrResponse: mockValidateOrResponse };
+});
+
+// Referencia a NextResponse del mock para usar en validateOrResponse
+import { NextResponse } from 'next/server';
 
 let mockAuthUser: any = null;
 
