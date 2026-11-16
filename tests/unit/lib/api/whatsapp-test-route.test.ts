@@ -12,6 +12,22 @@ vi.mock('@/modules/auditoria', () => ({
 }));
 vi.mock('@/lib/database/db', () => ({ query: vi.fn() }));
 vi.mock('@/lib/middleware/redisRateLimit', () => ({ checkRateLimit: mocks.limit }));
+vi.mock('@/lib/utils/logger', () => {
+  const logger = {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    captureException: vi.fn()
+  };
+  return {
+    logger,
+    default: logger,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
+  };
+});
 import { POST } from '@/app/api/whatsapp/test/route';
 const request = () => new Request('http://localhost/api/whatsapp/test', { method: 'POST' });
 beforeEach(() => {

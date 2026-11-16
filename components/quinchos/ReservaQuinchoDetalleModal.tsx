@@ -53,6 +53,7 @@ export function ReservaQuinchoDetalleModal({
    * Esto protege contra el caso donde el backend aún no actualizó el estado.
    */
   const esReservaUsada = (reserva: ReservaQuincho) => {
+    if (reserva.estado === 'anulada') return false;
     if (reserva.estado === 'usado') return true;
     const fechaReserva = toDateKey(reserva.fecha_reserva);
     return fechaReserva < getTodayDateKey();
@@ -124,61 +125,61 @@ export function ReservaQuinchoDetalleModal({
                       )}
                     </div>
 
-                  <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
-                    <DatoReserva
-                      etiqueta='Personas'
-                      valor={reserva.cantidad_personas.toLocaleString('es-CL')}
-                    />
-                    <DatoReserva
-                      etiqueta='Monto por persona'
-                      valor={formatCurrencyCLP(reserva.monto_por_persona)}
-                    />
-                    <DatoReserva etiqueta='Total' valor={formatCurrencyCLP(reserva.total)} />
-                    <DatoReserva etiqueta='Método de pago' valor={reserva.metodo_pago} />
-                  </div>
-
-                  <div className='flex flex-wrap gap-x-6 gap-y-2 text-xs text-gray-600 dark:text-neutral-400'>
-                    <span className='flex items-center gap-1'>
-                      <Users className='h-3.5 w-3.5' />
-                      Registrada el {formatFechaConHora(reserva.fecha_crea)}
-                    </span>
-                    {reserva.fecha_anulacion && (
-                      <span className='flex items-center gap-1'>
-                        <Ban className='h-3.5 w-3.5' />
-                        Anulada el {formatFechaConHora(reserva.fecha_anulacion)}
-                      </span>
-                    )}
-                    {reserva.fecha_uso && (
-                      <span className='flex items-center gap-1'>
-                        <CheckCircle2 className='h-3.5 w-3.5' />
-                        Usado el {formatFechaConHora(reserva.fecha_uso)}
-                      </span>
-                    )}
-                  </div>
-
-                  {reserva.observaciones && (
-                    <p className='rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
-                      {reserva.observaciones}
-                    </p>
-                  )}
-
-                  {canCancel && !usada && reserva.estado !== 'anulada' && (
-                    <div className='flex justify-end pt-1'>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        className='rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40'
-                        onClick={() => setReservaAAnular(reserva)}
-                        disabled={isCancelling}
-                        aria-label={`Anular reserva de ${reserva.cliente_nombre} ${reserva.cliente_apellido}`}
-                      >
-                        <Ban className='mr-1 h-3.5 w-3.5' />
-                        Anular reserva
-                      </Button>
+                    <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
+                      <DatoReserva
+                        etiqueta='Personas'
+                        valor={reserva.cantidad_personas.toLocaleString('es-CL')}
+                      />
+                      <DatoReserva
+                        etiqueta='Monto por persona'
+                        valor={formatCurrencyCLP(reserva.monto_por_persona)}
+                      />
+                      <DatoReserva etiqueta='Total' valor={formatCurrencyCLP(reserva.total)} />
+                      <DatoReserva etiqueta='Método de pago' valor={reserva.metodo_pago} />
                     </div>
-                  )}
-                </section>
+
+                    <div className='flex flex-wrap gap-x-6 gap-y-2 text-xs text-gray-600 dark:text-neutral-400'>
+                      <span className='flex items-center gap-1'>
+                        <Users className='h-3.5 w-3.5' />
+                        Registrada el {formatFechaConHora(reserva.fecha_crea)}
+                      </span>
+                      {reserva.fecha_anulacion && (
+                        <span className='flex items-center gap-1'>
+                          <Ban className='h-3.5 w-3.5' />
+                          Anulada el {formatFechaConHora(reserva.fecha_anulacion)}
+                        </span>
+                      )}
+                      {reserva.fecha_uso && (
+                        <span className='flex items-center gap-1'>
+                          <CheckCircle2 className='h-3.5 w-3.5' />
+                          Usado el {formatFechaConHora(reserva.fecha_uso)}
+                        </span>
+                      )}
+                    </div>
+
+                    {reserva.observaciones && (
+                      <p className='rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
+                        {reserva.observaciones}
+                      </p>
+                    )}
+
+                    {canCancel && !usada && reserva.estado !== 'anulada' && (
+                      <div className='flex justify-end pt-1'>
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='sm'
+                          className='rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40'
+                          onClick={() => setReservaAAnular(reserva)}
+                          disabled={isCancelling}
+                          aria-label={`Anular reserva de ${reserva.cliente_nombre} ${reserva.cliente_apellido}`}
+                        >
+                          <Ban className='mr-1 h-3.5 w-3.5' />
+                          Anular reserva
+                        </Button>
+                      </div>
+                    )}
+                  </section>
                 );
               })}
             </div>

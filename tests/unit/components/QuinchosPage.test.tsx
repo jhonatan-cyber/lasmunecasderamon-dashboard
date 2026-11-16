@@ -5,17 +5,16 @@ import QuinchosPage from '@/app/quinchos/page';
 import { formatLongDateEs, getTodayDateKey } from '@/lib/utils/calendarUtils';
 import type { ReservaQuincho } from '@/types/quincho';
 
-const periodo = getTodayDateKey().slice(0, 7);
-const fechaConReserva = `${periodo}-15`;
-const ultimoDiaDelMes = new Date(
-  Number(periodo.slice(0, 4)),
-  Number(periodo.slice(5, 7)),
-  0
-).getDate();
-const fechaLibre = `${periodo}-${String(ultimoDiaDelMes).padStart(2, '0')}`;
-const [anioHoy, mesHoy, diaHoy] = getTodayDateKey().split('-').map(Number);
+const pad = (n: number) => String(n).padStart(2, '0');
+const hoyKey = getTodayDateKey();
+const periodo = hoyKey.slice(0, 7);
+const [anioHoy, mesHoy, diaHoy] = hoyKey.split('-').map(Number);
+// La reserva activa va en el día actual: un día pasado se marca como "Usado" y oculta "Anular".
+const fechaConReserva = hoyKey;
+const manana = new Date(anioHoy, mesHoy - 1, diaHoy + 1);
+const fechaLibre = `${manana.getFullYear()}-${pad(manana.getMonth() + 1)}-${pad(manana.getDate())}`;
 const ayer = new Date(anioHoy, mesHoy - 1, diaHoy - 1);
-const fechaPasada = `${ayer.getFullYear()}-${String(ayer.getMonth() + 1).padStart(2, '0')}-${String(ayer.getDate()).padStart(2, '0')}`;
+const fechaPasada = `${ayer.getFullYear()}-${pad(ayer.getMonth() + 1)}-${pad(ayer.getDate())}`;
 
 const reservaDelDia: ReservaQuincho = {
   id: 'r-1',
@@ -85,6 +84,9 @@ describe('página de reservas de quincho', () => {
   it('abre el registro con la fecha del día libre elegido', () => {
     render(<QuinchosPage />);
 
+    if (fechaLibre.slice(0, 7) !== periodo) {
+      fireEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }));
+    }
     fireEvent.click(dia(fechaLibre));
 
     expect(screen.getByRole('heading', { name: /Nueva reserva de quincho/i })).toBeInTheDocument();
