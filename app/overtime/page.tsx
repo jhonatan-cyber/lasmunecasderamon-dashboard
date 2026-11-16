@@ -75,7 +75,7 @@ export default function OvertimePage() {
 
   return (
     <PermissionGuard module='overtime' action='view'>
-      <div className='w-full max-w-none px-1 sm:px-6 lg:px-10 py-4 sm:py-6 space-y-6'>
+      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
         {}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
           <div className='flex flex-col'>

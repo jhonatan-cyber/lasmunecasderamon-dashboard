@@ -7,12 +7,10 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 import { PersonnelGrid } from '@/components/attendance/PersonnelGrid';
 import { QrCodeDialog } from '@/components/attendance/QrCodeDialog';
 import { ErrorState } from '@/components/shared/ErrorState';
-import { ConfirmModal } from '@/components/shared/ConfirmModal';
 
 const AttendanceTable = dynamic(() => import('@/components/attendance/AttendanceTable'), {
   loading: () => <div className='h-48 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse' />,
@@ -43,32 +41,6 @@ export default function AttendancePage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedUserForQR, setSelectedUserForQR] = useState<any | null>(null);
   const [asistenciaFormOpen, setAsistenciaFormOpen] = useState(false);
-  const [masivoLoading, setMasivoLoading] = useState(false);
-  const [masivoConfirmOpen, setMasivoConfirmOpen] = useState(false);
-
-  const handleRegistroMasivo = async () => {
-    if (masivoLoading) return;
-    setMasivoConfirmOpen(true);
-  };
-
-  const confirmarRegistroMasivo = async () => {
-    if (masivoLoading) return;
-    setMasivoLoading(true);
-    try {
-      const res = await fetch('/api/attendance/bulk', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success) {
-        toast.error(data.message || 'No se pudo registrar');
-        return;
-      }
-      toast.success(data.message || 'Registro masivo completado');
-      fetchAsistencias();
-    } catch {
-      toast.error('Error de red en el registro masivo');
-    } finally {
-      setMasivoLoading(false);
-    }
-  };
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -136,20 +108,6 @@ export default function AttendancePage() {
             </div>
             <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
               <Button
-                onClick={handleRegistroMasivo}
-                disabled={masivoLoading}
-                size='sm'
-                variant='outline'
-                className='w-full sm:w-auto justify-center rounded-full px-4 sm:px-6 py-2 transition-all duration-200 text-sm sm:text-base'
-              >
-                {masivoLoading ? (
-                  <Loader2 className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin' />
-                ) : (
-                  <Users className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
-                )}
-                Entrada masiva hoy
-              </Button>
-              <Button
                 onClick={() => setAsistenciaFormOpen(true)}
                 size='sm'
                 className='w-full sm:w-auto justify-center rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
@@ -210,16 +168,6 @@ export default function AttendancePage() {
         </div>
 
         <QrCodeDialog selectedUser={selectedUserForQR} onClose={() => setSelectedUserForQR(null)} />
-
-        <ConfirmModal
-          open={masivoConfirmOpen}
-          onOpenChange={setMasivoConfirmOpen}
-          title='Entrada masiva de hoy'
-          message='Se registrará la asistencia de hoy para todas las anfitrionas y garzones activos.'
-          confirmText='Registrar'
-          type='question'
-          onConfirm={confirmarRegistroMasivo}
-        />
 
         <AsistenciaForm
           isOpen={asistenciaFormOpen}

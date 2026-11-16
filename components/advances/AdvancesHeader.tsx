@@ -20,7 +20,7 @@ export function AdvancesHeader({ canCreate, onOpenDialog }: AdvancesHeaderProps)
         </p>
       </div>
       {canCreate && (
-        <Button onClick={onOpenDialog} className='rounded-full'>
+        <Button onClick={onOpenDialog} className='w-full sm:w-auto rounded-full'>
           <Plus className='mr-2' />
           Nueva solicitud
         </Button>

@@ -319,7 +319,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
   return (
     <TooltipProvider>
       <div className='space-y-4'>
-        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
           <div className='overflow-x-auto'>
             <DndContext
               modifiers={dragModifiers}

@@ -233,7 +233,7 @@ export function ServiceRequestModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-h-[90vh] max-w-xl overflow-y-auto'>
         <DialogHeader>
-          <DialogTitle>Solicitud de Servicio #{solicitud.id_solicitud}</DialogTitle>
+          <DialogTitle>Solicitud de Servicio</DialogTitle>
         </DialogHeader>
 
         {Number(

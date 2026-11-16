@@ -38,7 +38,10 @@ export const MobileCardView = React.memo(function MobileCardView({
   return (
     <div className='space-y-4 lg:hidden'>
       {rows.map(cuenta => (
-        <Card key={cuenta.id_cuenta} className='shadow-xs hover:shadow-md transition-shadow'>
+        <Card
+          key={cuenta.id_cuenta}
+          className='border border-gray-200 dark:border-gray-800 shadow-xs hover:shadow-md transition-shadow'
+        >
           <CardContent className='p-4'>
             <div className='space-y-3'>
               <div className='flex items-center justify-between'>

@@ -385,7 +385,9 @@ export class UserRepository {
       FROM usuarios U
       INNER JOIN roles R ON R.id_rol = U.rol_id
       WHERE U.estado = 1
-      AND (LOWER(R.nombre) LIKE '%garzon%' OR LOWER(R.nombre) LIKE '%mesero%' OR LOWER(R.nombre) LIKE '%cajero%' OR LOWER(R.nombre) LIKE '%anfitriona%')
+      AND LOWER(R.nombre) NOT LIKE '%administrador%'
+      AND LOWER(R.nombre) NOT LIKE '%admin%'
+      AND LOWER(R.nombre) NOT LIKE '%anfitriona%'
       ORDER BY U.nombre, U.apellido
     `);
 

@@ -12,15 +12,14 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { getTodayDateKey, getCurrentTimeKey } from '@/lib/utils/calendarUtils';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { DatePicker } from '@/components/shared/DatePicker';
+import { TimePicker } from '@/components/shared/TimePicker';
 import { UserSelect } from '@/components/shared/selects';
 import { ORDER_FIELD_INPUT_CLASS } from '@/components/orders/orderFieldStyles';
-import { useRefreshOnFocus } from '@/hooks/shared';
 import { Label } from '@/components/ui/label';
 
 interface AsistenciaFormProps {
@@ -59,7 +58,11 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
     }
   };
 
-  useRefreshOnFocus(fetchUsers, { enabled: Boolean(isOpen) });
+  useEffect(() => {
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (data: any) => {
     if (!data.usuario_id) {
@@ -116,7 +119,7 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+      <DialogContent className='max-w-lg w-[95vw] sm:w-full max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
         <DialogHeader className='p-4 pb-2 border-b sm:p-6 sm:pb-2'>
           <DialogTitle className='text-xl font-bold'>Registrar Asistencia</DialogTitle>
           <DialogDescription className='sr-only'>
@@ -153,7 +156,7 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
                   </FormItem>
                 )}
               />
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 <FormField
                   control={form.control}
                   name='fecha'
@@ -197,10 +200,12 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
                             Hora
                             <span className='ml-1 text-red-500'>*</span>
                           </Label>
-                          <Input
+                          <TimePicker
                             id='asistencia-hora'
-                            type='time'
-                            {...field}
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            disabled={loading}
                             className={ORDER_FIELD_INPUT_CLASS}
                           />
                         </div>
@@ -212,12 +217,12 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
               </div>
             </div>
 
-            <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
+            <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex flex-col sm:flex-row justify-center gap-3 rounded-b-2xl sm:p-6'>
               <Button
                 type='button'
                 variant='outline'
                 onClick={handleCancel}
-                className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+                className='w-full sm:w-auto rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
                 disabled={submitting}
               >
                 Cancelar
@@ -225,7 +230,7 @@ export default function AsistenciaForm({ isOpen, onOpenChange, onSuccess }: Asis
               <Button
                 type='submit'
                 form='asistencia-form'
-                className='bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
+                className='w-full sm:w-auto bg-black text-white dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
                 disabled={submitting || loading}
               >
                 {submitting ? (

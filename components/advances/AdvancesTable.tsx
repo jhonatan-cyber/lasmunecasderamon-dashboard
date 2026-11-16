@@ -32,7 +32,7 @@ function MobileSkeletons({ count = 5 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <Card
           key={i}
-          className='rounded-3xl border-none shadow-md bg-white dark:bg-slate-900/40 overflow-hidden animate-pulse'
+          className='rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md bg-white dark:bg-slate-900/40 overflow-hidden animate-pulse'
         >
           <CardContent className='p-4'>
             <Skeleton className='h-6 w-1/2 mb-4' />
@@ -48,7 +48,7 @@ function MobileSkeletons({ count = 5 }: { count?: number }) {
 
 function DesktopSkeletons({ pageSize, isAdmin }: { pageSize: number; isAdmin: boolean }) {
   return (
-    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+    <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
       <Table>
         <TableHeader>
           <TableRow className='hover:bg-transparent'>
@@ -122,7 +122,7 @@ function AdvancesSection({
         {loading && advancesToRender.length === 0 ? (
           <MobileSkeletons />
         ) : advancesToRender.length === 0 ? (
-          <Card className='rounded-3xl border-none shadow-xs bg-white dark:bg-slate-900/40 overflow-hidden'>
+          <Card className='rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xs bg-white dark:bg-slate-900/40 overflow-hidden'>
             <CardContent className='p-8 text-center text-gray-500'>
               <p className='text-sm'>No hay anticipos en esta categoría</p>
             </CardContent>
@@ -146,13 +146,13 @@ function AdvancesSection({
         {loading && advancesToRender.length === 0 ? (
           <DesktopSkeletons pageSize={pageSize} isAdmin={isAdmin} />
         ) : advancesToRender.length === 0 ? (
-          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
             <div className='p-8 text-center text-gray-500'>
               <p className='text-sm'>No hay anticipos en esta categoría</p>
             </div>
           </div>
         ) : (
-          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+          <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
             <Table>
               <TableHeader>
                 <TableRow className='hover:bg-transparent'>
@@ -208,7 +208,7 @@ export default function AdvancesTable({
 
   if (filteredAdvances.length === 0 && !loading) {
     return (
-      <Card className='border-none shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
+      <Card className='border border-gray-200 dark:border-gray-800 shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
         <CardContent className='flex flex-col items-center justify-center py-16 text-gray-500'>
           <Wallet className='h-12 w-12 mb-4 opacity-20' />
           <p className='text-lg font-medium'>No hay {TAB_LABELS[activeTab] ?? 'anticipos'}</p>

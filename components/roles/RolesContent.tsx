@@ -1,16 +1,17 @@
 'use client';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
-import { Search, Shield, Plus, CheckCircle, Users as UsersIcon } from 'lucide-react';
+import { Shield, Plus, CheckCircle, Users as UsersIcon } from 'lucide-react';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { RoleCard } from '@/components/roles/RoleCard';
 import { PermissionsPanel } from '@/components/roles/PermissionsPanel';
 import { RoleUsersList } from '@/components/roles/RoleUsersList';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { FilterSelect } from '@/components/shared/selects';
-import { Tooltip, TooltipTrigger } from '@/components/ui/tooltip';
+import SearchInput from '@/components/shared/SearchInput';
 import type { Role } from '@/hooks/staff';
 
 const ROLE_STATUS_OPTIONS = [
@@ -65,28 +66,24 @@ export function RolesContent({
   });
 
   return (
-    <div className='w-full max-w-none flex flex-col gap-4 sm:gap-6 px-1 sm:p-6 lg:p-10 mt-3 sm:mt-6 lg:mt-10'>
-      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
+    <div className='w-full max-w-none flex flex-col p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
         <div>
-          <h2 className='text-3xl font-bold text-black dark:text-neutral-100'>Gestión de Roles</h2>
+          <h1 className='text-3xl font-bold tracking-tight text-slate-900 dark:text-white'>
+            Gestión de Roles
+          </h1>
           <p className='text-gray-600 dark:text-neutral-300 mt-1'>
             Administra roles y permisos del sistema
           </p>
         </div>
         <PermissionGuard module='roles' action='create' fallback={null}>
           <Button
-            variant='unstyled'
-            className='whitespace-nowrap inline-flex items-center justify-center px-6 py-2 bg-black text-white rounded-full hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+            size='sm'
+            className='w-full sm:w-auto justify-center rounded-full px-4 sm:px-6 py-2 bg-black text-white hover:bg-white hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base border-2 dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white'
             onClick={onNewRole}
           >
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className='flex items-center justify-center w-full'>
-                  <Plus className='h-4 w-4 mr-2' />
-                  Nuevo Rol
-                </span>
-              </TooltipTrigger>
-            </Tooltip>
+            <Plus className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+            Nuevo Rol
           </Button>
         </PermissionGuard>
       </div>
@@ -115,36 +112,35 @@ export function RolesContent({
         />
       </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
-        <div className='space-y-4'>
-          <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xs border border-gray-200 dark:border-neutral-800 p-4 sm:p-6'>
-            <div className='flex flex-col sm:flex-row gap-4'>
-              <div className='flex-1'>
-                <div className='relative'>
-                  <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400 dark:text-neutral-500' />
-                  <Input
-                    type='text'
-                    placeholder='Buscar roles...'
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className='w-full pl-10 pr-4 py-2 border border-zinc-300 dark:border-neutral-700 rounded-full focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base bg-white dark:bg-neutral-800 text-black dark:text-neutral-100 placeholder:text-zinc-400 dark:placeholder:text-neutral-500'
-                  />
-                </div>
-              </div>
-              <div className='flex items-center gap-2 w-full'>
-                <div className='w-full min-w-0'>
-                  <FilterSelect
-                    label='Estado'
-                    value={String(filterStatus)}
-                    onChange={value => setFilterStatus(value === 'all' ? 'all' : Number(value))}
-                    options={ROLE_STATUS_OPTIONS}
-                  />
-                </div>
-              </div>
+      <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
+        <CardContent className='p-4 sm:p-6'>
+          <div className='flex flex-col sm:flex-row gap-4'>
+            <div className='flex-1'>
+              <Label className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'>
+                Buscar
+              </Label>
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder='Buscar roles...'
+                className='w-full rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+              />
+            </div>
+            <div className='w-full sm:w-auto sm:min-w-[160px]'>
+              <FilterSelect
+                label='Estado'
+                value={String(filterStatus)}
+                onChange={value => setFilterStatus(value === 'all' ? 'all' : Number(value))}
+                options={ROLE_STATUS_OPTIONS}
+              />
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className='space-y-4 overflow-y-auto max-h-[500px] pr-3 pl-3 pt-3'>
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
+        <div className='space-y-4'>
+          <div className='space-y-4'>
             {filteredRoles.length === 0 ? (
               <EmptyState
                 icon={Shield}
@@ -189,7 +185,7 @@ export function RolesContent({
         <div className='hidden lg:block'>
           <div className='flex flex-col gap-4 sm:gap-6'>
             <RoleUsersList role={selectedRole} />
-            <div className='bg-white dark:bg-neutral-900 rounded-lg shadow-xs border border-gray-200 dark:border-neutral-800 p-4 sm:p-6 flex flex-col h-[600px]'>
+            <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-md border-none flex flex-col h-[600px]'>
               <PermissionsPanel selectedRole={selectedRole} />
             </div>
           </div>

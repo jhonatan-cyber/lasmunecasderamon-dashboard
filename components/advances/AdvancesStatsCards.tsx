@@ -34,8 +34,6 @@ export default function AdvancesStatsCards({ advances }: AdvancesStatsCardsProps
         badge='Aceptados'
         label='Total Aprobado'
         value={formatCurrencyCLP(totals.montoAceptados)}
-        footerValue={totals.countAceptados}
-        footerLabel='Solicitudes'
       />
 
       {}
@@ -45,8 +43,6 @@ export default function AdvancesStatsCards({ advances }: AdvancesStatsCardsProps
         badge='Pendientes'
         label='En Espera'
         value={formatCurrencyCLP(totals.montoPendientes)}
-        footerValue={totals.countPendientes}
-        footerLabel='Solicitudes'
       />
 
       {}
@@ -57,8 +53,6 @@ export default function AdvancesStatsCards({ advances }: AdvancesStatsCardsProps
         badge='Rechazados'
         label='Rechazado'
         value={formatCurrencyCLP(totals.montoRechazados)}
-        footerValue={totals.countRechazados}
-        footerLabel='Solicitudes'
       />
     </div>
   );

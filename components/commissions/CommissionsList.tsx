@@ -84,7 +84,7 @@ export function CommissionsList({
         : paginatedCommissions.map(commission => (
             <div
               key={commission.id}
-              className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl shadow-md border-none p-4 space-y-3'
+              className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl shadow-md border border-gray-200 dark:border-gray-800 p-4 space-y-3'
             >
               {}
               <div className='flex justify-between items-start'>
@@ -161,7 +161,7 @@ export function CommissionsList({
   );
 
   const DesktopTableView = () => (
-    <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+    <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
       <div className='overflow-x-auto'>
         <Table className='min-w-full text-center'>
           <TableHeader>
