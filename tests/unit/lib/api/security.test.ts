@@ -13,7 +13,7 @@ import {
   sanitizeBody,
   detectSQLInjection,
   scanForSQLInjection,
-  sanitizeRequest,
+  sanitizeRequest
 } from '@/lib/api/sanitize';
 import { setRequestId, getRequestId, clearRequestId } from '@/lib/utils/logger';
 
@@ -144,6 +144,24 @@ describe('withRateLimit', () => {
     }
 
     limiter.destroy();
+  });
+
+  it('should skip rate limiting when SKIP_RATE_LIMIT is true in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SKIP_RATE_LIMIT', 'true');
+    try {
+      const limiter = new InMemoryRateLimiter(1, 60000, 60000);
+      const headers = new Headers();
+      headers.set('x-forwarded-for', '10.0.0.1');
+      const req1 = new Request('http://localhost/test', { headers });
+      const req2 = new Request('http://localhost/test', { headers });
+
+      expect(withRateLimit(req1, limiter)).toBeNull();
+      expect(withRateLimit(req2, limiter)).toBeNull();
+      limiter.destroy();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
 

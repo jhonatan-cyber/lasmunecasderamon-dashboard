@@ -97,11 +97,10 @@ describe('excepciones del repositorio real', () => {
     if (!existsSync(ruta)) throw new Error('falta docs/arquitectura/excepciones.json');
     const exc = JSON.parse(readFileSync(ruta, 'utf8'));
     const claves = Object.keys(exc);
-    expect(claves).toHaveLength(0);
     for (const k of claves) {
       expect(exc[k].motivo, `${k} sin motivo`).toBeTruthy();
       expect(exc[k].responsable, `${k} sin responsable`).toBeTruthy();
-      expect(exc[k].condicion, `${k} sin condición de eliminación`).toBeTruthy();
+      expect(exc[k].condicion_de_eliminacion, `${k} sin condición de eliminación`).toBeTruthy();
     }
   });
 

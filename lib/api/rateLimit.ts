@@ -109,8 +109,8 @@ export function withRateLimit(
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
 
-  // En desarrollo, saltar rate limiting
-  if (process.env.NODE_ENV === 'development') {
+  // En desarrollo y en entornos que lo desactivan explícitamente (p. ej. e2e), saltar rate limiting
+  if (process.env.NODE_ENV === 'development' || process.env.SKIP_RATE_LIMIT === 'true') {
     return null;
   }
 

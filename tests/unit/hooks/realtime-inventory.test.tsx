@@ -105,7 +105,7 @@ it('no refresca un modal cerrado y usa el callback actual al abrirlo', async () 
   expect(oldRefresh).not.toHaveBeenCalled();
 });
 
-it('marca las consultas como obsoletas al recuperar la conexión', () => {
+it('no invalida todas las consultas al recuperar la conexión', () => {
   const client = new QueryClient();
   client.setQueryData(['dashboard', 'composite'], {});
   renderHook(() => useRealtimeInvalidation(), {
@@ -114,7 +114,7 @@ it('marca las consultas como obsoletas al recuperar la conexión', () => {
     )
   });
   act(() => stream.receive!({ type: 'connected' }));
-  expect(client.getQueryState(['dashboard', 'composite'])?.isInvalidated).toBe(true);
+  expect(client.getQueryState(['dashboard', 'composite'])?.isInvalidated).toBe(false);
   client.clear();
 });
 

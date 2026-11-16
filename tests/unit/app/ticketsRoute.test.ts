@@ -15,10 +15,21 @@ const entradas = vi.hoisted(() => ({
   listarPendientes: vi.fn(),
   registrarEntrada: vi.fn(),
   entregarEntrada: vi.fn(),
-  anularEntrada: vi.fn()
+  anularEntrada: vi.fn(),
+  existeSolicitudAnulacionEntrada: vi.fn()
 }));
 const idempotencia = vi.hoisted(() => ({ runIdempotent: vi.fn() }));
 const ventas = vi.hoisted(() => ({ createSale: vi.fn() }));
+const anulaciones = vi.hoisted(() => ({ solicitarAnulacionEntrada: vi.fn() }));
+const comunicaciones = vi.hoisted(() => ({ enviarMensajeSolicitudAnulacionEntrada: vi.fn() }));
+const caja = vi.hoisted(() => ({
+  obtenerCajaActiva: vi.fn(),
+  CashRegisterService: { getById: vi.fn() }
+}));
+const notificaciones = vi.hoisted(() => ({
+  notificarEntradaRegistrada: vi.fn(),
+  notificarEntradaActualizada: vi.fn()
+}));
 
 vi.mock('@/lib/api/withRoute', () => ({
   withRoute: (configOrHandler: unknown, maybeHandler?: unknown) => {
@@ -36,7 +47,11 @@ vi.mock('@/lib/api/withRoute', () => ({
 
 vi.mock('@/lib/api/idempotency', () => ({ runIdempotent: idempotencia.runIdempotent }));
 vi.mock('@/modules/entradas', () => entradas);
+vi.mock('@/modules/caja', () => caja);
+vi.mock('@/modules/comunicaciones', () => comunicaciones);
+vi.mock('@/workflows/anulaciones-entrada', () => anulaciones);
 vi.mock('@/workflows/ventas', () => ({ SaleService: ventas }));
+vi.mock('@/lib/notifications/entradaNotificationUtils', () => notificaciones);
 
 import { GET, POST } from '@/app/api/tickets/route';
 import { GET as GET_PENDIENTES } from '@/app/api/tickets/pendientes/route';
@@ -63,6 +78,13 @@ beforeEach(() => {
   entradas.listarPendientes.mockResolvedValue([]);
   entradas.entregarEntrada.mockResolvedValue({ tipo: 'cover', montoCobrarBarra: 0 });
   entradas.anularEntrada.mockResolvedValue({ entradaId: 'e1', monto: 10000 });
+  entradas.existeSolicitudAnulacionEntrada.mockResolvedValue(false);
+  entradas.listarEntradas.mockResolvedValue([
+    { id: 'e1', monto_entrada: 10000, cliente_nombre: 'Ana', metodo_pago: 'efectivo' }
+  ]);
+  anulaciones.solicitarAnulacionEntrada.mockResolvedValue('solicitud-1');
+  comunicaciones.enviarMensajeSolicitudAnulacionEntrada.mockResolvedValue(undefined);
+  caja.obtenerCajaActiva.mockResolvedValue(null);
 });
 
 describe('registro en la puerta', () => {
@@ -308,15 +330,18 @@ describe('entrega en la barra', () => {
 });
 
 describe('anulación', () => {
-  it('anula la entrada con el usuario de la sesión', async () => {
+  it('solicita la anulación con el usuario de la sesión y el motivo', async () => {
     const response = await (POST_ANULAR as unknown as Handler)(
-      pedido({}, 'http://localhost/api/tickets/e1/anular')
+      pedido({ motivo: 'Cliente desistió' }, 'http://localhost/api/tickets/e1/anular')
     );
 
-    expect(entradas.anularEntrada).toHaveBeenCalledWith({ entradaId: 'e1', usuarioId: 'user-1' });
-    await expect(response.json()).resolves.toEqual({
-      success: true,
-      data: { entradaId: 'e1', monto: 10000 }
-    });
+    expect(anulaciones.solicitarAnulacionEntrada).toHaveBeenCalledWith(
+      'e1',
+      'Cliente desistió',
+      'user-1',
+      10000
+    );
+    expect(notificaciones.notificarEntradaActualizada).toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({ success: true, token: 'solicitud-1' });
   });
 });
