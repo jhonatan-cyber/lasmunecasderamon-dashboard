@@ -96,7 +96,10 @@ export default function TipsTable({
       <div className='lg:hidden space-y-4'>
         {loading
           ? Array.from({ length: rowsPerPage }).map((_, i) => (
-              <Card key={i} className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'>
+              <Card
+                key={i}
+                className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'
+              >
                 <Skeleton className='h-6 w-1/2 mb-4' />
                 <div className='space-y-2'>
                   <Skeleton className='h-4 w-full' />
@@ -189,7 +192,7 @@ export default function TipsTable({
       </div>
 
       {/* Vista desktop: tabla */}
-      <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-center'>
             <TableHeader>
@@ -267,9 +270,7 @@ export default function TipsTable({
                       <TableCell className='text-center'>
                         {formatFechaLarga(propina.fecha_crea)}
                       </TableCell>
-                      <TableCell className='text-center'>
-                        {getStatusBadge(propina)}
-                      </TableCell>
+                      <TableCell className='text-center'>{getStatusBadge(propina)}</TableCell>
                       {canViewDetail && (
                         <TableCell className='text-center'>
                           <Button

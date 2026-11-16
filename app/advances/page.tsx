@@ -143,43 +143,45 @@ export default function AdvancesPage() {
               loading={loading}
               isAdmin={isAdmin}
             />
+          </div>
 
-            <StatusTabs
-              className='mb-4'
-              items={[
-                {
-                  label: 'Solicitudes',
-                  count: solicitudesCount,
-                  active: activeTab === 'solicitudes',
-                  onSelect: () => {
-                    setActiveTab('solicitudes');
-                    setPage(1);
-                  },
-                  tone: 'warning'
+          <StatusTabs
+            className='mb-4 px-4 sm:px-8'
+            items={[
+              {
+                label: 'Solicitudes',
+                count: solicitudesCount,
+                active: activeTab === 'solicitudes',
+                onSelect: () => {
+                  setActiveTab('solicitudes');
+                  setPage(1);
                 },
-                {
-                  label: 'Por Cobrar',
-                  count: porCobrarCount,
-                  active: activeTab === 'porCobrar',
-                  onSelect: () => {
-                    setActiveTab('porCobrar');
-                    setPage(1);
-                  },
-                  tone: 'warning'
+                tone: 'warning'
+              },
+              {
+                label: 'Por Cobrar',
+                count: porCobrarCount,
+                active: activeTab === 'porCobrar',
+                onSelect: () => {
+                  setActiveTab('porCobrar');
+                  setPage(1);
                 },
-                {
-                  label: 'Cobrados',
-                  count: cobradoCount,
-                  active: activeTab === 'cobrado',
-                  onSelect: () => {
-                    setActiveTab('cobrado');
-                    setPage(1);
-                  },
-                  tone: 'success'
-                }
-              ]}
-            />
+                tone: 'warning'
+              },
+              {
+                label: 'Cobrados',
+                count: cobradoCount,
+                active: activeTab === 'cobrado',
+                onSelect: () => {
+                  setActiveTab('cobrado');
+                  setPage(1);
+                },
+                tone: 'success'
+              }
+            ]}
+          />
 
+          <div className='px-4 sm:px-8'>
             <div className='overflow-x-auto'>
               <AdvancesTable
                 advances={anticipos}

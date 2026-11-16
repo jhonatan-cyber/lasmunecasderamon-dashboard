@@ -15,7 +15,6 @@ import {
   Calendar,
   DollarSign,
   FileText,
-  Hash,
   Clock,
   CheckCircle,
   XCircle,
@@ -64,10 +63,6 @@ export default function GratificacionesDetailModal({
               <DialogTitle className='text-lg sm:text-xl lg:text-2xl font-bold'>
                 Detalle de Gratificación
               </DialogTitle>
-              <div className='flex items-center gap-2 mt-1 text-zinc-500'>
-                <Hash className='h-3 w-3' />
-                <span className='text-xs font-mono uppercase'>ID: {gratificacion.id}</span>
-              </div>
             </div>
             <div
               className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${

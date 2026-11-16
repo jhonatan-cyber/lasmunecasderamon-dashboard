@@ -93,7 +93,7 @@ export default function CuentaTable({
 
   if (loading) {
     return (
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden p-8'>
         <div className='animate-pulse space-y-4'>
           <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
           <div className='h-12 bg-gray-100 dark:bg-gray-800 rounded-xl' />
@@ -105,7 +105,7 @@ export default function CuentaTable({
 
   if (rows.length === 0) {
     return (
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden p-8'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden p-8'>
         <div className='text-center py-12'>
           <EmptyState
             icon={Receipt}

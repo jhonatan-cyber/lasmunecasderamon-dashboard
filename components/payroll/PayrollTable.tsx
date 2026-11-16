@@ -207,7 +207,7 @@ export default function PayrollTable({
       </div>
 
       {}
-      <div className='hidden lg:block mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='hidden lg:block mt-4 sm:mt-6 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-center'>
             <TableHeader>

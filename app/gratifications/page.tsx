@@ -192,7 +192,7 @@ export default function GratificacionesPage() {
   }
 
   return (
-    <div className='space-y-6 p-4 sm:p-6'>
+    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <CajaStatusBanner entityName='gratificaciones' />
 
       <GratificacionesHeader
@@ -210,46 +210,48 @@ export default function GratificacionesPage() {
         formatCurrency={formatCurrency}
       />
 
-      {/* Toggle Mis gratificaciones / Mis solicitudes (solo lectura) */}
-      <div className='flex w-full flex-col gap-2 border-b pb-2 sm:flex-row sm:justify-center sm:gap-3 sm:pb-1'>
-        <Button
-          variant='unstyled'
-          type='button'
-          onClick={() => {
-            setViewMode('mine');
-            setCurrentPage(1);
-          }}
-          className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
-            viewMode === 'mine'
-              ? 'bg-zinc-900 text-white rounded-full shadow-xs'
-              : 'text-gray-500 hover:bg-gray-100 rounded-full'
-          }`}
-        >
-          Mis gratificaciones
-        </Button>
-        <Button
-          variant='unstyled'
-          type='button'
-          onClick={() => {
-            setViewMode('requests');
-            setCurrentPage(1);
-          }}
-          className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
-            viewMode === 'requests'
-              ? 'bg-amber-600 text-white rounded-full shadow-xs'
-              : 'text-gray-500 hover:bg-gray-100 rounded-full'
-          }`}
-        >
-          Mis solicitudes
-          <span
-            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-              viewMode === 'requests' ? 'bg-white text-amber-700' : 'bg-amber-100 text-amber-800'
+      {/* Toggle Mis gratificaciones / Mis solicitudes (solo para cajero) */}
+      {isRequesterFlow && (
+        <div className='flex w-full flex-col items-center gap-2 border-b pb-2 sm:flex-row sm:justify-center sm:gap-3 sm:pb-1'>
+          <Button
+            variant='unstyled'
+            type='button'
+            onClick={() => {
+              setViewMode('mine');
+              setCurrentPage(1);
+            }}
+            className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
+              viewMode === 'mine'
+                ? 'bg-zinc-900 text-white rounded-full shadow-xs'
+                : 'text-gray-500 hover:bg-gray-100 rounded-full'
             }`}
           >
-            {myRequests.length}
-          </span>
-        </Button>
-      </div>
+            Mis gratificaciones
+          </Button>
+          <Button
+            variant='unstyled'
+            type='button'
+            onClick={() => {
+              setViewMode('requests');
+              setCurrentPage(1);
+            }}
+            className={`flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-all ${
+              viewMode === 'requests'
+                ? 'bg-amber-600 text-white rounded-full shadow-xs'
+                : 'text-gray-500 hover:bg-gray-100 rounded-full'
+            }`}
+          >
+            Mis solicitudes
+            <span
+              className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                viewMode === 'requests' ? 'bg-white text-amber-700' : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {myRequests.length}
+            </span>
+          </Button>
+        </div>
+      )}
 
       {/* Tabs Por Pagar / Pagadas (solo en Mis gratificaciones) */}
       {viewMode === 'mine' && (

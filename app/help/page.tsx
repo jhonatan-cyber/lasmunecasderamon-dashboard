@@ -52,7 +52,7 @@ const resources = [
 
 export default function Help() {
   return (
-    <div className='space-y-6 p-4 sm:p-6'>
+    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
       <div>
         <h1 className='text-2xl font-bold'>Centro de Ayuda</h1>
         <p className='text-muted-foreground'>Accesos a los módulos y respuestas sobre su uso</p>

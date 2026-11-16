@@ -87,13 +87,13 @@ export function RolesDialogs({
               hideButtons={true}
             />
           </div>
-          <div className='shrink-0 border-t p-4 sm:p-6'>
+          <div className='shrink-0 p-2 sm:p-6'>
             <div className='flex flex-col sm:flex-row justify-center gap-2 w-full'>
               <Button
                 type='button'
                 variant='outline'
                 size='sm'
-                className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
+                className='rounded-full px-6 transition-all duration-200 hover:bg-black hover:text-white w-full sm:w-auto'
                 onClick={resetRoleForm}
                 disabled={isSubmitting}
               >
@@ -104,7 +104,7 @@ export function RolesDialogs({
                 form='role-form'
                 variant='outline'
                 size='sm'
-                className='bg-black text-white rounded-full px-6 hover:scale-105 transition-all duration-200 w-full sm:w-auto'
+                className='bg-black text-white rounded-full px-6 transition-all duration-200 w-full sm:w-auto'
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Guardando...' : isEditMode ? 'Guardar Cambios' : 'Guardar'}
@@ -134,10 +134,21 @@ export function RolesDialogs({
               Gestión de permisos del rol seleccionado
             </DialogDescription>
           </DialogHeader>
-          <div className='flex-1 min-h-0 overflow-hidden p-2'>
-            <div className='h-full min-h-0 overflow-hidden bg-white dark:bg-neutral-900 rounded-lg'>
+          <div className='flex-1 min-h-0 overflow-hidden p-0'>
+            <div className='h-full min-h-0 overflow-hidden bg-white dark:bg-neutral-900 rounded-3xl'>
               <PermissionsPanel selectedRole={selectedRole} />
             </div>
+          </div>
+          <div className='shrink-0 px-4 pt-1 pb-4'>
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='rounded-full px-6 hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white w-full'
+              onClick={() => setIsPermissionsModalOpen(false)}
+            >
+              Cerrar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

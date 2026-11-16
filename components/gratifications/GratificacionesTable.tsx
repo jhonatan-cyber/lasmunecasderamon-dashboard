@@ -97,7 +97,7 @@ export default function GratificacionesTable({
     <div className='lg:hidden space-y-3'>
       {loading
         ? Array.from({ length: rowsPerPage }).map((_, i) => (
-            <Card key={i} className='p-4 sm:p-6'>
+            <Card key={i} className='border border-gray-200 dark:border-gray-800 p-4 sm:p-6'>
               <CardContent className='space-y-3'>
                 <Skeleton className='h-4 w-32' />
                 <Skeleton className='h-4 w-20' />
@@ -107,7 +107,10 @@ export default function GratificacionesTable({
             </Card>
           ))
         : rows.map(gratificacion => (
-            <Card key={gratificacion.id} className='p-4 sm:p-6'>
+            <Card
+              key={gratificacion.id}
+              className='border border-gray-200 dark:border-gray-800 p-4 sm:p-6'
+            >
               <CardContent className='space-y-3'>
                 <div className='flex justify-between items-start'>
                   <div className='flex items-center gap-2'>
@@ -140,7 +143,7 @@ export default function GratificacionesTable({
                         <Eye className='h-4 w-4' />
                       </Button>
                     )}
-                    {canEdit && (
+                    {canEdit && gratificacion.estado !== 0 && (
                       <Button
                         variant='ghost'
                         size='sm'
@@ -302,7 +305,7 @@ export default function GratificacionesTable({
                             <Eye className='h-4 w-4' />
                           </Button>
                         )}
-                        {canEdit && (
+                        {canEdit && gratificacion.estado !== 0 && (
                           <Button
                             variant='ghost'
                             size='sm'

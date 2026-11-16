@@ -3,15 +3,7 @@ import { Input } from '@/components/ui/input';
 
 /* eslint-disable */
 import { useState, useEffect } from 'react';
-import {
-  Shield,
-  CheckCircle,
-  XCircle,
-  Save,
-  Loader2,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions, Permission } from '@/hooks/auth/usePermissions';
@@ -297,7 +289,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
       </div>
 
       {}
-      <div className='shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-3 sm:p-4'>
+      <div className='shrink-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 p-2 sm:p-4'>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm'>
           <div className='flex items-center justify-between sm:justify-start gap-2'>
             <span className='text-zinc-600 dark:text-neutral-400'>Permisos seleccionados:</span>
@@ -311,12 +303,7 @@ export function PermissionsPanel({ selectedRole }: PermissionsPanelProps) {
               disabled={isSaving}
               className='w-full sm:w-auto bg-black text-white hover:bg-zinc-900 rounded-full'
             >
-              {isSaving ? (
-                <Loader2 className='h-4 w-4 animate-spin mr-2' />
-              ) : (
-                <Save className='h-4 w-4 mr-2' />
-              )}
-              Guardar
+              {isSaving ? 'Guardando...' : 'Guardar'}
             </Button>
           )}
         </div>

@@ -36,7 +36,7 @@ export default function OvertimeTable({
 }: OvertimeTableProps) {
   if (rows.length === 0 && !loading) {
     return (
-      <Card className='border-none shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
+      <Card className='border border-gray-200 dark:border-gray-800 shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
         <CardContent className='flex flex-col items-center justify-center py-12 text-gray-500'>
           <Clock className='h-12 w-12 mb-4 opacity-20' />
           <p className='text-lg font-medium'>No hay horas extras registradas</p>
@@ -64,7 +64,10 @@ export default function OvertimeTable({
     <div className='lg:hidden space-y-4'>
       {loading
         ? Array.from({ length: pageSize }).map((_, i) => (
-            <Card key={i} className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'>
+            <Card
+              key={i}
+              className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'
+            >
               <Skeleton className='h-6 w-1/2 mb-4' />
               <div className='space-y-2'>
                 <Skeleton className='h-4 w-full' />
@@ -155,7 +158,7 @@ export default function OvertimeTable({
 
   const renderDesktopTableView = () => (
     <div className='hidden lg:block'>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
         <Table>
           <TableHeader>
             <TableRow className='hover:bg-transparent'>

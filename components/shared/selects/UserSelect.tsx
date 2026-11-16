@@ -58,7 +58,8 @@ export default function UserSelect({
       if (onlyActive && !isActive) return false;
 
       const userRole = (u.role || '').toLowerCase();
-      if (userRole === 'administrador' || userRole === 'admin') return false;
+      if (userRole === 'administrador' || userRole === 'admin' || userRole === 'anfitrona')
+        return false;
 
       if (roles && roles.length > 0) {
         return roles.some(r => r.toLowerCase() === userRole);

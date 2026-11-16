@@ -128,8 +128,8 @@ export default function AdvancesFilters({
         </div>
 
         {}
-        <div className='hidden lg:flex flex-row gap-4 items-end w-full'>
-          <div className='flex-1'>
+        <div className='hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-end w-full'>
+          <div>
             <Label className='mb-2 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
               {isAdmin ? 'Filtrar por Usuario' : 'Filtrar por Detalle'}
             </Label>
@@ -141,7 +141,7 @@ export default function AdvancesFilters({
             />
           </div>
 
-          <div className='min-w-[140px]'>
+          <div>
             <FilterSelect
               value={statusFilter}
               onChange={setStatusFilter}
@@ -156,7 +156,7 @@ export default function AdvancesFilters({
           </div>
 
           <SortSelect
-            className='min-w-[180px]'
+            className='w-full'
             field={sortBy}
             direction={sortOrder}
             options={[
@@ -170,7 +170,7 @@ export default function AdvancesFilters({
             }}
           />
 
-          <div className='min-w-[100px]'>
+          <div>
             <FilterSelect
               value={pageSize.toString()}
               onChange={v => setPageSize(parseInt(v))}
@@ -185,24 +185,26 @@ export default function AdvancesFilters({
             />
           </div>
 
-          <TooltipProvider>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={onClearFilters}
-                  variant='outline'
-                  size='icon'
-                  aria-label='Limpiar filtros'
-                  className='w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
-                >
-                  <Trash2 className='w-4 h-4' />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
-                <p>Limpiar filtros</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className='flex justify-end'>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onClearFilters}
+                    variant='outline'
+                    size='icon'
+                    aria-label='Limpiar filtros'
+                    className='w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
+                  >
+                    <Trash2 className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className='bg-black text-white dark:bg-white dark:text-black rounded-xl border-none text-xs font-bold px-3 py-1.5 shadow-xl'>
+                  <p>Limpiar filtros</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </CardContent>
     </Card>

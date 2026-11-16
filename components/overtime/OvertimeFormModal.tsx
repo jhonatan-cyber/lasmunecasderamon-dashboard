@@ -71,7 +71,6 @@ export default function OvertimeFormModal({
                   users={employees}
                   value={selectedUser}
                   onChange={setSelectedUser}
-                  roles={['garzon', 'cajero']}
                   placeholder='Busca un empleado...'
                   disabled={isLoading}
                 />
