@@ -84,7 +84,11 @@ export default function Settings() {
         const triggerRect = trigger.getBoundingClientRect();
         const listRect = list.getBoundingClientRect();
         const offset = triggerRect.left - listRect.left - (listRect.width - triggerRect.width) / 2;
-        list.scrollBy({ left: offset, behavior: 'smooth' });
+        if (typeof list.scrollBy === 'function') {
+          list.scrollBy({ left: offset, behavior: 'smooth' });
+        } else {
+          list.scrollLeft += offset;
+        }
       });
     },
     [setTab]
