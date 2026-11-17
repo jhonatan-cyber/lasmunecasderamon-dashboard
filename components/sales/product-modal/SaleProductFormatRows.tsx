@@ -55,7 +55,7 @@ export function SaleProductFormatRows({
           : false;
         const displayLabel = esBotella(option.value)
           ? `${option.value === 'botella_sin_anfitriona' ? 'Botella sin anfitriona' : 'Botella'}${units > 0 ? ` · ${units} ${units === 1 ? 'unidad' : 'unidades'} de bebida` : ''}`
-          : `${option.label.replace(/ \u00b7 \$[\d.,]+/g, '')}${!shortHasMixer ? '' : esCortoAnfitriona(option.value) ? (drinkMl > 0 ? ` y ${drinkMl} ml de bebida` : '') : ' y 1 unidad de bebida'}`;
+          : `${option.label.replace(/ · \$[\d.,]+/g, '')}${!shortHasMixer ? '' : esCortoAnfitriona(option.value) ? (drinkMl > 0 ? ` y ${drinkMl} ml de bebida` : '') : ' y 1 unidad de bebida'}`;
         return (
           <div
             key={option.value}

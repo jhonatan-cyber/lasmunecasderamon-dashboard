@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Clock, Loader2, Save, TriangleAlert } from 'lucide-react';
+import { Clock, Loader2, TriangleAlert } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -345,19 +345,16 @@ export function SettingsAttendanceTab() {
                   Cambios sin guardar
                 </span>
               )}
-              <Button
-                variant='unstyled'
-                onClick={handleSave}
-                disabled={saving || !sucio || !valida}
-                className='flex items-center gap-2 rounded-full border-2 border-black bg-black px-6 py-2.5 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-neutral-800 active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:border-white dark:bg-white dark:text-black dark:hover:bg-neutral-200'
-              >
-                {saving ? (
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                ) : (
-                  <Save className='h-4 w-4' />
-                )}
-                {saving ? 'Guardando...' : 'Guardar Configuración'}
-              </Button>
+              <div className='flex justify-center sm:justify-end sm:flex-1'>
+                <Button
+                  variant='unstyled'
+                  onClick={handleSave}
+                  disabled={saving || !sucio || !valida}
+                  className='rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:pointer-events-none disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200'
+                >
+                  {saving ? 'Guardando...' : 'Guardar'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

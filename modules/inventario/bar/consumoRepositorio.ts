@@ -123,7 +123,7 @@ export async function consumirStock(
             Number(mixer.ml_por_corto) < 1 ||
             Number(mixer.ml_por_corto) > 10000)
       )
-        throw new BusinessError('Consumo de acompa\u00f1amiento inv\u00e1lido');
+        throw new BusinessError('Consumo de acompañamiento inválido');
       const acumulado = requerido.get(mixer.presentacion_id) ?? {
         botellas: 0,
         shotsCliente: 0,
@@ -199,7 +199,7 @@ export async function consumirStock(
           )
         )
       )
-        throw new BusinessError('El producto de acompa\u00f1amiento ya no existe');
+        throw new BusinessError('El producto de acompañamiento ya no existe');
       continue;
     }
     if (productoDesactivado(presentacion.estado)) {

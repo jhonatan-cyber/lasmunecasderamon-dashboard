@@ -7,19 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { SaleOptionsSchema } from '@/lib/business/schemas/sale-options';
-import { Save, Users, RotateCcw, Check, ChevronsUpDown } from 'lucide-react';
+import { Users, RotateCcw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem
-} from '@/components/ui/command';
 import { cn } from '@/lib/utils/utils';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -35,7 +26,7 @@ import {
   type SettingsSaleOptionsHandle
 } from './SettingsSaleOptionsEditor';
 import type { SaleOption } from '@/types/sale-options';
-import { Label } from '@/components/ui/label';
+import { SettingsCategoryCard } from './SettingsCategoryCard';
 
 type PresentacionComisiones = {
   codigo_barras?: string | null;
@@ -68,6 +59,28 @@ const bottleFieldsSchema = z.object({
   comision: z.string()
 });
 
+// Schema de carga: acepta `precio_sin_anfitriona: 0` desde BD y lo limpia a undefined
+// antes de validar con SaleOptionsSchema (que exige .min(1)).
+const SaleOptionsLoadSchema = z.preprocess(
+  input => {
+    if (!Array.isArray(input)) return input;
+    return input.map(option => {
+      if (typeof option !== 'object' || option === null) return option;
+      const cleaned = { ...option };
+      // precio_sin_anfitriona: 0 es inválido para SaleOptionsSchema (.min(1)),
+      // pero es un valor común en BD para productos sin precio sin anfitriona.
+      if (
+        'precio_sin_anfitriona' in cleaned &&
+        (cleaned.precio_sin_anfitriona === 0 || cleaned.precio_sin_anfitriona == null)
+      ) {
+        delete cleaned.precio_sin_anfitriona;
+      }
+      return cleaned;
+    });
+  },
+  SaleOptionsSchema.or(z.tuple([]))
+);
+
 const presentacionSchema = z.object({
   id: z.string(),
   producto_id: z.string(),
@@ -78,25 +91,44 @@ const presentacionSchema = z.object({
   comision: z.coerce.number().default(0),
   ml_shot: z.coerce.number().nullish(),
   ml_shot_anfitriona: z.coerce.number().nullish(),
-  opciones_venta: z.preprocess(
-    value => {
-      if (typeof value !== 'string') return value ?? [];
-      try {
-        return JSON.parse(value) as unknown;
-      } catch {
-        return value;
-      }
-    },
-    SaleOptionsSchema.or(z.tuple([]))
-  )
+  opciones_venta: z.preprocess(value => {
+    if (typeof value !== 'string') return value ?? [];
+    try {
+      return JSON.parse(value) as unknown;
+    } catch {
+      return value;
+    }
+  }, SaleOptionsLoadSchema)
 });
 
 async function cargarPresentaciones(signal: AbortSignal): Promise<PresentacionComisiones[]> {
-  const res = await fetch('/api/bar', { cache: 'no-store', signal });
+  let res: Response;
+  try {
+    res = await fetch('/api/bar', { cache: 'no-store', signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') throw err;
+    throw new Error(
+      'No se pudo conectar con el servidor. Verificá que la aplicación esté en ejecución.'
+    );
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const detail = text.includes('"message"') ? (JSON.parse(text)?.message ?? text) : text;
+    throw new Error(
+      `Error ${res.status}: ${detail || `No se pudo conectar con el servidor (${res.status})`}`
+    );
+  }
+  const body = await res.json().catch(() => null);
   const parsed = z
     .object({ success: z.literal(true), data: z.array(presentacionSchema) })
-    .safeParse(await res.json());
-  if (!res.ok || !parsed.success) throw new Error('Error al cargar las presentaciones');
+    .safeParse(body);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map(issue => `${issue.path.join('.')}: ${issue.message}`)
+      .slice(0, 3)
+      .join('; ');
+    throw new Error(`Respuesta inválida del servidor: ${issues}`);
+  }
   return parsed.data.data;
 }
 
@@ -149,7 +181,7 @@ function ProductSelectorPhoto({ foto }: { foto?: string | null }) {
 export function SettingsBottleHostessCard() {
   const { productos: allProductos, loading, error: productsError, refresh } = useSettingsProducts();
   const [selectedId, setSelectedId] = useState<string>('');
-  const [productSelectorOpen, setProductSelectorOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const saleOptionsRef = useRef<SettingsSaleOptionsHandle>(null);
   const tiersRef = useRef<SettingsTiersHandle>(null);
   const barQuery = useQuery({
@@ -328,11 +360,34 @@ export function SettingsBottleHostessCard() {
   const handleSelectChange = (id: string) => {
     setSelectedId(id);
     const producto = productos.find(p => String(p.id) === id);
+    if (producto && producto.categoria) {
+      setSelectedCategory(producto.categoria);
+    }
     reset({
       maximo: Number(producto?.max_anfitrionas) > 0 ? String(producto?.max_anfitrionas) : '',
       precio: formatMiles(producto?.price ?? 0),
       comision: formatMiles(producto?.commission ?? 0)
     });
+  };
+
+  const handleCategorySelect = (categoria: string) => {
+    setSelectedCategory(categoria);
+    setSelectedId('');
+    const primerProducto = productosAgrupados.find(([cat]) => cat === categoria)?.[1]?.[0];
+    if (primerProducto) {
+      reset({
+        maximo:
+          Number(primerProducto.max_anfitrionas) > 0 ? String(primerProducto.max_anfitrionas) : '',
+        precio: formatMiles(primerProducto.price ?? 0),
+        comision: formatMiles(primerProducto.commission ?? 0)
+      });
+      setSelectedId(String(primerProducto.id));
+    }
+  };
+
+  const handleBackToCategories = () => {
+    setSelectedCategory(null);
+    setSelectedId('');
   };
 
   const guardarMaximo = async (valor: number | null) => {
@@ -398,7 +453,7 @@ export function SettingsBottleHostessCard() {
           </span>
         </div>
       }
-      headerClassName='gap-3 border-b border-indigo-100/80 bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/70 p-4 sm:px-5 sm:py-4 dark:border-neutral-800 dark:from-indigo-950/30 dark:via-neutral-900 dark:to-sky-950/20'
+      headerClassName='gap-3 border-b border-neutral-200 p-4 sm:px-5 sm:py-4 dark:border-neutral-800'
       contentClassName='space-y-5 px-4 pb-4 sm:px-5 sm:pb-5'
     >
       {productsError && (
@@ -410,7 +465,7 @@ export function SettingsBottleHostessCard() {
           onRetry={() => void barQuery.refetch()}
         />
       )}
-      {(loading && allProductos.length === 0) || (presentaciones === null && !barError) ? (
+      {(loading && allProductos.length === 0) || barQuery.isLoading ? (
         <div className='text-center py-8'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-500 mx-auto' />
           <p className='text-sm text-neutral-500 dark:text-neutral-400 mt-2'>
@@ -418,151 +473,167 @@ export function SettingsBottleHostessCard() {
           </p>
         </div>
       ) : barError && presentaciones === null ? (
-        <div className='text-center py-8 space-y-3'>
+        <ErrorState
+          message={
+            barQuery.error instanceof Error ? barQuery.error.message : 'No se pudo cargar el bar'
+          }
+          onRetry={() => void barQuery.refetch()}
+        />
+      ) : productos.length === 0 ? (
+        <div className='text-center py-8 space-y-2'>
           <p className='text-sm text-neutral-500 dark:text-neutral-400'>
-            No se pudo cargar el bar. Revisá la conexión e intentá de nuevo.
+            No hay presentaciones del bar para configurar.
+          </p>
+          <p className='text-xs text-neutral-400 dark:text-neutral-500'>
+            Transferí productos al bar desde el módulo de Inventario para poder configurar precios y
+            comisiones.
           </p>
           <Button
             variant='unstyled'
             type='button'
-            onClick={() => void barQuery.refetch()}
+            onClick={() => refrescarPersistidos()}
             disabled={barQuery.isFetching}
-            className='px-6 py-2 rounded-full font-bold border-2 border-neutral-300 dark:border-neutral-700 hover:scale-105 active:scale-95 transition-all text-sm'
+            className='mt-2 rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
           >
             Reintentar
           </Button>
         </div>
-      ) : productos.length === 0 ? (
-        <p className='text-center py-8 text-neutral-400 text-sm'>
-          No hay presentaciones del bar para configurar.
-        </p>
       ) : (
         <div className='space-y-5'>
-          <div className='space-y-2 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-3 dark:border-neutral-800 dark:bg-neutral-950/40'>
-            <Label
-              htmlFor='botella-producto'
-              className='block text-xs font-semibold text-neutral-600 dark:text-neutral-400'
-            >
-              Elige un producto y presentación
-            </Label>
-            <Popover open={productSelectorOpen} onOpenChange={setProductSelectorOpen}>
-              <PopoverTrigger asChild>
+          {!selectedCategory ? (
+            /* Category cards grid */
+            <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3'>
+              {productosAgrupados.map(([categoria, items]) => (
+                <SettingsCategoryCard
+                  key={categoria}
+                  categoria={categoria}
+                  productoCount={items.length}
+                  onClick={() => handleCategorySelect(categoria)}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Category detail view */
+            <div className='space-y-5'>
+              {/* Back button and category title */}
+              <div className='flex items-center gap-3'>
                 <Button
-                  id='botella-producto'
+                  variant='unstyled'
                   type='button'
-                  variant='outline'
-                  role='combobox'
-                  aria-expanded={productSelectorOpen}
-                  aria-controls='botella-productos-lista'
-                  disabled={saving}
-                  className='h-auto min-h-12 w-full justify-between rounded-xl bg-white text-left shadow-sm dark:bg-neutral-900'
+                  onClick={handleBackToCategories}
+                  className='inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-medium transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800'
                 >
-                  <span className='flex min-w-0 items-center gap-2'>
-                    {seleccionado && <ProductSelectorPhoto foto={seleccionado.foto} />}
-                    <span className='truncate'>
-                      {seleccionado ? etiquetaProducto(seleccionado) : 'Seleccionar producto'}
-                    </span>
-                  </span>
-                  <ChevronsUpDown className='opacity-50' />
+                  <ArrowLeft className='h-4 w-4' />
+                  Volver
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent align='start' className='w-[var(--radix-popover-trigger-width)] p-0'>
-                <Command>
-                  <CommandInput
-                    id='botella-producto-busqueda'
-                    placeholder='Buscar producto, categoría o presentación...'
-                    aria-label='Buscar producto, categoría o presentación'
-                    className='border-0 shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0'
-                  />
-                  <CommandList id='botella-productos-lista'>
-                    <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                    {productosAgrupados.map(([categoria, items]) => (
-                      <CommandGroup key={categoria} heading={categoria}>
-                        {items.map(p => (
-                          <CommandItem
-                            key={p.id}
-                            value={String(p.id)}
-                            keywords={[String(p.name), String(p.categoria ?? ''), p.presentacion]}
-                            onSelect={() => {
-                              if (String(p.id) !== selectedId) handleSelectChange(String(p.id));
-                              setProductSelectorOpen(false);
-                            }}
+                <h3 className='text-lg font-semibold text-neutral-900 dark:text-neutral-100'>
+                  {selectedCategory}
+                </h3>
+              </div>
+
+              {/* Product list for this category */}
+              <div className='space-y-2 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-3 dark:border-neutral-800 dark:bg-neutral-950/40'>
+                <p className='mb-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400'>
+                  Seleccioná un producto para editar
+                </p>
+                <div className='space-y-1 max-h-64 overflow-y-auto'>
+                  {productosAgrupados
+                    .find(([cat]) => cat === selectedCategory)?.[1]
+                    ?.map(p => (
+                      <Button
+                        key={p.id}
+                        variant='unstyled'
+                        type='button'
+                        onClick={() => handleSelectChange(String(p.id))}
+                        className={cn(
+                          'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150',
+                          String(p.id) === selectedId
+                            ? 'bg-black text-white dark:bg-white dark:text-black'
+                            : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                        )}
+                      >
+                        <ProductSelectorPhoto foto={p.foto} />
+                        <div className='min-w-0 flex-1'>
+                          <p className='text-sm font-medium truncate'>{p.name}</p>
+                          <p
+                            className={cn(
+                              'text-xs truncate',
+                              String(p.id) === selectedId
+                                ? 'text-neutral-300 dark:text-neutral-600'
+                                : 'text-neutral-500 dark:text-neutral-400'
+                            )}
                           >
-                            <Check
-                              className={cn(
-                                selectedId === String(p.id) ? 'opacity-100' : 'opacity-0'
-                              )}
-                            />
-                            <ProductSelectorPhoto foto={p.foto} />
-                            <span className='min-w-0 break-words'>{etiquetaProducto(p)}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
+                            {p.presentacion}
+                          </p>
+                        </div>
+                      </Button>
                     ))}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-          {seleccionado && (
-            <SettingsSaleOptionsEditor
-              key={selectedId}
-              ref={saleOptionsRef}
-              options={seleccionado.opciones_venta}
-              categoria={seleccionado.categoria}
-              precio={precio}
-              comision={comision}
-              mlCliente={seleccionado.ml_shot}
-              mlAnfitriona={seleccionado.ml_shot_anfitriona}
-              onPrecio={value => setValue('precio', value, { shouldDirty: true })}
-              onComision={value => setValue('comision', value, { shouldDirty: true })}
-              saving={saving}
-              maxAnfitrionas={maximo}
-              onMaxAnfitrionasChange={value =>
-                setValue('maximo', value.replace(/\D/g, '').slice(0, 2), { shouldDirty: true })
-              }
-            />
+                </div>
+              </div>
+
+              {/* Product editor */}
+              {seleccionado && (
+                <SettingsSaleOptionsEditor
+                  key={selectedId}
+                  ref={saleOptionsRef}
+                  options={seleccionado.opciones_venta}
+                  categoria={seleccionado.categoria}
+                  precio={precio}
+                  comision={comision}
+                  mlCliente={seleccionado.ml_shot}
+                  mlAnfitriona={seleccionado.ml_shot_anfitriona}
+                  onPrecio={value => setValue('precio', value, { shouldDirty: true })}
+                  onComision={value => setValue('comision', value, { shouldDirty: true })}
+                  saving={saving}
+                  maxAnfitrionas={maximo}
+                  onMaxAnfitrionasChange={value =>
+                    setValue('maximo', value.replace(/\D/g, '').slice(0, 2), { shouldDirty: true })
+                  }
+                />
+              )}
+
+              {seleccionado &&
+                !esVentaSimple &&
+                Number(maximo) >= 2 &&
+                Number(maximo) <= MAX_ANFITRIONAS && (
+                  <SettingsChampagneTiers
+                    key={`${selectedId}:${barQuery.dataUpdatedAt}`}
+                    ref={tiersRef}
+                    disabled={saving}
+                    productId={seleccionado.producto_id}
+                    maxAnfitrionas={Number(maximo)}
+                    precioBase={Number(precio.replace(/\./g, '')) || 0}
+                    comisionBase={Number(comision.replace(/\./g, '')) || 0}
+                  />
+                )}
+
+              <div className='flex flex-col-reverse gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-800'>
+                {vigente !== null && !esVentaSimple && (
+                  <Button
+                    variant='unstyled'
+                    type='button'
+                    onClick={() => guardarMaximo(null)}
+                    disabled={saving}
+                    className='inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
+                  >
+                    <RotateCcw className='h-4 w-4' />
+                    Volver al default
+                  </Button>
+                )}
+                <div className='flex justify-center sm:justify-end sm:flex-1'>
+                  <Button
+                    variant='unstyled'
+                    type='button'
+                    onClick={handleSave}
+                    disabled={saving || loading || barQuery.isFetching || barError}
+                    className='rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200'
+                  >
+                    {saving ? 'Guardando...' : 'Guardar Cambios'}
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
-
-          {seleccionado &&
-            !esVentaSimple &&
-            Number(maximo) >= 2 &&
-            Number(maximo) <= MAX_ANFITRIONAS && (
-              <SettingsChampagneTiers
-                key={`${selectedId}:${barQuery.dataUpdatedAt}`}
-                ref={tiersRef}
-                disabled={saving}
-                productId={seleccionado.producto_id}
-                maxAnfitrionas={Number(maximo)}
-                precioBase={Number(precio.replace(/\./g, '')) || 0}
-                comisionBase={Number(comision.replace(/\./g, '')) || 0}
-              />
-            )}
-
-          <div className='flex flex-col-reverse gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-800'>
-            {vigente !== null && !esVentaSimple && (
-              <Button
-                variant='unstyled'
-                type='button'
-                onClick={() => guardarMaximo(null)}
-                disabled={saving}
-                className='inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-medium transition hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
-              >
-                <RotateCcw className='h-4 w-4' />
-                Volver al default
-              </Button>
-            )}
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={handleSave}
-              disabled={saving || loading || barQuery.isFetching || barError}
-              className='inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-400 dark:text-neutral-950 dark:hover:bg-indigo-300'
-            >
-              <Save className='h-4 w-4' />
-              {saving ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
-          </div>
         </div>
       )}
     </CollapsibleCard>

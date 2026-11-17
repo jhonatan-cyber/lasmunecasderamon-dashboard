@@ -67,9 +67,9 @@ describe('registro de claves de configuración', () => {
   it('la regla del tope de acompañamiento se guarda desde el registro', () => {
     // La tarjeta de reglas de venta envía esta clave en cada guardado; si falta en el
     // registro el endpoint responde "Clave desconocida" y se pierden los demás cambios.
-    expect(categoriaDeClave('tope_precio_acompanamiento')).toBe('comisiones');
-    expect(defaultDeClave('tope_precio_acompanamiento')).toBe(0);
-    expect(validarConfig('tope_precio_acompanamiento', '3000')).toBeNull();
+    expect(categoriaDeClave('tope_precio_acompañamiento')).toBe('comisiones');
+    expect(defaultDeClave('tope_precio_acompañamiento')).toBe(0);
+    expect(validarConfig('tope_precio_acompañamiento', '3000')).toBeNull();
   });
 
   it('el alias deprecado de los umbrales es mutuo', () => {

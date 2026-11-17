@@ -29,7 +29,7 @@ import { SettingsWhatsAppTab } from '@/components/settings/SettingsWhatsAppTab';
 import { SettingsTestPresenceTab } from '@/components/settings/SettingsTestPresenceTab';
 import { usePersistentTab } from '@/hooks/shared/usePersistentTab';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMemo } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 
 /**
  * Las pestañas de Configuraciones, en una sola lista: la dibujan los triggers y también
@@ -68,68 +68,120 @@ export default function Settings() {
   // Al recargar se reabre en el tab que quedó abierto, no en Empresa.
   const [tab, setTab] = usePersistentTab(CLAVE_TAB, valoresTab, 'empresa');
 
+  // Auto-scroll: cuando cambia el tab, el trigger activo se centra en la barra
+  // para que no quede oculto por el desbordamiento horizontal.
+  const listRef = useRef<HTMLDivElement>(null);
+  const activeTriggerRef = useRef<HTMLButtonElement>(null);
+  const handleTabChange = useCallback(
+    (value: string) => {
+      setTab(value);
+      // El scroll se programa después del paint para que Radix ya haya marcado
+      // el trigger activo y `activeTriggerRef` apunte al botón correcto.
+      requestAnimationFrame(() => {
+        const trigger = activeTriggerRef.current;
+        const list = listRef.current;
+        if (!trigger || !list) return;
+        const triggerRect = trigger.getBoundingClientRect();
+        const listRect = list.getBoundingClientRect();
+        const offset = triggerRect.left - listRect.left - (listRect.width - triggerRect.width) / 2;
+        if (typeof list.scrollBy === 'function') {
+          list.scrollBy({ left: offset, behavior: 'smooth' });
+        } else {
+          list.scrollLeft += offset;
+        }
+      });
+    },
+    [setTab]
+  );
+
+  // Marca la referencia del trigger activo para el auto-scroll.
+  const setActiveRef = useCallback((el: HTMLButtonElement | null) => {
+    activeTriggerRef.current = el;
+  }, []);
+
+  const currentTab = tab === 'comisiones' ? 'bar' : tab;
+
   return (
     <div className='w-full max-w-none p-4 sm:p-6 lg:p-8'>
-      <Tabs
-        value={tab === 'comisiones' ? 'bar' : tab}
-        onValueChange={setTab}
-        className='w-full space-y-6'
-      >
-        <TabsList className='@container flex h-auto w-full flex-nowrap justify-start gap-1.5 rounded-none bg-transparent p-0 sm:gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
-          {tabs.map(({ value, label, icon: Icon }) => (
-            <TabsTrigger
-              key={value}
-              value={value}
-              className='flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 data-[state=active]:border-blue-600 data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:data-[state=active]:border-blue-500 dark:data-[state=active]:bg-blue-500 dark:data-[state=active]:text-white'
-            >
-              <Icon className='h-4 w-4 hidden @min-[1100px]:block' />
-              {label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <Tabs value={currentTab} onValueChange={handleTabChange} className='w-full space-y-6'>
+        <div className='flex items-center gap-3'>
+          <h1 className='text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white truncate'>
+            Configuraciones
+          </h1>
+        </div>
 
-        <TabsContent value='empresa'>
-          <SettingsCompanyTab />
-        </TabsContent>
+        <div className='relative'>
+          <TabsList
+            ref={listRef}
+            className='@container flex h-11 w-full flex-nowrap justify-start gap-1.5 rounded-none bg-transparent p-0 sm:gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth'
+          >
+            {tabs.map(({ value, label, icon: Icon }) => {
+              const isActive = currentTab === value;
+              return (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  ref={isActive ? setActiveRef : undefined}
+                  className='group flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 transition-all duration-200 ease-out hover:bg-gray-50 hover:text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:border-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black'
+                >
+                  <Icon
+                    className={`h-4 w-4 transition-all duration-200 ${
+                      isActive
+                        ? 'block scale-100 opacity-100'
+                        : 'hidden @min-[1100px]:block scale-95 opacity-70 group-hover:scale-100 group-hover:opacity-100'
+                    }`}
+                  />
+                  <span className='font-medium'>{label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </div>
 
-        <TabsContent value='facturacion'>
-          <SettingsBillingTab />
-        </TabsContent>
-
-        <TabsContent value='permisos'>
-          <SettingsPermissionsTab />
-        </TabsContent>
-
-        <TabsContent value='bar' className='space-y-6'>
-          <SettingsBarTab />
-          <SettingsBottleHostessCard />
-          <SettingsServiceLevelsCard />
-        </TabsContent>
-
-        {esAdmin && (
-          <TabsContent value='whatsapp'>
-            <SettingsWhatsAppTab />
+        <div className='animate-in fade-in duration-200' key={currentTab}>
+          <TabsContent value='empresa'>
+            <SettingsCompanyTab />
           </TabsContent>
-        )}
 
-        <TabsContent value='mantenimiento'>
-          <SettingsMaintenanceTab />
-        </TabsContent>
+          <TabsContent value='facturacion'>
+            <SettingsBillingTab />
+          </TabsContent>
 
-        <TabsContent value='logs'>
-          <SettingsLogsTab />
-        </TabsContent>
+          <TabsContent value='permisos'>
+            <SettingsPermissionsTab />
+          </TabsContent>
 
-        <TabsContent value='asistencia' className='flex flex-col gap-6'>
-          <SettingsAttendanceTab />
-          <BiometricStatus />
-          <BiometricDevices />
-          <KioskDevices />
-        </TabsContent>
+          <TabsContent value='bar' className='space-y-6'>
+            <SettingsBarTab />
+            <SettingsBottleHostessCard />
+            <SettingsServiceLevelsCard />
+          </TabsContent>
 
-        <TabsContent value='pruebas'>
-          <SettingsTestPresenceTab />
-        </TabsContent>
+          {esAdmin && (
+            <TabsContent value='whatsapp'>
+              <SettingsWhatsAppTab />
+            </TabsContent>
+          )}
+
+          <TabsContent value='mantenimiento'>
+            <SettingsMaintenanceTab />
+          </TabsContent>
+
+          <TabsContent value='logs'>
+            <SettingsLogsTab />
+          </TabsContent>
+
+          <TabsContent value='asistencia' className='flex flex-col gap-6'>
+            <SettingsAttendanceTab />
+            <BiometricStatus />
+            <BiometricDevices />
+            <KioskDevices />
+          </TabsContent>
+
+          <TabsContent value='pruebas'>
+            <SettingsTestPresenceTab />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

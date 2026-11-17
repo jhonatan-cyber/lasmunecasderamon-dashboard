@@ -465,6 +465,7 @@ it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async ()
 
   fireEvent.click(screen.getByRole('button', { name: /Corto.*aumentar cantidad/ }));
   const mixer = await screen.findByRole('combobox', { name: /Corto/ });
+  await waitFor(() => expect(mixer).toBeEnabled());
   fireEvent.click(mixer);
 
   expect(await screen.findByRole('option', { name: /Con cover/ })).toBeInTheDocument();

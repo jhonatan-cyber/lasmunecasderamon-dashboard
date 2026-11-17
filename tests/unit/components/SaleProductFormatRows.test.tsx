@@ -57,7 +57,7 @@ it.each([
     },
     opcionesTipo: [
       { value: 'botella', label: 'Botella', cantidad: 0, comision: 0 },
-      { value: 'shot_anfitriona', label: 'Corto anfitriona \u00b7 20 ml', cantidad: 0, comision: 0 }
+      { value: 'shot_anfitriona', label: 'Corto anfitriona · 20 ml', cantidad: 0, comision: 0 }
     ]
   } as any;
   const { container, unmount } = render(

@@ -233,7 +233,7 @@ export function SettingsSaleOptionsEditor({
           : {}),
         ...(!esVentaSimple
           ? {
-              ...(precioSinAnfitriona.trim()
+              ...(precioSinAnfitriona.trim() && numeric(precioSinAnfitriona) > 0
                 ? { precio_sin_anfitriona: numeric(precioSinAnfitriona) }
                 : {}),
               acompanamiento: { unidades: Number(units || 0) }

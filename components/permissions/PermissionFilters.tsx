@@ -115,17 +115,17 @@ export function PermissionFilters({
             />
 
             {}
-            <div className='w-full sm:w-auto'>
-              <SelectElements
-                value={pageSize}
-                onChange={handlePageSizeChange}
-                options={[5, 10, 20, 40]}
-                label='LISTAR'
-              />
-            </div>
+            <div className='flex items-end gap-4 w-full sm:w-auto'>
+              <div className='w-full sm:w-auto'>
+                <SelectElements
+                  value={pageSize}
+                  onChange={handlePageSizeChange}
+                  options={[5, 10, 20, 40]}
+                  label='LISTAR'
+                />
+              </div>
 
-            {}
-            <div className='w-full sm:w-auto'>
+              {}
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>

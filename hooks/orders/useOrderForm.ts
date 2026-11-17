@@ -108,7 +108,7 @@ export function useOrderForm({
   }>({});
   const [roomSelections, setRoomSelections] = useState<{ [key: string]: string }>({});
   const configPropina = Number(useConfigValue('facturacion', 'propina_venta', '10'));
-  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0));
+  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompañamiento', 0));
   const [propina, setPropina] = useState(configPropina);
   const [propinaHabilitada, setPropinaHabilitada] = useState(false);
   const [error, setError] = useState('');
@@ -287,7 +287,7 @@ export function useOrderForm({
           totalUnidadesAcompanamientoBotella(p.acompanamiento_botella) !== bottleMixerUnits(p)
       )
     ) {
-      setError('Reparte el acompa\u00f1amiento de botella entre sus sabores');
+      setError('Reparte el acompañamiento de botella entre sus sabores');
       return;
     }
     if (!metodoPago) {

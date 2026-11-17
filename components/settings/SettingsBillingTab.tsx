@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Save, Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import {
   Select,
@@ -230,15 +230,14 @@ export function SettingsBillingTab() {
         </div>
       )}
 
-      <div className='mt-6 flex justify-end'>
+      <div className='mt-6 flex justify-center'>
         <Button
           variant='unstyled'
           onClick={handleSave}
           disabled={saving}
-          className='flex items-center gap-2 px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800 disabled:opacity-50'
+          className='rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50'
         >
-          <Save className='h-4 w-4' />
-          {saving ? 'Guardando...' : 'Guardar Configuración'}
+          {saving ? 'Guardando...' : 'Guardar'}
         </Button>
       </div>
     </CollapsibleCard>

@@ -6,7 +6,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Checkbox } from '@/components/ui/checkbox';
 
 import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
-import { MessageCircle, Save, Send, RefreshCw } from 'lucide-react';
+import { MessageCircle, Send, RefreshCw } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -613,7 +613,7 @@ export function SettingsWhatsAppTab() {
         </div>
       )}
 
-      <div className='flex justify-end pt-4'>
+      <div className='flex justify-center pt-4'>
         <Button
           variant='unstyled'
           onClick={() => (adminSeleccionado ? guardarAdmin(adminSeleccionado) : handleSave())}
@@ -623,9 +623,8 @@ export function SettingsWhatsAppTab() {
             testing ||
             (adminSeleccionado ? guardandoAdmin === adminSeleccionado.usuarioId : false)
           }
-          className='flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black border-2 border-black dark:border-white hover:scale-105 active:scale-95 transition-all duration-200 rounded-full font-bold disabled:opacity-50'
+          className='rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200'
         >
-          <Save className='h-4 w-4' />
           {adminSeleccionado
             ? guardandoAdmin === adminSeleccionado.usuarioId
               ? 'Guardando...'

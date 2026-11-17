@@ -18,7 +18,7 @@ const inventoryFields = {
     })
     .refine(
       value => (value.unidades !== undefined) !== (value.ml_por_corto !== undefined),
-      'Selecciona unidades completas del acompa\u00f1amiento'
+      'Selecciona unidades completas del acompañamiento'
     )
     .optional(),
   recargo_acompanamiento: z.number().min(0).optional()
@@ -94,7 +94,7 @@ export const OrderCreateSchema = z
               !d.acompanamiento_botella ||
               (d.tipo_venta !== 'shot' &&
                 saboresAcompanamientoValidos(d.presentacion_id, d.acompanamiento_botella)),
-            'Acompa\u00f1amiento de botella inv\u00e1lido'
+            'Acompañamiento de botella inválido'
           )
           .transform(d =>
             d.tipo_venta === 'shot' && !d.shot_anfitriona

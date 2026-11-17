@@ -5,8 +5,11 @@ import { SettingsServiceLevelsCard } from '@/components/settings/SettingsService
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/lib/utils/logger', () => ({
-  default: { captureException: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+  default: { captureException: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 vi.mock('@/hooks/shared/useConfigValue', () => ({
   useConfigValue: (_category: string, _key: string, defaultValue: string | number) => defaultValue,
   useConfig: (_clave: string, defaultValue?: string) => defaultValue ?? '',
@@ -88,7 +91,7 @@ describe('SettingsServiceLevelsCard · colaciones por rol', () => {
     await waitFor(() => {
       const put = request.mock.calls.find(args => args[1]?.method === 'PUT');
       const body = JSON.parse((put![1] as { body: string }).body);
-      expect(body.configs).toContainEqual({ clave: 'tope_precio_acompanamiento', valor: '3000' });
+      expect(body.configs).toContainEqual({ clave: 'tope_precio_acompañamiento', valor: '3000' });
     });
   });
 });

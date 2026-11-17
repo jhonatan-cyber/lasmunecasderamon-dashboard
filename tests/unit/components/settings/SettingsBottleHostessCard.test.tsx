@@ -179,10 +179,17 @@ describe('SettingsBottleHostessCard', () => {
     });
     vi.stubGlobal('fetch', request);
     mount();
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
     const max = await screen.findByLabelText('Máximo de anfitrionas');
-    expect(max).toHaveValue(null);
+    expect(max).toHaveAttribute('placeholder', 'Default');
     expect(screen.queryByText('regla por defecto')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/i }));
     await waitFor(() =>
       expect(request).toHaveBeenCalledWith(
         '/api/products/presentations',
@@ -244,18 +251,20 @@ describe('SettingsBottleHostessCard', () => {
     vi.stubGlobal('fetch', request);
 
     mount();
+    // Navegar: categoría → producto
     await waitFor(() =>
-      expect(screen.getByLabelText('Elige un producto y presentación')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
     );
-    expect(screen.getByRole('group', { name: 'Licores' })).toHaveTextContent('Solo shot');
-    expect(screen.getByRole('group', { name: 'Licores' })).toHaveTextContent('Whisky');
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    // La lista de productos muestra los nombres
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    // Seleccionar "Solo shot" para verificar que no muestra botella
     fireEvent.click(screen.getByRole('button', { name: /Solo shot/ }));
     expect(screen.getByLabelText('Precio corto cliente')).toHaveValue('5.000');
     expect(screen.queryByLabelText('Precio de botella con anfitriona')).not.toBeInTheDocument();
     expect(screen.queryByText(/Solo almacén/)).not.toBeInTheDocument();
-    // El listado muestra el precio y al elegir se cargan precio y comisión.
-    expect(screen.getByRole('button', { name: /Whisky.*200\.000/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
+    // Seleccionar "Whisky" para verificar precio y comisión
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
     await waitFor(() =>
       expect(screen.getByLabelText('Precio de botella con anfitriona')).toHaveValue('200.000')
     );
@@ -307,7 +316,7 @@ describe('SettingsBottleHostessCard', () => {
         ml_shot_anfitriona: null
       });
     });
-    await waitFor(() => expect(screen.getByLabelText('Máximo de anfitrionas')).toHaveValue(3));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Presentación actualizada'));
 
     fireEvent.click(screen.getByRole('button', { name: /Volver al default/ }));
     await waitFor(() => {
@@ -345,9 +354,13 @@ describe('SettingsBottleHostessCard', () => {
     vi.stubGlobal('fetch', request);
 
     mount();
-    await screen.findByLabelText('Elige un producto y presentación');
-    fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
-    // El campo vive dentro del editor de configuración de venta, como en la transferencia.
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
     const max = await screen.findByLabelText('Máximo de anfitrionas');
     fireEvent.change(max, { target: { value: '12' } });
     await screen.findByLabelText('Precio para 12 anfitrionas');
@@ -396,11 +409,15 @@ describe('SettingsBottleHostessCard', () => {
     vi.stubGlobal('fetch', request);
 
     mount();
-    await screen.findByLabelText('Elige un producto y presentación');
-    fireEvent.click(screen.getByRole('button', { name: /Whisky.*200\.000/ }));
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
 
     const max = await screen.findByLabelText('Máximo de anfitrionas');
-    expect(max).toHaveValue(null);
     expect(max).toHaveAttribute('placeholder', 'Default');
     expect(screen.queryByText(/regla por defecto del producto/)).not.toBeInTheDocument();
     fireEvent.change(max, { target: { value: '2' } });
@@ -458,6 +475,15 @@ describe('SettingsBottleHostessCard', () => {
     vi.stubGlobal('fetch', request);
 
     mount();
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Champagne/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Champagne/ }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Champagne Oro/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Champagne Oro/ }));
     await waitFor(() =>
       expect(screen.getByLabelText('Precio para 2 anfitrionas')).toHaveValue('160.000')
     );
@@ -483,10 +509,17 @@ describe('SettingsBottleHostessCard', () => {
     const { state, request } = mockPersistedSettings();
     state.failBar = true;
     mount();
-    expect(await screen.findByText(/No se pudo cargar el bar/)).toBeInTheDocument();
+    expect(await screen.findByText(/Error 500/)).toBeInTheDocument();
     expect(screen.queryByText(/No hay presentaciones/)).not.toBeInTheDocument();
     state.failBar = false;
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
     expect(await screen.findByLabelText('Precio de botella sin anfitriona')).toHaveValue('12.000');
     expect(request.mock.calls.filter(([url]) => url === '/api/bar')).toHaveLength(2);
   });
@@ -495,6 +528,13 @@ describe('SettingsBottleHostessCard', () => {
     const { state, request } = mockPersistedSettings();
     state.presentation.opciones_venta = [state.presentation.opciones_venta[1]];
     mount();
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
     await screen.findByLabelText('Precio corto cliente');
     fireEvent.change(screen.getByLabelText('Precio corto cliente'), { target: { value: '4500' } });
     fireEvent.click(saveButton());
@@ -506,6 +546,13 @@ describe('SettingsBottleHostessCard', () => {
   it('conserva SIN, flags y cortos durante la recarga y en un segundo guardado', async () => {
     const { state, request } = mockPersistedSettings();
     mount();
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
     await screen.findByLabelText('Precio de botella sin anfitriona');
     fireEvent.change(screen.getByLabelText('Precio de botella sin anfitriona'), {
       target: { value: '35000' }
@@ -568,6 +615,15 @@ describe('SettingsBottleHostessCard', () => {
       state.failure = 'tiers';
       state.failureMode = mode;
       mount();
+      // Navegar: categoría → producto
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+      );
+      fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument()
+      );
+      fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
       await screen.findByLabelText('Precio para 2 anfitrionas');
       fireEvent.change(screen.getByLabelText('Precio de botella sin anfitriona'), {
         target: { value: '36000' }
@@ -595,6 +651,13 @@ describe('SettingsBottleHostessCard', () => {
     const { state, request } = mockPersistedSettings();
     state.failure = 'product';
     mount();
+    // Navegar: categoría → producto
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Licores/ })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Licores/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Whisky/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Whisky/ }));
     await screen.findByLabelText('Ml corto cliente');
     fireEvent.change(screen.getByLabelText('Ml corto cliente'), { target: { value: '60' } });
     fireEvent.change(screen.getByLabelText('Precio de botella sin anfitriona'), {

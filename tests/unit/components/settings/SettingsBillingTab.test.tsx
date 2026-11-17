@@ -66,7 +66,7 @@ describe('tab de Facturación', () => {
     render(<SettingsBillingTab />);
     await waitFor(() => expect(screen.getByLabelText('% IVA')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('button', { name: /Guardar Configuración/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/i }));
 
     await waitFor(() => expect(peticionesPut).toHaveLength(5));
     // Si estas dos volvieran al estado por el spread de la carga, cada guardado

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const Redis = require('ioredis');
 
 async function ping(url) {
@@ -35,43 +35,69 @@ async function startRedis() {
 
   // Only manage the explicitly configured WSL service. Never start a local
   // substitute for a remote Redis, authenticated instance or custom port.
+  // Prefiere Valkey (fork open source de Redis) si está disponible, cae a Redis como fallback.
+  // Si WSL no está configurado, intenta usar Redis nativo de Windows.
   if (
     process.platform === 'win32' &&
     local &&
     (!target.port || target.port === '6379') &&
     !target.username &&
     !target.password &&
-    target.protocol === 'redis:' &&
-    process.env.REDIS_WSL_DISTRO
+    target.protocol === 'redis:'
   ) {
-    keeper = spawn(
-      'wsl.exe',
-      [
-        '-d',
-        process.env.REDIS_WSL_DISTRO,
-        '-u',
-        'root',
-        '--',
-        'sh',
-        '-lc',
-        'systemctl start redis-server && exec cat >/dev/null'
-      ],
-      { stdio: ['pipe', 'ignore', 'ignore'], windowsHide: true }
-    );
-    keeper.stdin.on('error', () => {});
-    keeper.on('error', () => {
-      keeperError = true;
-    });
-    keeper.on('exit', () => {
-      keeperError = true;
-    });
-    // Keep a Linux process alive for the development session: systemd services
-    // alone do not prevent WSL from becoming idle and shutting down.
-    process.once('exit', stop);
+    if (process.env.REDIS_WSL_DISTRO) {
+      // WSL disponible: usar Valkey/Redis a través de WSL.
+      const service = process.env.REDIS_WSL_SERVICE || 'auto';
+      let serviceCommand;
+      if (service === 'valkey') {
+        serviceCommand = 'systemctl start valkey && exec cat >/dev/null';
+      } else if (service === 'redis-server') {
+        serviceCommand = 'systemctl start redis-server && exec cat >/dev/null';
+      } else {
+        // 'auto': intenta Valkey primero; si no existe, usa Redis.
+        serviceCommand =
+          'systemctl is-active valkey >/dev/null 2>&1 && systemctl start valkey || systemctl start redis-server && exec cat >/dev/null';
+      }
+      keeper = spawn(
+        'wsl.exe',
+        ['-d', process.env.REDIS_WSL_DISTRO, '-u', 'root', '--', 'sh', '-lc', serviceCommand],
+        { stdio: ['pipe', 'ignore', 'ignore'], windowsHide: true }
+      );
+      keeper.stdin.on('error', () => {});
+      keeper.on('error', () => {
+        keeperError = true;
+      });
+      keeper.on('exit', () => {
+        keeperError = true;
+      });
+      // Keep a Linux process alive for the development session: systemd services
+      // alone do not prevent WSL from becoming idle and shutting down.
+      process.once('exit', stop);
+    } else {
+      // WSL no configurado: intentar Redis nativo de Windows.
+      try {
+        // Verificar si redis-server está disponible en PATH.
+        execSync('where.exe redis-server', { stdio: 'pipe', encoding: 'utf8' });
+        // Iniciar redis-server en segundo plano.
+        keeper = spawn('redis-server', ['--loglevel', 'warning', '--daemonize', 'yes'], {
+          stdio: 'ignore',
+          windowsHide: true
+        });
+        keeper.on('error', () => {
+          keeperError = true;
+        });
+        keeper.on('exit', () => {
+          keeperError = true;
+        });
+      } catch {
+        // redis-server no encontrado en PATH.
+        keeperError = true;
+      }
+    }
   }
 
   if (ready) {
-    console.log('[redis] PONG: conexión disponible.');
+    console.log('[redis/valkey] PONG: conexión disponible.');
     return stop;
   }
   if (keeper) {
@@ -79,13 +105,15 @@ async function startRedis() {
     while (!keeperError && Date.now() < deadline) {
       await new Promise(resolve => setTimeout(resolve, 500));
       if (await ping(url)) {
-        console.log('[redis] Ubuntu/WSL iniciado; PONG correcto.');
+        console.log('[redis/valkey] Ubuntu/WSL iniciado; PONG correcto.');
         return stop;
       }
     }
   }
   stop();
-  console.warn('[redis] No disponible. El limitador usará memoria y reintentará la conexión.');
+  console.warn(
+    '[redis/valkey] No disponible. El limitador usará memoria y reintentará la conexión.'
+  );
   return stop;
 }
 
@@ -97,7 +125,7 @@ if (require.main === module) {
   ).loadEnvConfig(process.cwd(), true);
   if (process.argv.includes('--check')) {
     ping(process.env.REDIS_URL || 'redis://127.0.0.1:6379').then(ok => {
-      console.log(ok ? '[redis] PONG' : '[redis] No disponible');
+      console.log(ok ? '[redis/valkey] PONG' : '[redis/valkey] No disponible');
       process.exitCode = ok ? 0 : 1;
     });
   } else {
@@ -111,7 +139,7 @@ if (require.main === module) {
         }
       })
       .catch(() => {
-        console.error('[redis] Revisa la configuración REDIS_URL.');
+        console.error('[redis/valkey] Revisa la configuración REDIS_URL.');
         process.exitCode = 1;
       });
   }

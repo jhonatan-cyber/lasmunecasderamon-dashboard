@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
-import { Save, GlassWater, Wine, AlertTriangle, CupSoda } from 'lucide-react';
+import { GlassWater, Wine, AlertTriangle, CupSoda } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { toast } from 'sonner';
 import logger from '@/lib/utils/logger';
@@ -264,21 +264,13 @@ export function SettingsBarTab() {
           </div>
         ))}
       </div>
-      <div className='flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800'>
-        <p className='text-xs text-neutral-500 dark:text-neutral-400' role='status'>
-          {loading
-            ? 'Cargando configuración…'
-            : saving
-              ? 'Guardando configuración…'
-              : 'Guarda los cambios para aplicarlos al bar.'}
-        </p>
+      <div className='flex justify-center border-t border-neutral-200 pt-4 dark:border-neutral-800'>
         <Button
           variant='unstyled'
           onClick={handleSave}
           disabled={saving || loading}
-          className='inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:bg-white dark:text-black dark:hover:bg-neutral-200 dark:focus-visible:ring-offset-neutral-900'
+          className='rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200'
         >
-          <Save className='h-4 w-4' aria-hidden='true' />
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </Button>
       </div>

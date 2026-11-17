@@ -105,10 +105,10 @@ export const CLAVES_VENTAS: Record<string, DefinicionClave> = {
    * más que este tope, el exceso (`precio - tope`) se suma al subtotal de la
    * venta por cada unidad. `0` = sin tope (no se aplica la regla).
    */
-  tope_precio_acompanamiento: {
+  tope_precio_acompañamiento: {
     categoria: 'comisiones',
     tipo: 'number',
     default: 0,
-    validar: enteroPositivo('tope_precio_acompanamiento')
+    validar: enteroPositivo('tope_precio_acompañamiento')
   }
 };

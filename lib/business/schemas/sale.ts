@@ -96,7 +96,7 @@ export const SaleCreateSchema = z.object({
             })
             .refine(
               value => (value.unidades !== undefined) !== (value.ml_por_corto !== undefined),
-              'Selecciona unidades completas del acompa\u00f1amiento'
+              'Selecciona unidades completas del acompañamiento'
             )
             .optional(),
           shot_anfitriona: z.boolean().optional().default(false),
