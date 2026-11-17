@@ -462,7 +462,7 @@ for (const regla of REGLAS) {
 for (const c of ciclos()) {
   hallazgos.push({
     regla: 'sin-ciclos',
-    plan: '\u00a75 - las dependencias entre modulos forman un grafo sin ciclos',
+    plan: '§5 - las dependencias entre modulos forman un grafo sin ciclos',
     desde: `${c.desde} (dominio)`,
     hacia: `${c.hacia} (dominio)`,
     ciclo: c.ciclo,

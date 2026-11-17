@@ -106,7 +106,7 @@ const ProductRow = memo(
                   ? String(
                       producto.producto_nombre || producto.nombre || producto.name || 'Producto'
                     )
-                      .replace(/\s*\u00b7?\s*\d+(?:[.,]\d+)?\s*(?:ml|litros?|l)\s*$/i, '')
+                      .replace(/\s*·?\s*\d+(?:[.,]\d+)?\s*(?:ml|litros?|l)\s*$/i, '')
                       .trim()
                   : producto.nombre || producto.name}
               </p>
@@ -392,7 +392,7 @@ function OrderProductCard({
           <p className='break-words text-sm font-semibold'>
             {isShot
               ? String(producto.producto_nombre || producto.nombre || producto.name || 'Producto')
-                  .replace(/\s*\u00b7?\s*\d+(?:[.,]\d+)?\s*(?:ml|litros?|l)\s*$/i, '')
+                  .replace(/\s*·?\s*\d+(?:[.,]\d+)?\s*(?:ml|litros?|l)\s*$/i, '')
                   .trim()
               : producto.nombre || producto.name}
           </p>

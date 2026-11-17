@@ -17,7 +17,7 @@ import { useConfigValue } from '@/hooks/shared/useConfigValue';
 export function useAccountForm() {
   const { createCuenta } = useCuentas();
   const [loading, setLoading] = useState(false);
-  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0));
+  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompañamiento', 0));
 
   const [selectedCliente, setSelectedCliente] = useState('');
   const [selectedAnfitrionas, setSelectedAnfitrionas] = useState<string[]>([]);

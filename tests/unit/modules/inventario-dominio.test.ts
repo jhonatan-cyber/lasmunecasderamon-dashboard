@@ -750,7 +750,7 @@ describe('generarEan13Interno', () => {
 });
 
 describe('descuento del bar al registrar una venta', () => {
-  it('descuenta el acompa\u00f1amiento de cortos como unidades completas', async () => {
+  it('descuenta el acompañamiento de cortos como unidades completas', async () => {
     const trx = vi.fn(async (sql: string, args?: any[]) => {
       const id = args?.[0];
       if (sql.includes('FROM configuraciones')) return [];

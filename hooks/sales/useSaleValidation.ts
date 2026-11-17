@@ -133,7 +133,7 @@ export function useSaleValidation({
   const configSimpleHasta = useConfigValue('comisiones', 'umbral_simple_hasta', 10000);
   const configHostessDesde = useConfigValue('comisiones', 'umbral_anfitriona_desde', 20000);
   const configHabitacionDesde = useConfigValue('comisiones', 'umbral_habitacion_desde', 30000);
-  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0));
+  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompañamiento', 0));
 
   useEffect(() => {
     setServiceLevels({

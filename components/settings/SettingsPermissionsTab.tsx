@@ -196,7 +196,7 @@ export function SettingsPermissionsTab() {
         </div>
         <Button
           variant='unstyled'
-          className='whitespace-nowrap inline-flex items-center px-6 py-2 bg-black text-white rounded-full hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
+          className='whitespace-nowrap inline-flex items-center justify-center px-6 py-2 bg-black text-white rounded-full hover:bg-white/90 hover:text-black dark:hover:bg-white dark:hover:text-black hover:scale-105 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto'
           onClick={handleCreatePermission}
         >
           <Plus className='h-4 w-4 mr-2' />

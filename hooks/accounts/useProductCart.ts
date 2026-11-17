@@ -42,7 +42,7 @@ interface ProductoInput extends SaleInventoryFields {
 export function useProductCart() {
   const [productos, setProductos] = useState<ProductoCarrito[]>([]);
   const [cantidades, setCantidades] = useState<{ [key: string]: number }>({});
-  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0));
+  const topeAcompanamiento = Number(useConfigValue('comisiones', 'tope_precio_acompañamiento', 0));
 
   const total = useMemo(() => productos.reduce((sum, p) => sum + p.sub_total, 0), [productos]);
 

@@ -52,7 +52,7 @@ function MixerChoice({ choice }: { choice: any }) {
  * la bebida no tiene precio guardado, lo advierte porque no habrá excedente.
  */
 function MixerExcess({ precio, unidades }: { precio: number; unidades: number }) {
-  const tope = Number(useConfigValue('comisiones', 'tope_precio_acompanamiento', 0)) || 0;
+  const tope = Number(useConfigValue('comisiones', 'tope_precio_acompañamiento', 0)) || 0;
   if (precio <= 0) {
     return (
       <p className='text-xs text-amber-700 dark:text-amber-300'>

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 
 import { useState, useEffect } from 'react';
 import {
-  Save,
   Users,
   BedDouble,
   ShoppingCart,
@@ -36,7 +35,7 @@ export function SettingsServiceLevelsCard() {
   const configHabitacion = useConfigValue('comisiones', 'umbral_habitacion_desde', 30000);
   const configTragoCover = useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000);
   const configCostoEntrada = useConfigValue('comisiones', 'costo_entrada', 10000);
-  const configTopeAcompanamiento = useConfigValue('comisiones', 'tope_precio_acompanamiento', 0);
+  const configTopeAcompanamiento = useConfigValue('comisiones', 'tope_precio_acompañamiento', 0);
   // Regla "colaciones por rol y turno de caja": map JSON `rol_id → tope` guardado
   // como texto; el rol que no está puesto queda con la regla vigente (1 por
   // trabajador por turno) y 0 significa que el rol no recibe colación.
@@ -198,7 +197,7 @@ export function SettingsServiceLevelsCard() {
             { clave: 'umbral_habitacion_desde', valor: String(habitacion) },
             { clave: 'monto_base_trago_cover_cliente', valor: String(tragoCover) },
             { clave: 'costo_entrada', valor: String(costoEntrada) },
-            { clave: 'tope_precio_acompanamiento', valor: String(topeAcompanamiento) },
+            { clave: 'tope_precio_acompañamiento', valor: String(topeAcompanamiento) },
             { clave: 'colaciones_por_rol_y_turno', valor: JSON.stringify(topesValores) }
           ]
         })
@@ -398,14 +397,13 @@ export function SettingsServiceLevelsCard() {
         </div>
       )}
 
-      <div className='flex justify-end border-t border-neutral-200 pt-4 dark:border-neutral-800'>
+      <div className='flex justify-center border-t border-neutral-200 pt-4 dark:border-neutral-800'>
         <Button
           variant='unstyled'
           onClick={handleSave}
           disabled={saving}
-          className='inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto dark:bg-white dark:text-black dark:hover:bg-neutral-200'
+          className='rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200'
         >
-          <Save className='h-4 w-4' aria-hidden='true' />
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </Button>
       </div>
