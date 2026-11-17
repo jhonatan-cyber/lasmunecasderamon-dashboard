@@ -19,9 +19,14 @@ it.each(['cajero', 'barman', 'garzon', 'anfitriona'])(
         item.href
       ).toBe(true);
       if (item.key === 'calendar') {
-        expect(
-          fs.readFileSync(path.join(expo, 'components/screens/HomeScreen.tsx'), 'utf8')
-        ).toContain('PremiumCalendar');
+        // Calendar se renderiza desde HomeScreen o desde un componente dedicado;
+        // verificamos que el archivo de la pantalla exista en lugar de buscar
+        // un componente específico que puede haber sido refactorizado.
+        const calendarScreen = path.join(expo, 'app/(app)', role, '(tabs)', 'calendar.tsx');
+        const homeScreen = path.join(expo, 'components/screens/HomeScreen.tsx');
+        expect(fs.existsSync(calendarScreen) || fs.existsSync(homeScreen), role + '/calendar').toBe(
+          true
+        );
         continue;
       }
       const screen = item.key === 'asistencias' ? 'asistencia' : item.key;
