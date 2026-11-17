@@ -88,7 +88,7 @@ export function RolesContent({
         </PermissionGuard>
       </div>
 
-      <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
+      <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
         <MetricCard
           icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
           badge='Roles'

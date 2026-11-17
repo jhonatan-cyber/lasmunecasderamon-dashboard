@@ -90,7 +90,6 @@ export function SettingsCompanyTab() {
           </span>
         </div>
       }
-      description='Datos generales y redes sociales de la empresa.'
     >
       {loading ? (
         <div className='text-center py-8'>
@@ -101,139 +100,133 @@ export function SettingsCompanyTab() {
         </div>
       ) : (
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <div className='space-y-4'>
-              <div>
-                <Label htmlFor='company-name' className='block text-sm font-medium mb-1'>
-                  Nombre de la Empresa
-                </Label>
-                <Input
-                  id='company-name'
-                  type='text'
-                  value={config.empresa_nombre}
-                  onChange={e => setConfig(prev => ({ ...prev, empresa_nombre: e.target.value }))}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='Las Muñecas de Ramón'
-                />
-              </div>
-              <div>
-                <Label htmlFor='company-rut' className='block text-sm font-medium mb-1'>
-                  RUT
-                </Label>
-                <Input
-                  id='company-rut'
-                  type='text'
-                  value={config.empresa_rut}
-                  onChange={e => setConfig(prev => ({ ...prev, empresa_rut: e.target.value }))}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='12.345.678-9'
-                />
-              </div>
-              <div>
-                <Label htmlFor='company-address' className='block text-sm font-medium mb-1'>
-                  Dirección
-                </Label>
-                <Input
-                  id='company-address'
-                  type='text'
-                  value={config.empresa_direccion}
-                  onChange={e =>
-                    setConfig(prev => ({ ...prev, empresa_direccion: e.target.value }))
-                  }
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='Dirección de la empresa'
-                />
-              </div>
+          <div className='space-y-4'>
+            <div>
+              <Label htmlFor='company-name' className='block text-sm font-medium mb-1'>
+                Nombre de la Empresa
+              </Label>
+              <Input
+                id='company-name'
+                type='text'
+                value={config.empresa_nombre}
+                onChange={e => setConfig(prev => ({ ...prev, empresa_nombre: e.target.value }))}
+                className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                placeholder='Las Muñecas de Ramón'
+              />
             </div>
-            <div className='space-y-4'>
+            <div>
+              <Label htmlFor='company-rut' className='block text-sm font-medium mb-1'>
+                RUT
+              </Label>
+              <Input
+                id='company-rut'
+                type='text'
+                value={config.empresa_rut}
+                onChange={e => setConfig(prev => ({ ...prev, empresa_rut: e.target.value }))}
+                className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                placeholder='12.345.678-9'
+              />
+            </div>
+            <div>
+              <Label htmlFor='company-address' className='block text-sm font-medium mb-1'>
+                Dirección
+              </Label>
+              <Input
+                id='company-address'
+                type='text'
+                value={config.empresa_direccion}
+                onChange={e => setConfig(prev => ({ ...prev, empresa_direccion: e.target.value }))}
+                className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                placeholder='Dirección de la empresa'
+              />
+            </div>
+          </div>
+          <div className='space-y-4'>
+            <div>
+              <Label htmlFor='company-phone' className='block text-sm font-medium mb-1'>
+                Teléfono
+              </Label>
+              <Input
+                id='company-phone'
+                type='text'
+                value={config.empresa_telefono}
+                onChange={e => setConfig(prev => ({ ...prev, empresa_telefono: e.target.value }))}
+                className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                placeholder='+56 9 1234 5678'
+              />
+            </div>
+            <div>
+              <Label htmlFor='company-email' className='block text-sm font-medium mb-1'>
+                Email
+              </Label>
+              <Input
+                id='company-email'
+                type='email'
+                value={config.empresa_email}
+                onChange={e => setConfig(prev => ({ ...prev, empresa_email: e.target.value }))}
+                className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                placeholder='contacto@empresa.cl'
+              />
+            </div>
+            <div className='grid grid-cols-2 gap-4'>
               <div>
-                <Label htmlFor='company-phone' className='block text-sm font-medium mb-1'>
-                  Teléfono
+                <Label htmlFor='company-whatsapp' className='block text-sm font-medium mb-1'>
+                  WhatsApp público
                 </Label>
                 <Input
-                  id='company-phone'
+                  id='company-whatsapp'
                   type='text'
-                  value={config.empresa_telefono}
-                  onChange={e => setConfig(prev => ({ ...prev, empresa_telefono: e.target.value }))}
+                  value={config.empresa_whatsapp}
+                  onChange={e => setConfig(prev => ({ ...prev, empresa_whatsapp: e.target.value }))}
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
                   placeholder='+56 9 1234 5678'
                 />
               </div>
               <div>
-                <Label htmlFor='company-email' className='block text-sm font-medium mb-1'>
-                  Email
+                <Label htmlFor='company-instagram' className='block text-sm font-medium mb-1'>
+                  Instagram
                 </Label>
                 <Input
-                  id='company-email'
-                  type='email'
-                  value={config.empresa_email}
-                  onChange={e => setConfig(prev => ({ ...prev, empresa_email: e.target.value }))}
+                  id='company-instagram'
+                  type='text'
+                  value={config.empresa_instagram}
+                  onChange={e =>
+                    setConfig(prev => ({ ...prev, empresa_instagram: e.target.value }))
+                  }
                   className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='contacto@empresa.cl'
+                  placeholder='@instagram'
                 />
               </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <Label htmlFor='company-whatsapp' className='block text-sm font-medium mb-1'>
-                    WhatsApp público
-                  </Label>
-                  <Input
-                    id='company-whatsapp'
-                    type='text'
-                    value={config.empresa_whatsapp}
-                    onChange={e =>
-                      setConfig(prev => ({ ...prev, empresa_whatsapp: e.target.value }))
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                    placeholder='+56 9 1234 5678'
-                  />
-                </div>
-                <div>
-                  <Label htmlFor='company-instagram' className='block text-sm font-medium mb-1'>
-                    Instagram
-                  </Label>
-                  <Input
-                    id='company-instagram'
-                    type='text'
-                    value={config.empresa_instagram}
-                    onChange={e =>
-                      setConfig(prev => ({ ...prev, empresa_instagram: e.target.value }))
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                    placeholder='@instagram'
-                  />
-                </div>
-                <div>
-                  <Label htmlFor='company-facebook' className='block text-sm font-medium mb-1'>
-                    Facebook
-                  </Label>
-                  <Input
-                    id='company-facebook'
-                    type='text'
-                    value={config.empresa_facebook}
-                    onChange={e =>
-                      setConfig(prev => ({ ...prev, empresa_facebook: e.target.value }))
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                    placeholder='@facebook'
-                  />
-                </div>
-                <div>
-                  <Label htmlFor='company-tiktok' className='block text-sm font-medium mb-1'>
-                    TikTok
-                  </Label>
-                  <Input
-                    id='company-tiktok'
-                    type='text'
-                    value={config.empresa_tiktok || ''}
-                    onChange={e => setConfig(prev => ({ ...prev, empresa_tiktok: e.target.value }))}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                    placeholder='@tiktok'
-                  />
-                </div>
+              <div>
+                <Label htmlFor='company-facebook' className='block text-sm font-medium mb-1'>
+                  Facebook
+                </Label>
+                <Input
+                  id='company-facebook'
+                  type='text'
+                  value={config.empresa_facebook}
+                  onChange={e => setConfig(prev => ({ ...prev, empresa_facebook: e.target.value }))}
+                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                  placeholder='@facebook'
+                />
+              </div>
+              <div>
+                <Label htmlFor='company-tiktok' className='block text-sm font-medium mb-1'>
+                  TikTok
+                </Label>
+                <Input
+                  id='company-tiktok'
+                  type='text'
+                  value={config.empresa_tiktok || ''}
+                  onChange={e => setConfig(prev => ({ ...prev, empresa_tiktok: e.target.value }))}
+                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                  placeholder='@tiktok'
+                />
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       <div className='mt-6 flex justify-end'>
         <Button

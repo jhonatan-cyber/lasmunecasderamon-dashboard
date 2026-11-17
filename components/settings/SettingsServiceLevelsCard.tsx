@@ -229,7 +229,6 @@ export function SettingsServiceLevelsCard() {
     {
       id: 'service-simple',
       title: 'Venta simple hasta',
-      description: 'Sin comisión ni anfitriona hasta este precio.',
       icon: ShoppingCart,
       value: simpleValue,
       onChange: setSimpleValue,
@@ -238,7 +237,6 @@ export function SettingsServiceLevelsCard() {
     {
       id: 'service-hostess',
       title: 'Anfitriona desde',
-      description: 'Precio mínimo para asignar anfitriona.',
       icon: Users,
       value: hostessValue,
       onChange: setHostessValue,
@@ -247,7 +245,6 @@ export function SettingsServiceLevelsCard() {
     {
       id: 'service-habitacion',
       title: 'Habitación desde',
-      description: 'Precio mínimo para exigir habitación.',
       icon: BedDouble,
       value: habitacionValue,
       onChange: setHabitacionValue,
@@ -256,7 +253,6 @@ export function SettingsServiceLevelsCard() {
     {
       id: 'service-trago-cover-cliente',
       title: 'Covers de entradas',
-      description: 'El cliente puede elegir una bebida de este precio o menos.',
       icon: GlassWater,
       value: tragoCoverValue,
       onChange: setTragoCoverValue,
@@ -265,7 +261,6 @@ export function SettingsServiceLevelsCard() {
     {
       id: 'service-costo-entrada',
       title: 'Costo de entrada',
-      description: 'Monto predeterminado al registrar una entrada.',
       icon: Ticket,
       value: costoEntradaValue,
       onChange: setCostoEntradaValue,
@@ -274,8 +269,6 @@ export function SettingsServiceLevelsCard() {
     {
       id: 'service-tope-acompanamiento',
       title: 'Tope de acompañamiento',
-      description:
-        'Precio máximo por unidad de acompañamiento; el exceso se suma al subtotal. 0 = sin tope.',
       icon: CupSoda,
       value: topeAcompanamientoValue,
       onChange: setTopeAcompanamientoValue,
@@ -300,10 +293,9 @@ export function SettingsServiceLevelsCard() {
           </span>
         </div>
       }
-      description='Define los umbrales de precios y las condiciones de atención.'
     >
       <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3'>
-        {reglas.map(({ id, title, description, icon: Icon, value, onChange, tone }) => (
+        {reglas.map(({ id, title, icon: Icon, value, onChange, tone }) => (
           <div
             key={id}
             className='flex min-w-0 flex-col rounded-xl border border-neutral-200/70 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-950/40'
@@ -321,9 +313,6 @@ export function SettingsServiceLevelsCard() {
                 {title}
               </Label>
             </div>
-            <p className='mt-2 min-h-8 text-xs leading-4 text-neutral-600 dark:text-neutral-400'>
-              {description}
-            </p>
             <div className='mt-3 flex items-center gap-2'>
               <span className='shrink-0 rounded-md bg-white px-2 py-1.5 text-xs font-semibold text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400'>
                 $
@@ -355,10 +344,6 @@ export function SettingsServiceLevelsCard() {
               className='text-sm font-semibold text-neutral-900 dark:text-neutral-100'
             >
               Colaciones por rol y turno
-            </p>
-            <p className='mt-0.5 text-xs leading-4 text-neutral-500 dark:text-neutral-400'>
-              Colaciones que puede recibir cada trabajador del rol durante un turno de caja. Vacío =
-              1 (regla vigente); 0 = sin colación para ese rol.
             </p>
           </div>
         </div>

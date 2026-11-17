@@ -21,7 +21,7 @@ export function PermissionStatsCards({ permissions }: PermissionStatsCardsProps)
   }, new Set<string>()).size;
 
   return (
-    <div className='grid gap-4 grid-cols-1 md:grid-cols-4 mb-6'>
+    <div className='grid grid-cols-2 gap-4 md:grid-cols-4 mb-6'>
       {}
       <MetricCard
         tone='blue'

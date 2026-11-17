@@ -75,12 +75,12 @@ export default function Settings() {
         onValueChange={setTab}
         className='w-full space-y-6'
       >
-        <TabsList className='@container flex w-full flex-nowrap justify-start gap-1 sm:gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
+        <TabsList className='@container flex h-auto w-full flex-nowrap justify-start gap-1.5 rounded-none bg-transparent p-0 sm:gap-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
           {tabs.map(({ value, label, icon: Icon }) => (
             <TabsTrigger
               key={value}
               value={value}
-              className='flex shrink-0 items-center gap-2 rounded-full px-2.5 sm:px-3'
+              className='flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 data-[state=active]:border-blue-600 data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:data-[state=active]:border-blue-500 dark:data-[state=active]:bg-blue-500 dark:data-[state=active]:text-white'
             >
               <Icon className='h-4 w-4 hidden @min-[1100px]:block' />
               {label}

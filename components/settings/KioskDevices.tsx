@@ -67,10 +67,6 @@ export function KioskActivation() {
           required
           disabled={saving}
         />
-        <p className='text-sm text-muted-foreground'>
-          Activa esta opción en el dispositivo que quedará en el local. Se cerrará tu sesión de
-          administrador en este navegador y se abrirá la pantalla de asistencia.
-        </p>
         <div>
           <Button className='rounded-full' type='submit' disabled={saving || !nombre.trim()}>
             {saving ? (
@@ -185,7 +181,6 @@ export function KioskDevices() {
             </span>
           </div>
         }
-        description='Vincula los dispositivos del local sin claves. La autorización se renueva automáticamente mientras se utilizan.'
       >
         <KioskActivation />
 

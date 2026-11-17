@@ -226,149 +226,142 @@ export function SettingsAttendanceTab() {
           </span>
         </div>
       }
-      description='Rango en el que se aceptan marcas de entrada y salida. Fuera de él el sistema guarda la ubicación pero no computa la asistencia del día.'
     >
       {loading ? (
-          <div className='space-y-4 max-w-2xl' role='status' aria-label='Cargando configuración'>
-            <Skeleton className='h-6 w-44' />
-            <Skeleton className='h-24 w-full' />
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-              <Skeleton className='h-20 w-full' />
-              <Skeleton className='h-20 w-full' />
-            </div>
-            <Skeleton className='h-10 w-40 self-end' />
-            <span className='sr-only'>Cargando configuración...</span>
+        <div className='space-y-4 max-w-2xl' role='status' aria-label='Cargando configuración'>
+          <Skeleton className='h-6 w-44' />
+          <Skeleton className='h-24 w-full' />
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+            <Skeleton className='h-20 w-full' />
+            <Skeleton className='h-20 w-full' />
           </div>
-        ) : (
-          <div className='flex flex-col gap-6'>
-            <div className='max-w-full overflow-x-auto pb-2'>
-              <div className='grid min-w-[760px] grid-cols-[minmax(380px,0.9fr)_minmax(340px,1.1fr)] items-center gap-6'>
-                <div className='grid min-w-0 grid-cols-2 items-start gap-4'>
-                  <div className='space-y-2'>
-                    <Label
-                      htmlFor='attendance-hora-inicio'
-                      className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-                    >
-                      Hora de inicio (entrada)
-                    </Label>
-                    <Input
-                      id='attendance-hora-inicio'
-                      type='time'
-                      step={60}
-                      value={formatoHora(inicio, minutoInicio)}
-                      onChange={e => {
-                        const valor = leerHora(e.target.value);
-                        setConfig(prev => ({
-                          ...prev,
-                          asistencia_hora_inicio: valor.hora,
-                          asistencia_minuto_inicio: valor.minuto
-                        }));
-                      }}
-                      className='max-w-48'
-                    />
-                    <p className='text-xs text-neutral-500 dark:text-neutral-400'>
-                      Primera hora en la que una marca cuenta como asistencia.
-                    </p>
-                  </div>
-
-                  <div className='space-y-2'>
-                    <Label
-                      htmlFor='attendance-hora-fin'
-                      className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-                    >
-                      Hora de fin (salida / corte)
-                    </Label>
-                    <Input
-                      id='attendance-hora-fin'
-                      type='time'
-                      step={60}
-                      value={formatoHora(fin, minutoFin)}
-                      onChange={e => {
-                        const valor = leerHora(e.target.value);
-                        setConfig(prev => ({
-                          ...prev,
-                          asistencia_hora_fin: valor.hora,
-                          asistencia_minuto_fin: valor.minuto
-                        }));
-                      }}
-                      className='max-w-48'
-                    />
-                    <p className='text-xs text-neutral-500 dark:text-neutral-400'>
-                      Hora en que deja de aceptarse (no incluida).
-                    </p>
-                  </div>
-                </div>
-                <section className='flex min-w-0 flex-col justify-center gap-4 rounded-xl bg-muted/40 p-4 text-card-foreground'>
-                  <div className='flex flex-wrap items-baseline justify-between gap-2'>
-                    <h3 className='text-sm font-semibold'>Ventana actual</h3>
-                    <span
-                      className={
-                        valida
-                          ? 'rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold tabular-nums text-foreground'
-                          : 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                      }
-                    >
-                      {valida
-                        ? `${pad(inicio)}:${pad(minutoInicio)} → ${pad(fin)}:${pad(minutoFin)} · ${Math.floor(duracion / 60)} h ${duracion % 60} min`
-                        : 'Ventana vacía'}
-                    </span>
-                  </div>
-                  <VentanaTimeline
-                    inicio={inicio}
-                    minutoInicio={minutoInicio}
-                    fin={fin}
-                    minutoFin={minutoFin}
-                    valida={valida}
+          <Skeleton className='h-10 w-40 self-end' />
+          <span className='sr-only'>Cargando configuración...</span>
+        </div>
+      ) : (
+        <div className='flex flex-col gap-6'>
+          <div className='max-w-full overflow-x-auto pb-2'>
+            <div className='grid min-w-[760px] grid-cols-[minmax(380px,0.9fr)_minmax(340px,1.1fr)] items-center gap-6'>
+              <div className='grid min-w-0 grid-cols-2 items-start gap-4'>
+                <div className='space-y-2'>
+                  <Label
+                    htmlFor='attendance-hora-inicio'
+                    className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
+                  >
+                    Hora de inicio (entrada)
+                  </Label>
+                  <Input
+                    id='attendance-hora-inicio'
+                    type='time'
+                    step={60}
+                    value={formatoHora(inicio, minutoInicio)}
+                    onChange={e => {
+                      const valor = leerHora(e.target.value);
+                      setConfig(prev => ({
+                        ...prev,
+                        asistencia_hora_inicio: valor.hora,
+                        asistencia_minuto_inicio: valor.minuto
+                      }));
+                    }}
+                    className='max-w-48'
                   />
-                </section>
-              </div>
-            </div>
+                </div>
 
-            {!valida && (
-              <div
-                role='alert'
-                className='flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/10'
-              >
-                <TriangleAlert className='mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
-                <p className='text-xs text-amber-800 dark:text-amber-300'>
-                  La hora de fin debe ser posterior a la hora de inicio. Con{' '}
-                  <strong>
-                    {pad(inicio)}:{pad(minutoInicio)} → {pad(fin)}:{pad(minutoFin)}
-                  </strong>{' '}
-                  no entraría ninguna marca y nadie podría registrar asistencia.
-                </p>
+                <div className='space-y-2'>
+                  <Label
+                    htmlFor='attendance-hora-fin'
+                    className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
+                  >
+                    Hora de fin (salida / corte)
+                  </Label>
+                  <Input
+                    id='attendance-hora-fin'
+                    type='time'
+                    step={60}
+                    value={formatoHora(fin, minutoFin)}
+                    onChange={e => {
+                      const valor = leerHora(e.target.value);
+                      setConfig(prev => ({
+                        ...prev,
+                        asistencia_hora_fin: valor.hora,
+                        asistencia_minuto_fin: valor.minuto
+                      }));
+                    }}
+                    className='max-w-48'
+                  />
+                </div>
               </div>
-            )}
-
-            <div className='flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'>
-              <p className='text-xs text-neutral-500 dark:text-neutral-400'>
-                {valida
-                  ? 'Los cambios afectan a las marcas nuevas, no a las ya registradas.'
-                  : 'Corregí el rango para poder guardar.'}
-              </p>
-              <div className='flex items-center gap-3'>
-                {sucio && !saving && (
-                  <span className='text-xs font-medium text-amber-700 dark:text-amber-400'>
-                    Cambios sin guardar
+              <section className='flex min-w-0 flex-col justify-center gap-4 rounded-xl bg-muted/40 p-4 text-card-foreground'>
+                <div className='flex flex-wrap items-baseline justify-between gap-2'>
+                  <h3 className='text-sm font-semibold'>Ventana actual</h3>
+                  <span
+                    className={
+                      valida
+                        ? 'rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold tabular-nums text-foreground'
+                        : 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                    }
+                  >
+                    {valida
+                      ? `${pad(inicio)}:${pad(minutoInicio)} → ${pad(fin)}:${pad(minutoFin)} · ${Math.floor(duracion / 60)} h ${duracion % 60} min`
+                      : 'Ventana vacía'}
                   </span>
-                )}
-                <Button
-                  variant='unstyled'
-                  onClick={handleSave}
-                  disabled={saving || !sucio || !valida}
-                  className='flex items-center gap-2 rounded-full border-2 border-black bg-black px-6 py-2.5 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-neutral-800 active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:border-white dark:bg-white dark:text-black dark:hover:bg-neutral-200'
-                >
-                  {saving ? (
-                    <Loader2 className='h-4 w-4 animate-spin' />
-                  ) : (
-                    <Save className='h-4 w-4' />
-                  )}
-                  {saving ? 'Guardando...' : 'Guardar Configuración'}
-                </Button>
-              </div>
+                </div>
+                <VentanaTimeline
+                  inicio={inicio}
+                  minutoInicio={minutoInicio}
+                  fin={fin}
+                  minutoFin={minutoFin}
+                  valida={valida}
+                />
+              </section>
             </div>
           </div>
-        )}
+
+          {!valida && (
+            <div
+              role='alert'
+              className='flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/10'
+            >
+              <TriangleAlert className='mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
+              <p className='text-xs text-amber-800 dark:text-amber-300'>
+                La hora de fin debe ser posterior a la hora de inicio. Con{' '}
+                <strong>
+                  {pad(inicio)}:{pad(minutoInicio)} → {pad(fin)}:{pad(minutoFin)}
+                </strong>{' '}
+                no entraría ninguna marca y nadie podría registrar asistencia.
+              </p>
+            </div>
+          )}
+
+          <div className='flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'>
+            <p className='text-xs text-neutral-500 dark:text-neutral-400'>
+              {valida
+                ? 'Los cambios afectan a las marcas nuevas, no a las ya registradas.'
+                : 'Corregí el rango para poder guardar.'}
+            </p>
+            <div className='flex items-center gap-3'>
+              {sucio && !saving && (
+                <span className='text-xs font-medium text-amber-700 dark:text-amber-400'>
+                  Cambios sin guardar
+                </span>
+              )}
+              <Button
+                variant='unstyled'
+                onClick={handleSave}
+                disabled={saving || !sucio || !valida}
+                className='flex items-center gap-2 rounded-full border-2 border-black bg-black px-6 py-2.5 font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-neutral-800 active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:border-white dark:bg-white dark:text-black dark:hover:bg-neutral-200'
+              >
+                {saving ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : (
+                  <Save className='h-4 w-4' />
+                )}
+                {saving ? 'Guardando...' : 'Guardar Configuración'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </CollapsibleCard>
   );
 }

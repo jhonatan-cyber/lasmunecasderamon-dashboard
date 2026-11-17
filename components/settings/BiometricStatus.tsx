@@ -156,10 +156,7 @@ export function BiometricStatus() {
           </div>
         }
       >
-        <ErrorState
-          message={error || 'No se pudo cargar el estado.'}
-          onRetry={() => void load()}
-        />
+        <ErrorState message={error || 'No se pudo cargar el estado.'} onRetry={() => void load()} />
       </CollapsibleCard>
     );
   }
@@ -184,7 +181,6 @@ export function BiometricStatus() {
           </span>
         </div>
       }
-      description={`Ventana ${ventana} · red de seguridad ${estado.pollerActivo ? 'activa' : 'inactiva'}${ultimaActualizacion ? ` · actualizado ${formatFechaConHora(ultimaActualizacion)}` : ''}`}
       headerAction={
         <Button
           className='rounded-full'
@@ -200,146 +196,146 @@ export function BiometricStatus() {
         </Button>
       }
     >
-        <section className='flex flex-col gap-3'>
-          <TituloSeccion>Hoy</TituloSeccion>
-          <div className='grid gap-4 sm:grid-cols-[10rem_1fr]'>
-            <div className='flex flex-col justify-center rounded-2xl bg-muted/60 px-5 py-4'>
-              <p className='text-4xl font-semibold tabular-nums'>
-                {estado.asistenciasBiometricasHoy}
-              </p>
-              <p className='text-xs text-muted-foreground'>asistencias por lector hoy</p>
-            </div>
-
-            <div className='p-1'>
-              <TituloSeccion>Últimas marcas</TituloSeccion>
-              {estado.asistencias.length === 0 ? (
-                <p className='mt-2 text-sm text-muted-foreground'>
-                  Todavía nadie marcó asistencia hoy.
-                </p>
-              ) : (
-                <ul className='mt-2 flex flex-col gap-1.5 text-sm'>
-                  {estado.asistencias.slice(0, 5).map(a => (
-                    <li
-                      key={`${a.usuario}-${a.hora}`}
-                      className='flex items-center justify-between gap-3'
-                    >
-                      <span className='flex min-w-0 items-center gap-2'>
-                        {a.recordId ? (
-                          // La foto es el JPEG que capturó el lector en la puerta
-                          // (cookie de sesión viaja sola en el <img>).
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={`/api/biometric/records/${a.recordId}/photo`}
-                            alt={`Foto de ${a.usuario} al marcar`}
-                            width={32}
-                            height={32}
-                            loading='lazy'
-                            className='h-8 w-8 shrink-0 rounded-md border object-cover'
-                            onError={evento => {
-                              evento.currentTarget.style.visibility = 'hidden';
-                            }}
-                          />
-                        ) : (
-                          <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted'>
-                            <UserRound className='h-4 w-4 text-muted-foreground' />
-                          </span>
-                        )}
-                        <span className='truncate'>{a.usuario}</span>
-                      </span>
-                      <span className='tabular-nums text-muted-foreground'>
-                        {a.hora.substring(0, 5)}
-                      </span>
-                    </li>
-                  ))}
-                  {estado.asistencias.length > 5 && (
-                    <li className='text-xs text-muted-foreground'>
-                      y {estado.asistencias.length - 5} más...
-                    </li>
-                  )}
-                </ul>
-              )}
-            </div>
+      <section className='flex flex-col gap-3'>
+        <TituloSeccion>Hoy</TituloSeccion>
+        <div className='grid gap-4 sm:grid-cols-[10rem_1fr]'>
+          <div className='flex flex-col justify-center rounded-2xl bg-muted/60 px-5 py-4'>
+            <p className='text-4xl font-semibold tabular-nums'>
+              {estado.asistenciasBiometricasHoy}
+            </p>
+            <p className='text-xs text-muted-foreground'>asistencias por lector hoy</p>
           </div>
-        </section>
 
-        <section className='flex flex-col gap-2'>
-          <div className='flex flex-wrap items-center justify-between gap-2'>
-            <TituloSeccion>
-              Lectores ({habilitados.length}/{estado.lectores.length} recogiendo)
-            </TituloSeccion>
-            {estado.lectores.length > 0 && (
-              <span className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                <Wifi
-                  className={
-                    habilitados.length > 0
-                      ? 'h-3.5 w-3.5 text-green-600 dark:text-green-400'
-                      : 'h-3.5 w-4'
-                  }
-                />
-                {habilitados.length > 0 ? 'Recogiendo' : 'Ninguno activo'}
-              </span>
+          <div className='p-1'>
+            <TituloSeccion>Últimas marcas</TituloSeccion>
+            {estado.asistencias.length === 0 ? (
+              <p className='mt-2 text-sm text-muted-foreground'>
+                Todavía nadie marcó asistencia hoy.
+              </p>
+            ) : (
+              <ul className='mt-2 flex flex-col gap-1.5 text-sm'>
+                {estado.asistencias.slice(0, 5).map(a => (
+                  <li
+                    key={`${a.usuario}-${a.hora}`}
+                    className='flex items-center justify-between gap-3'
+                  >
+                    <span className='flex min-w-0 items-center gap-2'>
+                      {a.recordId ? (
+                        // La foto es el JPEG que capturó el lector en la puerta
+                        // (cookie de sesión viaja sola en el <img>).
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/api/biometric/records/${a.recordId}/photo`}
+                          alt={`Foto de ${a.usuario} al marcar`}
+                          width={32}
+                          height={32}
+                          loading='lazy'
+                          className='h-8 w-8 shrink-0 rounded-md border object-cover'
+                          onError={evento => {
+                            evento.currentTarget.style.visibility = 'hidden';
+                          }}
+                        />
+                      ) : (
+                        <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted'>
+                          <UserRound className='h-4 w-4 text-muted-foreground' />
+                        </span>
+                      )}
+                      <span className='truncate'>{a.usuario}</span>
+                    </span>
+                    <span className='tabular-nums text-muted-foreground'>
+                      {a.hora.substring(0, 5)}
+                    </span>
+                  </li>
+                ))}
+                {estado.asistencias.length > 5 && (
+                  <li className='text-xs text-muted-foreground'>
+                    y {estado.asistencias.length - 5} más...
+                  </li>
+                )}
+              </ul>
             )}
           </div>
+        </div>
+      </section>
 
-          {estado.lectores.length === 0 ? (
-            <p className='py-2 text-sm text-muted-foreground'>
-              No hay lectores vinculados. Vinculá uno en la tarjeta de abajo para que las
-              verificaciones de la puerta se conviertan en asistencia.
-            </p>
-          ) : (
-            <ul className='flex flex-col divide-y'>
-              {estado.lectores.map(lector => (
-                <li
-                  key={lector.id}
-                  className='flex flex-wrap items-center justify-between gap-2 py-3 first:pt-1'
-                >
-                  <div className='min-w-0'>
-                    <p className='font-medium'>
-                      {lector.nombre}
-                      <span className='ml-2 text-xs font-normal text-muted-foreground'>
-                        {lector.marca === 'dahua' ? 'Dahua' : 'ZKTeco'}
-                        {lector.ip ? ` · ${lector.ip}` : ''}
-                      </span>
-                    </p>
+      <section className='flex flex-col gap-2'>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <TituloSeccion>
+            Lectores ({habilitados.length}/{estado.lectores.length} recogiendo)
+          </TituloSeccion>
+          {estado.lectores.length > 0 && (
+            <span className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+              <Wifi
+                className={
+                  habilitados.length > 0
+                    ? 'h-3.5 w-3.5 text-green-600 dark:text-green-400'
+                    : 'h-3.5 w-4'
+                }
+              />
+              {habilitados.length > 0 ? 'Recogiendo' : 'Ninguno activo'}
+            </span>
+          )}
+        </div>
+
+        {estado.lectores.length === 0 ? (
+          <p className='py-2 text-sm text-muted-foreground'>
+            No hay lectores vinculados. Vinculá uno en la tarjeta de abajo para que las
+            verificaciones de la puerta se conviertan en asistencia.
+          </p>
+        ) : (
+          <ul className='flex flex-col divide-y'>
+            {estado.lectores.map(lector => (
+              <li
+                key={lector.id}
+                className='flex flex-wrap items-center justify-between gap-2 py-3 first:pt-1'
+              >
+                <div className='min-w-0'>
+                  <p className='font-medium'>
+                    {lector.nombre}
+                    <span className='ml-2 text-xs font-normal text-muted-foreground'>
+                      {lector.marca === 'dahua' ? 'Dahua' : 'ZKTeco'}
+                      {lector.ip ? ` · ${lector.ip}` : ''}
+                    </span>
+                  </p>
+                  <p className='text-xs text-muted-foreground'>
+                    Último evento:{' '}
+                    {lector.ultimo_evento ? formatFechaConHora(lector.ultimo_evento) : 'nunca'}
+                  </p>
+                  {lector.desfase && lector.desfase.muestras > 0 && (
                     <p className='text-xs text-muted-foreground'>
-                      Último evento:{' '}
-                      {lector.ultimo_evento ? formatFechaConHora(lector.ultimo_evento) : 'nunca'}
+                      Reloj del lector:{' '}
+                      <span
+                        className={
+                          Math.abs(lector.desfase.segundos) > 300
+                            ? 'font-medium text-amber-700 dark:text-amber-400'
+                            : undefined
+                        }
+                      >
+                        {formatearDesfase(lector.desfase)}
+                      </span>{' '}
+                      ({lector.desfase.muestras} evento(s) en 24 h)
                     </p>
-                    {lector.desfase && lector.desfase.muestras > 0 && (
-                      <p className='text-xs text-muted-foreground'>
-                        Reloj del lector:{' '}
-                        <span
-                          className={
-                            Math.abs(lector.desfase.segundos) > 300
-                              ? 'font-medium text-amber-700 dark:text-amber-400'
-                              : undefined
-                          }
-                        >
-                          {formatearDesfase(lector.desfase)}
-                        </span>{' '}
-                        ({lector.desfase.muestras} evento(s) en 24 h)
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={
-                      lector.habilitado
-                        ? 'rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                        : 'rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                    }
-                  >
-                    {lector.habilitado ? 'Recogiendo asistencia' : 'Sin recolección'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {habilitados.length === 0 && estado.lectores.length > 0 && (
-            <p className='text-xs text-muted-foreground'>
-              Encendé un lector para que sus verificaciones se conviertan en asistencia.
-            </p>
-          )}
-        </section>
+                  )}
+                </div>
+                <span
+                  className={
+                    lector.habilitado
+                      ? 'rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                      : 'rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                  }
+                >
+                  {lector.habilitado ? 'Recogiendo asistencia' : 'Sin recolección'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {habilitados.length === 0 && estado.lectores.length > 0 && (
+          <p className='text-xs text-muted-foreground'>
+            Encendé un lector para que sus verificaciones se conviertan en asistencia.
+          </p>
+        )}
+      </section>
     </CollapsibleCard>
   );
 }

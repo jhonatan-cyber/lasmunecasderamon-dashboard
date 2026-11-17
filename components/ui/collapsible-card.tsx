@@ -4,12 +4,11 @@ import * as React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 interface CollapsibleCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   title: React.ReactNode;
-  description?: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
   headerAction?: React.ReactNode;
@@ -20,7 +19,6 @@ interface CollapsibleCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 
 export function CollapsibleCard({
   title,
-  description,
   children,
   defaultOpen = false,
   headerAction,
@@ -48,7 +46,6 @@ export function CollapsibleCard({
               ) : (
                 <div className='flex items-center gap-2 font-medium'>{title}</div>
               )}
-              {description && <CardDescription>{description}</CardDescription>}
             </div>
             {headerRight}
           </div>

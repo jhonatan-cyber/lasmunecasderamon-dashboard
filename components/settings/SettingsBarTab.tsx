@@ -154,8 +154,6 @@ export function SettingsBarTab() {
       id: 'bar-shot-ml',
       title: 'Mililitros por corto',
       icon: GlassWater,
-      description: 'Cantidad que se sirve en cada corto.',
-      hint: 'Medida general para productos sin un valor propio.',
       value: shotMl,
       onChange: setShotMl,
       min: 1,
@@ -167,8 +165,6 @@ export function SettingsBarTab() {
       id: 'bar-botella-ml',
       title: 'Capacidad de la botella',
       icon: Wine,
-      description: 'Volumen de la botella por defecto.',
-      hint: 'Se usa cuando la presentación no define sus mililitros.',
       value: botellaMl,
       onChange: setBotellaMl,
       min: 1,
@@ -180,8 +176,6 @@ export function SettingsBarTab() {
       id: 'bar-shots-alerta',
       title: 'Alerta de nivel bajo',
       icon: AlertTriangle,
-      description: 'Avisa cuando queden estos cortos o menos.',
-      hint: 'Ayuda a identificar las botellas abiertas que están por agotarse.',
       value: shotsAlerta,
       onChange: setShotsAlerta,
       min: 1,
@@ -193,8 +187,6 @@ export function SettingsBarTab() {
       id: 'bar-merma-shots-ml',
       title: 'Tolerancia de merma',
       icon: Wine,
-      description: 'Residuo máximo al devolver una botella abierta.',
-      hint: 'El residuo aceptado se registra como merma. Usa 0 para desactivar.',
       value: mermaShotsMl,
       onChange: setMermaShotsMl,
       min: 0,
@@ -206,8 +198,6 @@ export function SettingsBarTab() {
       id: 'bar-acompanamiento-max-ml',
       title: 'Máximo de acompañamiento',
       icon: CupSoda,
-      description: 'Volumen máximo de una bebida analcohólica de acompañamiento.',
-      hint: 'Solo se ofrecen bebidas de este tamaño o menos en los acompañamientos.',
       value: acompanamientoMaxMl,
       onChange: setAcompanamientoMaxMl,
       min: 1,
@@ -234,61 +224,45 @@ export function SettingsBarTab() {
           </span>
         </div>
       }
-      description='Ajusta capacidades, alertas y consumos predeterminados.'
     >
       <div className='grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3'>
-        {fields.map(
-          ({ id, title, icon: Icon, description, hint, value, onChange, min, max, unit, tone }) => (
-            <div
-              key={id}
-              className='flex min-w-0 flex-col rounded-xl border border-neutral-200/70 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-950/40'
-            >
-              <div className='mb-2 flex items-center gap-2'>
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}
-                >
-                  <Icon className='h-3.5 w-3.5' aria-hidden='true' />
-                </div>
-                <Label
-                  htmlFor={id}
-                  className='text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100'
-                >
-                  {title}
-                </Label>
-              </div>
-              <p
-                id={`${id}-description`}
-                className='mb-3 text-xs leading-4 text-neutral-600 dark:text-neutral-400'
+        {fields.map(({ id, title, icon: Icon, value, onChange, min, max, unit, tone }) => (
+          <div
+            key={id}
+            className='flex min-w-0 flex-col rounded-xl border border-neutral-200/70 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-950/40'
+          >
+            <div className='mb-2 flex items-center gap-2'>
+              <div
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}
               >
-                {description}
-              </p>
-              <div className='relative mt-auto'>
-                <Input
-                  id={id}
-                  type='number'
-                  inputMode='numeric'
-                  min={min}
-                  max={max}
-                  step={1}
-                  disabled={loading || saving}
-                  value={value}
-                  onChange={event => onChange(event.target.value)}
-                  aria-describedby={`${id}-description ${id}-hint`}
-                  className='h-10 w-full rounded-lg border border-neutral-300 bg-white pl-3 pr-16 text-base font-semibold tabular-nums text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-neutral-400 dark:focus:ring-neutral-700'
-                />
-                <span className='pointer-events-none absolute inset-y-0 right-5 flex items-center text-xs font-medium text-neutral-500 dark:text-neutral-400'>
-                  {unit}
-                </span>
+                <Icon className='h-3.5 w-3.5' aria-hidden='true' />
               </div>
-              <p
-                id={`${id}-hint`}
-                className='mt-2 text-[11px] leading-4 text-neutral-500 dark:text-neutral-400'
+              <Label
+                htmlFor={id}
+                className='text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100'
               >
-                {hint}
-              </p>
+                {title}
+              </Label>
             </div>
-          )
-        )}
+            <div className='relative mt-auto'>
+              <Input
+                id={id}
+                type='number'
+                inputMode='numeric'
+                min={min}
+                max={max}
+                step={1}
+                disabled={loading || saving}
+                value={value}
+                onChange={event => onChange(event.target.value)}
+                className='h-10 w-full rounded-lg border border-neutral-300 bg-white pl-3 pr-16 text-base font-semibold tabular-nums text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-neutral-400 dark:focus:ring-neutral-700'
+              />
+              <span className='pointer-events-none absolute inset-y-0 right-5 flex items-center text-xs font-medium text-neutral-500 dark:text-neutral-400'>
+                {unit}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
       <div className='flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800'>
         <p className='text-xs text-neutral-500 dark:text-neutral-400' role='status'>

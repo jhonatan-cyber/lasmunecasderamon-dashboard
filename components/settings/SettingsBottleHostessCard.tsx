@@ -395,9 +395,6 @@ export function SettingsBottleHostessCard() {
             <span className='block text-base font-semibold leading-tight text-neutral-900 dark:text-neutral-100'>
               Precios y comisiones por producto
             </span>
-            <span className='mt-1 block text-xs font-normal text-neutral-500 dark:text-neutral-400'>
-              Configura precios y usos para cada presentación del bar.
-            </span>
           </span>
         </div>
       }
