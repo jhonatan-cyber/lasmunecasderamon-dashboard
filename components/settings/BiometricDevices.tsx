@@ -5,7 +5,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
-import { ChevronDown, Plus, Wifi } from 'lucide-react';
+import { Plus, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,7 +90,6 @@ export function BiometricDevices() {
   const [saving, setSaving] = useState(false);
   // El formulario de alta solo se abre a demanda: si ya hay equipos, ocupa lugar.
   const [altaAbierta, setAltaAbierta] = useState(false);
-  const [notasAbiertas, setNotasAbiertas] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<BiometricDevice | null>(null);
   const [recepcionActiva, setRecepcionActiva] = useState(true);
   const [recepcionLoading, setRecepcionLoading] = useState(true);
@@ -372,7 +371,6 @@ export function BiometricDevices() {
             </span>
           </div>
         }
-        description='Los equipos ZKTeco y Dahua empujan cada verificación a este sitio. El alta por serial es lo que autoriza al equipo: sin ella, sus eventos se rechazan.'
       >
         <div className='flex items-center justify-between gap-4 border-b pb-4'>
           <div className='flex items-start gap-3'>
@@ -381,10 +379,6 @@ export function BiometricDevices() {
               <Label htmlFor={`${id}-vigilancia-ip`} className='font-semibold'>
                 Recepción automática del lector
               </Label>
-              <p className='text-sm text-muted-foreground'>
-                Al apagarla, detiene las consultas y reconexiones automáticas del lector. Las marcas
-                biométricas no se registrarán hasta volver a activarla.
-              </p>
             </div>
           </div>
           <Switch
@@ -552,10 +546,6 @@ export function BiometricDevices() {
                       <div className='flex flex-wrap items-center justify-between gap-2'>
                         <div>
                           <p className='text-sm font-medium'>Conexión del sistema al equipo</p>
-                          <p className='text-xs text-muted-foreground'>
-                            Usuario y clave CGI (se guardan cifradas). La IP se detecta sola por
-                            MAC: dejala vacía o usá la que ya tenés cargada.
-                          </p>
                         </div>
                         <div className='flex flex-wrap gap-2'>
                           <Button
@@ -741,38 +731,6 @@ export function BiometricDevices() {
                 </div>
               );
             })
-          )}
-        </div>
-
-        <div className='border-y border-neutral-200 dark:border-neutral-800'>
-          <Button
-            variant='unstyled'
-            type='button'
-            onClick={() => setNotasAbiertas(v => !v)}
-            aria-expanded={notasAbiertas}
-            className='flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900/60 rounded-full'
-          >
-            Cómo configurar cada equipo y enrolar caras
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${notasAbiertas ? 'rotate-180' : ''}`}
-            />
-          </Button>
-          {notasAbiertas && (
-            <div className='space-y-2 border-t border-neutral-200 px-4 py-3 text-xs text-muted-foreground dark:border-neutral-800'>
-              <p>
-                <strong>ZKTeco:</strong> en el equipo, Comm → Server Mode = ADMS y pon el dominio
-                del sitio como servidor (HTTPS en el puerto 443). El equipo empieza a conectarse
-                solo.
-              </p>
-              <p>
-                <strong>Dahua:</strong> en el terminal, configura el push hacia la dirección de este
-                sitio. La hora del equipo debe estar en la zona horaria del negocio.
-              </p>
-              <p>
-                El enrolamiento facial se realiza en Usuarios → Enrolar. La cámara del lector
-                captura la imagen y el sistema la guarda en su base de datos.
-              </p>
-            </div>
           )}
         </div>
       </CollapsibleCard>

@@ -192,7 +192,6 @@ export function SettingsMaintenanceTab() {
               </span>
             </div>
           }
-          description='Crea, descarga y restaura respaldos de la base de datos.'
           headerAction={
             <Button
               variant='unstyled'
@@ -214,70 +213,66 @@ export function SettingsMaintenanceTab() {
             </Button>
           }
         >
-            <p className='text-sm text-gray-600 dark:text-gray-300 mb-4'>
-              Crea un backup antes de vaciar la base de datos para poder restaurar si es necesario.
-            </p>
-
-            {backupsLoading ? (
-              <div className='text-center py-4'>
-                <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-black mx-auto'></div>
-                <p className='text-sm text-gray-500 mt-2'>Cargando backups...</p>
-              </div>
-            ) : backups.length === 0 ? (
-              <div className='text-center py-6 text-gray-500'>
-                <HardDrive className='h-10 w-10 mx-auto mb-2 opacity-30' />
-                <p>No hay backups disponibles</p>
-              </div>
-            ) : (
-              <div className='overflow-x-auto'>
-                <Table className='w-full'>
-                  <TableHeader>
-                    <TableRow className='border-b'>
-                      <TableHead className='text-left font-medium'>Nombre</TableHead>
-                      <TableHead className='text-left font-medium'>Fecha</TableHead>
-                      <TableHead className='text-left font-medium'>Registros</TableHead>
-                      <TableHead className='text-left font-medium'>Tamaño</TableHead>
-                      <TableHead className='text-right font-medium'>Acciones</TableHead>
+          {backupsLoading ? (
+            <div className='text-center py-4'>
+              <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-black mx-auto'></div>
+              <p className='text-sm text-gray-500 mt-2'>Cargando backups...</p>
+            </div>
+          ) : backups.length === 0 ? (
+            <div className='text-center py-6 text-gray-500'>
+              <HardDrive className='h-10 w-10 mx-auto mb-2 opacity-30' />
+              <p>No hay backups disponibles</p>
+            </div>
+          ) : (
+            <div className='overflow-x-auto'>
+              <Table className='w-full'>
+                <TableHeader>
+                  <TableRow className='border-b'>
+                    <TableHead className='text-left font-medium'>Nombre</TableHead>
+                    <TableHead className='text-left font-medium'>Fecha</TableHead>
+                    <TableHead className='text-left font-medium'>Registros</TableHead>
+                    <TableHead className='text-left font-medium'>Tamaño</TableHead>
+                    <TableHead className='text-right font-medium'>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {backups.map(backup => (
+                    <TableRow key={backup.id_backup} className='border-b'>
+                      <TableCell className='font-medium'>{backup.nombre}</TableCell>
+                      <TableCell>{new Date(backup.fecha_crea).toLocaleString('es-CL')}</TableCell>
+                      <TableCell>{backup.registros_count}</TableCell>
+                      <TableCell>{(backup.tamano_bytes / 1024).toFixed(1)} KB</TableCell>
+                      <TableCell className='text-right'>
+                        <div className='flex justify-end gap-2'>
+                          <Button
+                            variant='unstyled'
+                            onClick={() => downloadBackup(backup.id_backup)}
+                            className='p-1.5 text-blue-600 hover:bg-blue-50 rounded-full'
+                            title='Descargar JSON'
+                          >
+                            <Download className='h-4 w-4' />
+                          </Button>
+                          <Button
+                            variant='unstyled'
+                            onClick={() => setPendingRestoreId(backup.id_backup)}
+                            disabled={restoringBackupId === backup.id_backup}
+                            className='p-1.5 text-green-600 hover:bg-green-50 rounded-full disabled:opacity-50'
+                            title='Restaurar'
+                          >
+                            {restoringBackupId === backup.id_backup ? (
+                              <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-green-600'></div>
+                            ) : (
+                              <RotateCcw className='h-4 w-4' />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {backups.map(backup => (
-                      <TableRow key={backup.id_backup} className='border-b'>
-                        <TableCell className='font-medium'>{backup.nombre}</TableCell>
-                        <TableCell>{new Date(backup.fecha_crea).toLocaleString('es-CL')}</TableCell>
-                        <TableCell>{backup.registros_count}</TableCell>
-                        <TableCell>{(backup.tamano_bytes / 1024).toFixed(1)} KB</TableCell>
-                        <TableCell className='text-right'>
-                          <div className='flex justify-end gap-2'>
-                            <Button
-                              variant='unstyled'
-                              onClick={() => downloadBackup(backup.id_backup)}
-                              className='p-1.5 text-blue-600 hover:bg-blue-50 rounded-full'
-                              title='Descargar JSON'
-                            >
-                              <Download className='h-4 w-4' />
-                            </Button>
-                            <Button
-                              variant='unstyled'
-                              onClick={() => setPendingRestoreId(backup.id_backup)}
-                              disabled={restoringBackupId === backup.id_backup}
-                              className='p-1.5 text-green-600 hover:bg-green-50 rounded-full disabled:opacity-50'
-                              title='Restaurar'
-                            >
-                              {restoringBackupId === backup.id_backup ? (
-                                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-green-600'></div>
-                              ) : (
-                                <RotateCcw className='h-4 w-4' />
-                              )}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CollapsibleCard>
 
         <CollapsibleCard
@@ -296,7 +291,6 @@ export function SettingsMaintenanceTab() {
               </span>
             </div>
           }
-          description='Acciones de mantenimiento con impacto en los datos. Usa con precaución.'
           headerAction={
             <Button
               variant='unstyled'
@@ -318,19 +312,19 @@ export function SettingsMaintenanceTab() {
             </Button>
           }
         >
-            <div className='text-sm text-gray-600 dark:text-gray-300'>
-              <p>Esta acción vaciará todas las tablas excepto:</p>
-              <ul className='list-disc list-inside mt-1 text-gray-500'>
-                {DATABASE_CLEAN_PROTECTED_TABLES.map(table => (
-                  <li key={table}>{table}</li>
-                ))}
-              </ul>
-              <p className='mt-2 text-xs'>
-                Se conservan las asignaciones de permisos y el historial técnico de migraciones.
-                También se eliminarán productos, inventario, compras, habitaciones, configuración y
-                respaldos guardados. Se descargará un respaldo antes del vaciado.
-              </p>
-            </div>
+          <div className='text-sm text-gray-600 dark:text-gray-300'>
+            <p>Esta acción vaciará todas las tablas excepto:</p>
+            <ul className='list-disc list-inside mt-1 text-gray-500'>
+              {DATABASE_CLEAN_PROTECTED_TABLES.map(table => (
+                <li key={table}>{table}</li>
+              ))}
+            </ul>
+            <p className='mt-2 text-xs'>
+              Se conservan las asignaciones de permisos y el historial técnico de migraciones.
+              También se eliminarán productos, inventario, compras, habitaciones, configuración y
+              respaldos guardados. Se descargará un respaldo antes del vaciado.
+            </p>
+          </div>
         </CollapsibleCard>
       </div>
 

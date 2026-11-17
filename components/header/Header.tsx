@@ -64,7 +64,7 @@ export function Header({ showSidebarControls = true }: { showSidebarControls?: b
   const shouldShowNotifications = isAdmin || isCajero;
 
   return (
-    <header className='bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800 h-14 sm:h-16 flex items-center justify-between gap-2 px-2 sm:px-4 lg:px-6 sticky top-0 z-50'>
+    <header className='floating-header sticky top-0 z-50 h-14 sm:h-16 flex items-center justify-between gap-2 px-2 sm:px-4 lg:px-6'>
       <div className='flex shrink-0 items-center gap-2 sm:gap-4'>
         {showSidebarControls ? <SidebarControls /> : null}
       </div>

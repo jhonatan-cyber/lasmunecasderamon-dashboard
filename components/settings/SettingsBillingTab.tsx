@@ -126,7 +126,6 @@ export function SettingsBillingTab() {
           </span>
         </div>
       }
-      description='IVA, propinas, moneda y split de pagos con tarjeta.'
     >
       {loading ? (
         <div className='text-center py-8'>
@@ -137,109 +136,99 @@ export function SettingsBillingTab() {
         </div>
       ) : (
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <div className='space-y-4'>
-              <div>
-                <Label htmlFor='billing-iva' className='block text-sm font-medium mb-1'>
-                  % IVA
-                </Label>
-                <Input
-                  id='billing-iva'
-                  type='number'
-                  min='0'
-                  max='100'
-                  step='0.01'
-                  value={config.impuesto_iva}
-                  onChange={e => setConfig(prev => ({ ...prev, impuesto_iva: e.target.value }))}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='19'
-                />
-              </div>
-              <div>
-                <Label htmlFor='billing-propina' className='block text-sm font-medium mb-1'>
-                  % Propina de venta (reparto)
-                </Label>
-                <Input
-                  id='billing-propina'
-                  type='number'
-                  min='0'
-                  max='100'
-                  step='0.01'
-                  value={config.propina_venta}
-                  onChange={e => setConfig(prev => ({ ...prev, propina_venta: e.target.value }))}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                  placeholder='10'
-                />
-                <p className='text-xs text-gray-500 mt-1'>
-                  Porcentaje de las ventas que se distribuye entre cajeros, garzones y barman
-                  activos con sesi?n iniciada o presentes en el local del local.
-                </p>
-              </div>
-              <div>
-                <Label htmlFor='billing-moneda' className='block text-sm font-medium mb-1'>
-                  Moneda
-                </Label>
-                <Select
-                  value={config.moneda}
-                  onValueChange={(value: string) => setConfig(prev => ({ ...prev, moneda: value }))}
-                >
-                  <SelectTrigger id='billing-moneda'>
-                    <SelectValue placeholder='Seleccionar moneda' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='CLP'>CLP - Peso Chileno</SelectItem>
-                    <SelectItem value='USD'>USD - Dólar</SelectItem>
-                    <SelectItem value='EUR'>EUR - Euro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className='space-y-4'>
+            <div>
+              <Label htmlFor='billing-iva' className='block text-sm font-medium mb-1'>
+                % IVA
+              </Label>
+              <Input
+                id='billing-iva'
+                type='number'
+                min='0'
+                max='100'
+                step='0.01'
+                value={config.impuesto_iva}
+                onChange={e => setConfig(prev => ({ ...prev, impuesto_iva: e.target.value }))}
+                className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                placeholder='19'
+              />
             </div>
-            <div className='space-y-4'>
-              <div className='p-4 border border-gray-200 rounded-3xl'>
-                <p className='text-sm font-medium'>Split pago con tarjeta</p>
-                <p className='text-xs text-gray-500 mt-0.5'>
-                  Cómo se divide un pago con tarjeta entre venta y propina. Debe sumar 100.
-                </p>
-                <div className='mt-3 grid grid-cols-2 gap-3'>
-                  <div>
-                    <Label htmlFor='billing-split-venta' className='block text-xs font-medium mb-1'>
-                      Venta %
-                    </Label>
-                    <Input
-                      id='billing-split-venta'
-                      type='number'
-                      min='0'
-                      max='100'
-                      value={config.split_tarjeta_venta ?? '51'}
-                      onChange={e =>
-                        setConfig(prev => ({ ...prev, split_tarjeta_venta: e.target.value }))
-                      }
-                      className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                    />
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor='billing-split-propina'
-                      className='block text-xs font-medium mb-1'
-                    >
-                      Propina %
-                    </Label>
-                    <Input
-                      id='billing-split-propina'
-                      type='number'
-                      min='0'
-                      max='100'
-                      value={config.split_tarjeta_propina ?? '49'}
-                      onChange={e =>
-                        setConfig(prev => ({ ...prev, split_tarjeta_propina: e.target.value }))
-                      }
-                      className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
-                    />
-                  </div>
+            <div>
+              <Label htmlFor='billing-propina' className='block text-sm font-medium mb-1'>
+                % Propina de venta (reparto)
+              </Label>
+              <Input
+                id='billing-propina'
+                type='number'
+                min='0'
+                max='100'
+                step='0.01'
+                value={config.propina_venta}
+                onChange={e => setConfig(prev => ({ ...prev, propina_venta: e.target.value }))}
+                className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                placeholder='10'
+              />
+            </div>
+            <div>
+              <Label htmlFor='billing-moneda' className='block text-sm font-medium mb-1'>
+                Moneda
+              </Label>
+              <Select
+                value={config.moneda}
+                onValueChange={(value: string) => setConfig(prev => ({ ...prev, moneda: value }))}
+              >
+                <SelectTrigger id='billing-moneda'>
+                  <SelectValue placeholder='Seleccionar moneda' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='CLP'>CLP - Peso Chileno</SelectItem>
+                  <SelectItem value='USD'>USD - Dólar</SelectItem>
+                  <SelectItem value='EUR'>EUR - Euro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className='space-y-4'>
+            <div className='p-4 border border-gray-200 rounded-3xl'>
+              <p className='text-sm font-medium'>Split pago con tarjeta</p>
+              <div className='mt-3 grid grid-cols-2 gap-3'>
+                <div>
+                  <Label htmlFor='billing-split-venta' className='block text-xs font-medium mb-1'>
+                    Venta %
+                  </Label>
+                  <Input
+                    id='billing-split-venta'
+                    type='number'
+                    min='0'
+                    max='100'
+                    value={config.split_tarjeta_venta ?? '51'}
+                    onChange={e =>
+                      setConfig(prev => ({ ...prev, split_tarjeta_venta: e.target.value }))
+                    }
+                    className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                  />
+                </div>
+                <div>
+                  <Label htmlFor='billing-split-propina' className='block text-xs font-medium mb-1'>
+                    Propina %
+                  </Label>
+                  <Input
+                    id='billing-split-propina'
+                    type='number'
+                    min='0'
+                    max='100'
+                    value={config.split_tarjeta_propina ?? '49'}
+                    onChange={e =>
+                      setConfig(prev => ({ ...prev, split_tarjeta_propina: e.target.value }))
+                    }
+                    className='w-full px-3 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-black focus:border-transparent'
+                  />
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       <div className='mt-6 flex justify-end'>
         <Button

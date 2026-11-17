@@ -98,18 +98,17 @@ function SidebarHeader({ isCollapsed, subtitle, onClose, loading = false }: Side
             </div>
           )}
         </div>
+        {onClose && (
+          <Button
+            variant='unstyled'
+            onClick={onClose}
+            aria-label='Cerrar menú'
+            className='lg:hidden shrink-0 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors'
+          >
+            <X className='h-5 w-5 text-gray-500 dark:text-neutral-400' />
+          </Button>
+        )}
       </div>
-
-      {onClose && (
-        <Button
-          variant='unstyled'
-          onClick={onClose}
-          aria-label='Cerrar menú'
-          className='lg:hidden ml-auto p-2 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors'
-        >
-          <X className='h-5 w-5 text-gray-500 dark:text-neutral-400' />
-        </Button>
-      )}
     </div>
   );
 }
@@ -240,10 +239,10 @@ export function Sidebar() {
     return <SidebarSkeleton isCollapsed={isCollapsed} subtitle={subtitle} />;
   }
 
-  const content = (
-    <SidebarShell isCollapsed={isCollapsed}>
-      <SidebarHeader isCollapsed={isCollapsed} subtitle={subtitle} onClose={closeSidebar} />
-      {!isCollapsed && (
+  const renderContent = (collapsed: boolean) => (
+    <SidebarShell isCollapsed={collapsed}>
+      <SidebarHeader isCollapsed={collapsed} subtitle={subtitle} onClose={closeSidebar} />
+      {!collapsed && (
         <div className='sticky top-0 z-10 border-b border-gray-200/80 bg-white px-7 py-4 dark:border-neutral-800 dark:bg-neutral-900'>
           <div className='relative'>
             <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-neutral-500 pointer-events-none' />
@@ -279,7 +278,7 @@ export function Sidebar() {
             description={section.description}
             items={section.items}
             activeHref={activeHref}
-            isCollapsed={isCollapsed}
+            isCollapsed={collapsed}
             showSeparator={index > 0}
             onNavigate={closeSidebar}
           />
@@ -291,15 +290,17 @@ export function Sidebar() {
   return (
     <TooltipProvider delayDuration={0}>
       <>
-        <div className='hidden lg:block'>{content}</div>
+        <div className='hidden lg:block'>{renderContent(isCollapsed)}</div>
         {isSidebarOpen && (
-          <div className='lg:hidden fixed inset-0 z-50'>
+          <div className='lg:hidden fixed inset-0 z-[60]'>
             <div
               className='fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 sidebar-overlay'
               onClick={closeSidebar}
               aria-hidden='true'
             />
-            <div className='fixed inset-y-0 left-0 z-50 sidebar-enter'>{content}</div>
+            <div className='fixed inset-y-0 left-0 z-[60] sidebar-enter'>
+              {renderContent(false)}
+            </div>
           </div>
         )}
       </>

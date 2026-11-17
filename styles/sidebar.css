@@ -161,21 +161,22 @@
   margin: 0.75rem;
   border-radius: 1rem;
   width: auto !important;
-  
+
   /* Glassmorphism Logic */
   background: rgba(255, 255, 255, 0.85) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
 }
 
 .dark .floating-header {
-  background: rgba(10, 10, 10, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(26, 26, 26, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-/* En mobile el header debe ocupar todo el ancho */
+/* En mobile el header también flota, con el mismo margen que el sidebar */
 @media (max-width: 1024px) {
   .floating-header {
     margin: 0.75rem;

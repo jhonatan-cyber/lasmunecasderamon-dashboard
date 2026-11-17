@@ -193,9 +193,6 @@ export function SettingsPermissionsTab() {
           <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-black dark:text-neutral-100'>
             Gestión de Permisos
           </h2>
-          <p className='text-sm sm:text-base text-zinc-600 dark:text-neutral-300 mt-1'>
-            Crea, edita y elimina permisos del sistema
-          </p>
         </div>
         <Button
           variant='unstyled'
