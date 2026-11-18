@@ -51,3 +51,5 @@ peerDependencyRules:
 auditConfig:
   ignoreCves:
     - CVE-2026-93687
+    # picomatch (vía eslint-config-next, solo desarrollo) sin parche upstream.
+    - CVE-2026-112366
