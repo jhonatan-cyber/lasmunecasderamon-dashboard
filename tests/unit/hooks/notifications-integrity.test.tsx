@@ -14,6 +14,9 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
 vi.mock('@/hooks/auth/useCurrentUser', () => ({ useCurrentUser: () => ({ user: session.user }) }));
+vi.mock('@/hooks/auth/useUserPermissions', () => ({
+  useUserPermissions: () => ({ hasPermission: () => false })
+}));
 vi.mock('@/hooks/shared', () => ({
   useSharedSSE: (_url: string, handler: (payload: any) => void) => {
     session.handler = handler;
