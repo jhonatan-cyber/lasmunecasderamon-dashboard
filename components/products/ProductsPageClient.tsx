@@ -6,27 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useCategories, Category } from '@/hooks/products/useCategories';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
-import { SortableInventoryCategory } from '@/components/products/SortableInventoryCategory';
+import CategoryCardList from '@/components/shared/CategoryCardList';
 import { useRef, useState } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-  sortableKeyboardCoordinates
-} from '@dnd-kit/sortable';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { dragModifiers } from '@/components/shared/dragBounds';
 import { PackageCheck, ClipboardList, Search, X, AlertTriangle } from 'lucide-react';
 
 export function ProductsPageClient() {
@@ -42,21 +26,15 @@ export function ProductsPageClient() {
   const canReorder = hasPermission('categories', 'edit');
   const [savingOrder, setSavingOrder] = useState(false);
   const savingRef = useRef(false);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
   const activeCategories = (filteredCategories as Category[]).filter(cat => cat.status === 1);
 
-  const handleDragEnd = async ({ active, over }: DragEndEvent) => {
-    if (!canReorder || savingRef.current || !over || active.id === over.id) return;
-    const from = activeCategories.findIndex(cat => cat.id === active.id);
-    const to = activeCategories.findIndex(cat => cat.id === over.id);
-    if (from < 0 || to < 0) return;
-    const reordered = arrayMove(activeCategories, from, to);
+  const handleReorder = async (reordered: Category[]) => {
+    if (!canReorder || savingRef.current || reordered.length === 0) return;
     let index = 0;
     // Conserva las categorías inactivas en sus posiciones y en la caché compartida.
-    const fullOrder = filteredCategories.map(cat => (cat.status === 1 ? reordered[index++] : cat));
+    const fullOrder = filteredCategories.map(cat =>
+      cat.status === 1 ? (reordered[index++] ?? cat) : cat
+    );
     savingRef.current = true;
     setSavingOrder(true);
     try {
@@ -153,30 +131,14 @@ export function ProductsPageClient() {
               }
             />
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-              modifiers={dragModifiers}
-              autoScroll={false}
-            >
-              <SortableContext
-                items={activeCategories.map(cat => cat.id)}
-                strategy={rectSortingStrategy}
-              >
-                <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
-                  {activeCategories.map(cat => (
-                    <SortableInventoryCategory
-                      key={cat.id}
-                      category={cat}
-                      canReorder={canReorder}
-                      disabled={!canReorder || savingOrder}
-                      onClick={() => router.push(`/products/category/${cat.id}`)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+            <CategoryCardList
+              variant='inventory'
+              categorias={activeCategories}
+              canReorder={canReorder}
+              disabled={savingOrder}
+              onReorder={handleReorder}
+              onSelect={cat => router.push(`/products/category/${String(cat.id)}`)}
+            />
           )}
         </div>
       </BoneyardSkeleton>

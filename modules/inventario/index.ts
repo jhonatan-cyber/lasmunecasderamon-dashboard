@@ -24,7 +24,7 @@ export {
   type CodigoGenerado,
   type NuevaPresentacionProducto
 } from './productos/servicio';
-export { listar as listarCompras, registrarCompra } from './compras/servicio';
+export { listar as listarCompras, obtenerCodigosCompra, registrarCompra } from './compras/servicio';
 export { listar as listarCatalogoCompras } from './compras/catalogo';
 export {
   aceptarTransferencia,

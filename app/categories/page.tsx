@@ -6,7 +6,7 @@ import { useCategories, Category } from '@/hooks/products/useCategories';
 import { useCategoryModals } from '@/hooks/products/useCategoryModals';
 import { CategoryHeader } from '@/components/categories/CategoryHeader';
 import { CategoryFilters } from '@/components/categories/CategoryFilters';
-import { CategoryGrid } from '@/components/categories/CategoryGrid';
+import CategoryCardList from '@/components/shared/CategoryCardList';
 import { CategoryFormModal } from '@/components/categories/CategoryFormModal';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
@@ -125,8 +125,9 @@ export default function Categories() {
 
           {error && <div className='text-center text-red-500 text-sm sm:text-base'>{error}</div>}
 
-          <CategoryGrid
-            categories={paginatedCategories}
+          <CategoryCardList
+            variant='manage'
+            categorias={paginatedCategories}
             isMutating={isMutating}
             onEdit={openEditModal}
             onDelete={handleDelete}

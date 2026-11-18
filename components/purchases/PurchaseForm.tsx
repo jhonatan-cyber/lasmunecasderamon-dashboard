@@ -24,7 +24,7 @@ export function PurchaseForm({ catalog, initialItems }: PurchaseFormProps) {
 
   if (state.result) {
     return (
-      <section className='mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8'>
+      <section className='space-y-6 p-4 sm:p-6 lg:p-8'>
         <header className='space-y-2'>
           <p className='text-sm font-medium text-emerald-700'>Compra completada</p>
           <h1 className='flex items-center gap-2 text-2xl font-bold text-gray-900 sm:text-3xl'>
@@ -46,7 +46,7 @@ export function PurchaseForm({ catalog, initialItems }: PurchaseFormProps) {
   }
 
   return (
-    <section className='mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8'>
+    <section className='space-y-6 p-4 sm:p-6 lg:p-8'>
       <header className='flex flex-wrap items-center justify-between gap-x-5 gap-y-2'>
         <div className='min-w-0'>
           <h1 className='text-2xl font-bold text-gray-900 sm:text-3xl'>Nueva compra</h1>
@@ -54,7 +54,7 @@ export function PurchaseForm({ catalog, initialItems }: PurchaseFormProps) {
             Ingresa mercadería a la bodega. Solo stock, no mueve caja.
           </p>
         </div>
-        <Button asChild className='shrink-0 rounded-full'>
+        <Button asChild className='w-full shrink-0 rounded-full sm:w-auto'>
           <Link href='/purchases'>
             <ArrowLeft className='mr-2 h-4 w-4' aria-hidden='true' />
             Volver a compras
@@ -119,7 +119,7 @@ export function PurchaseForm({ catalog, initialItems }: PurchaseFormProps) {
             linesCount={state.lines.length}
             total={state.total}
             onBack={() => state.setStep(state.step === 3 ? 2 : 1)}
-            onNext={() => state.setStep(3)}
+            onNext={state.handleNext}
           />
         </form>
 

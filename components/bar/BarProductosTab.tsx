@@ -25,8 +25,7 @@ import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { PackageOpen, Search, SearchX } from 'lucide-react';
 import { productImageUrl } from '@/lib/utils/productImage';
 import { useMemo } from 'react';
-import { TransferCategoryCard } from '@/components/bar/transfer/TransferCategoryCard';
-import { StaggeredEntrance } from '@/components/shared/StaggeredEntrance';
+import CategoryCardList from '@/components/shared/CategoryCardList';
 
 const isTierPriced = (item: BarStockItem) => isTierPricedItem(item);
 
@@ -161,17 +160,18 @@ export function BarProductosTab({
               }
             />
           ) : (
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4'>
-              {categoryCards.map((category, index) => (
-                <StaggeredEntrance key={category.name} index={index} className='h-full'>
-                  <TransferCategoryCard
-                    name={category.name}
-                    presentationCount={category.presentationCount}
-                    onClick={() => onCategorySelect(category.name)}
-                  />
-                </StaggeredEntrance>
-              ))}
-            </div>
+            <CategoryCardList
+              categorias={categoryCards.map(category => ({
+                id: category.name,
+                name: category.name,
+                total_products: category.presentationCount
+              }))}
+              countLabel={category =>
+                (category.total_products ?? 0) === 1 ? 'presentación' : 'presentaciones'
+              }
+              paginate={false}
+              onSelect={category => onCategorySelect(category.name ?? '')}
+            />
           )
         ) : (
           // Nivel 2: Productos de la categoría seleccionada

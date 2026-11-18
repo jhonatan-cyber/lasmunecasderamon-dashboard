@@ -10,6 +10,8 @@ export interface AppEvents {
   closeOrderModal: { orderId: number | string };
   openServiceRequestModal: { solicitud: any };
   updateServiceRequests: void;
+  updatePendingTransfers: void;
+  openBarPendingTransfers: void;
   'test-notification': { type: string; data: any };
   cajaClosed: void;
   cajaOpened: void;

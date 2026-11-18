@@ -1,24 +1,24 @@
 {
   "resumen": {
-    "commit": "e0a139db3fce754958ca01bd2f8470f78ad170f9",
-    "generado": "2026-11-13T04:12:04.662Z",
-    "archivos": 2273,
-    "rutas": 242,
+    "commit": "8d21904db7e886b786d5618b21b0c6474ba962c9",
+    "generado": "2026-11-18T02:23:03.562Z",
+    "archivos": 2305,
+    "rutas": 246,
     "sqlFueraDeRepositorio": 65,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
-    "procesosPeriodicos": 20,
+    "procesosPeriodicos": 21,
     "caches": 31,
     "rutasApiConSqlDirecto": 0,
-    "rutasSinWrapper": 23
+    "rutasSinWrapper": 24
   },
   "rutas": [
     {
-      "ruta": "/api/tickets/entregar-grupo",
-      "archivo": "app/api/tickets/entregar-grupo/route.ts",
+      "ruta": "/api/purchases/:id/codes",
+      "archivo": "app/api/purchases/[id]/codes/route.ts",
       "metodos": [],
-      "nivel": "entradas.deliver",
-      "audit": true,
+      "nivel": "products.read",
+      "audit": false,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -995,6 +995,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/hostesses/:id/release",
+      "archivo": "app/api/hostesses/[id]/release/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/hostesses/:id/status",
       "archivo": "app/api/hostesses/[id]/status/route.ts",
       "metodos": [],
@@ -1904,6 +1913,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/tickets/cancellation-request",
+      "archivo": "app/api/tickets/cancellation-request/route.ts",
+      "metodos": ["GET"],
+      "nivel": "SIN_WRAPPER",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/tickets/cortesia-solicitudes/:id/approve",
       "archivo": "app/api/tickets/cortesia-solicitudes/[id]/approve/route.ts",
       "metodos": [],
@@ -1958,11 +1976,29 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/tickets/entregar-grupo",
+      "archivo": "app/api/tickets/entregar-grupo/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/tickets/pendientes",
       "archivo": "app/api/tickets/pendientes/route.ts",
       "metodos": [],
       "nivel": "entradas.deliver",
       "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/tickets/process-cancellation",
+      "archivo": "app/api/tickets/process-cancellation/route.ts",
+      "metodos": [],
+      "nivel": "entradas.deliver",
+      "audit": true,
       "moduloDominio": null,
       "usaDriver": false
     },
@@ -2595,6 +2631,11 @@
   "escriturasCruzadas": [],
   "transacciones": [
     {
+      "archivo": "app/api/hostesses/[id]/release/route.ts",
+      "capa": "app/api",
+      "modulo": null
+    },
+    {
       "archivo": "lib/database/maintenance.ts",
       "capa": "lib/database",
       "modulo": null
@@ -2835,6 +2876,11 @@
       "modulo": "personal"
     },
     {
+      "archivo": "workflows/anulaciones-entrada.ts",
+      "capa": "workflows",
+      "modulo": null
+    },
+    {
       "archivo": "workflows/anulaciones-venta.ts",
       "capa": "workflows",
       "modulo": null
@@ -2897,7 +2943,7 @@
     },
     {
       "archivo": "app/tickets/page.tsx",
-      "linea": 196,
+      "linea": 195,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2968,8 +3014,14 @@
       "texto": "const interval = window.setInterval(onVisible, 120_000);"
     },
     {
+      "archivo": "lib/api/rateLimit.ts",
+      "linea": 22,
+      "tipo": "setInterval",
+      "texto": "this.cleanupInterval = setInterval(() => this.cleanup(), this.cleanupMs);"
+    },
+    {
       "archivo": "lib/api/sseService.ts",
-      "linea": 87,
+      "linea": 88,
       "tipo": "setInterval",
       "texto": "this.heartbeatInterval = setInterval(() => {"
     },
@@ -3179,35 +3231,27 @@
   "ciclos": [],
   "matriz": {
     "app/api": {
-      "lib/api": 283,
-      "lib/business": 38,
-      "workflows": 25,
-      "lib/otros": 88,
+      "lib/api": 295,
+      "workflows": 27,
+      "lib/otros": 92,
       "lib/identidad": 15,
+      "lib/business": 38,
       "modules/aplicacion": 1,
       "lib/database": 3,
       "lib/integrations": 4
     },
     "components": {
-      "lib/business": 58,
+      "raiz": 93,
+      "lib/otros": 404,
       "hooks": 152,
-      "lib/otros": 394,
-      "raiz": 92,
+      "lib/business": 59,
       "lib/api": 3,
       "modules/aplicacion": 9,
       "app/ui": 1
     },
-    "lib/business": {
-      "lib/api": 3,
-      "lib/otros": 15,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
-      "raiz": 4,
-      "components": 1
-    },
     "app/ui": {
       "hooks": 65,
-      "lib/otros": 56,
+      "lib/otros": 57,
       "lib/api": 7,
       "components": 6,
       "modules/aplicacion": 3,
@@ -3239,6 +3283,14 @@
     "lib/identidad": {
       "lib/otros": 5
     },
+    "lib/business": {
+      "lib/api": 3,
+      "lib/otros": 15,
+      "lib/database": 4,
+      "modules/aplicacion": 4,
+      "raiz": 4,
+      "components": 1
+    },
     "lib/otros": {
       "lib/database": 4,
       "lib/api": 2,
@@ -3252,7 +3304,7 @@
     },
     "lib/integrations": {},
     "modules/infraestructura": {
-      "lib/database": 113,
+      "lib/database": 114,
       "lib/otros": 169,
       "lib/business": 76,
       "modules/aplicacion": 27,
@@ -3271,8 +3323,8 @@
     },
     "scripts": {},
     "workflows": {
-      "lib/business": 10,
-      "lib/otros": 22,
+      "lib/otros": 26,
+      "lib/business": 11,
       "lib/api": 4,
       "modules/aplicacion": 4
     }

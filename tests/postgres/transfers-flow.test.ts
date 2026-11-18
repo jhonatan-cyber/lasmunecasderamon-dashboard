@@ -77,7 +77,9 @@ it('consulta presentaciones y transfiere unidades con botella y shot en la misma
       expect(result).toEqual({
         transferencia_id: expect.any(String),
         trasladadas: 1,
-        stock_bar: 1
+        stock_bar: 1,
+        producto_nombre: 'Producto transferencia',
+        presentacion_nombre: '1000 ml'
       });
       const [movement] = await trx(
         'SELECT id, estado, opciones_venta, precio_venta, comision FROM inventario_movimientos WHERE presentacion_id = ?',

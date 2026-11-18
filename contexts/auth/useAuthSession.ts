@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useSharedSSE } from '@/hooks/shared';
+import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
 import { isPublicRoute } from '@/lib/constants/routes';
 import logger from '@/lib/utils/logger';
 

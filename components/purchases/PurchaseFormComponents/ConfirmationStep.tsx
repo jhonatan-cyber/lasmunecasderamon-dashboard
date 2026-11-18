@@ -17,12 +17,15 @@ export function ConfirmationStep({
   observaciones: string;
 }) {
   return (
-    <div className='mx-auto max-w-3xl space-y-4'>
+    <div className='space-y-4'>
       <h2 className='text-lg font-semibold'>Confirma la compra</h2>
       <div className='divide-y rounded-2xl border'>
         {lines.map(line => (
-          <div key={line.presentacion_id} className='flex items-center justify-between gap-3 p-3'>
-            <div className='min-w-0'>
+          <div
+            key={line.presentacion_id}
+            className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1 p-3 sm:p-4'
+          >
+            <div className='min-w-0 flex-1'>
               <p className='truncate text-sm font-semibold'>
                 {line.producto_nombre} · {line.presentacion_nombre}
               </p>
@@ -36,14 +39,14 @@ export function ConfirmationStep({
           </div>
         ))}
       </div>
-      <dl className='grid gap-3 rounded-2xl bg-muted/50 p-4 text-sm sm:grid-cols-2'>
+      <dl className='grid gap-3 rounded-2xl bg-muted/50 p-4 text-sm sm:grid-cols-2 sm:gap-4'>
         <div>
           <dt className='text-muted-foreground'>Proveedor</dt>
-          <dd className='font-medium'>{proveedor || 'No indicado'}</dd>
+          <dd className='font-medium break-words'>{proveedor || 'No indicado'}</dd>
         </div>
         <div>
           <dt className='text-muted-foreground'>Teléfono</dt>
-          <dd className='font-medium'>{telefono || 'No indicado'}</dd>
+          <dd className='font-medium break-words'>{telefono || 'No indicado'}</dd>
         </div>
         <div>
           <dt className='text-muted-foreground'>Método de pago</dt>
@@ -51,7 +54,7 @@ export function ConfirmationStep({
         </div>
         <div>
           <dt className='text-muted-foreground'>Descripción</dt>
-          <dd className='font-medium'>{observaciones || 'Sin descripción'}</dd>
+          <dd className='font-medium break-words'>{observaciones || 'Sin descripción'}</dd>
         </div>
       </dl>
       <div className='flex justify-between border-t pt-4 text-lg font-bold'>

@@ -23,27 +23,85 @@ import {
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy
+} from '@dnd-kit/sortable';
+import { dragModifiers } from '@/components/shared/dragBounds';
+import { CategoryGrid } from '@/components/categories/CategoryGrid';
+import { SortableInventoryCategory } from '@/components/products/SortableInventoryCategory';
+import type { Category } from '@/hooks/products/useCategories';
 
-interface Category {
+export interface CategoryListItem {
   id_categoria?: number;
-  id?: number;
+  id?: number | string;
   nombre?: string;
   name?: string;
+  description?: string;
   estado?: number;
+  status?: number;
   productCount?: number;
-  total_products?: number;
+  total_products?: number | null;
+  created_at?: string;
+  system_key?: string | null;
 }
 
-interface CategoryCardListProps {
-  categorias: Category[];
-  onSelect: (categoria: Category) => void;
-  center?: boolean;
-  filter?: (categoria: Category) => boolean;
-  icon?: React.ReactNode;
+interface CategoryCardListBaseProps<T extends CategoryListItem = CategoryListItem> {
+  categorias: T[];
   className?: string;
   loading?: boolean;
-  variant?: 'default' | 'catalog';
+  center?: boolean;
+  countLabel?: (categoria: T) => string;
 }
+
+interface CategoryCardListCatalogProps<
+  T extends CategoryListItem = CategoryListItem
+> extends CategoryCardListBaseProps<T> {
+  variant?: 'catalog' | 'default';
+  onSelect: (categoria: T) => void;
+  filter?: (categoria: T) => boolean;
+  icon?: React.ReactNode;
+  paginate?: boolean;
+  countPlacement?: 'inline' | 'top';
+}
+
+interface CategoryCardListInventoryProps<
+  T extends CategoryListItem = CategoryListItem
+> extends CategoryCardListBaseProps<T> {
+  variant: 'inventory';
+  onSelect: (categoria: T) => void;
+  canReorder?: boolean;
+  disabled?: boolean;
+  onReorder?: (categorias: Category[]) => void;
+}
+
+interface CategoryCardListManageProps<
+  T extends CategoryListItem = CategoryListItem
+> extends CategoryCardListBaseProps<T> {
+  variant: 'manage';
+  isMutating: boolean;
+  onEdit: (categoria: { id: string; name: string; description: string }) => void;
+  onDelete: (id: string) => void;
+  onActivate: (id: string) => void;
+  onDeactivate: (id: string) => void;
+  onReorder: (categorias: Category[]) => void;
+}
+
+type CategoryCardListProps<T extends CategoryListItem = CategoryListItem> =
+  | CategoryCardListCatalogProps<T>
+  | CategoryCardListInventoryProps<T>
+  | CategoryCardListManageProps<T>;
 
 function getCategoryIcon(categoryName: string): LucideIcon {
   const name = categoryName
@@ -67,7 +125,105 @@ function getCategoryIcon(categoryName: string): LucideIcon {
   return fallbackIcons[Math.abs(hash) % fallbackIcons.length];
 }
 
-const CategoryCardList: React.FC<CategoryCardListProps> = ({
+function toCategory(categoria: CategoryListItem): Category {
+  return {
+    id: String(categoria.id ?? categoria.id_categoria ?? ''),
+    name: categoria.name ?? categoria.nombre ?? '',
+    description: categoria.description ?? '',
+    status: categoria.status ?? categoria.estado ?? 1,
+    total_products: categoria.total_products ?? categoria.productCount ?? undefined,
+    created_at: categoria.created_at,
+    system_key: categoria.system_key
+  };
+}
+
+export default function CategoryCardList<T extends CategoryListItem = CategoryListItem>(
+  props: CategoryCardListProps<T>
+) {
+  if (props.variant === 'manage') return <ManageCategoryList {...props} />;
+  if (props.variant === 'inventory') return <InventoryCategoryList {...props} />;
+  return <CatalogCategoryList {...props} />;
+}
+
+function ManageCategoryList<T extends CategoryListItem = CategoryListItem>({
+  categorias,
+  isMutating,
+  onEdit,
+  onDelete,
+  onActivate,
+  onDeactivate,
+  onReorder
+}: CategoryCardListManageProps<T>) {
+  return (
+    <CategoryGrid
+      categories={categorias.map(toCategory)}
+      isMutating={isMutating}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onActivate={onActivate}
+      onDeactivate={onDeactivate}
+      onReorder={onReorder}
+    />
+  );
+}
+
+function InventoryCategoryList<T extends CategoryListItem = CategoryListItem>({
+  categorias,
+  onSelect,
+  canReorder = false,
+  disabled = false,
+  onReorder
+}: CategoryCardListInventoryProps<T>) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const categories = categorias.map(toCategory);
+  const originals = new Map<string, T>(
+    categorias.map((category, index) => [categories[index].id, category])
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!canReorder || !onReorder || !over || active.id === over.id) return;
+    const from = categories.findIndex(category => category.id === active.id);
+    const to = categories.findIndex(category => category.id === over.id);
+    if (from < 0 || to < 0) return;
+    onReorder(arrayMove(categories, from, to));
+  };
+
+  return (
+    <DndContext
+      modifiers={dragModifiers}
+      autoScroll={false}
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={categories.map(category => category.id)}
+        strategy={rectSortingStrategy}
+      >
+        <div className='grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+          {categories.map(category => (
+            <SortableInventoryCategory
+              key={category.id}
+              category={category}
+              canReorder={canReorder}
+              disabled={!canReorder || disabled}
+              onClick={() => {
+                const original = originals.get(category.id);
+                if (original) onSelect(original);
+              }}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function CatalogCategoryList<T extends CategoryListItem = CategoryListItem>({
   categorias = [],
   onSelect,
   center = false,
@@ -75,17 +231,22 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
   icon,
   className = '',
   loading = false,
-  variant = 'catalog'
-}) => {
+  variant = 'catalog',
+  countLabel,
+  countPlacement = 'inline',
+  paginate = true
+}: CategoryCardListCatalogProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   const categoriasFiltradas = filter ? categorias.filter(filter) : categorias;
 
-  const totalPages = Math.ceil(categoriasFiltradas.length / itemsPerPage);
+  const totalPages = paginate ? Math.ceil(categoriasFiltradas.length / itemsPerPage) : 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentCategorias = categoriasFiltradas.slice(startIndex, endIndex);
+  const currentCategorias = paginate
+    ? categoriasFiltradas.slice(startIndex, endIndex)
+    : categoriasFiltradas;
   const isCatalogVariant = variant === 'catalog';
   const orderAccents = [
     'bg-rose-100 text-rose-700 ring-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-900',
@@ -137,6 +298,26 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
         >
           {currentCategorias.map((cat, index) => {
             const CategoryIcon = getCategoryIcon(cat?.nombre || cat?.name || '');
+            const iconTile = (
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-200 group-hover:scale-110 ${orderAccents[index % orderAccents.length]}`}
+              >
+                {icon || <CategoryIcon className='h-5 w-5' aria-hidden='true' />}
+              </div>
+            );
+            const countBadge = (
+              <span
+                className={
+                  countPlacement === 'top'
+                    ? 'inline-flex min-w-0 items-center gap-1 whitespace-normal break-words rounded-full bg-neutral-100 px-2 py-1 text-right text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                    : 'inline-flex shrink-0 items-center gap-1 rounded-full bg-neutral-100 px-2 py-1 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                }
+              >
+                <Package2 className='h-3 w-3 shrink-0' aria-hidden='true' />
+                {cat?.total_products ?? cat?.productCount ?? 0}
+                {countLabel ? ` ${countLabel(cat)}` : ''}
+              </span>
+            );
             return (
               <Card
                 key={cat?.id_categoria || cat?.id || `categoria-${index}`}
@@ -157,19 +338,19 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
               >
                 {isCatalogVariant ? (
                   <>
-                    <div
-                      className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ring-1 transition-transform duration-200 group-hover:scale-110 ${orderAccents[index % orderAccents.length]}`}
-                    >
-                      {icon || <CategoryIcon className='h-5 w-5' aria-hidden='true' />}
-                    </div>
+                    {countPlacement === 'top' ? (
+                      <div className='mb-4 flex w-full items-start justify-between gap-2'>
+                        {iconTile}
+                        {countBadge}
+                      </div>
+                    ) : (
+                      <div className='mb-4'>{iconTile}</div>
+                    )}
                     <div className='flex w-full items-end justify-between gap-2'>
                       <span className='min-w-0 break-words text-sm font-semibold leading-snug text-neutral-800 dark:text-neutral-100'>
                         {cat?.nombre || cat?.name || 'Sin nombre'}
                       </span>
-                      <span className='inline-flex shrink-0 items-center gap-1 rounded-full bg-neutral-100 px-2 py-1 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'>
-                        <Package2 className='h-3 w-3' aria-hidden='true' />
-                        {cat?.total_products ?? cat?.productCount ?? 0}
-                      </span>
+                      {countPlacement === 'inline' && countBadge}
                     </div>
                   </>
                 ) : (
@@ -196,7 +377,7 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
       )}
 
       {}
-      {!loading && totalPages > 1 && (
+      {!loading && paginate && totalPages > 1 && (
         <div className='flex justify-center items-center gap-4 mt-8'>
           <Button
             variant='outline'
@@ -229,6 +410,4 @@ const CategoryCardList: React.FC<CategoryCardListProps> = ({
       )}
     </div>
   );
-};
-
-export default CategoryCardList;
+}

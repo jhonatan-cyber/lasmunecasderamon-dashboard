@@ -14,28 +14,30 @@ import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 function Prices({ rows }: { rows: { label: string; precio: number; comision: number }[] }) {
   return (
-    <Table className='w-full'>
-      <TableHeader className='border-b text-xs text-muted-foreground'>
-        <TableRow>
-          <TableHead className='text-left font-medium'>Opción</TableHead>
-          <TableHead className='text-right font-medium'>Precio</TableHead>
-          <TableHead className='text-right font-medium'>Comisión</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody className='divide-y'>
-        {rows.map(row => (
-          <TableRow key={row.label}>
-            <TableHead className='pr-2 text-left font-medium'>{row.label}</TableHead>
-            <TableCell className='text-right font-semibold tabular-nums'>
-              {formatCurrencyCLP(row.precio)}
-            </TableCell>
-            <TableCell className='pl-3 text-right tabular-nums text-muted-foreground'>
-              {formatCurrencyCLP(row.comision)}
-            </TableCell>
+    <div className='overflow-x-auto'>
+      <Table className='w-full'>
+        <TableHeader className='border-b text-xs text-muted-foreground'>
+          <TableRow>
+            <TableHead className='text-left font-medium'>Opción</TableHead>
+            <TableHead className='text-right font-medium'>Precio</TableHead>
+            <TableHead className='text-right font-medium'>Comisión</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody className='divide-y'>
+          {rows.map(row => (
+            <TableRow key={row.label}>
+              <TableHead className='pr-2 text-left font-medium'>{row.label}</TableHead>
+              <TableCell className='text-right font-semibold tabular-nums'>
+                {formatCurrencyCLP(row.precio)}
+              </TableCell>
+              <TableCell className='pl-3 text-right tabular-nums text-muted-foreground'>
+                {formatCurrencyCLP(row.comision)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -55,7 +57,7 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
   return (
     <section className='space-y-5' aria-label='Detalle de venta enviado'>
       {options.map(option => (
-        <section key={option.tipo} className='min-w-0 space-y-4 rounded-2xl border p-4 sm:p-5'>
+        <section key={option.tipo} className='min-w-0 space-y-4 rounded-2xl border p-3 sm:p-5'>
           <h3 className='text-base font-semibold'>
             {option.tipo === 'botella' ? 'Venta por botella' : 'Venta por corto'}
           </h3>
@@ -64,7 +66,7 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
               <Prices
                 rows={[{ label: 'Botella', precio: option.precio, comision: option.comision ?? 0 }]}
               />
-              <dl className='grid grid-cols-2 gap-4 rounded-xl bg-muted/40 p-3'>
+              <dl className='grid grid-cols-1 gap-3 rounded-xl bg-muted/40 p-3 sm:grid-cols-2 sm:gap-4'>
                 <Measure
                   label='Máximo de anfitrionas'
                   value={Number(option.comision) > 0 ? record.max_anfitrionas || 1 : 0}
@@ -109,7 +111,7 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
                     </p>
                     <p className='mt-1 text-xs text-muted-foreground'>Sin comisión</p>
                   </div>
-                  <dl className='grid grid-cols-2 gap-3 sm:grid-cols-1'>
+                  <dl className='grid gap-3'>
                     <Measure
                       label='Ml corto cliente'
                       value={record.ml_shot ? `${record.ml_shot} ml` : 'No especificados'}
@@ -130,7 +132,7 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
                         ]
                     ).map((row, index) => ({ ...row, label: `Corto anfitriona ${index + 1}` }))}
                   />
-                  <dl className='grid grid-cols-2 gap-3 rounded-xl bg-muted/40 p-3'>
+                  <dl className='grid grid-cols-1 gap-3 rounded-xl bg-muted/40 p-3 sm:grid-cols-2'>
                     <Measure
                       label='Ml corto anfitriona'
                       value={

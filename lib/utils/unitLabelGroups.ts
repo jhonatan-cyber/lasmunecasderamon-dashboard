@@ -13,8 +13,16 @@ export interface LabelUnit {
   presentacion_nombre?: string | null;
 }
 
-/** "Producto" agrupa por producto; útil al ingresar stock de varios productos a la vez. */
-export type LabelGroupBy = 'purchase' | 'date' | 'product';
+/**
+ * "Product" agrupa por producto; "presentation" separa el producto por su
+ * presentación, que es la unidad real de compra y venta.
+ */
+export type LabelGroupBy = 'purchase' | 'date' | 'product' | 'presentation';
+
+function presentationTitle(unit: LabelUnit): string {
+  const partes = [unit.producto_nombre?.trim(), unit.presentacion_nombre?.trim()].filter(Boolean);
+  return partes.length ? partes.join(' · ') : 'Sin presentación';
+}
 
 export function labelDate(value?: string | null) {
   if (!value) return 'Sin fecha';
@@ -30,9 +38,11 @@ export function groupLabelUnits(units: LabelUnit[], by: LabelGroupBy) {
     const title =
       by === 'product'
         ? unit.producto_nombre?.trim() || 'Sin producto'
-        : by === 'purchase' && unit.compra_folio
-          ? `Compra ${unit.compra_folio}`
-          : `${by === 'purchase' ? 'Sin compra · ' : ''}${labelDate(unit.fecha_crea)}`;
+        : by === 'presentation'
+          ? presentationTitle(unit)
+          : by === 'purchase' && unit.compra_folio
+            ? `Compra ${unit.compra_folio}`
+            : `${by === 'purchase' ? 'Sin compra · ' : ''}${labelDate(unit.fecha_crea)}`;
     const group = groups.get(title) ?? [];
     group.push(unit);
     groups.set(title, group);

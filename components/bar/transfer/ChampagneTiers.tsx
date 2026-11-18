@@ -72,7 +72,7 @@ export const ChampagneTiersEditor = memo(function ChampagneTiersEditor({
             onChange={e => onTierChange(i, 'precio', formatMiles(e.target.value))}
             inputMode='numeric'
             disabled={saving}
-            className='h-10'
+            className='h-10 min-w-0'
           />,
           <Input
             key={`c-${t.anfitrionas}`}
@@ -81,7 +81,7 @@ export const ChampagneTiersEditor = memo(function ChampagneTiersEditor({
             onChange={e => onTierChange(i, 'comision', formatMiles(e.target.value))}
             inputMode='numeric'
             disabled={saving}
-            className='h-10'
+            className='h-10 min-w-0'
           />
         ])}
       </div>

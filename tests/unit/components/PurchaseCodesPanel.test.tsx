@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   PurchaseCodesPanel,
@@ -67,9 +67,9 @@ describe('PurchaseCodesPanel', () => {
     expect(
       screen.getByText(/3 unidades recién ingresadas con sus códigos generados/)
     ).toBeInTheDocument();
-    // Un grupo por producto, cada código con su presentación.
-    expect(screen.getByRole('region', { name: 'Ron Habana' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Coca Cola' })).toBeInTheDocument();
+    // Un grupo por presentación, cada código con su presentación.
+    expect(screen.getByRole('region', { name: 'Ron Habana · Botella 750ml' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Coca Cola · Lata 350ml' })).toBeInTheDocument();
     expect(screen.getAllByText('Botella 750ml')).toHaveLength(2);
     expect(screen.getByText('Lata 350ml')).toBeInTheDocument();
   });
@@ -79,5 +79,38 @@ describe('PurchaseCodesPanel', () => {
 
     expect(screen.getByText('Sin códigos generados en esta compra.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Imprimir/ })).not.toBeInTheDocument();
+  });
+
+  it('lista los códigos en dos columnas y fija el cierre a ancho completo en móvil', () => {
+    render(<PurchaseCodesPanel folio='C-0003' codigos={[codigo({})]} onClose={() => {}} />);
+
+    const cerrar = screen.getByRole('button', { name: 'Cerrar' });
+    expect(cerrar).toHaveClass('w-full', 'sm:w-auto');
+    expect(cerrar.parentElement).toHaveClass('sticky', 'bottom-0');
+    expect(document.querySelector('.grid-cols-2')).not.toBeNull();
+  });
+
+  it('oculta la selección de pendientes, bloquea el agrupado y permite contraer los grupos', () => {
+    render(<PurchaseCodesPanel folio='C-0004' codigos={[codigo({})]} onClose={() => {}} />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Seleccionar pendientes' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Agrupar por' })).toBeDisabled();
+
+    const grupo = screen.getByRole('region', { name: 'Ron Habana · Botella 750ml' });
+    fireEvent.click(
+      within(grupo).getByRole('button', {
+        name: 'Contraer Ron Habana · Botella 750ml'
+      })
+    );
+    expect(within(grupo).queryByText('2900000000001')).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(grupo).getByRole('button', {
+        name: 'Expandir Ron Habana · Botella 750ml'
+      })
+    );
+    expect(within(grupo).getByText('2900000000001')).toBeInTheDocument();
   });
 });

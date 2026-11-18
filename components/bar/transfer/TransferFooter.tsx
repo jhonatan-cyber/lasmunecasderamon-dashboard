@@ -20,20 +20,20 @@ export const TransferFooter = memo(function TransferFooter({
   return (
     <div className='space-y-3'>
       {summary}
-      <div className='grid grid-cols-2 gap-2'>
+      <div className='grid grid-cols-1 gap-2'>
         <Button
           type='button'
           variant='outline'
           onClick={onCancel}
           disabled={saving}
-          className='h-11 rounded-full px-6'
+          className='h-11 w-full rounded-full px-6'
         >
           Cancelar
         </Button>
         <Button
           type='submit'
           disabled={disabled}
-          className='h-11 rounded-full px-6 bg-black text-white hover:bg-white hover:text-black border-2'
+          className='h-11 w-full rounded-full px-6 bg-black text-white hover:bg-white hover:text-black border-2'
         >
           {saving ? (
             <span className='flex items-center gap-2'>

@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useQuery } from '@tanstack/react-query';
 import { playNotificationSound, announcePriority } from '@/lib/utils/audioUtils';
 import { useSharedSSE } from '@/hooks/shared';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { TRANSFER_RESOLVE_PERMISSION } from '@/lib/constants/transferPermissions';
 import { appEventBus } from '@/lib/utils/eventBus';
 
 interface NotificationData {
@@ -29,6 +31,11 @@ function nombreDe(user?: { nombre?: string; apellido?: string } | null): string 
 export function useNotifications() {
   const [lastNotification, setLastNotification] = useState<any>(null);
   const { user } = useCurrentUser();
+  const { hasPermission } = useUserPermissions();
+  const canApproveTransfers = hasPermission(
+    TRANSFER_RESOLVE_PERMISSION.module,
+    TRANSFER_RESOLVE_PERMISSION.action
+  );
   const pathname = usePathname();
   const router = useRouter();
   const canLoadCounts = !!user && !!pathname && pathname !== '/' && pathname !== '/login';
@@ -239,6 +246,44 @@ export function useNotifications() {
         }
       );
       setLastNotification({ type: 'entrada_registrada', data, timestamp: Date.now() });
+    }
+
+    // Traspaso bodega → bar: quien puede aceptarlo recibe el aviso en vivo y
+    // salta directo a la cola de pendientes. El emisor no se auto-avisa.
+    if (payload?.type === 'transfers_updated' && payload?.data) {
+      appEventBus.emit('updatePendingTransfers');
+      const data = payload.data as {
+        action?: string;
+        cantidad?: number;
+        usuario_id?: string | null;
+        producto_nombre?: string | null;
+        presentacion_nombre?: string | null;
+      };
+      if (
+        data.action === 'created' &&
+        canApproveTransfers &&
+        String(data.usuario_id ?? '') !== String(user?.id ?? '')
+      ) {
+        const cantidad = Number(data.cantidad || 1);
+        const detalle = [data.producto_nombre, data.presentacion_nombre]
+          .filter(Boolean)
+          .join(' · ');
+        playNotificationSound();
+        toast.success('Nuevo traspaso pendiente', {
+          description: `${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'}${
+            detalle ? ` de ${detalle}` : ''
+          } esperan tu aceptación en el bar.`,
+          duration: 9000,
+          action: {
+            label: 'Ver y aceptar',
+            onClick: () => {
+              appEventBus.emit('openBarPendingTransfers');
+              router.push('/bar?tab=pendientes');
+            }
+          }
+        });
+        setLastNotification({ type: 'transfer_pending', data, timestamp: Date.now() });
+      }
     }
 
     if (payload?.type === 'new_service_request' && payload?.data) {

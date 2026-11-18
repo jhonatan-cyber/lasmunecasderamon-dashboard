@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/card';
 import type { TransferRecord } from '@/types/transfer';
 import { TransferSaleDetails } from '@/components/bar/TransferSaleDetails';
+import { formatCurrencyCLP } from '@/lib/utils/formatters';
 
 interface PendingApprovalsProps {
   pendientes: TransferRecord[];
@@ -125,57 +126,119 @@ export function PendingApprovals({
           if (!open) setSelectedId(null);
         }}
       >
-        <DialogContent className='flex max-h-[90dvh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl'>
-          <DialogHeader className='shrink-0 border-b px-5 py-5 pr-12 sm:px-6'>
-            <DialogTitle>Detalle de transferencia</DialogTitle>
-            <DialogDescription>
+        <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_1rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:w-[calc(100vw_-_2rem)] sm:max-w-3xl'>
+          <DialogHeader className='shrink-0 gap-1 border-b px-4 py-4 pr-14 text-left sm:px-6'>
+            <DialogTitle className='text-base font-bold sm:text-lg'>
+              Detalle de transferencia
+            </DialogTitle>
+            <DialogDescription className='break-words text-sm'>
               {selected?.producto_nombre} · {selected?.presentacion_nombre}
             </DialogDescription>
           </DialogHeader>
           {selected && (
             <>
-              <div className='min-h-0 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-6'>
-                <div className='grid grid-cols-2 gap-3 rounded-xl bg-muted/40 p-4 text-sm'>
-                  <p className='col-span-2 font-semibold'>
-                    {selected.cantidad} unidades · Bodega → Bar
-                  </p>
-                  <p>Enviado por: {selected.usuario_nombre}</p>
-                  <p>Fecha: {String(selected.fecha_crea).replace('T', ' ').slice(0, 16)}</p>
-                  {selected.categoria_nombre && <p>Categoría: {selected.categoria_nombre}</p>}
-                  {Number(selected.ml_botella) > 0 && <p>Contenido: {selected.ml_botella} ml</p>}
+              <div className='min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-muted/20 p-3 sm:space-y-5 sm:p-6'>
+                <div className='rounded-xl border bg-card p-3 sm:p-5'>
+                  <div className='flex flex-wrap items-center justify-between gap-2'>
+                    <Badge variant='secondary' className='w-fit rounded-full'>
+                      <Clock className='mr-1 size-3' aria-hidden='true' />
+                      Pendiente
+                    </Badge>
+                    <p className='min-w-0 break-words text-sm font-semibold'>
+                      {selected.cantidad} unidades · Bodega → Bar
+                    </p>
+                  </div>
+                  <dl className='mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+                    <div className='min-w-0'>
+                      <dt className='text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                        Enviado por
+                      </dt>
+                      <dd className='mt-0.5 break-words text-sm font-medium'>
+                        {selected.usuario_nombre}
+                      </dd>
+                    </div>
+                    <div className='min-w-0'>
+                      <dt className='text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                        Fecha
+                      </dt>
+                      <dd className='mt-0.5 break-words text-sm font-medium'>
+                        {String(selected.fecha_crea).replace('T', ' ').slice(0, 16)}
+                      </dd>
+                    </div>
+                    {selected.categoria_nombre && (
+                      <div className='min-w-0'>
+                        <dt className='text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                          Categoría
+                        </dt>
+                        <dd className='mt-0.5 break-words text-sm font-medium'>
+                          {selected.categoria_nombre}
+                        </dd>
+                      </div>
+                    )}
+                    {Number(selected.ml_botella) > 0 && (
+                      <div className='min-w-0'>
+                        <dt className='text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+                          Contenido
+                        </dt>
+                        <dd className='mt-0.5 break-words text-sm font-medium'>
+                          {selected.ml_botella} ml
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
                 </div>
                 <TransferSaleDetails record={selected} />
               </div>
-              <div className='flex shrink-0 flex-wrap justify-end gap-2 border-t bg-background px-5 py-4 sm:px-6'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  className='rounded-full'
-                  onClick={() => setSelectedId(null)}
-                >
-                  Cerrar
-                </Button>
-                {puedeAprobar && (
-                  <>
-                    <Button
-                      className='rounded-full'
-                      disabled={resolvingId !== null}
-                      onClick={() => onResolve(selected.id, 'aprobar')}
-                    >
-                      <Check aria-hidden='true' />
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant='outline'
-                      className='rounded-full'
-                      disabled={resolvingId !== null}
-                      onClick={() => onResolve(selected.id, 'rechazar')}
-                    >
-                      <X aria-hidden='true' />
-                      Rechazar
-                    </Button>
-                  </>
-                )}
+              <div className='shrink-0 space-y-3 border-t bg-background px-4 py-3 sm:px-6 sm:py-4'>
+                <div className='flex flex-wrap items-end justify-between gap-x-4 gap-y-1'>
+                  <div className='min-w-0 text-xs text-muted-foreground'>
+                    <p className='text-sm font-semibold text-foreground'>
+                      {selected.cantidad} {selected.cantidad === 1 ? 'unidad' : 'unidades'} · Bodega
+                      → Bar
+                    </p>
+                    {Number(selected.precio_venta) > 0 && (
+                      <p>{formatCurrencyCLP(selected.precio_venta)} c/u</p>
+                    )}
+                  </div>
+                  {Number(selected.precio_venta) > 0 && (
+                    <p className='shrink-0 text-xl font-bold tabular-nums' aria-live='polite'>
+                      {formatCurrencyCLP(Number(selected.precio_venta) * selected.cantidad)}
+                    </p>
+                  )}
+                </div>
+                <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end'>
+                  {puedeAprobar && (
+                    <>
+                      <Button
+                        type='button'
+                        className='w-full rounded-full sm:w-auto'
+                        disabled={resolvingId !== null}
+                        onClick={() => onResolve(selected.id, 'aprobar')}
+                      >
+                        <Check aria-hidden='true' />
+                        Aprobar
+                      </Button>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        className='w-full rounded-full sm:w-auto'
+                        disabled={resolvingId !== null}
+                        onClick={() => onResolve(selected.id, 'rechazar')}
+                      >
+                        <X aria-hidden='true' />
+                        Rechazar
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    type='button'
+                    variant='outline'
+                    className='w-full rounded-full px-8 py-2 transition-all duration-200 hover:scale-105 sm:w-auto dark:hover:bg-white dark:hover:text-black'
+                    onClick={() => setSelectedId(null)}
+                  >
+                    Cerrar
+                  </Button>
+                </div>
               </div>
             </>
           )}

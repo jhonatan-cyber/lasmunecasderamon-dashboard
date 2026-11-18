@@ -9,8 +9,8 @@ interface CategoryCardProps {
   category: {
     id: string;
     name: string;
-    description: string;
-    status: number;
+    description?: string;
+    status?: number;
     total_products?: number;
     created_at?: string;
   };
@@ -53,6 +53,7 @@ const generateColor = (id: string) => {
 
 export default function ProductCategoryCard({ category, onClick }: CategoryCardProps) {
   const categoryColor = generateColor(category.id);
+  const status = category.status ?? 1;
 
   const createdAt = category.created_at
     ? formatLongDateEs(category.created_at)
@@ -74,14 +75,14 @@ export default function ProductCategoryCard({ category, onClick }: CategoryCardP
       >
         {}
         <div className='flex items-start justify-between pb-3'>
-          <div className='flex items-center gap-2 sm:gap-3'>
+          <div className='flex min-w-0 items-center gap-2 sm:gap-3'>
             <div
-              className='w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center'
+              className='w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0'
               style={{ backgroundColor: categoryColor + '15' }}
             >
               <Tag className='h-4 w-4 sm:h-6 sm:w-6' style={{ color: categoryColor }} />
             </div>
-            <div className='flex-1'>
+            <div className='min-w-0 flex-1'>
               <div className='text-sm sm:text-lg font-semibold text-neutral-600 dark:text-white group-hover:text-blue-600 transition-colors'>
                 {category.name}
               </div>
@@ -95,7 +96,6 @@ export default function ProductCategoryCard({ category, onClick }: CategoryCardP
           </div>
         </div>
 
-        {}
         <div className='space-y-3 sm:space-y-4'>
           {}
           <div className='flex items-center justify-between'>
@@ -103,7 +103,7 @@ export default function ProductCategoryCard({ category, onClick }: CategoryCardP
               variant='secondary'
               className='bg-green-100 text-green-800 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-green-200'
             >
-              Activa
+              {status === 0 ? 'Inactiva' : 'Activa'}
             </Badge>
             <div className='flex items-center gap-1 text-green-600 text-[10px] sm:text-xs font-medium'>
               <Package className='h-3 w-3' />

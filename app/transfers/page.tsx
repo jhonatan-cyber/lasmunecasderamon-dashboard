@@ -21,7 +21,7 @@ import { useRefreshOnFocus } from '@/hooks/shared';
 import { useTransferPermissions } from '@/hooks/transfers';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { TransferModal, type BarStockItem } from '@/components/bar/TransferModal';
-import { TransferCategoryCard } from '@/components/bar/transfer/TransferCategoryCard';
+import CategoryCardList from '@/components/shared/CategoryCardList';
 import {
   TransferHistoryDetailModal,
   estadoLabel
@@ -296,6 +296,18 @@ function TransfersContent() {
     });
   }, [groups, search]);
 
+  // Mismo listado de categorías que Ventas y Bodega, sin paginación propia:
+  // aquí solo se elige la categoría cuyas presentaciones se transferirán.
+  const categoryOptions = useMemo(
+    () =>
+      categoryCards.map(card => ({
+        id: card.name,
+        name: card.name,
+        total_products: card.presentationCount
+      })),
+    [categoryCards]
+  );
+
   // Nivel 2: productos transferibles de la categoría elegida, con búsqueda propia.
   const categoryItems = useMemo(() => {
     if (!selectedCategory) return [];
@@ -366,7 +378,7 @@ function TransfersContent() {
           {tab === 'products' && selectedCategory !== null && (
             <Button
               variant='outline'
-              className='shrink-0 rounded-full'
+              className='w-full shrink-0 rounded-full sm:w-auto'
               onClick={() => {
                 setSelectedCategory(null);
                 setSearch('');
@@ -479,21 +491,19 @@ function TransfersContent() {
                     }
                   />
                 ) : (
-                  <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4'>
-                    {categoryCards.map((category, index) => (
-                      <StaggeredEntrance key={category.name} index={index} className='h-full'>
-                        <TransferCategoryCard
-                          name={category.name}
-                          presentationCount={category.presentationCount}
-                          onClick={() => {
-                            setSelectedCategory(category.name);
-                            setSearch('');
-                            setPage(1);
-                          }}
-                        />
-                      </StaggeredEntrance>
-                    ))}
-                  </div>
+                  <CategoryCardList
+                    categorias={categoryOptions}
+                    countLabel={category =>
+                      (category.total_products ?? 0) === 1 ? 'presentación' : 'presentaciones'
+                    }
+                    countPlacement='top'
+                    paginate={false}
+                    onSelect={category => {
+                      setSelectedCategory(category.name ?? '');
+                      setSearch('');
+                      setPage(1);
+                    }}
+                  />
                 )
               ) : (
                 <>

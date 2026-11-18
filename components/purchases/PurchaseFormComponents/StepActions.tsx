@@ -20,27 +20,36 @@ export function StepActions({
   if (step === 1) return null;
 
   return (
-    <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+    <div className='flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between'>
       <p className='text-sm text-muted-foreground'>
         {linesCount} presentaciones · Total {formatCurrencyCLP(total)}
       </p>
-      <div className='flex gap-2'>
+      <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row'>
         <Button
           type='button'
           variant='outline'
-          className='rounded-full'
+          className='w-full rounded-full sm:w-auto'
           onClick={onBack}
           disabled={saving}
         >
           Atrás
         </Button>
         {step === 2 && (
-          <Button type='button' onClick={onNext} disabled={saving} className='rounded-full'>
+          <Button
+            type='button'
+            onClick={onNext}
+            disabled={saving}
+            className='w-full rounded-full sm:w-auto'
+          >
             Revisar compra
           </Button>
         )}
         {step === 3 && (
-          <Button type='submit' disabled={saving || linesCount === 0} className='rounded-full'>
+          <Button
+            type='submit'
+            disabled={saving || linesCount === 0}
+            className='w-full rounded-full sm:w-auto'
+          >
             {saving ? (
               <>
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
