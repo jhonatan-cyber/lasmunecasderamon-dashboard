@@ -109,7 +109,7 @@ export default function Categories() {
   return (
     <PermissionGuard module='categories' action='view'>
       <BoneyardSkeleton name='categories-main' loading={isLoading}>
-        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
           <CategoryHeader onCreateClick={openCreateModal} />
 
           <CategoryFilters

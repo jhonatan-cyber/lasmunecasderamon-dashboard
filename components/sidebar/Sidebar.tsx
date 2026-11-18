@@ -217,12 +217,25 @@ export function Sidebar() {
   const [mounted, setMounted] = React.useState(false);
   const { isSidebarOpen, isCollapsed, closeSidebar } = useSidebar();
   const [searchTerm, setSearchTerm] = React.useState('');
+  const mobileSidebarRef = React.useRef<HTMLDivElement>(null);
   const { sections, loading, role } = useSidebarNavigation({ searchTerm: searchTerm || undefined });
   const subtitle = panelSubtitleFor(role);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  React.useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const frame = requestAnimationFrame(() => {
+      const activeItem =
+        mobileSidebarRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+      activeItem?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isSidebarOpen]);
 
   // Resalta el destino más específico: en `/payroll/calendar` manda "Detalle
   // Planillas" y en `/products/containers` manda "Envases devueltos".
@@ -298,7 +311,7 @@ export function Sidebar() {
               onClick={closeSidebar}
               aria-hidden='true'
             />
-            <div className='fixed inset-y-0 left-0 z-[60] sidebar-enter'>
+            <div ref={mobileSidebarRef} className='fixed inset-y-0 left-0 z-[60] sidebar-enter'>
               {renderContent(false)}
             </div>
           </div>

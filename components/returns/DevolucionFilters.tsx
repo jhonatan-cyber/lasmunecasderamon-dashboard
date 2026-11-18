@@ -24,7 +24,7 @@ export const DevolucionFilters = ({
   updateFilter,
   clearFilters
 }: DevolucionFiltersProps) => (
-  <Card className='mb-4 sm:mb-6 shadow-xs'>
+  <Card className='mb-4 sm:mb-6 rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-slate-900/40'>
     <CardContent className='p-4 sm:p-6'>
       {}
       <div className='block lg:hidden space-y-3'>
@@ -46,30 +46,30 @@ export const DevolucionFilters = ({
             />
           </div>
         </div>
-        <div className='flex gap-2 items-end'>
-          <div className='flex-1 min-w-0'>
-            <Label
-              htmlFor='payment-mobile'
-              className='mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'
-            >
-              Método de pago
-            </Label>
-            <Select
-              value={filters.paymentFilter}
-              onValueChange={(value: string) => updateFilter('paymentFilter', value)}
-            >
-              <SelectTrigger id='payment-mobile'>
-                <SelectValue placeholder='Seleccionar método' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>Todos</SelectItem>
-                <SelectItem value='efectivo'>Efectivo</SelectItem>
-                <SelectItem value='tarjeta'>Tarjeta</SelectItem>
-                <SelectItem value='transferencia'>Transferencia</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className='flex-1 min-w-0'>
+        <div className='w-full min-w-0'>
+          <Label
+            htmlFor='payment-mobile'
+            className='mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'
+          >
+            Método de pago
+          </Label>
+          <Select
+            value={filters.paymentFilter}
+            onValueChange={(value: string) => updateFilter('paymentFilter', value)}
+          >
+            <SelectTrigger id='payment-mobile'>
+              <SelectValue placeholder='Seleccionar método' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>Todos</SelectItem>
+              <SelectItem value='efectivo'>Efectivo</SelectItem>
+              <SelectItem value='tarjeta'>Tarjeta</SelectItem>
+              <SelectItem value='transferencia'>Transferencia</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className='flex w-full min-w-0 items-end gap-2'>
+          <div className='min-w-0 flex-1'>
             <Label
               htmlFor='list-mobile'
               className='mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'

@@ -32,8 +32,8 @@ export function AnulacionServicioModal({
         if (!isLoading) onOpenChange(value);
       }}
     >
-      <DialogContent className='sm:max-w-[425px] max-h-[90vh] flex flex-col p-0'>
-        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-gray-700 sm:p-6 sm:pr-14 sm:pb-3'>
+      <DialogContent className='flex max-h-[90dvh] w-[calc(100vw-1rem)] max-w-md flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-gray-900 shadow-xl dark:border-neutral-800 dark:bg-black dark:text-white'>
+        <DialogHeader className='shrink-0 border-b border-neutral-200 p-4 pr-12 pb-3 dark:border-neutral-800 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-gray-900 dark:text-gray-100'>
             Solicitar Anulación de Servicio
           </DialogTitle>
@@ -46,7 +46,7 @@ export function AnulacionServicioModal({
                   <Label className='text-sm font-medium text-gray-900 dark:text-gray-100'>
                     Servicio a anular:
                   </Label>
-                  <div className='p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700'>
+                  <div className='rounded-2xl border border-neutral-200 bg-gray-50 p-3 dark:border-neutral-800 dark:bg-neutral-900'>
                     <div className='text-sm text-gray-600 dark:text-gray-300'>
                       <p>
                         <strong>Código:</strong> {servicio.codigo}
@@ -85,15 +85,15 @@ export function AnulacionServicioModal({
             </div>
           </div>
 
-          <div className='shrink-0 border-t p-4 dark:border-gray-700 sm:p-6'>
-            <div className='flex justify-end space-x-2'>
+          <div className='shrink-0 border-t border-neutral-200 p-4 dark:border-neutral-800 sm:p-6'>
+            <div className='flex flex-col-reverse justify-center gap-2 sm:flex-row'>
               <Button
                 type='button'
                 variant='outline'
                 onClick={handleCancel}
                 disabled={isLoading}
                 size='sm'
-                className='rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                className='w-full rounded-full transition-all duration-200 hover:scale-105 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black sm:w-auto'
               >
                 Cancelar
               </Button>
@@ -102,7 +102,7 @@ export function AnulacionServicioModal({
                 disabled={isLoading || !motivo.trim()}
                 size='sm'
                 variant='outline'
-                className='bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 transition-all duration-200'
+                className='w-full rounded-full bg-black text-white transition-all duration-200 hover:scale-105 dark:bg-white dark:text-black sm:w-auto'
               >
                 {isLoading ? 'Enviando...' : 'Enviar Solicitud'}
               </Button>

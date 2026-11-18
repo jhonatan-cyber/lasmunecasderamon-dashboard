@@ -161,7 +161,7 @@ export const CajaFormDialog = ({
           Abrir Nueva Caja
         </Button>
       </DialogTrigger>
-      <DialogContent className='max-w-md w-full border-none shadow-2xl bg-white dark:bg-slate-900 rounded-4xl p-0 overflow-hidden'>
+      <DialogContent className='max-w-md w-full border-none shadow-2xl bg-white dark:bg-slate-900 rounded-2xl p-0 overflow-hidden'>
         <DialogHeader className='px-4 pt-5 pb-4 border-b border-slate-100 dark:border-white/5 sm:px-8 sm:pt-8'>
           <DialogTitle className='text-xl font-black tracking-tight'>Apertura de Caja</DialogTitle>
         </DialogHeader>

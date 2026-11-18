@@ -67,8 +67,12 @@ export function KioskActivation() {
           required
           disabled={saving}
         />
-        <div>
-          <Button className='rounded-full' type='submit' disabled={saving || !nombre.trim()}>
+        <div className='flex justify-center sm:justify-start'>
+          <Button
+            className='w-full justify-center rounded-full sm:w-auto'
+            type='submit'
+            disabled={saving || !nombre.trim()}
+          >
             {saving ? (
               <Loader2 className='h-4 w-4 animate-spin' />
             ) : (
@@ -241,11 +245,6 @@ export function KioskDevices() {
             ))
           )}
         </div>
-
-        <p className='text-xs text-muted-foreground'>
-          Si borras las cookies o la pantalla permanece sin uso durante 30 días, vuelve a activarla
-          con una sesión de administrador.
-        </p>
       </CollapsibleCard>
 
       <DeleteConfirmModal

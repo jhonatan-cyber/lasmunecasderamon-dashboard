@@ -250,13 +250,16 @@ export default function Users() {
     [users]
   );
 
-  const handleReleaseHostess = useCallback((userId: string | number) => {
-    const user = users?.find(u => u.id === userId);
-    if (user) {
-      setReleaseError(null);
-      setReleaseTarget(user);
-    }
-  }, [users]);
+  const handleReleaseHostess = useCallback(
+    (userId: string | number) => {
+      const user = users?.find(u => u.id === userId);
+      if (user) {
+        setReleaseError(null);
+        setReleaseTarget(user);
+      }
+    },
+    [users]
+  );
 
   async function confirmRelease() {
     if (!releaseTarget || releasing) return;
@@ -306,11 +309,11 @@ export default function Users() {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className='mt-4 w-full max-w-none space-y-4 px-4 pb-24 sm:mt-6 sm:space-y-6 sm:px-6 sm:pb-8 lg:mt-10 lg:px-10'>
+    <div className='w-full max-w-none space-y-6 px-4 pb-24 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8 lg:pt-8'>
       <div className='flex flex-col justify-between gap-6 sm:flex-row sm:items-center'>
         <div>
-          <h1 className='text-2xl font-bold sm:text-3xl'>Gestión de Usuarios</h1>
-          <p className='text-gray-600'>Control de plataforma.</p>
+          <h1 className='text-xl font-bold sm:text-2xl lg:text-3xl'>Gestión de Usuarios</h1>
+          <p className='text-sm text-gray-600 sm:text-base'>Control de plataforma.</p>
         </div>
         <div className='flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2'>
           <PermissionGuard module='users' action='view' fallback={null}>

@@ -1,9 +1,9 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TimePicker } from '@/components/shared/TimePicker';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Clock, Loader2, TriangleAlert } from 'lucide-react';
+import { Clock, TriangleAlert } from 'lucide-react';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -108,7 +108,7 @@ function VentanaTimeline({
       <div className='flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground'>
         <span className='flex items-center gap-1.5'>
           <span className='h-2.5 w-4 shrink-0 rounded-sm border border-emerald-600/40 bg-emerald-500/25 dark:border-emerald-400/40 dark:bg-emerald-400/20' />
-          Se registra asistencia
+          Asistencia
         </span>
         <span className='flex items-center gap-1.5'>
           <span className='h-2.5 w-4 shrink-0 rounded-sm border border-foreground/25 bg-muted' />
@@ -116,7 +116,7 @@ function VentanaTimeline({
         </span>
         <span className='flex items-center gap-1.5'>
           <span className='h-2.5 w-1 rounded-sm bg-amber-500' />
-          {dentro ? 'Estás dentro de la ventana' : 'Ahora fuera de la ventana'}
+          Ahora: {dentro ? 'dentro' : 'fuera'}
         </span>
       </div>
     </div>
@@ -240,81 +240,79 @@ export function SettingsAttendanceTab() {
         </div>
       ) : (
         <div className='flex flex-col gap-6'>
-          <div className='max-w-full overflow-x-auto pb-2'>
-            <div className='grid min-w-[760px] grid-cols-[minmax(380px,0.9fr)_minmax(340px,1.1fr)] items-center gap-6'>
-              <div className='grid min-w-0 grid-cols-2 items-start gap-4'>
-                <div className='space-y-2'>
-                  <Label
-                    htmlFor='attendance-hora-inicio'
-                    className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-                  >
-                    Hora de inicio (entrada)
-                  </Label>
-                  <Input
-                    id='attendance-hora-inicio'
-                    type='time'
-                    step={60}
-                    value={formatoHora(inicio, minutoInicio)}
-                    onChange={e => {
-                      const valor = leerHora(e.target.value);
-                      setConfig(prev => ({
-                        ...prev,
-                        asistencia_hora_inicio: valor.hora,
-                        asistencia_minuto_inicio: valor.minuto
-                      }));
-                    }}
-                    className='max-w-48'
-                  />
-                </div>
-
-                <div className='space-y-2'>
-                  <Label
-                    htmlFor='attendance-hora-fin'
-                    className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
-                  >
-                    Hora de fin (salida / corte)
-                  </Label>
-                  <Input
-                    id='attendance-hora-fin'
-                    type='time'
-                    step={60}
-                    value={formatoHora(fin, minutoFin)}
-                    onChange={e => {
-                      const valor = leerHora(e.target.value);
-                      setConfig(prev => ({
-                        ...prev,
-                        asistencia_hora_fin: valor.hora,
-                        asistencia_minuto_fin: valor.minuto
-                      }));
-                    }}
-                    className='max-w-48'
-                  />
-                </div>
-              </div>
-              <section className='flex min-w-0 flex-col justify-center gap-4 rounded-xl bg-muted/40 p-4 text-card-foreground'>
-                <div className='flex flex-wrap items-baseline justify-between gap-2'>
-                  <h3 className='text-sm font-semibold'>Ventana actual</h3>
-                  <span
-                    className={
-                      valida
-                        ? 'rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold tabular-nums text-foreground'
-                        : 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                    }
-                  >
-                    {valida
-                      ? `${pad(inicio)}:${pad(minutoInicio)} → ${pad(fin)}:${pad(minutoFin)} · ${Math.floor(duracion / 60)} h ${duracion % 60} min`
-                      : 'Ventana vacía'}
-                  </span>
-                </div>
-                <VentanaTimeline
-                  inicio={inicio}
-                  minutoInicio={minutoInicio}
-                  fin={fin}
-                  minutoFin={minutoFin}
-                  valida={valida}
+          <div className='grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:items-center xl:gap-6'>
+            <div className='grid min-w-0 grid-cols-1 items-start gap-4 sm:grid-cols-2'>
+              <div className='space-y-2'>
+                <Label
+                  htmlFor='attendance-hora-inicio'
+                  className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
+                >
+                  Hora de inicio
+                </Label>
+                <TimePicker
+                  id='attendance-hora-inicio'
+                  value={formatoHora(inicio, minutoInicio)}
+                  onChange={valorHora => {
+                    const valor = leerHora(valorHora);
+                    setConfig(prev => ({
+                      ...prev,
+                      asistencia_hora_inicio: valor.hora,
+                      asistencia_minuto_inicio: valor.minuto
+                    }));
+                  }}
+                  ariaLabel='Hora de inicio'
+                  minuteStep={1}
+                  className='w-full sm:max-w-48'
                 />
-              </section>
+              </div>
+
+              <div className='space-y-2'>
+                <Label
+                  htmlFor='attendance-hora-fin'
+                  className='block text-sm font-medium text-neutral-700 dark:text-neutral-300'
+                >
+                  Hora de fin
+                </Label>
+                <TimePicker
+                  id='attendance-hora-fin'
+                  value={formatoHora(fin, minutoFin)}
+                  onChange={valorHora => {
+                    const valor = leerHora(valorHora);
+                    setConfig(prev => ({
+                      ...prev,
+                      asistencia_hora_fin: valor.hora,
+                      asistencia_minuto_fin: valor.minuto
+                    }));
+                  }}
+                  ariaLabel='Hora de fin'
+                  minuteStep={1}
+                  className='w-full sm:max-w-48'
+                />
+              </div>
             </div>
+            <section className='flex min-w-0 flex-col justify-center gap-4 rounded-xl bg-muted/40 p-4 text-card-foreground'>
+              <div className='flex flex-wrap items-baseline justify-between gap-2'>
+                <h3 className='text-sm font-semibold'>Ventana actual</h3>
+                <span
+                  className={
+                    valida
+                      ? 'rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold tabular-nums text-foreground'
+                      : 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold tabular-nums text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                  }
+                >
+                  {valida
+                    ? `${pad(inicio)}:${pad(minutoInicio)} → ${pad(fin)}:${pad(minutoFin)} · ${Math.floor(duracion / 60)} h ${duracion % 60} min`
+                    : 'Ventana vacía'}
+                </span>
+              </div>
+              <VentanaTimeline
+                inicio={inicio}
+                minutoInicio={minutoInicio}
+                fin={fin}
+                minutoFin={minutoFin}
+                valida={valida}
+              />
+            </section>
           </div>
 
           {!valida && (
@@ -324,28 +322,19 @@ export function SettingsAttendanceTab() {
             >
               <TriangleAlert className='mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400' />
               <p className='text-xs text-amber-800 dark:text-amber-300'>
-                La hora de fin debe ser posterior a la hora de inicio. Con{' '}
-                <strong>
-                  {pad(inicio)}:{pad(minutoInicio)} → {pad(fin)}:{pad(minutoFin)}
-                </strong>{' '}
-                no entraría ninguna marca y nadie podría registrar asistencia.
+                La hora de fin debe ser posterior al inicio para registrar asistencia.
               </p>
             </div>
           )}
 
-          <div className='flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'>
-            <p className='text-xs text-neutral-500 dark:text-neutral-400'>
-              {valida
-                ? 'Los cambios afectan a las marcas nuevas, no a las ya registradas.'
-                : 'Corregí el rango para poder guardar.'}
-            </p>
-            <div className='flex items-center gap-3'>
+          <div className='flex flex-col items-center gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'>
+            <div className='flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center'>
               {sucio && !saving && (
-                <span className='text-xs font-medium text-amber-700 dark:text-amber-400'>
+                <span className='text-center text-xs font-medium text-amber-700 dark:text-amber-400'>
                   Cambios sin guardar
                 </span>
               )}
-              <div className='flex justify-center sm:justify-end sm:flex-1'>
+              <div className='flex w-full justify-center sm:w-auto'>
                 <Button
                   variant='unstyled'
                   onClick={handleSave}

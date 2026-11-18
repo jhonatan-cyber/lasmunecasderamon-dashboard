@@ -136,7 +136,7 @@ export function SalesReport() {
       {/* Charts Row */}
       <div className='grid grid-cols-1 xl:grid-cols-3 gap-8'>
         {/* Payment Methods Pie */}
-        <Card className='xl:col-span-1 border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
+        <Card className='xl:col-span-1 border border-neutral-200 shadow-sm dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
           <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
             <CardTitle className='text-lg font-black flex items-center gap-2'>
               <div className='p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30'>
@@ -145,7 +145,7 @@ export function SalesReport() {
               Métodos de Pago
             </CardTitle>
           </CardHeader>
-          <CardContent className='pt-8'>
+          <CardContent className='pt-4 sm:pt-6'>
             <div className='h-[320px] w-full relative'>
               {pieData.length > 0 ? (
                 <>
@@ -213,7 +213,7 @@ export function SalesReport() {
         </Card>
 
         {/* Temporal Evolution Area Chart */}
-        <Card className='xl:col-span-2 border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
+        <Card className='xl:col-span-2 border border-neutral-200 shadow-sm dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
           <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
             <CardTitle className='text-lg font-black flex items-center gap-2'>
               <div className='p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30'>
@@ -222,7 +222,7 @@ export function SalesReport() {
               Evolución Temporal
             </CardTitle>
           </CardHeader>
-          <CardContent className='pt-8'>
+          <CardContent className='pt-4 sm:pt-6'>
             <div className='h-[400px] w-full'>
               {barData.length > 0 ? (
                 <ResponsiveContainer width='100%' height='100%'>

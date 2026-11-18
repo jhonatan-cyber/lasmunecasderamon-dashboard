@@ -1,4 +1,4 @@
-﻿import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CajaWithUser } from '@/types/caja';
@@ -101,7 +101,7 @@ export const CajaCard = ({
   const balanceActual = totalCaja(caja);
 
   return (
-    <Card className='group border border-slate-100 dark:border-white/10 shadow-xs hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-4xl overflow-hidden'>
+    <Card className='group border border-slate-100 dark:border-white/10 shadow-xs hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden'>
       <CardHeader className='pb-4 pt-6 px-6'>
         <div className='flex items-start justify-between'>
           <div className='space-y-1'>

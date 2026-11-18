@@ -276,7 +276,7 @@ export function BarStatsCards({
                 <Button
                   variant='unstyled'
                   type='button'
-                  className='absolute inset-0 rounded-3xl bg-transparent! focus-visible:outline-2 focus-visible:outline-primary'
+                  className='absolute inset-0 rounded-2xl bg-transparent! focus-visible:outline-2 focus-visible:outline-primary'
                   onClick={stat.onOpen}
                   aria-label={stat.overlayLabel}
                 />

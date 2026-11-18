@@ -95,12 +95,12 @@ export function SalesDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='w-[calc(100vw-1rem)] max-w-5xl max-h-[90vh] gap-0 p-0 border-none shadow-2xl rounded-3xl overflow-hidden bg-background flex flex-col'>
-        <DialogHeader className='px-5 py-5 sm:px-8 bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-gray-800'>
+      <DialogContent className='flex max-h-[90vh] w-[calc(100vw-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 text-gray-900 shadow-xl dark:border-neutral-800 dark:bg-black dark:text-white'>
+        <DialogHeader className='border-b border-neutral-200 bg-white px-5 py-5 dark:border-neutral-800 dark:bg-black sm:px-8'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-3'>
-              <div className='p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl'>
-                <Receipt className='h-6 w-6 text-blue-600' />
+              <div className='rounded-2xl bg-black p-3 text-white dark:bg-white dark:text-black'>
+                <Receipt className='h-6 w-6' />
               </div>
               <div>
                 <DialogTitle className='text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight'>
@@ -167,7 +167,7 @@ export function SalesDetailModal({
 
               {habitacion && (
                 <div className='flex items-center gap-3'>
-                  <Home className='w-4 h-4 text-indigo-500 shrink-0' />
+                  <Home className='w-4 h-4 shrink-0 text-muted-foreground' />
                   <div>
                     <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                       Habitación
@@ -182,7 +182,7 @@ export function SalesDetailModal({
 
               {clienteDisponible && (
                 <div className='flex items-center gap-3'>
-                  <User className='w-4 h-4 text-blue-500 shrink-0' />
+                  <User className='w-4 h-4 shrink-0 text-muted-foreground' />
                   <div>
                     <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-bold'>
                       Cliente
@@ -343,7 +343,7 @@ export function SalesDetailModal({
           )}
         </div>
 
-        <DialogFooter className='flex items-center justify-center border-t border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-slate-800/50 sm:justify-center sm:p-8'>
+        <DialogFooter className='flex items-center justify-center border-t border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-black sm:justify-center sm:p-6'>
           <Button
             onClick={() => onOpenChange(false)}
             variant='outline'

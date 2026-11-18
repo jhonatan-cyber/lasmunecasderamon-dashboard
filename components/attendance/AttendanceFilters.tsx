@@ -44,8 +44,8 @@ export default function AttendanceFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
-      <CardContent className='p-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden'>
+      <CardContent className='p-4 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end w-full'>
           {}
           <div className='w-full lg:flex-1'>
@@ -60,9 +60,9 @@ export default function AttendanceFilters({
             />
           </div>
 
-          <div className='grid grid-cols-5 gap-2 sm:flex sm:flex-nowrap sm:gap-4 w-full lg:w-auto items-end'>
+          <div className='grid w-full grid-cols-[minmax(0,1fr)_2.5rem] items-end gap-2 sm:flex sm:flex-nowrap sm:gap-4 lg:w-auto'>
             {}
-            <div className='col-span-3 sm:col-auto min-w-0 sm:min-w-[160px] order-1 sm:order-0'>
+            <div className='col-span-2 min-w-0 sm:col-auto sm:min-w-[160px]'>
               <FilterSelect
                 value={filterRole}
                 onChange={setFilterRole}
@@ -80,7 +80,7 @@ export default function AttendanceFilters({
 
             {}
             <SortSelect
-              className='col-span-3 sm:col-auto min-w-0 sm:min-w-[180px] order-4 sm:order-0'
+              className='col-span-2 min-w-0 sm:col-auto sm:min-w-[180px]'
               field={sortBy}
               direction={sortOrder}
               options={[
@@ -101,7 +101,7 @@ export default function AttendanceFilters({
             {}
 
             {}
-            <div className='col-span-2 sm:col-auto min-w-0 sm:min-w-[140px] order-5 sm:order-0'>
+            <div className='col-span-1 min-w-0 sm:col-auto sm:min-w-[140px]'>
               <FilterSelect
                 value={pageSize.toString()}
                 onChange={value => handlePageSizeChange(parseInt(value))}
@@ -117,7 +117,7 @@ export default function AttendanceFilters({
             </div>
 
             {}
-            <div className='col-span-1 sm:col-auto flex justify-center sm:justify-start order-3 sm:order-0'>
+            <div className='col-span-1 flex justify-center sm:col-auto sm:justify-start'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>

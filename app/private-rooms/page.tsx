@@ -94,7 +94,7 @@ export default function ServiciosPage() {
 
   return (
     <PermissionGuard module='private_rooms' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <CajaStatusBanner entityName='servicios privados' />
 
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6'>

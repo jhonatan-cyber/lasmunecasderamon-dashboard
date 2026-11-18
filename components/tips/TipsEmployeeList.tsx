@@ -217,7 +217,9 @@ export function TipsEmployeeList({ allowedRole }: Props) {
       {}
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl'>Listado de Propinas</h1>
+          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl'>
+            Listado de Propinas
+          </h1>
           <p className='text-sm text-gray-600 sm:text-base'>
             Propinas de {user?.name} {user?.lastName}
           </p>

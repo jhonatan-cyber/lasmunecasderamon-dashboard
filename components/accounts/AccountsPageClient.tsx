@@ -66,7 +66,7 @@ export function AccountsPageClient() {
   return (
     <PermissionGuard module='accounts' action='view'>
       <BoneyardSkeleton name='accounts-main' loading={isLoading || cajaLoading}>
-        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
           <CajaStatusBanner entityName='cuentas' />
 
           <CuentaHeader loading={isLoading} onRefresh={() => getCuentas()} />

@@ -514,7 +514,7 @@ export default function BarPage() {
 
   return (
     <PermissionGuard module='products' action='view'>
-      <div className='flex w-full min-w-0 flex-col gap-6 p-4 sm:p-6 lg:p-10'>
+      <div className='flex w-full min-w-0 flex-col gap-6 p-4 sm:p-6 lg:p-8'>
         <BarPageHeader stockError={stockError} isLoading={isLoading} totalBar={totalBar} />
         <BarSummaryRow
           tab={tab}

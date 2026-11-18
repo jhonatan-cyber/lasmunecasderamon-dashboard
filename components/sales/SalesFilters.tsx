@@ -49,8 +49,8 @@ export function SalesFilters({
   setPage
 }: SalesFiltersProps) {
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6 mx-4 sm:mx-8'>
-      <CardContent className='p-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden mb-6'>
+      <CardContent className='p-4 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end'>
           {}
           <div className='w-full lg:flex-1'>

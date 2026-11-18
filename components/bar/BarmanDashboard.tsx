@@ -77,7 +77,7 @@ export default function BarmanDashboard({ name }: { name: string }) {
   ];
 
   return (
-    <main className='mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-10'>
+    <main className='mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8'>
       <header className='flex flex-wrap items-end justify-between gap-4 border-b pb-6'>
         <div className='flex flex-col gap-2'>
           <Badge variant='secondary' className='w-fit rounded-full'>
@@ -124,7 +124,7 @@ export default function BarmanDashboard({ name }: { name: string }) {
           className='grid grid-cols-2 gap-3 lg:grid-cols-4'
         >
           {metrics.map(metric => (
-            <Skeleton key={metric.label} className='h-28 rounded-3xl' />
+            <Skeleton key={metric.label} className='h-28 rounded-2xl' />
           ))}
         </div>
       ) : (
@@ -142,7 +142,7 @@ export default function BarmanDashboard({ name }: { name: string }) {
           </section>
 
           <div className='grid items-start gap-6 lg:grid-cols-5'>
-            <Card className='rounded-3xl lg:col-span-3'>
+            <Card className='rounded-2xl lg:col-span-3'>
               <CardHeader>
                 <CardTitle>Por recibir</CardTitle>
                 <CardDescription>
@@ -188,7 +188,7 @@ export default function BarmanDashboard({ name }: { name: string }) {
               </CardContent>
             </Card>
 
-            <Card className='rounded-3xl lg:col-span-2'>
+            <Card className='rounded-2xl lg:col-span-2'>
               <CardHeader>
                 <CardTitle>Existencias en barra</CardTitle>
                 <CardDescription>

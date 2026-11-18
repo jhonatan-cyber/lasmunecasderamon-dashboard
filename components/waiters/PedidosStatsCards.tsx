@@ -20,7 +20,7 @@ export default function PedidosStatsCards({
   rejectedOrders
 }: PedidosStatsCardsProps) {
   return (
-    <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
+    <div className='mb-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4'>
       <MetricCard
         tone='emerald'
         icon={<DollarSign className='h-4 w-4 text-emerald-600' />}

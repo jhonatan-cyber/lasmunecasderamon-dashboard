@@ -22,13 +22,20 @@ interface AttendanceFinancialSummaryProps {
 export function AttendanceFinancialSummary({
   userName,
   userNick,
-  totals,
+  totals
 }: AttendanceFinancialSummaryProps) {
-  const { totalSueldos, totalAportes, totalDescuentos, totalFinal, semanasConDescuento, montoDescuento } = totals;
+  const {
+    totalSueldos,
+    totalAportes,
+    totalDescuentos,
+    totalFinal,
+    semanasConDescuento,
+    montoDescuento
+  } = totals;
 
   return (
     <Card>
-      <CardContent className='p-6'>
+      <CardContent className='p-4 sm:p-6'>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
           {/* User Info */}
           <div className='flex flex-col space-y-2'>
@@ -36,9 +43,7 @@ export function AttendanceFinancialSummary({
               Información del Usuario
             </h4>
             <div className='space-y-1'>
-              <div className='text-lg font-semibold text-gray-900 dark:text-white'>
-                {userName}
-              </div>
+              <div className='text-lg font-semibold text-gray-900 dark:text-white'>{userName}</div>
               <div className='text-sm text-gray-600 dark:text-gray-400'>@{userNick}</div>
             </div>
           </div>
@@ -62,13 +67,17 @@ export function AttendanceFinancialSummary({
                 </span>
               </div>
               <div className='flex items-center justify-between'>
-                <span className='text-sm text-gray-600 dark:text-gray-400'>Descuento habitación:</span>
+                <span className='text-sm text-gray-600 dark:text-gray-400'>
+                  Descuento habitación:
+                </span>
                 <span className='text-lg font-bold dark:text-white'>
                   {formatCurrencyNoDecimals(totalDescuentos)}
                 </span>
               </div>
               <div className='flex items-center justify-between border-t pt-2 dark:border-gray-700'>
-                <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>Total a pagar:</span>
+                <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                  Total a pagar:
+                </span>
                 <span className='text-lg font-bold text-green-600 dark:text-green-500'>
                   {formatCurrencyNoDecimals(totalFinal)}
                 </span>
@@ -85,10 +94,21 @@ export function AttendanceFinancialSummary({
               <div className='text-sm text-blue-800 dark:text-blue-200'>
                 <p className='font-medium mb-1'>Información del Descuento por Habitación:</p>
                 <ul className='space-y-1 text-xs'>
-                  <li>• <strong>Semanas con descuento:</strong> {semanasConDescuento}</li>
-                  <li>• <strong>Monto por semana:</strong> {formatCurrencyNoDecimals(montoDescuento)}</li>
-                  <li>• <strong>Total descuento:</strong> {formatCurrencyNoDecimals(totalDescuentos)}</li>
-                  <li>• <em>El descuento se aplica una vez por semana, no por cada día de asistencia</em></li>
+                  <li>
+                    • <strong>Semanas con descuento:</strong> {semanasConDescuento}
+                  </li>
+                  <li>
+                    • <strong>Monto por semana:</strong> {formatCurrencyNoDecimals(montoDescuento)}
+                  </li>
+                  <li>
+                    • <strong>Total descuento:</strong> {formatCurrencyNoDecimals(totalDescuentos)}
+                  </li>
+                  <li>
+                    •{' '}
+                    <em>
+                      El descuento se aplica una vez por semana, no por cada día de asistencia
+                    </em>
+                  </li>
                 </ul>
               </div>
             </div>

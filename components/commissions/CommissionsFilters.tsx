@@ -40,8 +40,8 @@ export function CommissionsFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6'>
-      <CardContent className='p-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden mb-6'>
+      <CardContent className='p-4 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-4 items-end w-full'>
           {}
           <div className='w-full lg:flex-1'>
@@ -57,8 +57,9 @@ export function CommissionsFilters({
           </div>
 
           {}
-          <div className='w-full lg:w-auto grid grid-cols-2 gap-4 lg:flex lg:gap-4 lg:items-end'>
+          <div className='flex w-full flex-col gap-4 lg:w-auto lg:flex-row lg:items-end'>
             <SortSelect
+              className='w-full lg:w-auto'
               field={sortBy}
               direction={sortOrder}
               options={[
@@ -75,8 +76,8 @@ export function CommissionsFilters({
               }}
             />
 
-            <div className='flex items-end gap-2'>
-              <div>
+            <div className='flex w-full min-w-0 items-end gap-2 lg:w-auto'>
+              <div className='min-w-0 flex-1 lg:flex-none'>
                 <FilterSelect
                   value={rowsPerPage.toString()}
                   onChange={v => {

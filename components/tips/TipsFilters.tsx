@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,7 +40,7 @@ export default function TipsFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden mb-6'>
       <CardContent className='p-4 sm:p-6'>
         <div
           role='group'

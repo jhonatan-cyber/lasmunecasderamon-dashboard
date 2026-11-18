@@ -176,13 +176,13 @@ export function ExpiredStockPanel({
       module='products'
       action='view'
       fallback={
-        <div className='p-4 sm:p-6 lg:p-10 text-center text-gray-500 text-sm sm:text-base'>
+        <div className='p-4 sm:p-6 lg:p-8 text-center text-gray-500 text-sm sm:text-base'>
           No tienes permiso para ver los lotes vencidos.
         </div>
       }
     >
       <TooltipProvider>
-        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
           <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3'>
             <div className='min-w-0'>
               <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
@@ -333,7 +333,7 @@ export function ExpiredStockPanel({
           )}
 
           {!historialOnly && (
-            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
+            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
               <div className='overflow-x-auto'>
                 <Table className='min-w-full text-center'>
                   <TableHeader>

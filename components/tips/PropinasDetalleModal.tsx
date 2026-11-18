@@ -78,7 +78,73 @@ export default function PropinasDetalleModal({
             <h3 className='text-xs sm:text-sm font-semibold mb-4 text-center text-gray-600'>
               Detalle de las Propinas
             </h3>
-            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-x-auto'>
+            <div className='space-y-3 sm:hidden'>
+              {loading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className='space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-slate-900/40'
+                  >
+                    <Skeleton className='h-5 w-2/3' />
+                    <Skeleton className='h-4 w-full' />
+                    <Skeleton className='h-4 w-1/2' />
+                  </div>
+                ))
+              ) : error ? (
+                <div className='rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-slate-900/40'>
+                  <ErrorState
+                    size='sm'
+                    message={error}
+                    onRetry={() => fetchDetalles(usuario.id_usuario)}
+                  />
+                </div>
+              ) : detalles.length === 0 ? (
+                <div className='rounded-2xl border border-gray-200 bg-white p-4 text-center dark:border-gray-800 dark:bg-slate-900/40'>
+                  No hay detalles de propinas para mostrar
+                </div>
+              ) : (
+                detalles.map((detalle, index) => {
+                  const fecha = detalle.fecha_crea || detalle.fecha_hora;
+                  const pagada = Boolean(detalle.fecha_pago);
+
+                  return (
+                    <article
+                      key={`${detalle.codigo_venta}-${fecha}-${index}`}
+                      className='space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-slate-900/40'
+                    >
+                      <div className='flex items-start justify-between gap-3'>
+                        <div className='min-w-0'>
+                          <p className='text-xs text-gray-500 dark:text-gray-400'>Venta</p>
+                          <p className='truncate font-mono text-sm font-semibold text-gray-900 dark:text-gray-100'>
+                            {detalle.codigo_venta || '—'}
+                          </p>
+                        </div>
+                        <p className='shrink-0 font-bold text-green-600 dark:text-green-400'>
+                          {formatCurrencyNoDecimals(detalle.monto)}
+                        </p>
+                      </div>
+                      <div className='flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-gray-800'>
+                        <div className='flex flex-col text-xs text-gray-500 dark:text-gray-400'>
+                          <span>{fecha ? formatSoloFecha(fecha) : '—'}</span>
+                          {fecha && <span>{formatSoloHora(fecha)}</span>}
+                        </div>
+                        <Badge
+                          className={`${pagada ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'} rounded-full border-none px-3 py-1 text-xs font-semibold shadow-none`}
+                        >
+                          {pagada ? 'Pagado' : 'Por pagar'}
+                        </Badge>
+                      </div>
+                      <p className='text-xs text-gray-500 dark:text-gray-400'>
+                        Fecha de pago:{' '}
+                        {detalle.fecha_pago ? formatSoloFecha(detalle.fecha_pago) : 'Pendiente'}
+                      </p>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+
+            <div className='hidden overflow-x-auto rounded-2xl border-none bg-white shadow-md backdrop-blur-xs dark:bg-slate-900/40 sm:block'>
               <Table className='min-w-[580px]'>
                 <TableHeader>
                   <TableRow className='hover:bg-transparent'>

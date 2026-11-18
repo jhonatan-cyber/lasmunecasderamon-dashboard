@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -52,7 +52,7 @@ export default function GratificacionesFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden'>
       <CardContent className='p-4 sm:p-6'>
         {}
         <div className='block lg:hidden space-y-3'>
@@ -71,8 +71,8 @@ export default function GratificacionesFilters({
               className='w-full rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
             />
           </div>
-          <div className='flex gap-2 items-end'>
-            <div className='flex-1 min-w-0'>
+          <div className='flex flex-col gap-3'>
+            <div className='w-full min-w-0'>
               <Label className='mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1'>
                 Estado
               </Label>
@@ -88,7 +88,7 @@ export default function GratificacionesFilters({
               </Select>
             </div>
             <SortSelect
-              className='flex-1 min-w-0'
+              className='w-full min-w-0'
               field={sortBy}
               direction={sortOrder}
               options={[

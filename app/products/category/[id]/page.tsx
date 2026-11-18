@@ -369,7 +369,7 @@ const ProductCategoryPage = () => {
   if (!category && categoriesLoading) {
     return (
       <BoneyardSkeleton name='category-products-main' loading={true}>
-        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
           <div className='text-center text-gray-500'>Cargando categorías...</div>
         </div>
       </BoneyardSkeleton>
@@ -378,7 +378,7 @@ const ProductCategoryPage = () => {
 
   if (!category && categoryId) {
     return (
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <div className='text-center text-gray-500 text-sm sm:text-base'>
           Categoría no encontrada. ID: {categoryId}
         </div>
@@ -388,7 +388,7 @@ const ProductCategoryPage = () => {
 
   if (!categoryId) {
     return (
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <div className='text-center text-gray-500 text-sm sm:text-base'>
           ID de categoría inválido
         </div>
@@ -398,7 +398,7 @@ const ProductCategoryPage = () => {
 
   return (
     <PermissionGuard module='products' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <CategoryProductsHeader
           categoryName={category?.name}
           onBack={handleBack}

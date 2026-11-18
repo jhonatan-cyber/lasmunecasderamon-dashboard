@@ -79,7 +79,7 @@ export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosC
   };
 
   return (
-    <div className='overflow-hidden rounded-3xl bg-white shadow-md dark:bg-slate-900/40'>
+    <div className='overflow-hidden rounded-2xl bg-white shadow-md dark:bg-slate-900/40'>
       <div className='flex flex-col gap-3 border-b border-gray-200 p-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between sm:p-4'>
         <div className='flex items-center gap-1 sm:gap-2'>
           <Button
@@ -158,7 +158,10 @@ export function QuinchosCalendar({ reservas, isLoading, onSelectDay }: QuinchosC
         >
           {METODOS_PAGO.map(metodo => (
             <li key={metodo.valor} className='flex items-center gap-1'>
-              <span className={`h-1.5 w-1.5 rounded-full ${metodo.punto} sm:h-2 sm:w-2`} aria-hidden='true' />
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${metodo.punto} sm:h-2 sm:w-2`}
+                aria-hidden='true'
+              />
               {metodo.etiqueta}:
               <strong className='font-semibold text-gray-900 dark:text-neutral-100'>
                 {formatCurrencyCLP(resumen.porMetodo[metodo.valor])}

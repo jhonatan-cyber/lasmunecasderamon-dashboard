@@ -70,7 +70,7 @@ export function ProductsPageClient() {
   return (
     <PermissionGuard module='products' action='view'>
       <BoneyardSkeleton name='products-main' loading={categoriesLoading}>
-        <div className='min-w-0 max-w-full overflow-x-clip p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='min-w-0 max-w-full overflow-x-clip p-4 sm:p-6 lg:p-8 space-y-6'>
           <div className='flex flex-col gap-3'>
             <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 overflow-visible'>
               <div className='shrink-0'>

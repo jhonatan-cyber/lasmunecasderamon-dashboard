@@ -21,7 +21,7 @@ export function ProfileHeader({
   return (
     <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
       <div>
-        <h1 className='text-3xl font-bold'>Perfil de Usuario</h1>
+        <h1 className='text-xl font-bold sm:text-2xl lg:text-3xl'>Perfil de Usuario</h1>
         {currentUser && (
           <p className='text-sm text-muted-foreground mt-1'>
             Conectado como:{' '}

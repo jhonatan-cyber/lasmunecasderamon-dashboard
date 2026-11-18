@@ -56,7 +56,7 @@ interface TopPerformersChartProps {
 
 export function TopPerformersChart({ data }: TopPerformersChartProps) {
   return (
-    <Card className='border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
+    <Card className='border border-neutral-200 shadow-sm dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
       <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
         <CardTitle className='text-lg font-black flex items-center gap-2'>
           <div className='p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30'>
@@ -65,7 +65,7 @@ export function TopPerformersChart({ data }: TopPerformersChartProps) {
           Top Performers (Ranking Comisiones)
         </CardTitle>
       </CardHeader>
-      <CardContent className='pt-8'>
+      <CardContent className='pt-4 sm:pt-6'>
         <div className='h-[400px] w-full'>
           {data.length > 0 ? (
             <ResponsiveContainer width='100%' height='100%'>

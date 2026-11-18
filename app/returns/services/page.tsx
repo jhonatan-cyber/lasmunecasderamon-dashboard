@@ -8,7 +8,6 @@ import { useDevolucionResponse } from '@/hooks/services/useDevolucionResponse';
 import { useServicioTimerSync } from '@/hooks/services/useServicioTimerSync';
 import { useAnulacionContext } from '@/contexts/AnulacionContext';
 import { useTimer } from '@/contexts/TimerContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
 import { ServicioDetailModal } from '@/components/services/ServicioDetailModal';
@@ -83,14 +82,14 @@ export default function DevolucionesServiciosPage() {
 
   if (error) {
     return (
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <ErrorState message={`Error al cargar los servicios: ${error}`} size='sm' />
       </div>
     );
   }
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
       <DevolucionHeader title='Devoluciones de Servicios' variant='solid' />
 
       <DevolucionFilters
@@ -99,46 +98,36 @@ export default function DevolucionesServiciosPage() {
         clearFilters={clearFilters}
       />
 
-      <Card className='shadow-xs sm:shadow-md'>
-        <CardHeader className='pb-4 sm:pb-6'>
-          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4'>
-            <CardTitle className='text-lg sm:text-xl lg:text-2xl'>
-              {showAnulados ? 'Servicios Anulados' : 'Servicios Activos'} (
-              {filteredServicios.length})
-            </CardTitle>
-            <Button
-              variant={showAnulados ? 'default' : 'outline-solid'}
-              size='sm'
-              onClick={() => setShowAnulados(!showAnulados)}
-              className='w-full sm:w-auto bg-black text-white rounded-full hover:scale-105 transition-all duration-200 text-sm sm:text-base px-4 py-2'
-            >
-              {showAnulados ? 'Ver Activos' : 'Ver Anulados'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className='p-4 sm:p-6'>
-          <div className='overflow-x-auto'>
-            <DevolucionServiciosTable
-              servicios={paginatedServicios}
-              loading={loading}
-              showAnularButton={!showAnulados}
-              onVerDetalles={handleVerDetalles}
-              onAnularServicio={handleAnularServicio}
+      <div className='space-y-4'>
+        <div className='flex justify-end'>
+          <Button
+            variant={showAnulados ? 'default' : 'outline-solid'}
+            size='sm'
+            onClick={() => setShowAnulados(!showAnulados)}
+            className='w-full rounded-full bg-black px-4 py-2 text-sm text-white transition-all duration-200 hover:scale-105 sm:w-auto sm:text-base'
+          >
+            {showAnulados ? 'Ver Activos' : 'Ver Anulados'}
+          </Button>
+        </div>
+
+        <DevolucionServiciosTable
+          servicios={paginatedServicios}
+          loading={loading}
+          showAnularButton={!showAnulados}
+          onVerDetalles={handleVerDetalles}
+          onAnularServicio={handleAnularServicio}
+        />
+
+        {totalPages > 1 && (
+          <div className='flex justify-center'>
+            <Paginate
+              page={filters.currentPage}
+              totalPages={totalPages}
+              setPage={page => updateFilter('currentPage', page)}
             />
           </div>
-
-          {}
-          {totalPages > 1 && (
-            <div className='mt-4 sm:mt-6 flex justify-center'>
-              <Paginate
-                page={filters.currentPage}
-                totalPages={totalPages}
-                setPage={page => updateFilter('currentPage', page)}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
       {}
       <ServicioDetailModal

@@ -29,7 +29,7 @@ export function ErrorLogsPageClient() {
 
   return (
     <BoneyardSkeleton name='error-logs-main' loading={loading}>
-      <div className='p-4 sm:p-8'>
+      <div className='space-y-6 p-4 sm:p-6 lg:p-8'>
         <div className='mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
           <h1 className='text-xl font-bold sm:text-2xl'>Error Logs (ultimos 50)</h1>
           <Button onClick={fetchLogs} className='w-full sm:w-auto'>

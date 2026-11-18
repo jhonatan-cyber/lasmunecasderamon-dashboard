@@ -135,7 +135,7 @@ export function RolesDialogs({
             </DialogDescription>
           </DialogHeader>
           <div className='flex-1 min-h-0 overflow-hidden p-0'>
-            <div className='h-full min-h-0 overflow-hidden bg-white dark:bg-neutral-900 rounded-3xl'>
+            <div className='h-full min-h-0 overflow-hidden bg-white dark:bg-neutral-900 rounded-2xl'>
               <PermissionsPanel selectedRole={selectedRole} />
             </div>
           </div>

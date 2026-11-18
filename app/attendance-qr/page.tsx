@@ -380,7 +380,7 @@ export default function AsistenciaQrPage() {
             icon={QrCode}
             title='No se encontraron trabajadores'
             description='Ajustá los términos de tu búsqueda.'
-            className='rounded-3xl border border-neutral-200 bg-white py-16 dark:border-neutral-800 dark:bg-neutral-900/20'
+            className='rounded-2xl border border-neutral-200 bg-white py-16 dark:border-neutral-800 dark:bg-neutral-900/20'
           />
         ) : (
           <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6'>

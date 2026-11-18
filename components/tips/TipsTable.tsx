@@ -98,7 +98,7 @@ export default function TipsTable({
           ? Array.from({ length: rowsPerPage }).map((_, i) => (
               <Card
                 key={i}
-                className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'
+                className='rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xs p-4'
               >
                 <Skeleton className='h-6 w-1/2 mb-4' />
                 <div className='space-y-2'>
@@ -110,9 +110,9 @@ export default function TipsTable({
           : rows.map(propina => (
               <Card
                 key={propina.id_usuario}
-                className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-slate-900 overflow-hidden group hover:scale-[1.01] transition-transform duration-200'
+                className='rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-slate-900 overflow-hidden group hover:scale-[1.01] transition-transform duration-200'
               >
-                <CardContent className='p-5 space-y-4'>
+                <CardContent className='p-4 sm:p-6 space-y-4'>
                   <div className='flex justify-between items-start'>
                     <div className='space-y-1'>
                       <div className='flex items-center gap-2'>
@@ -192,7 +192,7 @@ export default function TipsTable({
       </div>
 
       {/* Vista desktop: tabla */}
-      <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
+      <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-center'>
             <TableHeader>

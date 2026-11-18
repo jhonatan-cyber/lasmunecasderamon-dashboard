@@ -102,10 +102,9 @@ export function useAuthSession({
       if (!silent || !userFetchedRef.current) {
         setUserLoading(true);
       }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-
         /*
          * Sin cache-buster `?t=`.
          *
@@ -129,7 +128,6 @@ export function useAuthSession({
           cache: 'no-store',
           signal: controller.signal
         });
-        clearTimeout(timeoutId);
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.user) {
@@ -146,9 +144,16 @@ export function useAuthSession({
           handleSessionExpired();
         }
       } catch (error) {
-        logger.captureException(error, { context: 'AuthContext:fetchUser' });
+        if (controller.signal.aborted || (error instanceof Error && error.name === 'AbortError')) {
+          logger.warn('La consulta de sesión superó el tiempo límite y fue cancelada', {
+            context: 'AuthContext:fetchUser'
+          });
+        } else {
+          logger.captureException(error, { context: 'AuthContext:fetchUser' });
+        }
       } finally {
-        setUserLoading(false);
+        clearTimeout(timeoutId);
+        if (isMountedRef.current) setUserLoading(false);
         isFetchingUserRef.current = false;
       }
     },

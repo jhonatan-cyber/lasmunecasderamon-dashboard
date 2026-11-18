@@ -45,7 +45,7 @@ export default function TopPerformers() {
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={index}
-            className='h-48 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20 animate-pulse'
+            className='h-48 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20 animate-pulse'
           />
         ))}
       </div>

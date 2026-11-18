@@ -24,7 +24,7 @@ const DashboardStatsCards = dynamic(() => import('@/components/dashboard/Dashboa
 
 const MiniSalesChart = dynamic(() => import('@/components/dashboard/MiniSalesChart'), {
   loading: () => (
-    <div className='h-[500px] bg-slate-100 dark:bg-slate-800 rounded-[3rem] animate-pulse' />
+    <div className='h-[500px] animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800' />
   )
 });
 
@@ -61,7 +61,7 @@ function GeneralDashboard({ user }: { user: CurrentUser }) {
   const shouldShowSkeleton = role === 'anfitriona' || role === 'garzon';
 
   return (
-    <div className='p-4 md:p-8 space-y-10 bg-slate-50/50 dark:bg-transparent min-h-screen pb-20'>
+    <div className='min-h-screen space-y-6 bg-slate-50/50 p-4 pb-20 dark:bg-transparent sm:p-6 lg:p-8'>
       <div className='flex flex-col md:flex-row md:items-end justify-between gap-4'>
         <div className='flex flex-col gap-1'>
           <h1 className='text-3xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white uppercase'>
@@ -77,7 +77,7 @@ function GeneralDashboard({ user }: { user: CurrentUser }) {
       </div>
 
       <BoneyardSkeleton name='dashboard-main' loading={shouldShowSkeleton}>
-        <div className='space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000'>
+        <div className='animate-in fade-in slide-in-from-bottom-4 duration-1000 space-y-6'>
           <PermissionGuard module='products' action='view' fallback={null}>
             <ReplenishmentNotice showProducts />
           </PermissionGuard>
@@ -98,7 +98,7 @@ function GeneralDashboard({ user }: { user: CurrentUser }) {
 
           <section className='space-y-6'>
             <SectionHeading icon={Medal} title='Performance y Forecast' tone='amber' />
-            <div className='grid grid-cols-1 gap-10'>
+            <div className='grid grid-cols-1 gap-6'>
               <CollapsibleSection title='Top Performers' icon={Medal} defaultOpen={true}>
                 <TopPerformers />
               </CollapsibleSection>
@@ -111,7 +111,7 @@ function GeneralDashboard({ user }: { user: CurrentUser }) {
 
           <section className='space-y-6'>
             <SectionHeading icon={Activity} title='Operación en Tiempo Real' tone='indigo' />
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-10 items-start'>
+            <div className='grid grid-cols-1 items-start gap-6 lg:grid-cols-2'>
               <div className='flex flex-col gap-4'>
                 <PanelHeading
                   icon={Activity}
@@ -130,7 +130,7 @@ function GeneralDashboard({ user }: { user: CurrentUser }) {
                   description='Logs de Turno'
                   tone='slate'
                 />
-                <div className='rounded-3xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/40 p-6 shadow-xl shadow-slate-200/20 dark:shadow-none min-h-[300px]'>
+                <div className='rounded-2xl border border-slate-200/60 bg-white dark:border-slate-800/60 dark:bg-slate-950/40 p-6 shadow-xl shadow-slate-200/20 dark:shadow-none min-h-[300px]'>
                   <RecentActivityCompact />
                 </div>
               </div>

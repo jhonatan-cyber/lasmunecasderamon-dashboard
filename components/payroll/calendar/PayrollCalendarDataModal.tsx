@@ -36,7 +36,11 @@ interface PayrollCalendarDataModalProps {
   onPageChange: (page: number) => void;
   onOpenDetail: (item: any, type: 'venta' | 'servicio') => void;
   onFetchData: (type: 'ventas' | 'servicios') => void;
-  getFilteredAndPaginatedData: (data: any[]) => { data: any[]; totalPages: number };
+  getFilteredAndPaginatedData: (data: any[]) => {
+    data: any[];
+    allData: any[];
+    totalPages: number;
+  };
   formatDateToSpanish: (dateString: string) => string;
   formatTimeFromDate: (dateString: string) => string;
 }
@@ -102,7 +106,11 @@ export function PayrollCalendarDataModal({
   const totalServicios = serviciosData.reduce((sum, item) => sum + (item.total || 0), 0);
   const currentData = showVentasTable ? ventasData : serviciosData;
   const currentLabel = showVentasTable ? 'ventas' : 'servicios';
-  const { data: paginatedData, totalPages } = getFilteredAndPaginatedData(currentData);
+  const {
+    data: paginatedData,
+    allData: filteredData,
+    totalPages
+  } = getFilteredAndPaginatedData(currentData);
 
   return (
     <Dialog open={open && selectedDatesCount > 0} onOpenChange={onOpenChange}>
@@ -181,8 +189,8 @@ export function PayrollCalendarDataModal({
               </Button>
             </div>
 
-            <div className='mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border'>
-              <div className='flex-1 max-w-md'>
+            <div className='mt-4 flex flex-col gap-3 rounded-2xl border bg-gray-50 p-3 dark:bg-gray-800 sm:mt-6 sm:flex-row sm:items-center sm:justify-between sm:p-4'>
+              <div className='w-full sm:max-w-md sm:flex-1'>
                 <SearchInput
                   value={searchTerm}
                   onChange={onSearchChange}
@@ -190,8 +198,7 @@ export function PayrollCalendarDataModal({
                   className='w-full'
                 />
               </div>
-
-              <div className='flex items-center gap-4'>
+              <div className='hidden sm:flex sm:items-center sm:gap-4'>
                 <SelectElements
                   value={rowsPerPage}
                   onChange={onRowsPerPageChange}
@@ -202,8 +209,8 @@ export function PayrollCalendarDataModal({
             </div>
 
             <div className='mt-6'>
-              {currentData.length === 0 ? (
-                <div className='overflow-hidden rounded-3xl border-none bg-white p-4 text-center shadow-md backdrop-blur-xs dark:bg-slate-900/40 sm:p-8'>
+              {filteredData.length === 0 ? (
+                <div className='overflow-hidden rounded-2xl border-none bg-white p-4 text-center shadow-md backdrop-blur-xs dark:bg-slate-900/40 sm:p-8'>
                   <EmptyState
                     variant='text'
                     title={<>No hay datos de {currentLabel}</>}
@@ -215,10 +222,10 @@ export function PayrollCalendarDataModal({
                   />
                 </div>
               ) : (
-                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+                <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border-none shadow-md overflow-hidden'>
                   {}
                   <div className='block sm:hidden space-y-3 p-4'>
-                    {paginatedData.map(item => {
+                    {filteredData.map(item => {
                       const dateValue =
                         item.fecha_crea || item.fechaVenta || item.fechaHoraServicio;
                       const isVenta = showVentasTable;
@@ -268,15 +275,6 @@ export function PayrollCalendarDataModal({
                         </div>
                       );
                     })}
-                    {totalPages > 1 && (
-                      <div className='pt-2'>
-                        <Paginate
-                          page={currentPage}
-                          totalPages={totalPages}
-                          setPage={onPageChange}
-                        />
-                      </div>
-                    )}
                   </div>
 
                   {}

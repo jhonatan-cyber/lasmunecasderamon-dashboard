@@ -89,7 +89,7 @@ const MobileCardView = React.memo(
         ? Array.from({ length: pageSize }).map((_, i) => (
             <Card
               key={i}
-              className='rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md bg-white dark:bg-slate-900/40 overflow-hidden animate-pulse'
+              className='rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md bg-white dark:bg-slate-900/40 overflow-hidden animate-pulse'
             >
               <CardContent className='p-4'>
                 <Skeleton className='h-6 w-1/2 mb-4' />
@@ -102,9 +102,9 @@ const MobileCardView = React.memo(
         : clients.map((client, idx) => (
             <Card
               key={client.id}
-              className='rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md bg-white dark:bg-slate-900/40 overflow-hidden group hover:shadow-lg hover:-translate-y-0.5 transition-transform duration-200'
+              className='rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md bg-white dark:bg-slate-900/40 overflow-hidden group hover:shadow-lg hover:-translate-y-0.5 transition-transform duration-200'
             >
-              <CardContent className='p-5 space-y-4'>
+              <CardContent className='p-4 sm:p-6 space-y-4'>
                 <div className='flex justify-between items-start'>
                   <div className='space-y-1'>
                     <div className='flex items-center justify-between gap-2'>
@@ -316,7 +316,7 @@ const DesktopTableView = React.memo(
   }: DesktopTableViewProps) => (
     <TooltipProvider>
       <div className='hidden lg:block'>
-        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
+        <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
           <Table>
             <TableHeader>
               <TableRow className='hover:bg-transparent'>
@@ -443,7 +443,7 @@ export function ClientTable({
 
   if (!loading && clients.length === 0) {
     return (
-      <Card className='border border-gray-200 dark:border-gray-800 shadow-md rounded-3xl bg-white dark:bg-slate-900/40 overflow-hidden'>
+      <Card className='border border-neutral-200 dark:border-neutral-800 shadow-sm rounded-2xl bg-white dark:bg-slate-900/40 overflow-hidden'>
         <CardContent className='flex flex-col items-center justify-center py-12 text-gray-500'>
           <User className='h-12 w-12 mb-4 opacity-20' />
           <p className='text-lg font-medium'>No hay clientes registrados</p>

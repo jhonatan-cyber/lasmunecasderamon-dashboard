@@ -7,7 +7,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'tex
   ({ className, ...props }, ref) => {
     return (
       <textarea
-        className={cn(FIELD_INPUT_CLASS, 'flex min-h-[80px] h-auto', className, 'rounded-3xl')}
+        className={cn(FIELD_INPUT_CLASS, 'flex min-h-[80px] h-auto', className, 'rounded-2xl')}
         ref={ref}
         {...props}
       />

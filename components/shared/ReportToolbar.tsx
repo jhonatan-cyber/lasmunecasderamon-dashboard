@@ -39,7 +39,7 @@ export function ReportToolbar<T extends string>({
       <div
         role='group'
         aria-label='Periodo del reporte'
-        className='flex flex-wrap items-center gap-2 rounded-3xl border border-gray-200/50 bg-gray-100/50 p-1.5 dark:border-gray-700/50 dark:bg-gray-800/50'
+        className='flex flex-wrap items-center gap-2 rounded-2xl border border-gray-200/50 bg-gray-100/50 p-1.5 dark:border-gray-700/50 dark:bg-gray-800/50'
       >
         {periods.map(item => (
           <Button

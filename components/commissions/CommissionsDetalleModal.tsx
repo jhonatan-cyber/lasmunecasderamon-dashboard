@@ -110,7 +110,7 @@ export default function CommissionsDetalleModal({
             </div>
 
             {}
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 w-full'>
+            <div className='mt-4 grid w-full grid-cols-2 gap-4 sm:grid-cols-3'>
               <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center'>
                 <div className='flex items-center justify-center gap-2 mb-1'>
                   <span className='text-sm font-medium text-blue-800 dark:text-blue-300'>
@@ -133,7 +133,7 @@ export default function CommissionsDetalleModal({
                 </p>
               </div>
 
-              <div className='bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center'>
+              <div className='col-span-2 rounded-lg bg-purple-50 p-3 text-center dark:bg-purple-900/20 sm:col-span-1'>
                 <div className='flex items-center justify-center gap-2 mb-1'>
                   <DollarSign className='w-4 h-4 text-purple-600 dark:text-purple-400' />
                   <span className='text-sm font-medium text-purple-800 dark:text-purple-300'>
@@ -152,7 +152,78 @@ export default function CommissionsDetalleModal({
             <h3 className='text-sm font-semibold mb-4 text-center text-gray-600 dark:text-gray-400'>
               Detalle de Comisiones
             </h3>
-            <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden'>
+            <div className='space-y-3 sm:hidden'>
+              {loading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className='space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-slate-900/40'
+                  >
+                    <Skeleton className='h-5 w-2/3' />
+                    <Skeleton className='h-4 w-full' />
+                    <Skeleton className='h-4 w-1/2' />
+                  </div>
+                ))
+              ) : error ? (
+                <div className='rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-slate-900/40'>
+                  <ErrorState
+                    size='sm'
+                    message={error}
+                    onRetry={() => fetchDetalles(usuario.id_usuario)}
+                  />
+                </div>
+              ) : detalles.length === 0 ? (
+                <div className='rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-slate-900/40'>
+                  <EmptyState variant='text' title='No hay detalles de comisiones para mostrar' />
+                </div>
+              ) : (
+                detalles.map(detalle => (
+                  <article
+                    key={detalle.id}
+                    className='space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-slate-900/40'
+                  >
+                    <div className='flex items-start justify-between gap-3'>
+                      <div className='min-w-0'>
+                        <p className='truncate font-mono text-sm font-bold text-blue-600 dark:text-blue-400'>
+                          {detalle.codigo_venta || detalle.codigo_servicio || '-'}
+                        </p>
+                        <p className='mt-1 truncate text-sm font-medium text-gray-900 dark:text-gray-100'>
+                          {detalle.producto || detalle.descripcion || 'Sin descripción'}
+                        </p>
+                      </div>
+                      <p className='shrink-0 font-bold text-green-600 dark:text-green-400'>
+                        {formatCurrencyNoDecimals(detalle.monto)}
+                      </p>
+                    </div>
+                    <div className='flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-gray-800'>
+                      <div className='flex flex-col text-xs text-gray-500 dark:text-gray-400'>
+                        <span>{formatSoloFecha(detalle.fecha_hora)}</span>
+                        <span>{formatSoloHora(detalle.fecha_hora)}</span>
+                      </div>
+                      <div className='flex flex-wrap items-center justify-end gap-2'>
+                        <Badge
+                          variant='outline'
+                          className='capitalize border-blue-100 bg-blue-50 text-[10px] text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                        >
+                          {detalle.tipo}
+                        </Badge>
+                        <Badge
+                          className={`${getEstadoColor(detalle.estado)} block w-fit rounded-full px-2 py-1 text-xs font-medium`}
+                        >
+                          {detalle.estado}
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className='text-xs text-gray-500 dark:text-gray-400'>
+                      Fecha de pago:{' '}
+                      {detalle.fecha_pago ? formatSoloFecha(detalle.fecha_pago) : 'Pendiente'}
+                    </p>
+                  </article>
+                ))
+              )}
+            </div>
+
+            <div className='hidden overflow-hidden rounded-2xl border-none bg-white shadow-md backdrop-blur-xs dark:bg-slate-900/40 sm:block'>
               <div className='overflow-x-auto'>
                 <Table className='min-w-full text-center'>
                   <TableHeader>

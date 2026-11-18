@@ -10,19 +10,33 @@ vi.mock('@/hooks/shared/useSharedSSE', () => ({
     return { isConnected: true, reconnect: vi.fn() };
   }
 }));
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe('estado biométrico en tiempo real', () => {
   it('actualiza las marcas al recibir el mensaje SSE del canal autenticado', async () => {
-    const estado = { asistenciasBiometricasHoy: 0, asistencias: [], ventana: { inicio: 18, fin: 6 }, lectores: [], pollerActivo: true };
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true, data: estado }) });
+    const estado = {
+      asistenciasBiometricasHoy: 0,
+      asistencias: [],
+      ventana: { inicio: 18, fin: 6 },
+      lectores: [],
+      pollerActivo: true
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ success: true, data: estado }) });
     vi.stubGlobal('fetch', fetchMock);
     render(<BiometricStatus />);
-    await screen.findByText('Todavía nadie marcó asistencia hoy.');
+    await screen.findByText('asistencias por lector hoy');
     expect(harness.url).toBe('/api/notifications/sse');
     act(() => harness.onMessage({ type: 'ping' }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true, data: { ...estado, asistenciasBiometricasHoy: 1 } }) });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: { ...estado, asistenciasBiometricasHoy: 1 } })
+    });
     act(() => harness.onMessage({ type: 'attendance_registered', data: { usuario_id: 'prueba' } }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     await screen.findByText('1');

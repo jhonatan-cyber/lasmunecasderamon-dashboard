@@ -248,10 +248,19 @@ export async function loginUser(creds: { email?: string; password?: string }, ip
 export async function logoutUser(userId: string, sesionId?: string) {
   try {
     if (sesionId) await revocarSesion(sesionId);
-    await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
-    // Sin fila de `logins` la persona deja de estar en el local: el resto de sesiones
-    // refresca contadores y selectores de personal presente.
-    sendNotificationToAll('presence_updated', { userId, en_local: false });
+    // La presencia sigue a las sesiones: si al usuario le quedan otras sesiones
+    // vivas (otro dispositivo), su fila de `logins` se conserva.
+    const [vivas] = await query<Array<{ count: number }>>(
+      `SELECT COUNT(*)::int AS count FROM sesiones
+       WHERE usuario_id = ? AND revocada_en IS NULL AND expira_en > now()`,
+      [userId]
+    );
+    if (Number(vivas?.count ?? 0) === 0) {
+      await query('DELETE FROM logins WHERE usuario_id = ?', [userId]);
+      // Sin fila de `logins` la persona deja de estar en el local: el resto de sesiones
+      // refresca contadores y selectores de personal presente.
+      sendNotificationToAll('presence_updated', { userId, en_local: false });
+    }
   } catch (err) {
     logger.error('[AuthQueries] Error en logoutUser:', { userId, err });
     throw new DatabaseError(`Error al cerrar sesión del usuario ${userId}`, err);

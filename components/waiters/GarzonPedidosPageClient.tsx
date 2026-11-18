@@ -213,11 +213,11 @@ export default function GarzonPedidosPage() {
     return <ListLoadError message='No se pudieron cargar tus pedidos.' onRetry={fetchOrders} />;
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
       {}
       <div className='flex items-center justify-between gap-2 flex-wrap'>
         <div>
-          <h1 className='text-xl sm:text-2xl font-bold text-gray-900 dark:text-white'>
+          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl dark:text-white'>
             Listado de Pedidos
           </h1>
           <p className='text-gray-600'>

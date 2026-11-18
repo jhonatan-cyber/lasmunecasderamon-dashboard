@@ -208,11 +208,7 @@ export function BiometricStatus() {
 
           <div className='p-1'>
             <TituloSeccion>Últimas marcas</TituloSeccion>
-            {estado.asistencias.length === 0 ? (
-              <p className='mt-2 text-sm text-muted-foreground'>
-                Todavía nadie marcó asistencia hoy.
-              </p>
-            ) : (
+            {estado.asistencias.length > 0 && (
               <ul className='mt-2 flex flex-col gap-1.5 text-sm'>
                 {estado.asistencias.slice(0, 5).map(a => (
                   <li
@@ -277,12 +273,7 @@ export function BiometricStatus() {
           )}
         </div>
 
-        {estado.lectores.length === 0 ? (
-          <p className='py-2 text-sm text-muted-foreground'>
-            No hay lectores vinculados. Vinculá uno en la tarjeta de abajo para que las
-            verificaciones de la puerta se conviertan en asistencia.
-          </p>
-        ) : (
+        {estado.lectores.length > 0 && (
           <ul className='flex flex-col divide-y'>
             {estado.lectores.map(lector => (
               <li

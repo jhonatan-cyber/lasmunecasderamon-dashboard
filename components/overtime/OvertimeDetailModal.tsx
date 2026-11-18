@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -102,7 +102,7 @@ export default function OvertimeDetailModal({
       return (
         <EmptyState
           title='No se encontraron registros'
-          className='rounded-3xl border-gray-100 bg-gray-50 py-12 dark:border-gray-800 dark:bg-slate-800/30'
+          className='rounded-2xl border-gray-100 bg-gray-50 py-12 dark:border-gray-800 dark:bg-slate-800/30'
         />
       );
     }
@@ -115,9 +115,9 @@ export default function OvertimeDetailModal({
             return (
               <Card
                 key={index}
-                className='rounded-3xl border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-slate-900 overflow-hidden'
+                className='rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-slate-900 overflow-hidden'
               >
-                <CardContent className='p-5 space-y-4'>
+                <CardContent className='p-4 sm:p-6 space-y-4'>
                   <div className='flex justify-between items-start'>
                     <div className='space-y-1'>
                       <div className='flex items-center gap-2'>
@@ -174,7 +174,7 @@ export default function OvertimeDetailModal({
           })}
         </div>
 
-        <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-x-auto'>
+        <div className='hidden lg:block bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border-none shadow-md overflow-x-auto'>
           <Table className='min-w-[540px]'>
             <TableHeader>
               <TableRow className='hover:bg-transparent'>

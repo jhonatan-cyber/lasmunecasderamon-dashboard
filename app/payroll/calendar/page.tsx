@@ -239,6 +239,7 @@ export default function PayrollCalendarPage() {
     const startIndex = (currentPage - 1) * rowsPerPage;
     return {
       data: filteredData.slice(startIndex, startIndex + rowsPerPage),
+      allData: filteredData,
       totalPages: Math.ceil(filteredData.length / rowsPerPage),
       totalItems: filteredData.length
     };
@@ -258,7 +259,7 @@ export default function PayrollCalendarPage() {
 
   return (
     <PermissionGuard module='payroll' action='view'>
-      <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
+      <div className='min-h-screen p-4 sm:p-6 lg:p-8 flex flex-col bg-gray-50 dark:bg-gray-900'>
         <div className='flex items-center justify-between mb-6'>
           <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>
             Calendario de Planillas

@@ -15,7 +15,6 @@ import Paginate from '@/components/shared/Paginate';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import { type ClientFormValues } from '@/hooks/clients';
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function Clients() {
   const {
@@ -108,20 +107,15 @@ export default function Clients() {
     [deleteClient]
   );
 
-  const { user } = useAuth();
-  const isAdmin = user?.role?.toLowerCase() === 'administrador';
-
   useRefreshOnFocus(fetchClients);
 
   return (
     <PermissionGuard module='clients' action='view'>
       <BoneyardSkeleton name='clients-main' loading={isLoading && allClients.length === 0}>
-        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
           <ClientHeader allClients={allClients} onCreateClick={openCreateModal} />
 
-          <div className='px-4 sm:px-8'>
-            <ClientStatsCards clients={allClients || []} />
-          </div>
+          <ClientStatsCards clients={allClients || []} />
 
           <ClientFilters
             searchTerm={searchTerm}
@@ -136,10 +130,9 @@ export default function Clients() {
             pageSize={pageSize}
             setPageSize={setPageSize}
             setPage={setPage}
-            showSolicitudes={isAdmin}
           />
 
-          <div className='mt-4 sm:mt-6'>
+          <div>
             <div className='overflow-x-auto'>
               <ClientTable
                 clients={clients}

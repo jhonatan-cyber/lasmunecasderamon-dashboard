@@ -23,8 +23,8 @@ export default function ColacionesPage() {
           <ReceiptText className='h-6 w-6' />
         </div>
         <div>
-          <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>Colaciones</h1>
-          <p className='text-sm text-muted-foreground'>
+          <h1 className='text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl'>Colaciones</h1>
+          <p className='text-sm text-muted-foreground sm:text-base'>
             Registro de un corto por trabajador durante el turno de caja.
           </p>
         </div>

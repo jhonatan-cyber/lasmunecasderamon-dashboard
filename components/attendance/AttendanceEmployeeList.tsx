@@ -255,7 +255,7 @@ export function AttendanceEmployeeList({ allowedRole, showHousingSummary = false
       {}
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
-          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>
+          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl dark:text-white'>
             Listado de Asistencias
           </h1>
           <p className='text-sm text-gray-600 sm:text-base'>

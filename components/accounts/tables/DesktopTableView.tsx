@@ -39,7 +39,7 @@ export const DesktopTableView = React.memo(function DesktopTableView({
 }: CuentaTableViewsProps) {
   return (
     <div className='hidden lg:block'>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <Table className='min-w-full text-center'>
             <TableHeader>
