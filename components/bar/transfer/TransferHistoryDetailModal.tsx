@@ -13,9 +13,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 import type { TransferRecord } from '@/types/transfer';
+import { parseSavedOptions } from '@/components/bar/transfer/transferOptions';
+import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import {
   ArrowLeftRight,
   CalendarClock,
@@ -125,6 +126,14 @@ export function TransferHistoryDetailModal({
   record,
   onOpenChange
 }: TransferHistoryDetailModalProps) {
+  const opcionCorto = parseSavedOptions(record?.opciones_venta)?.find(
+    option => option.tipo === 'shot'
+  );
+  // Sin venta por cortos en el traspaso no se muestran ml por shot: no describen
+  // nada de lo que el barman va a servir.
+  const vendeCortos =
+    !!opcionCorto &&
+    (Number(opcionCorto.precio) > 0 || preciosCortoAnfitriona(opcionCorto).length > 0);
   return (
     <Dialog open={record !== null} onOpenChange={onOpenChange}>
       <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_1rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl p-0 [&>button]:top-2 [&>button]:right-2 [&>button]:flex [&>button]:h-10 [&>button]:w-10 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button:hover]:bg-accent'>
@@ -185,48 +194,43 @@ export function TransferHistoryDetailModal({
               </Section>
 
               <Section icon={ReceiptText} title='Venta configurada'>
-                <dl className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-                  <Field label='Precio de venta'>{formatCurrencyCLP(record.precio_venta)}</Field>
-                  <Field label='Comisión'>{formatCurrencyCLP(record.comision)}</Field>
-                </dl>
-                <div className='mt-4 border-t pt-4'>
-                  <p className='mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
-                    Tipos de venta
-                  </p>
-                  <div className='text-sm'>
-                    {isTierPricedItem({
-                      categoria_nombre: record.categoria_nombre,
-                      opciones_venta: record.opciones_venta,
-                      precio_venta: record.precio_venta
-                    }) ? (
-                      <BarAnfitrionas
-                        productoId={record.producto_id}
-                        categoriaNombre={record.categoria_nombre}
-                        precio={record.precio_venta}
-                      />
-                    ) : (
-                      <SalePrices
-                        options={record.opciones_venta}
-                        price={record.precio_venta}
-                        commission={record.comision}
-                        mlShot={record.ml_shot}
-                        mlShotAnfitriona={record.ml_shot_anfitriona}
-                      />
-                    )}
-                  </div>
+                <div className='text-sm'>
+                  {isTierPricedItem({
+                    categoria_nombre: record.categoria_nombre,
+                    opciones_venta: record.opciones_venta,
+                    precio_venta: record.precio_venta
+                  }) ? (
+                    <BarAnfitrionas
+                      productoId={record.producto_id}
+                      categoriaNombre={record.categoria_nombre}
+                      precio={record.precio_venta}
+                    />
+                  ) : (
+                    <SalePrices
+                      options={record.opciones_venta}
+                      price={record.precio_venta}
+                      commission={record.comision}
+                      mlShot={record.ml_shot}
+                      mlShotAnfitriona={record.ml_shot_anfitriona}
+                    />
+                  )}
                 </div>
               </Section>
 
               <Section icon={SlidersHorizontal} title='Parámetros de servicio'>
                 <dl className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-                  <Field label='ml por shot (cliente)'>
-                    {record.ml_shot != null ? `${record.ml_shot} ml` : 'Según configuración'}
-                  </Field>
-                  <Field label='ml por shot (anfitriona)'>
-                    {record.ml_shot_anfitriona != null
-                      ? `${record.ml_shot_anfitriona} ml`
-                      : 'Igual que cliente'}
-                  </Field>
+                  {vendeCortos && (
+                    <>
+                      <Field label='ml por shot (cliente)'>
+                        {record.ml_shot != null ? `${record.ml_shot} ml` : 'Según configuración'}
+                      </Field>
+                      <Field label='ml por shot (anfitriona)'>
+                        {record.ml_shot_anfitriona != null
+                          ? `${record.ml_shot_anfitriona} ml`
+                          : 'Igual que cliente'}
+                      </Field>
+                    </>
+                  )}
                   <Field label='Máx. anfitrionas'>{record.max_anfitrionas ?? '—'}</Field>
                   <Field label='ml por botella'>
                     {record.ml_botella != null ? `${record.ml_botella} ml` : 'Según configuración'}

@@ -143,7 +143,7 @@ export function ExistingPresentacionCard({
               aplicar la URL.
             </p>
           </div>
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
             <div className='space-y-1'>
               <Label
                 htmlFor='edit-pres-nombre'
@@ -329,7 +329,7 @@ export function ExistingPresentacionCard({
             <Label
               htmlFor={`pres-foto-${p.id}`}
               title='Cambiar foto'
-              className='p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
+              className='p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer shrink-0'
               onClick={e => e.stopPropagation()}
             >
               <Input
@@ -355,7 +355,7 @@ export function ExistingPresentacionCard({
               }}
               disabled={isLoading}
               title='Editar presentación'
-              className='p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 shrink-0'
+              className='p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 shrink-0'
             >
               <Pencil className='w-4 h-4' />
             </Button>
@@ -368,7 +368,7 @@ export function ExistingPresentacionCard({
               }}
               disabled={isLoading}
               title='Eliminar presentación'
-              className='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
+              className='p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
             >
               <Trash2 className='w-4 h-4' />
             </Button>
@@ -378,7 +378,7 @@ export function ExistingPresentacionCard({
                 variant='unstyled'
                 type='button'
                 title={isOpen ? 'Contraer' : 'Expandir'}
-                className='p-2 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shrink-0'
+                className='p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shrink-0'
               >
                 <ChevronDown
                   className={cn(

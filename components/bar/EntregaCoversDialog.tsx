@@ -91,6 +91,8 @@ type Props = {
   tope: number;
   onClose: () => void;
   onEntregado: () => void | Promise<void>;
+  /** El barman no entrega: pide autorización y la entrega la ejecuta el cajero. */
+  modo?: 'entrega' | 'solicitud';
 };
 
 const esRegistro = (valor: unknown): valor is JsonRecord =>
@@ -260,15 +262,7 @@ type UnidadEntrega = {
   acompanamientos: { presentacion_id: string; unidades: number }[] | null;
 };
 
-type ResultadoGrupo = {
-  entradas: number;
-  productos: number;
-  montoEntrada: number;
-  montoCobrarBarra: number;
-  presupuesto: number;
-};
-
-export function EntregaCoversDialog({ grupo, onClose, onEntregado }: Props) {
+export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entrega' }: Props) {
   const enviando = useRef(false);
   const [busqueda, setBusqueda] = useState('');
   const [seleccion, setSeleccion] = useState<Record<string, LineaSeleccion>>({});
@@ -308,22 +302,33 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado }: Props) {
       monto_adicional: number;
       unidades: UnidadEntrega[];
     }) => {
-      const respuesta = await fetch('/api/tickets/entregar-grupo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const solicitud = modo === 'solicitud';
+      const respuesta = await fetch(
+        solicitud ? '/api/tickets/cover-solicitudes' : '/api/tickets/entregar-grupo',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            solicitud
+              ? {
+                  grupo_registro_id: grupo?.id ?? null,
+                  cliente_nombre: grupo?.cliente ?? null,
+                  ...payload
+                }
+              : payload
+          )
+        }
+      );
       const json: unknown = await respuesta.json().catch(() => null);
       if (!respuesta.ok || !esRegistro(json) || json.success !== true || !esRegistro(json.data))
-        throw new Error(mensajeDe(json, 'No se pudo entregar el grupo'));
-      const data = json.data;
-      return {
-        entradas: numero(data.entradas),
-        productos: numero(data.productos),
-        montoEntrada: numero(data.montoEntrada),
-        montoCobrarBarra: numero(data.montoCobrarBarra),
-        presupuesto: numero(data.presupuesto)
-      } satisfies ResultadoGrupo;
+        throw new Error(
+          mensajeDe(
+            json,
+            solicitud ? 'No se pudo enviar la solicitud' : 'No se pudo entregar el grupo'
+          )
+        );
+      if (solicitud) return { productos: payload.unidades.length };
+      return { productos: numero((json.data as JsonRecord).productos) };
     },
     retry: false
   });
@@ -620,13 +625,22 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado }: Props) {
         monto_adicional: adicional,
         unidades
       });
-      toast.success(`${resultado.productos} productos entregados`, {
-        description: grupo.cliente || undefined
-      });
+      if (modo === 'solicitud') {
+        toast.success('Solicitud enviada al cajero', {
+          description: 'La entrega quedará pendiente de autorización.'
+        });
+      } else {
+        toast.success(`${resultado.productos} productos entregados`, {
+          description: grupo.cliente || undefined
+        });
+      }
     } catch (error) {
-      toast.error('No se pudo entregar el grupo', {
-        description: error instanceof Error ? error.message : 'Intenta de nuevo.'
-      });
+      toast.error(
+        modo === 'solicitud' ? 'No se pudo enviar la solicitud' : 'No se pudo entregar el grupo',
+        {
+          description: error instanceof Error ? error.message : 'Intenta de nuevo.'
+        }
+      );
       return;
     } finally {
       enviando.current = false;
@@ -635,7 +649,11 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado }: Props) {
     try {
       await onEntregado();
     } catch {
-      toast.error('El grupo se entregó. No se pudo actualizar el listado.');
+      toast.error(
+        modo === 'solicitud'
+          ? 'La solicitud se envió. No se pudo actualizar el listado.'
+          : 'El grupo se entregó. No se pudo actualizar el listado.'
+      );
     }
   };
 
@@ -648,7 +666,9 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado }: Props) {
     >
       <DialogContent className='max-h-[88vh] overflow-y-auto sm:max-w-3xl'>
         <DialogHeader>
-          <DialogTitle>Entregar covers</DialogTitle>
+          <DialogTitle>
+            {modo === 'solicitud' ? 'Solicitar entrega de covers' : 'Entregar covers'}
+          </DialogTitle>
           <DialogDescription>
             {grupo
               ? `${grupo.cliente || 'Sin nombre'} · ${grupo.cantidad} ${
@@ -1004,9 +1024,13 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado }: Props) {
             onClick={() => void entregar()}
           >
             {entregando ? <LoaderCircle className='mr-2 size-4 animate-spin' /> : null}
-            {totalSeleccionado > 0
-              ? `Entregar ${totalSeleccionado} en la barra`
-              : 'Entregar en la barra'}
+            {modo === 'solicitud'
+              ? totalSeleccionado > 0
+                ? `Solicitar ${totalSeleccionado} covers`
+                : 'Solicitar covers'
+              : totalSeleccionado > 0
+                ? `Entregar ${totalSeleccionado} en la barra`
+                : 'Entregar en la barra'}
           </Button>
         </DialogFooter>
       </DialogContent>

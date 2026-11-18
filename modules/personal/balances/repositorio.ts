@@ -15,6 +15,9 @@ type AnticipoBalances = {
   montoAsistencia: number;
   montoComision: number;
   montoPropina: number;
+  montoHorasExtras: number;
+  montoGratificaciones: number;
+  montoAnticipos: number;
   montoMaximo: number;
 };
 
@@ -86,6 +89,9 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
       montoAsistencia: Number(data.monto_sueldo),
       montoComision: Number(data.total_comisiones),
       montoPropina: Number(data.total_propinas),
+      montoHorasExtras: Number(data.total_horas_extras),
+      montoGratificaciones: Number(data.total_gratificaciones),
+      montoAnticipos: Number(data.total_anticipos),
       montoMaximo
     };
   } catch (error: unknown) {

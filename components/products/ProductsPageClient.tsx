@@ -59,12 +59,12 @@ export function ProductsPageClient() {
                   Selecciona una categoría para ver sus productos
                 </p>
               </div>
-              <div className='flex flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-end'>
+              <div className='flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center lg:justify-end'>
                 <PermissionGuard module='products' action='confirm_container_return'>
                   <Button
                     variant='outline'
                     onClick={() => router.push('/products/containers')}
-                    className='rounded-full flex items-center gap-2 whitespace-nowrap'
+                    className='flex w-full items-center justify-center gap-2 rounded-full whitespace-nowrap lg:w-auto'
                   >
                     <PackageCheck className='w-4 h-4' />
                     Envases devueltos
@@ -73,7 +73,7 @@ export function ProductsPageClient() {
                 <Button
                   asChild
                   variant='outline'
-                  className='rounded-full flex items-center gap-2 whitespace-nowrap'
+                  className='flex w-full items-center justify-center gap-2 rounded-full whitespace-nowrap lg:w-auto'
                 >
                   <Link href='/products/expired'>
                     <AlertTriangle className='w-4 h-4' />
@@ -83,7 +83,7 @@ export function ProductsPageClient() {
                 <Button
                   asChild
                   variant='outline'
-                  className='rounded-full flex items-center gap-2 whitespace-nowrap'
+                  className='flex w-full items-center justify-center gap-2 rounded-full whitespace-nowrap lg:w-auto'
                 >
                   <Link href='/purchases/replenishment'>
                     <ClipboardList className='w-4 h-4' />

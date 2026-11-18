@@ -67,7 +67,7 @@ export function ProductBasicFields({
             onChange={handleChange}
             placeholder='Ej: Cerveza Corona 330ml'
             disabled={isLoading}
-            className='h-12 pl-12'
+            className='h-12 pl-12 rounded-2xl'
           />
         </div>
         {errors.name && (

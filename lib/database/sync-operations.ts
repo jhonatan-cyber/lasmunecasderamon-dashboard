@@ -102,7 +102,14 @@ export class SyncOperationRepository {
 
       return { claimed: false, operation: existente };
     } catch (err) {
-      throw new DatabaseError('Error al reclamar la operación sincronizada', err);
+      // Si la tabla no existe o la BD no responde, no bloquear la operación:
+      // se ejecuta sin registro de idempotencia en lugar de fallar el request.
+      logger.warn('[sync_operations] No se pudo reclamar la operación', {
+        idCliente,
+        endpoint: input.endpoint,
+        error: err instanceof Error ? err.message : String(err)
+      });
+      return { claimed: true, operation: null };
     }
   }
 

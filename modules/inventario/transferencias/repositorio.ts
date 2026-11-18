@@ -20,6 +20,7 @@ import { sincronizarStockTotal } from '../unidades/repositorio';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
 import type { TransferRecord } from '@/types/transfer';
 import { TRANSFER_RESOLVE_PERMISSION } from '@/lib/constants/transferPermissions';
+import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 
 /**
  * ¿Puede resolver traspasos este usuario? Mismo par que exigen las rutas de
@@ -170,8 +171,17 @@ export async function traspasarAlBar(
   if (botella?.cover_habilitado && producto[0].system_key !== 'bebidas_analcoholicas') {
     throw new BusinessError('El cover solo puede habilitarse para bebidas analcohólicas');
   }
-  precioVenta = botella?.precio ?? opciones[0].precio ?? 0;
-  comision = botella?.comision ?? opciones[0].comision ?? 0;
+  // Sin venta con anfitriona la botella vale lo que costará al venderse así: el
+  // traspaso se registra a ese precio y sin comisión. Con ambos precios manda
+  // el de anfitriona, que es el que se cobra al vender la botella completa.
+  if (botella) {
+    const conAnfitriona = Number(botella.precio ?? 0);
+    precioVenta = conAnfitriona > 0 ? conAnfitriona : Number(botella.precio_sin_anfitriona ?? 0);
+    comision = conAnfitriona > 0 ? Number(botella.comision ?? 0) : 0;
+  } else {
+    precioVenta = Number(opciones[0].precio ?? 0);
+    comision = Number(opciones[0].comision ?? 0);
+  }
   if (
     !Number.isFinite(precioVenta) ||
     precioVenta < 0 ||
@@ -336,9 +346,50 @@ export async function listarTransferencias(pendientesOnly = false): Promise<Tran
       )
     : [];
   return rows.map(row => {
-    const mlShotCliente = Number(row.ml_shot) > 0 ? Number(row.ml_shot) : shotMl;
-    const mlShotAnfitriona =
-      Number(row.ml_shot_anfitriona) > 0 ? Number(row.ml_shot_anfitriona) : mlShotCliente;
+    const opcionesVenta =
+      completarOpciones(
+        row.opciones_venta,
+        [
+          { precio: Number(row.precio_venta ?? 0), comision: Number(row.comision ?? 0) },
+          { precio: Number(row.pres_precio ?? 0), comision: Number(row.pres_comision ?? 0) },
+          {
+            precio: Number(row.producto_precio ?? 0),
+            comision: Number(row.producto_comision ?? 0)
+          }
+        ],
+        topeSimple
+      ) ??
+      (row.precio_venta !== null && row.precio_venta !== undefined
+        ? [
+            resolverBotella(
+              { precio: 0, comision: 0 },
+              [
+                {
+                  precio: Number(row.precio_venta ?? 0),
+                  comision: Number(row.comision ?? 0)
+                }
+              ],
+              topeSimple
+            )
+          ]
+        : undefined);
+    // El volumen por corto solo describe algo si el traspaso se configuró con venta
+    // por cortos. Sin esa opción, el ml propio del producto (o el global) no aplica:
+    // quien lo muestre haría creer al barman que esa bebida se sirve por corto.
+    const opcionCorto = opcionesVenta?.find(opcion => opcion.tipo === 'shot');
+    const vendeCortos =
+      !!opcionCorto &&
+      (Number(opcionCorto.precio) > 0 || preciosCortoAnfitriona(opcionCorto).length > 0);
+    const mlShotCliente = !vendeCortos
+      ? null
+      : Number(row.ml_shot) > 0
+        ? Number(row.ml_shot)
+        : shotMl;
+    const mlShotAnfitriona = !vendeCortos
+      ? null
+      : Number(row.ml_shot_anfitriona) > 0
+        ? Number(row.ml_shot_anfitriona)
+        : mlShotCliente;
     return {
       ...row,
       tiers: tiers
@@ -350,33 +401,7 @@ export async function listarTransferencias(pendientesOnly = false): Promise<Tran
         })),
       ml_shot: mlShotCliente,
       ml_shot_anfitriona: mlShotAnfitriona,
-      opciones_venta:
-        completarOpciones(
-          row.opciones_venta,
-          [
-            { precio: Number(row.precio_venta ?? 0), comision: Number(row.comision ?? 0) },
-            { precio: Number(row.pres_precio ?? 0), comision: Number(row.pres_comision ?? 0) },
-            {
-              precio: Number(row.producto_precio ?? 0),
-              comision: Number(row.producto_comision ?? 0)
-            }
-          ],
-          topeSimple
-        ) ??
-        (row.precio_venta !== null && row.precio_venta !== undefined
-          ? [
-              resolverBotella(
-                { precio: 0, comision: 0 },
-                [
-                  {
-                    precio: Number(row.precio_venta ?? 0),
-                    comision: Number(row.comision ?? 0)
-                  }
-                ],
-                topeSimple
-              )
-            ]
-          : undefined)
+      opciones_venta: opcionesVenta
     };
   }) as TransferRecord[];
 }

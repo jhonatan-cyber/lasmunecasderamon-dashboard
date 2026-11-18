@@ -13,6 +13,8 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { EntregaCoversDialog } from '@/components/bar/EntregaCoversDialog';
+import { SolicitudesCoversPanel } from '@/components/bar/SolicitudesCoversPanel';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
@@ -107,9 +109,13 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
   const [recargando, setRecargando] = useState(false);
   const [grupoSeleccionado, setGrupoSeleccionado] = useState<GrupoPendiente | null>(null);
   const [comprasExpandidas, setComprasExpandidas] = useState<Set<string>>(() => new Set());
+  const [solicitudesPendientes, setSolicitudesPendientes] = useState<Set<string>>(() => new Set());
 
+  const { user } = useCurrentUser();
   const { hasPermission } = useUserPermissions();
+  const esBarman = (user?.role ?? '').toLowerCase() === 'barman';
   const puedeEntregar = hasPermission('entradas', 'deliver');
+  const puedeAutorizar = puedeEntregar && !esBarman;
   const topeCover = Number(useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000));
 
   const cargarCola = useCallback(async (silent = false) => {
@@ -133,24 +139,51 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
     }
   }, []);
 
+  // El barman no repite la solicitud de una compra que ya espera al cajero.
+  const cargarSolicitudes = useCallback(async () => {
+    if (!esBarman || !puedeEntregar) return;
+    try {
+      const respuesta = await fetch('/api/tickets/cover-solicitudes?estado=pendiente', {
+        cache: 'no-store'
+      });
+      const lista = listaDe(await respuesta.json().catch(() => null));
+      setSolicitudesPendientes(
+        new Set(
+          (lista ?? [])
+            .map(fila => (esRegistro(fila) ? texto(fila.grupo_registro_id) : ''))
+            .filter(id => id !== '')
+        )
+      );
+    } catch {
+      setSolicitudesPendientes(new Set());
+    }
+  }, [esBarman, puedeEntregar]);
+
   useEffect(() => {
     void cargarCola();
   }, [cargarCola]);
 
+  useEffect(() => {
+    void cargarSolicitudes();
+  }, [cargarSolicitudes]);
+
   // El garzón sigue registrando entradas en la puerta: la cola se actualiza
   // sola sin reemplazar la tabla por el mensaje de carga.
-  useRealtimeRefresh('tickets', () => cargarCola(true));
+  useRealtimeRefresh('tickets', () => {
+    void cargarCola(true);
+    void cargarSolicitudes();
+  });
 
   /** Recarga manual de la cola: el garzón sigue registrando entradas en la puerta. */
   const recargar = useCallback(async () => {
     if (recargando) return;
     setRecargando(true);
     try {
-      await cargarCola();
+      await Promise.all([cargarCola(), cargarSolicitudes()]);
     } finally {
       setRecargando(false);
     }
-  }, [recargando, cargarCola]);
+  }, [recargando, cargarCola, cargarSolicitudes]);
 
   // La cola trae una persona por fila; la barra atiende la compra completa.
   const grupos = useMemo<GrupoPendiente[]>(() => {
@@ -215,6 +248,7 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
 
   return (
     <div className='space-y-5'>
+      {puedeAutorizar ? <SolicitudesCoversPanel onProcesada={() => cargarCola(true)} /> : null}
       <section className='overflow-hidden rounded-2xl border bg-card shadow-xs'>
         <div className='flex flex-wrap items-center justify-between gap-2 border-b p-4'>
           <div className='flex items-start gap-3'>
@@ -331,17 +365,27 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
                         </TableCell>
                         <TableCell className='text-right'>
                           {puedeEntregar ? (
-                            <Button
-                              type='button'
-                              size='sm'
-                              className='rounded-full'
-                              onClick={() => abrirDialogo(grupo)}
-                              aria-label={`Entregar ${grupo.cantidad} ${
-                                grupo.cantidad === 1 ? 'cover' : 'covers'
-                              } de ${grupo.cliente || 'cliente sin nombre'}`}
-                            >
-                              Entregar
-                            </Button>
+                            esBarman && solicitudesPendientes.has(grupo.id) ? (
+                              <Badge variant='secondary'>Solicitud enviada</Badge>
+                            ) : (
+                              <Button
+                                type='button'
+                                size='sm'
+                                className='rounded-full'
+                                onClick={() => abrirDialogo(grupo)}
+                                aria-label={
+                                  esBarman
+                                    ? `Solicitar entrega de ${grupo.cantidad} ${
+                                        grupo.cantidad === 1 ? 'cover' : 'covers'
+                                      } de ${grupo.cliente || 'cliente sin nombre'}`
+                                    : `Entregar ${grupo.cantidad} ${
+                                        grupo.cantidad === 1 ? 'cover' : 'covers'
+                                      } de ${grupo.cliente || 'cliente sin nombre'}`
+                                }
+                              >
+                                {esBarman ? 'Solicitar' : 'Entregar'}
+                              </Button>
+                            )
                           ) : (
                             <span className='text-xs text-muted-foreground'>Sin permiso</span>
                           )}
@@ -408,8 +452,12 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
       <EntregaCoversDialog
         grupo={grupoSeleccionado}
         tope={topeCover}
+        modo={esBarman ? 'solicitud' : 'entrega'}
         onClose={cerrarDialogo}
-        onEntregado={() => cargarCola(true)}
+        onEntregado={() => {
+          void cargarCola(true);
+          void cargarSolicitudes();
+        }}
       />
     </div>
   );

@@ -437,7 +437,92 @@ export function ContainerReturnsPanel() {
           </div>
 
           <div className='bg-white dark:bg-slate-900/40 rounded-2xl shadow-md overflow-hidden'>
-            <div className='overflow-x-auto'>
+            <div className='space-y-3 p-3 sm:hidden'>
+              {visibles.length === 0 ? (
+                <EmptyState
+                  variant='text'
+                  title={
+                    loading
+                      ? 'Cargando...'
+                      : soloPendientes
+                        ? 'No hay envases pendientes de recepción.'
+                        : 'Sin envases entregados por el bar.'
+                  }
+                />
+              ) : (
+                visibles.map(d => (
+                  <article
+                    key={d.id}
+                    className='rounded-2xl border border-gray-200 p-4 dark:border-gray-800'
+                  >
+                    <div className='flex items-start justify-between gap-2'>
+                      <div className='min-w-0'>
+                        <p className='break-words font-semibold text-gray-900 dark:text-white'>
+                          {d.producto_nombre || '—'}
+                        </p>
+                        <p className='text-sm text-muted-foreground'>
+                          {d.presentacion_nombre || '—'}
+                        </p>
+                      </div>
+                      {d.pendiente_confirmacion ? (
+                        <Badge className='shrink-0 rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700'>
+                          Pendiente
+                        </Badge>
+                      ) : (
+                        <Badge className='shrink-0 rounded-full bg-green-100 px-2 py-1 text-xs text-green-700'>
+                          Recibido
+                        </Badge>
+                      )}
+                    </div>
+                    <dl className='mt-3 space-y-1 text-sm'>
+                      <div className='flex items-center justify-between gap-2'>
+                        <dt className='text-muted-foreground'>SKU</dt>
+                        <dd className='font-mono text-xs'>{d.codigo}</dd>
+                      </div>
+                      <div className='flex items-center justify-between gap-2'>
+                        <dt className='text-muted-foreground'>Entrega</dt>
+                        <dd className='text-right text-xs'>{fechaHora(d.fecha_devolucion)}</dd>
+                      </div>
+                      <div className='flex items-center justify-between gap-2'>
+                        <dt className='text-muted-foreground'>Entregado por</dt>
+                        <dd className='text-right text-xs'>
+                          {nombreDe(d.usuario_nombre, d.usuario_apellido, d.usuario_nick)}
+                        </dd>
+                      </div>
+                      {!d.pendiente_confirmacion && (
+                        <div className='flex items-center justify-between gap-2'>
+                          <dt className='text-muted-foreground'>Recepción</dt>
+                          <dd className='text-right text-xs'>
+                            {nombreDe(
+                              d.confirmado_nombre,
+                              d.confirmado_apellido,
+                              d.confirmado_nick
+                            )}
+                            {d.fecha_confirmacion ? ` · ${fechaHora(d.fecha_confirmacion)}` : ''}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                    {d.pendiente_confirmacion ? (
+                      <Button
+                        type='button'
+                        className='mt-3 w-full rounded-full'
+                        disabled={confirmandoId === d.id}
+                        onClick={() => void confirmarPendiente(d)}
+                      >
+                        <Check className='w-4 h-4' />
+                        {confirmandoId === d.id ? 'Aceptando…' : 'Aceptar devolución'}
+                      </Button>
+                    ) : (
+                      <p className='mt-3 text-center text-xs text-gray-500 dark:text-gray-400'>
+                        Completada
+                      </p>
+                    )}
+                  </article>
+                ))
+              )}
+            </div>
+            <div className='hidden overflow-x-auto sm:block'>
               <Table className='min-w-full text-center'>
                 <TableHeader>
                   <TableRow className='hover:bg-transparent'>

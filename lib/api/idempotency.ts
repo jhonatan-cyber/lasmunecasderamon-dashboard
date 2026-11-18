@@ -93,11 +93,26 @@ export async function runIdempotent(
   const key = readIdempotencyKey(request);
   if (!key) return handler();
 
-  const { claimed, operation } = await SyncOperationRepository.claim(key, {
-    endpoint: config.endpoint,
-    usuarioId: config.usuarioId ?? null,
-    deviceDate: config.deviceDate
-  });
+  let claimed = true;
+  let operation: SyncOperation | null = null;
+
+  try {
+    const result = await SyncOperationRepository.claim(key, {
+      endpoint: config.endpoint,
+      usuarioId: config.usuarioId ?? null,
+      deviceDate: config.deviceDate
+    });
+    claimed = result.claimed;
+    operation = result.operation;
+  } catch {
+    // Si no se puede consultar la BD, se ejecuta sin idempotencia.
+    logger.warn('[idempotency] No se pudo reclamar la clave, se ejecuta sin registro', {
+      key,
+      endpoint: config.endpoint
+    });
+    claimed = true;
+    operation = null;
+  }
 
   if (!claimed && operation) {
     if (
@@ -128,12 +143,20 @@ export async function runIdempotent(
     // Un 5xx no es determinista (puede haber aplicado a medias): no se marca
     // como "resuelta" para que no se replique como si fuera definitiva.
     const estado = response.ok ? 'aplicada' : response.status >= 500 ? 'fallida' : 'rechazada';
-    await SyncOperationRepository.resolve(key, estado, { status: response.status, body });
+    try {
+      await SyncOperationRepository.resolve(key, estado, { status: response.status, body });
+    } catch {
+      // No bloquear la respuesta exitosa por no poder auditar.
+    }
 
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error desconocido';
-    await SyncOperationRepository.fail(key, message);
+    try {
+      await SyncOperationRepository.fail(key, message);
+    } catch {
+      // No enmascarar el error original por no poder auditar.
+    }
     throw error;
   }
 }
