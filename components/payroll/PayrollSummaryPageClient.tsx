@@ -12,9 +12,11 @@ export function PayrollSummaryPageClient() {
   const { data, totals, isLoading, error } = usePayrollSummary(month, year);
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
       <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-        <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>Detalle Planillas</h1>
+        <h1 className='text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl'>
+          Detalle Planillas
+        </h1>
       </div>
 
       {error ? (

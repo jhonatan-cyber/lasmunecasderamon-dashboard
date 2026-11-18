@@ -24,8 +24,8 @@ export function AdvancesMobileCard({
   statusBadge
 }: AdvancesMobileCardProps) {
   return (
-    <Card className='rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md bg-white dark:bg-slate-900/40 overflow-hidden group hover:shadow-lg hover:-translate-y-0.5 transition-transform duration-200'>
-      <CardContent className='p-5 space-y-4'>
+    <Card className='rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-slate-900/40 overflow-hidden group hover:shadow-lg hover:-translate-y-0.5 transition-transform duration-200'>
+      <CardContent className='p-4 sm:p-6 space-y-4'>
         <div className='flex justify-between items-start'>
           <div className='flex items-center gap-3'>
             <div className='h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold overflow-hidden border-2 border-white dark:border-slate-800 shadow-xs relative'>

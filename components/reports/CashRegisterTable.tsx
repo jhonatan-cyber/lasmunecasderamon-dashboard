@@ -85,7 +85,7 @@ interface CashRegisterTableProps {
 
 export function CashRegisterTable({ cajas, cajasBarData }: CashRegisterTableProps) {
   return (
-    <Card className='border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md mb-8'>
+    <Card className='border border-neutral-200 shadow-sm dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md mb-8'>
       <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
         <CardTitle className='text-lg font-black flex items-center gap-2'>
           <div className='p-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/30'>

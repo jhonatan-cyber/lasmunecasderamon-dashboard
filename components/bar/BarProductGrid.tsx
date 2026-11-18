@@ -60,7 +60,7 @@ function BarReorderCard({
       className={cn(
         'w-full min-w-0',
         isDragging && 'relative z-20 opacity-70',
-        isOver && !isDragging && 'rounded-3xl ring-2 ring-primary/50'
+        isOver && !isDragging && 'rounded-2xl ring-2 ring-primary/50'
       )}
     >
       <BarCard item={item} entranceIndex={entranceIndex} dragHandle={dragHandle} />

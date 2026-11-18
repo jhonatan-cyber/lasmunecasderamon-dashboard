@@ -140,7 +140,7 @@ export default function PruebaBiometricaPage() {
   const reconocido = resultado?.mejor ? resultado.mejor.similitud >= resultado.umbral : false;
 
   return (
-    <main className='mx-auto w-full max-w-3xl px-4 py-6'>
+    <main className='mx-auto w-full max-w-3xl p-4 sm:p-6 lg:p-8'>
       <div className='mb-6 flex items-center gap-3'>
         <Link
           href='/users'

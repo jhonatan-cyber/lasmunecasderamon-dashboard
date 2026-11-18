@@ -16,7 +16,7 @@ export const ServicioConfirmModal = memo(function ServicioConfirmModal({
 }) {
   return (
     <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
-      <div className='bg-white rounded-3xl p-6 sm:p-8 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200'>
+      <div className='bg-white rounded-2xl p-6 sm:p-8 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200'>
         <h3 className='text-lg sm:text-xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight'>
           Confirmar creación de servicio
         </h3>

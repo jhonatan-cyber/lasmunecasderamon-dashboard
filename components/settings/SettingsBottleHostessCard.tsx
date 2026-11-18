@@ -607,7 +607,7 @@ export function SettingsBottleHostessCard() {
                   />
                 )}
 
-              <div className='flex flex-col-reverse gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-800'>
+              <div className='flex flex-col-reverse items-center gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-center dark:border-neutral-800'>
                 {vigente !== null && !esVentaSimple && (
                   <Button
                     variant='unstyled'
@@ -620,7 +620,7 @@ export function SettingsBottleHostessCard() {
                     Volver al default
                   </Button>
                 )}
-                <div className='flex justify-center sm:justify-end sm:flex-1'>
+                <div className='flex w-full justify-center sm:w-auto'>
                   <Button
                     variant='unstyled'
                     type='button'

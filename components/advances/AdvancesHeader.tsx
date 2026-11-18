@@ -12,7 +12,7 @@ interface AdvancesHeaderProps {
 
 export function AdvancesHeader({ canCreate, onOpenDialog }: AdvancesHeaderProps) {
   return (
-    <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 pt-4 sm:pt-8 px-4 sm:px-8'>
+    <div className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
       <div>
         <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-foreground'>Anticipos</h1>
         <p className='text-sm sm:text-base text-muted-foreground mt-2'>

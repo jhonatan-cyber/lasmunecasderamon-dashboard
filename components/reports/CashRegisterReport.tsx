@@ -166,7 +166,7 @@ export function CashRegisterReport() {
       {/* Charts Row: Payment Distribution + Cash Flow */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         {/* Payment Distribution */}
-        <Card className='border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
+        <Card className='border border-neutral-200 shadow-sm dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
           <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
             <CardTitle className='text-lg font-black flex items-center gap-2'>
               <div className='p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30'>
@@ -267,7 +267,7 @@ export function CashRegisterReport() {
         </Card>
 
         {/* Cash Flow */}
-        <Card className='border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
+        <Card className='border border-neutral-200 shadow-sm dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
           <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
             <CardTitle className='text-lg font-black flex items-center gap-2'>
               <div className='p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30'>
@@ -390,7 +390,7 @@ export function CashRegisterReport() {
       </div>
 
       {/* Detailed Movements */}
-      <Card className='border-0 shadow-2xl shadow-gray-200/50 dark:shadow-black/40 rounded-3xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
+      <Card className='border border-neutral-200 shadow-sm dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-800/50 backdrop-blur-md'>
         <CardHeader className='border-b border-gray-50 dark:border-gray-700/50 pb-4'>
           <CardTitle className='text-lg font-black flex items-center gap-2'>
             <div className='p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30'>

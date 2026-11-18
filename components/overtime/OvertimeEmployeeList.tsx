@@ -124,7 +124,7 @@ export function OvertimeEmployeeList({ allowedRole }: Props) {
   if (user?.role?.toLowerCase() !== allowedRole) {
     return (
       <div className='flex min-h-[60vh] flex-col items-center justify-center gap-4 p-4 sm:p-6'>
-        <div className='h-16 w-16 bg-red-100 rounded-3xl flex items-center justify-center'>
+        <div className='h-16 w-16 bg-red-100 rounded-2xl flex items-center justify-center'>
           <ArrowLeft className='h-8 w-8 text-red-600' />
         </div>
         <h1 className='text-2xl font-black text-gray-900 uppercase tracking-tight'>

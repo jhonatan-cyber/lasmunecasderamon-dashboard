@@ -59,7 +59,7 @@ export default function QuinchosPage() {
 
   return (
     <PermissionGuard module='quinchos' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <header>
           <h1 className='flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-neutral-100 sm:text-2xl lg:text-3xl'>
             <Flame className='h-6 w-6 text-orange-500' />

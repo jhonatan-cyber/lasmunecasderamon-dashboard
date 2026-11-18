@@ -146,18 +146,18 @@ export function SettingsTestPresenceTab() {
         <ErrorState size='sm' message={error} onRetry={cargar} />
       ) : (
         <>
-          <div className='flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4'>
+          <div className='flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between'>
             <p className='text-sm text-muted-foreground'>
               <span className='font-bold text-foreground'>{enLocal}</span> de {personal.length} en
               el local
             </p>
-            <div className='flex flex-wrap items-center gap-2'>
+            <div className='grid w-full grid-cols-1 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:items-center'>
               <Button
                 variant='outline'
                 size='sm'
                 onClick={cargar}
                 disabled={bulk}
-                className='rounded-full gap-2'
+                className='w-full justify-center rounded-full gap-2 sm:w-auto'
               >
                 <RefreshCw className='h-4 w-4' />
                 Actualizar
@@ -167,7 +167,7 @@ export function SettingsTestPresenceTab() {
                 size='sm'
                 onClick={() => cambiarTodos(false)}
                 disabled={bulk || enLocal === 0}
-                className='rounded-full gap-2'
+                className='w-full justify-center rounded-full gap-2 sm:w-auto'
               >
                 {bulk ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
@@ -180,7 +180,7 @@ export function SettingsTestPresenceTab() {
                 size='sm'
                 onClick={() => cambiarTodos(true)}
                 disabled={bulk || enLocal === personal.length}
-                className='rounded-full gap-2'
+                className='w-full justify-center rounded-full gap-2 sm:w-auto'
               >
                 {bulk ? (
                   <Loader2 className='h-4 w-4 animate-spin' />
@@ -203,7 +203,7 @@ export function SettingsTestPresenceTab() {
                 return (
                   <li
                     key={persona.id_usuario}
-                    className='flex items-center justify-between gap-4 py-3'
+                    className='flex flex-col items-start gap-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4'
                   >
                     <div className='flex min-w-0 items-center gap-3'>
                       <Avatar className='h-9 w-9'>
@@ -229,7 +229,7 @@ export function SettingsTestPresenceTab() {
                         </p>
                       </div>
                     </div>
-                    <div className='flex shrink-0 items-center gap-3'>
+                    <div className='flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start'>
                       <Badge variant={persona.en_local ? 'success' : 'secondary'}>
                         {persona.en_local ? 'En el local' : 'Fuera'}
                       </Badge>

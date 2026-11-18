@@ -129,7 +129,7 @@ export default function AnfitrionaServiciosPage() {
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
           <p className='text-sm text-gray-500'>LAS MUÑECAS DE RAMÓN</p>
-          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>
+          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl dark:text-white'>
             Listado de Servicios {user?.name} {user?.lastName}
           </h1>
         </div>

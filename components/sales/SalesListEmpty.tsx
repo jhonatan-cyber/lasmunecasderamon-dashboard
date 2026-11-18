@@ -34,7 +34,7 @@ export function SaleCardSkeleton() {
 export function SalesListEmptyState({ hasFilters }: { hasFilters: boolean }) {
   return (
     <div className='col-span-full flex flex-col items-center justify-center py-24 px-6'>
-      <div className='w-24 h-24 rounded-4xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mb-5'>
+      <div className='w-24 h-24 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mb-5'>
         <ShoppingCart className='w-10 h-10 text-gray-300 dark:text-slate-600' />
       </div>
       <h3 aria-live='polite' className='text-xl font-black text-gray-800 dark:text-slate-100 mb-2'>

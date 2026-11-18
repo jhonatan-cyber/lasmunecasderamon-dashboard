@@ -96,13 +96,13 @@ export default function AttendancePage() {
   return (
     <PermissionGuard module='attendance' action='view'>
       <BoneyardSkeleton name='attendance-main' loading={loading || statsLoading || usersLoading}>
-        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
           <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
             <div>
-              <h1 className='text-3xl font-bold tracking-tight text-slate-900 dark:text-white'>
+              <h1 className='text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl dark:text-white'>
                 Asistencias
               </h1>
-              <p className='text-gray-600 dark:text-neutral-300 mt-1'>
+              <p className='mt-1 text-sm text-gray-600 sm:text-base dark:text-neutral-300'>
                 Administra la asistencia del personal
               </p>
             </div>
@@ -136,23 +136,23 @@ export default function AttendancePage() {
           />
 
           <Tabs defaultValue='history' className='w-full'>
-            <TabsList className='grid w-full grid-cols-2 mb-6 p-1 rounded-full max-w-md mx-auto border border-gray-200 dark:border-slate-700 shadow-xs'>
+            <TabsList className='mx-auto mb-6 grid w-full max-w-md grid-cols-2 rounded-full bg-transparent p-1'>
               <TabsTrigger
                 value='history'
-                className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
+                className='min-w-0 rounded-full px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider transition-all data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black sm:min-w-[220px] sm:px-6'
               >
                 Historial de Asistencias
               </TabsTrigger>
               <TabsTrigger
                 value='personnel'
-                className='rounded-full data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black transition-all font-bold text-xs uppercase tracking-wider'
+                className='min-w-0 rounded-full px-2 py-2.5 text-center text-xs font-bold uppercase tracking-wider transition-all data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black sm:min-w-[220px] sm:px-6'
               >
                 Personal
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value='history'>
-              <div className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
+              <div className='rounded-2xl border border-neutral-200 bg-white shadow-sm backdrop-blur-xs dark:border-neutral-800 dark:bg-slate-900/40'>
                 <div className='overflow-x-auto'>
                   <AttendanceTable data={paginatedData} />
                 </div>

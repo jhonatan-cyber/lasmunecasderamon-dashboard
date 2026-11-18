@@ -52,10 +52,12 @@ const resources = [
 
 export default function Help() {
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
       <div>
-        <h1 className='text-2xl font-bold'>Centro de Ayuda</h1>
-        <p className='text-muted-foreground'>Accesos a los módulos y respuestas sobre su uso</p>
+        <h1 className='text-xl font-bold sm:text-2xl lg:text-3xl'>Centro de Ayuda</h1>
+        <p className='text-sm text-muted-foreground sm:text-base'>
+          Accesos a los módulos y respuestas sobre su uso
+        </p>
       </div>
       <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
         {resources.map(resource => (
@@ -64,8 +66,8 @@ export default function Help() {
             href={resource.href}
             className='rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2'
           >
-            <Card className='h-full transition-shadow hover:shadow-md'>
-              <CardContent className='p-6'>
+            <Card className='h-full transition-shadow hover:shadow-sm'>
+              <CardContent className='p-4 sm:p-6'>
                 <h2 className='font-semibold'>{resource.title}</h2>
                 <p className='mt-2 text-sm text-muted-foreground'>{resource.description}</p>
               </CardContent>
@@ -75,7 +77,7 @@ export default function Help() {
       </div>
       <HelpAccordion faqData={faqData} />
       <Card>
-        <CardContent className='p-6'>
+        <CardContent className='p-4 sm:p-6'>
           <h2 className='font-semibold'>Soporte del sistema</h2>
           <p className='mt-2 text-sm text-muted-foreground'>
             Para asistencia, contacta al administrador de tu establecimiento e indica el módulo, la

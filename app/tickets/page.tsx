@@ -55,16 +55,8 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { fechaDeNegocio } from '@/lib/business/timezoneService';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
-import {
-  CreditCard,
-  Clock
-} from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CreditCard, Clock } from 'lucide-react';
 
 type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
 /** Anulada a mano se devuelve; anulada por el cierre del turno se cobra en caja. */
@@ -447,8 +439,10 @@ export default function EntradasPage() {
           <Ticket className='h-6 w-6' />
         </div>
         <div>
-          <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>Entradas</h1>
-          <p className='text-sm text-muted-foreground'>Registro de ingresos de clientes.</p>
+          <h1 className='text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl'>Entradas</h1>
+          <p className='text-sm text-muted-foreground sm:text-base'>
+            Registro de ingresos de clientes.
+          </p>
         </div>
       </header>
 
@@ -492,127 +486,124 @@ export default function EntradasPage() {
             />
           </Button>
           {formExpanded && (
-            <form
-              onSubmit={registrar}
-              className='px-4 pb-4 pt-0 space-y-4 sm:px-5 sm:pb-5'
-            >
+            <form onSubmit={registrar} className='px-4 pb-4 pt-0 space-y-4 sm:px-5 sm:pb-5'>
               <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-5'>
-            <div className='space-y-2'>
-              <Label htmlFor='entrada-cliente'>Cliente (opcional)</Label>
-              <Input
-                id='entrada-cliente'
-                type='text'
-                value={clienteNombre}
-                onChange={event => setClienteNombre(event.target.value)}
-                placeholder='Sin nombre'
-                autoComplete='off'
-                maxLength={120}
-              />
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='entrada-cantidad'>Cantidad de entradas</Label>
-              <div className='flex items-center gap-1'>
+                <div className='space-y-2'>
+                  <Label htmlFor='entrada-cliente'>Cliente (opcional)</Label>
+                  <Input
+                    id='entrada-cliente'
+                    type='text'
+                    value={clienteNombre}
+                    onChange={event => setClienteNombre(event.target.value)}
+                    placeholder='Sin nombre'
+                    autoComplete='off'
+                    maxLength={120}
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='entrada-cantidad'>Cantidad de entradas</Label>
+                  <div className='flex items-center gap-1'>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='icon'
+                      aria-label='Disminuir cantidad de entradas'
+                      onClick={() => setCantidadEntradas(prev => Math.max(1, prev - 1))}
+                      disabled={cantidadEntradas <= 1}
+                      className='rounded-full'
+                    >
+                      <Minus className='h-4 w-4' />
+                    </Button>
+                    <Input
+                      id='entrada-cantidad'
+                      type='number'
+                      inputMode='numeric'
+                      min={1}
+                      max={100}
+                      value={cantidadEntradas}
+                      onChange={event => {
+                        const siguiente = event.target.valueAsNumber;
+                        if (!Number.isFinite(siguiente)) return;
+                        setCantidadEntradas(Math.min(100, Math.max(1, Math.trunc(siguiente))));
+                      }}
+                      className='text-center'
+                    />
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='icon'
+                      aria-label='Aumentar cantidad de entradas'
+                      onClick={() => setCantidadEntradas(prev => Math.min(100, prev + 1))}
+                      disabled={cantidadEntradas >= 100}
+                      className='rounded-full'
+                    >
+                      <Plus className='h-4 w-4' />
+                    </Button>
+                  </div>
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='entrada-metodo-pago'>Método de pago</Label>
+                  <Select
+                    value={metodoPago}
+                    onValueChange={(value: string) => setMetodoPago(value as typeof metodoPago)}
+                  >
+                    <SelectTrigger id='entrada-metodo-pago' className='w-full'>
+                      <SelectValue placeholder='Selecciona un método de pago' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='efectivo'>Efectivo</SelectItem>
+                      <SelectItem value='tarjeta'>Tarjeta</SelectItem>
+                      <SelectItem value='transferencia'>Transferencia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='entrada-total'>Total a cobrar</Label>
+                  <Input
+                    id='entrada-total'
+                    type='text'
+                    value={formatCurrencyCLP(totalPuerta)}
+                    readOnly
+                    aria-readonly='true'
+                  />
+                  {cantidadEntradas > 1 && (
+                    <p className='text-xs text-muted-foreground'>
+                      {cantidadEntradas} × {formatCurrencyCLP(costoEntradaPredeterminado)}
+                    </p>
+                  )}
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='entrada-fecha-hora'>Fecha y hora</Label>
+                  <Input
+                    id='entrada-fecha-hora'
+                    type='text'
+                    value={formatoFechaHora(fechaHoraEntrada)}
+                    readOnly
+                    aria-readonly='true'
+                  />
+                </div>
+              </div>
+              {metodoPago === 'transferencia' && (
+                <div className='rounded-xl border border-dashed border-amber-400/70 bg-amber-50/70 p-3 dark:border-amber-500/30 dark:bg-amber-500/10'>
+                  <BaucherFileInput
+                    id='entrada-baucher'
+                    label='Foto del baucher (obligatoria)'
+                    hint='Es la constancia del pago: sin la foto no se registra la entrada.'
+                    value={baucherFoto}
+                    onChange={setBaucherFoto}
+                  />
+                </div>
+              )}
+              <div className='flex justify-center pt-1'>
                 <Button
-                  type='button'
-                  variant='outline'
-                  size='icon'
-                  aria-label='Disminuir cantidad de entradas'
-                  onClick={() => setCantidadEntradas(prev => Math.max(1, prev - 1))}
-                  disabled={cantidadEntradas <= 1}
-                  className='rounded-full'
+                  type='submit'
+                  disabled={saving || !hasOpenCaja}
+                  className='w-full rounded-full sm:w-auto'
                 >
-                  <Minus className='h-4 w-4' />
-                </Button>
-                <Input
-                  id='entrada-cantidad'
-                  type='number'
-                  inputMode='numeric'
-                  min={1}
-                  max={100}
-                  value={cantidadEntradas}
-                  onChange={event => {
-                    const siguiente = event.target.valueAsNumber;
-                    if (!Number.isFinite(siguiente)) return;
-                    setCantidadEntradas(Math.min(100, Math.max(1, Math.trunc(siguiente))));
-                  }}
-                  className='text-center'
-                />
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='icon'
-                  aria-label='Aumentar cantidad de entradas'
-                  onClick={() => setCantidadEntradas(prev => Math.min(100, prev + 1))}
-                  disabled={cantidadEntradas >= 100}
-                  className='rounded-full'
-                >
-                  <Plus className='h-4 w-4' />
+                  <UserRoundPlus className='mr-2 h-4 w-4' />
+                  {saving ? 'Registrando…' : 'Registrar entrada'}
                 </Button>
               </div>
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='entrada-metodo-pago'>Método de pago</Label>
-              <Select
-                value={metodoPago}
-                onValueChange={(value: string) => setMetodoPago(value as typeof metodoPago)}
-              >
-                <SelectTrigger id='entrada-metodo-pago' className='w-full'>
-                  <SelectValue placeholder='Selecciona un método de pago' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='efectivo'>Efectivo</SelectItem>
-                  <SelectItem value='tarjeta'>Tarjeta</SelectItem>
-                  <SelectItem value='transferencia'>Transferencia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='entrada-total'>Total a cobrar</Label>
-              <Input
-                id='entrada-total'
-                type='text'
-                value={formatCurrencyCLP(totalPuerta)}
-                readOnly
-                aria-readonly='true'
-              />
-              {cantidadEntradas > 1 && (
-                <p className='text-xs text-muted-foreground'>
-                  {cantidadEntradas} × {formatCurrencyCLP(costoEntradaPredeterminado)}
-                </p>
-              )}
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='entrada-fecha-hora'>Fecha y hora</Label>
-              <Input
-                id='entrada-fecha-hora'
-                type='text'
-                value={formatoFechaHora(fechaHoraEntrada)}
-                readOnly
-                aria-readonly='true'
-              />
-            </div>
-          </div>
-          {metodoPago === 'transferencia' && (
-            <div className='rounded-xl border border-dashed border-amber-400/70 bg-amber-50/70 p-3 dark:border-amber-500/30 dark:bg-amber-500/10'>
-              <BaucherFileInput
-                id='entrada-baucher'
-                label='Foto del baucher (obligatoria)'
-                hint='Es la constancia del pago: sin la foto no se registra la entrada.'
-                value={baucherFoto}
-                onChange={setBaucherFoto}
-              />
-            </div>
-          )}
-          <div className='flex justify-center pt-1'>
-            <Button
-              type='submit'
-              disabled={saving || !hasOpenCaja}
-              className='w-full rounded-full sm:w-auto'
-            >
-              <UserRoundPlus className='mr-2 h-4 w-4' />
-              {saving ? 'Registrando…' : 'Registrar entrada'}
-            </Button>
-          </div>
             </form>
           )}
         </div>
@@ -758,145 +749,148 @@ export default function EntradasPage() {
             {/* Desktop table view */}
             <div className='hidden lg:block'>
               <Table className='w-full min-w-[820px] text-sm'>
-            <TableHeader className='bg-muted/50 text-muted-foreground'>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Entradas</TableHead>
-                <TableHead>Monto entrada</TableHead>
-                <TableHead>Método de pago</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Registró</TableHead>
-                <TableHead>Hora</TableHead>
-                <TableHead className='text-right'>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {gruposEntradas.map(grupo => {
-                const primero = grupo.registros[0];
-                return (
-                  <TableRow key={grupo.id} className='align-top'>
-                    <TableCell className='font-medium'>
-                      {primero.cliente_nombre || 'Sin nombre'}
-                    </TableCell>
-                    <TableCell className='tabular-nums'>{grupo.registros.length}</TableCell>
-                    <TableCell className='tabular-nums'>
-                      {formatCurrencyCLP(grupo.monto_entrada)}
-                    </TableCell>
-                    <TableCell className='capitalize'>{primero.metodo_pago}</TableCell>
-                    <TableCell>
-                      <div className='space-y-1'>
-                        <Badge variant={varianteGrupo(grupo)} className='px-2 py-0 text-[11px]'>{estadoGrupo(grupo)}</Badge>
-                        {grupo.entregadas.map(entrega => (
-                          <p key={entrega.id} className='text-xs text-muted-foreground'>
-                            {formatoEntrega(entrega.cover_entregada_at)}
-                            {entrega.cover_entregada_por_nombre
-                              ? ` · ${entrega.cover_entregada_por_nombre}`
-                              : ''}
-                          </p>
-                        ))}
-                        {grupo.venta_id && (
-                          <p className='text-xs text-muted-foreground'>
-                            Adicional {formatCurrencyCLP(grupo.monto_bebida_adicional)}
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{primero.registrado_por_nombre}</TableCell>
-                    <TableCell className='tabular-nums'>{primero.hora}</TableCell>
-                    <TableCell className='text-right'>
-                      <TooltipProvider delayDuration={300}>
-                        <div className='flex flex-wrap items-center justify-end gap-2'>
-                          {canDeliver && grupo.pendientes.length > 0 && (
-                            <Tooltip key='entregar'>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type='button'
-                                  variant='ghost'
-                                  size='icon'
-                                  disabled={anulandoGrupoId === grupo.id}
-                                  aria-label={
-                                    grupo.pendientes.length > 1
-                                      ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
-                                      : 'Entregar la entrada pendiente'
-                                  }
-                                  onClick={() => abrirEntregaMultiple(grupo)}
-                                  className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
-                                >
-                                  <Wine className='h-4 w-4' />
-                                  {grupo.pendientes.length > 1 && (
-                                    <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground'>
-                                      {grupo.pendientes.length}
-                                    </span>
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side='left'>
-                                {grupo.pendientes.length > 1
-                                  ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
-                                  : 'Entregar la entrada pendiente'}
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          {canDeliver && grupo.pendientes.length > 0 && (
-                            <Tooltip key='anular'>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type='button'
-                                  variant='ghost'
-                                  size='icon'
-                                  disabled={anulandoGrupoId === grupo.id}
-                                  aria-label={
-                                    grupo.pendientes.length > 1
-                                      ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
-                                      : 'Anular y devolver la entrada pendiente'
-                                  }
-                                  onClick={() => anularPendientes(grupo)}
-                                  className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-destructive/10 hover:text-destructive hover:shadow-md active:scale-95'
-                                >
-                                  {anulandoGrupoId === grupo.id ? (
-                                    <LoaderCircle className='h-4 w-4 animate-spin' />
-                                  ) : (
-                                    <Ban className='h-4 w-4' />
-                                  )}
-                                  {grupo.pendientes.length > 1 && anulandoGrupoId !== grupo.id && (
-                                    <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-white'>
-                                      {grupo.pendientes.length}
-                                    </span>
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side='left'>
-                                {grupo.pendientes.length > 1
-                                  ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
-                                  : 'Anular y devolver la entrada pendiente'}
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type='button'
-                                variant='ghost'
-                                size='icon'
-                                aria-label={`Ver detalle de ${grupo.registros.length} entrada(s)`}
-                                onClick={() => setGrupoDetalleId(grupo.id)}
-                                className='rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
-                              >
-                                <Eye className='h-4 w-4' />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side='left'>
-                              Ver detalle de {grupo.registros.length} entrada(s)
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </TooltipProvider>
-                    </TableCell>
+                <TableHeader className='bg-muted/50 text-muted-foreground'>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Entradas</TableHead>
+                    <TableHead>Monto entrada</TableHead>
+                    <TableHead>Método de pago</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Registró</TableHead>
+                    <TableHead>Hora</TableHead>
+                    <TableHead className='text-right'>Acciones</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {gruposEntradas.map(grupo => {
+                    const primero = grupo.registros[0];
+                    return (
+                      <TableRow key={grupo.id} className='align-top'>
+                        <TableCell className='font-medium'>
+                          {primero.cliente_nombre || 'Sin nombre'}
+                        </TableCell>
+                        <TableCell className='tabular-nums'>{grupo.registros.length}</TableCell>
+                        <TableCell className='tabular-nums'>
+                          {formatCurrencyCLP(grupo.monto_entrada)}
+                        </TableCell>
+                        <TableCell className='capitalize'>{primero.metodo_pago}</TableCell>
+                        <TableCell>
+                          <div className='space-y-1'>
+                            <Badge variant={varianteGrupo(grupo)} className='px-2 py-0 text-[11px]'>
+                              {estadoGrupo(grupo)}
+                            </Badge>
+                            {grupo.entregadas.map(entrega => (
+                              <p key={entrega.id} className='text-xs text-muted-foreground'>
+                                {formatoEntrega(entrega.cover_entregada_at)}
+                                {entrega.cover_entregada_por_nombre
+                                  ? ` · ${entrega.cover_entregada_por_nombre}`
+                                  : ''}
+                              </p>
+                            ))}
+                            {grupo.venta_id && (
+                              <p className='text-xs text-muted-foreground'>
+                                Adicional {formatCurrencyCLP(grupo.monto_bebida_adicional)}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{primero.registrado_por_nombre}</TableCell>
+                        <TableCell className='tabular-nums'>{primero.hora}</TableCell>
+                        <TableCell className='text-right'>
+                          <TooltipProvider delayDuration={300}>
+                            <div className='flex flex-wrap items-center justify-end gap-2'>
+                              {canDeliver && grupo.pendientes.length > 0 && (
+                                <Tooltip key='entregar'>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type='button'
+                                      variant='ghost'
+                                      size='icon'
+                                      disabled={anulandoGrupoId === grupo.id}
+                                      aria-label={
+                                        grupo.pendientes.length > 1
+                                          ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
+                                          : 'Entregar la entrada pendiente'
+                                      }
+                                      onClick={() => abrirEntregaMultiple(grupo)}
+                                      className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
+                                    >
+                                      <Wine className='h-4 w-4' />
+                                      {grupo.pendientes.length > 1 && (
+                                        <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground'>
+                                          {grupo.pendientes.length}
+                                        </span>
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side='left'>
+                                    {grupo.pendientes.length > 1
+                                      ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
+                                      : 'Entregar la entrada pendiente'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {canDeliver && grupo.pendientes.length > 0 && (
+                                <Tooltip key='anular'>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      type='button'
+                                      variant='ghost'
+                                      size='icon'
+                                      disabled={anulandoGrupoId === grupo.id}
+                                      aria-label={
+                                        grupo.pendientes.length > 1
+                                          ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
+                                          : 'Anular y devolver la entrada pendiente'
+                                      }
+                                      onClick={() => anularPendientes(grupo)}
+                                      className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-destructive/10 hover:text-destructive hover:shadow-md active:scale-95'
+                                    >
+                                      {anulandoGrupoId === grupo.id ? (
+                                        <LoaderCircle className='h-4 w-4 animate-spin' />
+                                      ) : (
+                                        <Ban className='h-4 w-4' />
+                                      )}
+                                      {grupo.pendientes.length > 1 &&
+                                        anulandoGrupoId !== grupo.id && (
+                                          <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-white'>
+                                            {grupo.pendientes.length}
+                                          </span>
+                                        )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side='left'>
+                                    {grupo.pendientes.length > 1
+                                      ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
+                                      : 'Anular y devolver la entrada pendiente'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='icon'
+                                    aria-label={`Ver detalle de ${grupo.registros.length} entrada(s)`}
+                                    onClick={() => setGrupoDetalleId(grupo.id)}
+                                    className='rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
+                                  >
+                                    <Eye className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side='left'>
+                                  Ver detalle de {grupo.registros.length} entrada(s)
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TooltipProvider>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           </>
         )}

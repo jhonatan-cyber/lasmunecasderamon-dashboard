@@ -7,6 +7,7 @@ import { useDevolucionVentasLogic } from '@/hooks/services/useDevolucionVentasLo
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Paginate from '@/components/shared/Paginate';
+import { ModuleStatusTabs } from '@/components/shared/ModuleStatusTabs';
 import { SalesDetailModal } from '@/components/sales';
 import { anfitrionaColors, metodoPagoLabels } from '@/lib/business/salesUtils';
 import { DevolucionHeader } from '@/components/returns/DevolucionHeader';
@@ -117,55 +118,36 @@ export function DevolucionesVentasPageClient() {
 
   if (error) {
     return (
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <ErrorState size='sm' message={`Error al cargar las ventas: ${error}`} />
       </div>
     );
   }
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
       <DevolucionHeader title='Devoluciones de Ventas' />
 
       {}
-      <div className='mb-4 flex w-full flex-col gap-2 border-b pb-2 sm:flex-row sm:justify-center sm:gap-3 sm:pb-1'>
-        <Button
-          variant='unstyled'
-          onClick={() => setActiveTab('pendientes')}
-          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-            activeTab === 'pendientes'
-              ? 'bg-amber-100 text-amber-700 rounded-full shadow-xs'
-              : 'text-gray-500 hover:bg-gray-100 rounded-full'
-          }`}
-        >
-          Pendientes
-          <span
-            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'pendientes' ? 'bg-amber-600 text-white' : 'bg-amber-100 text-amber-800'
-            }`}
-          >
-            {solicitudes.length}
-          </span>
-        </Button>
-        <Button
-          variant='unstyled'
-          onClick={() => setActiveTab('anuladas')}
-          className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold transition-all ${
-            activeTab === 'anuladas'
-              ? 'bg-green-100 text-green-700 rounded-full shadow-xs'
-              : 'text-gray-500 hover:bg-gray-100 rounded-full'
-          }`}
-        >
-          Anuladas
-          <span
-            className={`ml-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'anuladas' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'
-            }`}
-          >
-            {filteredVentas.length}
-          </span>
-        </Button>
-      </div>
+      <ModuleStatusTabs
+        className='mb-4 w-full justify-center'
+        items={[
+          {
+            label: 'Pendientes',
+            count: solicitudes.length,
+            active: activeTab === 'pendientes',
+            onSelect: () => setActiveTab('pendientes'),
+            tone: 'warning'
+          },
+          {
+            label: 'Anuladas',
+            count: filteredVentas.length,
+            active: activeTab === 'anuladas',
+            onSelect: () => setActiveTab('anuladas'),
+            tone: 'success'
+          }
+        ]}
+      />
 
       {}
       {activeTab === 'pendientes' && (
@@ -187,7 +169,7 @@ export function DevolucionesVentasPageClient() {
                 {solicitudes.map(sol => (
                   <div
                     key={sol.id}
-                    className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-muted/40 rounded-xl'
+                    className='flex flex-col items-start justify-between gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-slate-900/40 sm:flex-row sm:items-center'
                   >
                     <div className='flex-1'>
                       <div className='font-bold text-lg'>Venta #{sol.codigo}</div>
@@ -232,40 +214,31 @@ export function DevolucionesVentasPageClient() {
 
       {}
       {activeTab === 'anuladas' && (
-        <>
+        <div className='space-y-4'>
           <DevolucionFilters
             filters={filters}
             updateFilter={updateFilter}
             clearFilters={clearFilters}
           />
 
-          <Card className='shadow-xs'>
-            <CardHeader className='p-4 sm:p-6'>
-              <CardTitle className='text-lg sm:text-xl lg:text-2xl'>
-                Ventas Anuladas ({filteredVentas.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='p-4 sm:p-6'>
-              <div className='overflow-x-auto'>
-                <DevolucionVentasTable
-                  ventas={paginatedVentas}
-                  loading={loading}
-                  onVerDetalles={handleVerDetalles}
-                />
-              </div>
+          <div className='overflow-x-auto'>
+            <DevolucionVentasTable
+              ventas={paginatedVentas}
+              loading={loading}
+              onVerDetalles={handleVerDetalles}
+            />
+          </div>
 
-              {totalPages > 1 && (
-                <div className='mt-4 sm:mt-6 flex justify-center'>
-                  <Paginate
-                    page={filters.currentPage}
-                    totalPages={totalPages}
-                    setPage={page => updateFilter('currentPage', page)}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
+          {totalPages > 1 && (
+            <div className='flex justify-center'>
+              <Paginate
+                page={filters.currentPage}
+                totalPages={totalPages}
+                setPage={page => updateFilter('currentPage', page)}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       <SalesDetailModal

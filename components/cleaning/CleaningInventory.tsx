@@ -185,10 +185,10 @@ export default function CleaningInventory() {
     <main className='mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6'>
       <header className='flex flex-wrap items-center justify-between gap-3'>
         <div>
-          <h1 className='flex items-center gap-2 text-2xl font-bold'>
+          <h1 className='flex items-center gap-2 text-xl font-bold sm:text-2xl lg:text-3xl'>
             <Package aria-hidden='true' /> Insumos de limpieza
           </h1>
-          <p className='text-sm text-muted-foreground'>
+          <p className='text-sm text-muted-foreground sm:text-base'>
             Existencias, recepciones y consumo por ubicación.
           </p>
         </div>

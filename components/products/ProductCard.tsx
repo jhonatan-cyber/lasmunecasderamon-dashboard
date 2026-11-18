@@ -135,7 +135,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     <TooltipProvider>
       <StaggeredEntrance index={entranceIndex} className='h-full'>
         <Card
-          className={`group relative h-full border border-gray-200 dark:border-slate-700 backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-4xl overflow-hidden ${lowStock ? 'bg-red-50 dark:bg-red-950/30 ring-2 ring-inset ring-red-400 dark:ring-red-700' : 'bg-white dark:bg-slate-900'}`}
+          className={`group relative h-full border border-gray-200 dark:border-slate-700 backdrop-blur-xs shadow-md hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden ${lowStock ? 'bg-red-50 dark:bg-red-950/30 ring-2 ring-inset ring-red-400 dark:ring-red-700' : 'bg-white dark:bg-slate-900'}`}
           ref={isDraggable ? setNodeRef : undefined}
           style={style}
         >
@@ -253,7 +253,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           </InteractiveProductPhoto>
 
-          <CardContent className='p-6 space-y-4'>
+          <CardContent className='p-4 sm:p-6 space-y-4'>
             <div className='space-y-1.5'>
               {/* Nombre del producto */}
               <Tooltip>

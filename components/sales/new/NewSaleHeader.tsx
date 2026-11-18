@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 export const NewSaleHeader = ({ onBack }: { onBack?: () => void }) => {
   const router = useRouter();
   return (
-    <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 lg:p-8 space-y-6'>
       <div>
         <h2 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
           Datos Ticket Venta

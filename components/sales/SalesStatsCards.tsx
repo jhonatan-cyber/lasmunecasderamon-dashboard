@@ -37,7 +37,7 @@ export default function SalesStatsCards({ ventas }: SalesStatsCardsProps) {
   };
 
   return (
-    <div className='grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6 px-4 sm:px-8'>
+    <div className='mb-6 grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4'>
       {}
       <MetricCard
         tone='emerald'

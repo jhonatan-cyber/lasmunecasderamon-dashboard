@@ -51,11 +51,13 @@ export default function Notifications() {
   const visible = unreadOnly ? unread : notifications;
 
   return (
-    <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
       <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
         <div>
-          <h1 className='text-2xl font-bold'>Notificaciones</h1>
-          <p className='text-muted-foreground'>Historial reciente de avisos del sistema</p>
+          <h1 className='text-xl font-bold sm:text-2xl lg:text-3xl'>Notificaciones</h1>
+          <p className='text-sm text-muted-foreground sm:text-base'>
+            Historial reciente de avisos del sistema
+          </p>
         </div>
         <div className='flex flex-wrap gap-2'>
           <Button variant='outline' onClick={() => history.refetch()} disabled={history.isFetching}>

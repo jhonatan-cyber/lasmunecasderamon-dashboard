@@ -66,13 +66,13 @@ export function RolesContent({
   });
 
   return (
-    <div className='w-full max-w-none flex flex-col p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+    <div className='w-full max-w-none flex flex-col p-4 sm:p-6 lg:p-8 space-y-6'>
       <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-6'>
         <div>
-          <h1 className='text-3xl font-bold tracking-tight text-slate-900 dark:text-white'>
+          <h1 className='text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl dark:text-white'>
             Gestión de Roles
           </h1>
-          <p className='text-gray-600 dark:text-neutral-300 mt-1'>
+          <p className='mt-1 text-sm text-gray-600 sm:text-base dark:text-neutral-300'>
             Administra roles y permisos del sistema
           </p>
         </div>
@@ -88,7 +88,7 @@ export function RolesContent({
         </PermissionGuard>
       </div>
 
-      <div className='grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
+      <div className='grid grid-cols-2 gap-4 sm:gap-6 [&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>*:last-child:nth-child(odd)]:col-span-1'>
         <MetricCard
           icon={<Shield className='h-5 w-5 sm:h-6 sm:w-6 text-white' />}
           badge='Roles'
@@ -112,7 +112,7 @@ export function RolesContent({
         />
       </div>
 
-      <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
+      <Card className='rounded-2xl border border-neutral-200 bg-white shadow-sm backdrop-blur-xs dark:border-neutral-800 dark:bg-slate-900/40'>
         <CardContent className='p-4 sm:p-6'>
           <div className='flex flex-col sm:flex-row gap-4'>
             <div className='flex-1'>
@@ -185,7 +185,7 @@ export function RolesContent({
         <div className='hidden lg:block'>
           <div className='flex flex-col gap-4 sm:gap-6'>
             <RoleUsersList role={selectedRole} />
-            <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-md border-none flex flex-col h-[600px]'>
+            <div className='bg-white dark:bg-neutral-900 rounded-2xl shadow-md border-none flex flex-col h-[600px]'>
               <PermissionsPanel selectedRole={selectedRole} />
             </div>
           </div>

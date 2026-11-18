@@ -29,7 +29,7 @@ import { SettingsWhatsAppTab } from '@/components/settings/SettingsWhatsAppTab';
 import { SettingsTestPresenceTab } from '@/components/settings/SettingsTestPresenceTab';
 import { usePersistentTab } from '@/hooks/shared/usePersistentTab';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef, useCallback, useEffect } from 'react';
 
 /**
  * Las pestañas de Configuraciones, en una sola lista: la dibujan los triggers y también
@@ -72,27 +72,7 @@ export default function Settings() {
   // para que no quede oculto por el desbordamiento horizontal.
   const listRef = useRef<HTMLDivElement>(null);
   const activeTriggerRef = useRef<HTMLButtonElement>(null);
-  const handleTabChange = useCallback(
-    (value: string) => {
-      setTab(value);
-      // El scroll se programa después del paint para que Radix ya haya marcado
-      // el trigger activo y `activeTriggerRef` apunte al botón correcto.
-      requestAnimationFrame(() => {
-        const trigger = activeTriggerRef.current;
-        const list = listRef.current;
-        if (!trigger || !list) return;
-        const triggerRect = trigger.getBoundingClientRect();
-        const listRect = list.getBoundingClientRect();
-        const offset = triggerRect.left - listRect.left - (listRect.width - triggerRect.width) / 2;
-        if (typeof list.scrollBy === 'function') {
-          list.scrollBy({ left: offset, behavior: 'smooth' });
-        } else {
-          list.scrollLeft += offset;
-        }
-      });
-    },
-    [setTab]
-  );
+  const handleTabChange = useCallback((value: string) => setTab(value), [setTab]);
 
   // Marca la referencia del trigger activo para el auto-scroll.
   const setActiveRef = useCallback((el: HTMLButtonElement | null) => {
@@ -100,12 +80,26 @@ export default function Settings() {
   }, []);
 
   const currentTab = tab === 'comisiones' ? 'bar' : tab;
+  useEffect(() => {
+    const trigger = activeTriggerRef.current;
+    const list = listRef.current;
+    if (!trigger || !list) return;
+
+    const listRect = list.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    const padding = 4;
+    const hiddenLeft = listRect.left + padding - triggerRect.left;
+    const hiddenRight = triggerRect.right - (listRect.right - padding);
+    const offset = hiddenLeft > 0 ? -hiddenLeft : hiddenRight > 0 ? hiddenRight : 0;
+
+    if (offset) list.scrollBy({ left: offset, behavior: 'smooth' });
+  }, [currentTab]);
 
   return (
     <div className='w-full max-w-none p-4 sm:p-6 lg:p-8'>
       <Tabs value={currentTab} onValueChange={handleTabChange} className='w-full space-y-6'>
         <div className='flex items-center gap-3'>
-          <h1 className='text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white truncate'>
+          <h1 className='text-xl font-bold text-neutral-900 sm:text-2xl lg:text-3xl dark:text-white truncate'>
             Configuraciones
           </h1>
         </div>
@@ -122,7 +116,7 @@ export default function Settings() {
                   key={value}
                   value={value}
                   ref={isActive ? setActiveRef : undefined}
-                  className='group flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 transition-all duration-200 ease-out hover:bg-gray-50 hover:text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 data-[state=active]:border-black data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:border-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black'
+                  className='group flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 transition-all duration-200 ease-out hover:bg-gray-50 hover:text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 data-[state=active]:!border-black data-[state=active]:!bg-black data-[state=active]:!text-white dark:data-[state=active]:!border-white dark:data-[state=active]:!bg-white dark:data-[state=active]:!text-black'
                 >
                   <Icon
                     className={`h-4 w-4 transition-all duration-200 ${

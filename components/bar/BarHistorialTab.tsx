@@ -88,7 +88,7 @@ export function BarHistorialTab({
   return (
     <>
       <BoneyardSkeleton name='bar-history' loading={loading}>
-        <div className='overflow-hidden rounded-3xl border bg-card'>
+        <div className='overflow-hidden rounded-2xl border bg-card'>
           <div className='overflow-x-auto'>
             <Table className='min-w-full text-center'>
               <TableHeader>

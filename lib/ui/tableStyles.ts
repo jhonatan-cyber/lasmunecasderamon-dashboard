@@ -1,8 +1,8 @@
 export const MODULE_TABLE_CARD_CLASS =
-  'bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border-none shadow-md overflow-hidden';
+  'bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden';
 export const MODULE_TABLE_CLASS = 'min-w-full text-base text-center';
 export const TABLE_CONTAINER_CLASS =
-  'relative w-full overflow-auto rounded-3xl border border-gray-200 dark:border-gray-800';
+  'relative w-full overflow-auto rounded-2xl border border-neutral-200 dark:border-neutral-800';
 export const MODULE_TABLE_HEADER_CLASS = 'bg-gray-100 dark:bg-slate-900/50';
 export const MODULE_TABLE_HEADER_ROW_CLASS =
   'hover:bg-transparent border-gray-100 dark:border-gray-800';

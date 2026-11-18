@@ -113,7 +113,7 @@ export default function AdvancesPage() {
   return (
     <PermissionGuard module='advances' action='view'>
       <BoneyardSkeleton name='advances-main' loading={loading || cajaLoading}>
-        <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
           <CajaStatusBanner entityName='anticipos' />
 
           <AdvancesHeader
@@ -123,11 +123,9 @@ export default function AdvancesPage() {
             onOpenDialog={handleOpenDialog}
           />
 
-          <div className='px-4 sm:px-8'>
-            <AdvancesStatsCards advances={allAnticipos || []} />
-          </div>
+          <AdvancesStatsCards advances={allAnticipos || []} />
 
-          <div className='px-4 sm:px-8 mt-4 sm:mt-6'>
+          <div>
             <AdvancesFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -146,7 +144,7 @@ export default function AdvancesPage() {
           </div>
 
           <StatusTabs
-            className='mb-4 px-4 sm:px-8'
+            className='mb-4'
             items={[
               {
                 label: 'Solicitudes',
@@ -181,7 +179,7 @@ export default function AdvancesPage() {
             ]}
           />
 
-          <div className='px-4 sm:px-8'>
+          <div>
             <div className='overflow-x-auto'>
               <AdvancesTable
                 advances={anticipos}

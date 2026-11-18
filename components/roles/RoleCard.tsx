@@ -47,7 +47,7 @@ export function RoleCard({
 
   return (
     <div
-      className={`w-full bg-white dark:bg-neutral-900 rounded-3xl shadow-md border-none p-3 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${
+      className={`w-full bg-white dark:bg-neutral-900 rounded-2xl shadow-md border-none p-3 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${
         selected ? 'ring-2 ring-black dark:ring-neutral-200' : ''
       }`}
       onClick={onSelect}

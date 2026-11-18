@@ -41,8 +41,8 @@ export function ServicioDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-neutral-900'>
-        <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 sm:p-6 sm:pr-14 sm:pb-3'>
+      <DialogContent className='flex max-h-[90dvh] w-[calc(100vw-1rem)] max-w-2xl flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-gray-900 shadow-xl dark:border-neutral-800 dark:bg-black dark:text-white'>
+        <DialogHeader className='shrink-0 border-b border-neutral-200 p-4 pr-12 pb-3 dark:border-neutral-800 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='text-center text-lg font-bold text-black dark:text-neutral-100'>
             Información del Servicio
           </DialogTitle>
@@ -53,7 +53,7 @@ export function ServicioDetailModal({
             {}
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6'>
               <div className='space-y-3'>
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2'>
                   <Calendar className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
                     Fecha:
@@ -64,7 +64,7 @@ export function ServicioDetailModal({
                       : 'Sin fecha'}
                   </span>
                 </div>
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2'>
                   <Clock className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
                     Hora:
@@ -75,7 +75,7 @@ export function ServicioDetailModal({
                       : 'Sin hora'}
                   </span>
                 </div>
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2'>
                   <Tag className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
                     Código:
@@ -84,7 +84,7 @@ export function ServicioDetailModal({
                     {selectedServicio.codigo}
                   </span>
                 </div>
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2'>
                   <User className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
                     Cliente:
@@ -96,7 +96,7 @@ export function ServicioDetailModal({
               </div>
 
               <div className='space-y-3'>
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2'>
                   <Home className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
                     Habitación:
@@ -105,7 +105,7 @@ export function ServicioDetailModal({
                     {selectedServicio.habitacion_numero || 'Sin habitación'}
                   </span>
                 </div>
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2'>
                   <Clock className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
                     Tiempo:
@@ -114,7 +114,7 @@ export function ServicioDetailModal({
                     {selectedServicio.tiempo} minutos
                   </span>
                 </div>
-                <div className='flex items-center gap-2'>
+                <div className='flex min-w-0 flex-wrap items-center gap-2'>
                   <CreditCard className='text-gray-500 dark:text-neutral-400 w-4' />
                   <Label className='text-sm font-medium text-black dark:text-neutral-200'>
                     Método de Pago:
@@ -235,7 +235,7 @@ export function ServicioDetailModal({
             {mostrarBotonEditar && (
               <Button
                 variant='outline'
-                className='rounded-full hover:scale-105 transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700'
+                className='rounded-full bg-black text-white transition-all duration-200 hover:scale-105 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
                 disabled
               >
                 Servicio adicional

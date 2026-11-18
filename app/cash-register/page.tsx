@@ -166,8 +166,8 @@ export default function CashRegister() {
   if (error) {
     return (
       <div className='flex min-h-[60vh] items-center justify-center p-4 sm:p-6'>
-        <Card className='w-full max-w-md rounded-[2.5rem] border-none bg-white/80 p-6 text-center shadow-2xl backdrop-blur-xl dark:bg-slate-900/40 sm:p-8'>
-          <div className='w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-4xl flex items-center justify-center mx-auto mb-6'>
+        <Card className='w-full max-w-md rounded-2xl border border-neutral-200 bg-white/80 p-4 text-center shadow-sm backdrop-blur-xl dark:border-neutral-800 dark:bg-slate-900/40 sm:p-6'>
+          <div className='w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6'>
             <AlertTriangle className='h-10 w-10 text-rose-500' />
           </div>
           <h3 className='text-2xl font-black text-slate-900 dark:text-white mb-2'>
@@ -190,14 +190,14 @@ export default function CashRegister() {
 
   return (
     <PermissionGuard module='cash_register' action='view'>
-      <div className='w-full p-4 sm:p-6 lg:p-10 space-y-8 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='w-full p-4 sm:p-6 lg:p-8 space-y-6'>
         {}
         <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
           <div className='space-y-1'>
-            <h1 className='text-3xl lg:text-4xl font-black tracking-tighter text-slate-900 dark:text-white'>
+            <h1 className='text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl dark:text-white'>
               {isCajero ? 'Mi Caja' : 'Control de Cajas'}
             </h1>
-            <p className='text-slate-500 font-medium'>
+            <p className='text-sm font-medium text-slate-500 sm:text-base'>
               {isCajero
                 ? 'Monitorea y gestiona tus transacciones diarias'
                 : 'Administración centralizada de flujos de efectivo'}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { FilterBar } from '@/components/shared/FilterBar';
 import SelectElements from '@/components/shared/SelectElements';
 import { SELECT_LABEL_CLASS } from '@/components/shared/selectStyles';
@@ -43,7 +43,7 @@ export default function OvertimeFilters({
   isAdmin = false
 }: OvertimeFiltersProps) {
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 rounded-3xl mb-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 rounded-2xl mb-6'>
       <CardContent className='p-4 sm:p-6'>
         <div
           role='group'

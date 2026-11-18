@@ -41,7 +41,7 @@ export function SalesDistribution({
           className={
             flat
               ? 'overflow-x-auto border-y border-border'
-              : 'overflow-x-auto rounded-3xl border border-gray-100 dark:border-gray-800'
+              : 'overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-800'
           }
         >
           <Table className='w-full'>

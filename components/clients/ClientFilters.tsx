@@ -15,7 +15,6 @@ import { Trash2 } from 'lucide-react';
 import SearchInput from '@/components/shared/SearchInput';
 import SelectElements from '@/components/shared/SelectElements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DevolucionSolicitudesButton } from '@/components/clients/DevolucionSolicitudesModal';
 
 interface ClientFiltersProps {
   searchTerm: string;
@@ -30,7 +29,6 @@ interface ClientFiltersProps {
   pageSize: number;
   setPageSize: (size: number) => void;
   setPage: (page: number) => void;
-  showSolicitudes?: boolean;
 }
 
 export function ClientFilters({
@@ -45,8 +43,7 @@ export function ClientFilters({
   onClearFilters,
   pageSize,
   setPageSize,
-  setPage,
-  showSolicitudes = false
+  setPage
 }: ClientFiltersProps) {
   const handlePageSizeChange = (value: number) => {
     setPageSize(value);
@@ -54,8 +51,8 @@ export function ClientFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
-      <CardContent className='p-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden'>
+      <CardContent className='p-4 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
           {}
           <div className='w-full lg:flex-1'>
@@ -74,15 +71,8 @@ export function ClientFilters({
             />
           </div>
 
-          <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
-            {}
-            {showSolicitudes && (
-              <div className='w-full sm:w-auto'>
-                <DevolucionSolicitudesButton />
-              </div>
-            )}
-
-            <div className='w-full sm:w-auto min-w-40'>
+          <div className='flex w-full flex-col items-end gap-4 lg:w-auto lg:flex-row'>
+            <div className='w-full min-w-0 lg:w-auto lg:min-w-40'>
               <Label
                 htmlFor='status'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -107,9 +97,9 @@ export function ClientFilters({
             </div>
 
             {}
-            <div className='w-full sm:w-auto grid grid-cols-2 gap-4 sm:flex sm:gap-4 sm:items-end'>
+            <div className='flex w-full flex-col gap-4 lg:w-auto lg:flex-row lg:items-end'>
               <SortSelect
-                className='w-full sm:w-auto min-w-40'
+                className='w-full min-w-0 lg:w-auto lg:min-w-40'
                 field={sortBy}
                 direction={sortOrder}
                 options={[
@@ -126,8 +116,8 @@ export function ClientFilters({
                 }}
               />
 
-              <div className='flex items-end gap-2'>
-                <div>
+              <div className='flex w-full min-w-0 items-end gap-2 lg:w-auto'>
+                <div className='min-w-0 flex-1 lg:flex-none'>
                   <SelectElements
                     value={pageSize}
                     onChange={handlePageSizeChange}

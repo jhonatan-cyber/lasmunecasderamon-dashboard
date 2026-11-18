@@ -407,7 +407,7 @@ export default function ProfilePage() {
 
   if (!userData) {
     return (
-      <div className='container mx-auto p-4 sm:p-6'>
+      <div className='container mx-auto p-4 sm:p-6 lg:p-8'>
         <div className='flex items-center justify-center h-64'>
           <ErrorState
             className='text-center'
@@ -426,7 +426,7 @@ export default function ProfilePage() {
 
   return (
     <BoneyardSkeleton name='profile-main' loading={userLoading || loadingUserData || loadingRoles}>
-      <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='flex flex-col gap-6 p-4 sm:p-6 lg:p-8'>
         <ProfileHeader
           currentUser={currentUser}
           isEditing={isEditing}

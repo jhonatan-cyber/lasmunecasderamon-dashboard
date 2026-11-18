@@ -41,7 +41,7 @@ export default function AdvancesFilters({
   isAdmin = false
 }: AdvancesFiltersProps) {
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden mb-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden mb-6'>
       <CardContent className='p-4 sm:p-6'>
         {}
         <div className='block lg:hidden space-y-3'>
@@ -56,37 +56,35 @@ export default function AdvancesFilters({
               className='w-full rounded-full bg-gray-100 dark:bg-slate-900/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100'
             />
           </div>
-          <div className='flex gap-2 items-end'>
-            <div className='flex-1 min-w-0'>
-              <FilterSelect
-                value={statusFilter}
-                onChange={setStatusFilter}
-                label='Estado'
-                placeholder='Todos'
-                options={[
-                  { value: 'all', label: 'Todos' },
-                  { value: 'por_cobrar', label: 'Por cobrar' },
-                  { value: 'pagado', label: 'Pagado' }
-                ]}
-              />
-            </div>
-            <SortSelect
-              className='flex-1 min-w-0'
-              field={sortBy}
-              direction={sortOrder}
+          <div className='w-full min-w-0'>
+            <FilterSelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              label='Estado'
+              placeholder='Todos'
               options={[
-                { value: 'fecha_crea', label: 'Creación' },
-                { value: 'monto', label: 'Monto' },
-                { value: 'usuario', label: 'Usuario' }
+                { value: 'all', label: 'Todos' },
+                { value: 'por_cobrar', label: 'Por cobrar' },
+                { value: 'pagado', label: 'Pagado' }
               ]}
-              onChange={(field, direction) => {
-                setSortBy(field as typeof sortBy);
-                setSortOrder(direction);
-              }}
             />
           </div>
-          <div className='flex gap-2 items-end'>
-            <div className='flex-1 min-w-0'>
+          <SortSelect
+            className='w-full min-w-0'
+            field={sortBy}
+            direction={sortOrder}
+            options={[
+              { value: 'fecha_crea', label: 'Creación' },
+              { value: 'monto', label: 'Monto' },
+              { value: 'usuario', label: 'Usuario' }
+            ]}
+            onChange={(field, direction) => {
+              setSortBy(field as typeof sortBy);
+              setSortOrder(direction);
+            }}
+          />
+          <div className='flex w-full min-w-0 items-end gap-2'>
+            <div className='min-w-0 flex-1'>
               <FilterSelect
                 value={pageSize.toString()}
                 onChange={v => setPageSize(parseInt(v))}

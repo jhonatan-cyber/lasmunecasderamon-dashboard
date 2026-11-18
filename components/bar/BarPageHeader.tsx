@@ -18,11 +18,11 @@ export function BarPageHeader({ stockError, isLoading, totalBar }: BarPageHeader
   return (
     <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
       <div>
-        <h1 className='flex items-center gap-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>
+        <h1 className='flex items-center gap-3 text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl'>
           <Wine className='size-7 text-primary' aria-hidden='true' />
           Bar
         </h1>
-        <p className='mt-2 text-sm text-muted-foreground'>
+        <p className='mt-2 text-sm text-muted-foreground sm:text-base'>
           Stock, botellas abiertas y movimientos del bar.
         </p>
       </div>

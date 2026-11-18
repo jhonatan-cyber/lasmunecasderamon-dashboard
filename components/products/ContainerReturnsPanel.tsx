@@ -223,12 +223,12 @@ export function ContainerReturnsPanel() {
       module='products'
       action='confirm_container_return'
       fallback={
-        <div className='p-4 sm:p-6 lg:p-10 text-center text-gray-500 text-sm sm:text-base'>
+        <div className='p-4 sm:p-6 lg:p-8 text-center text-gray-500 text-sm sm:text-base'>
           No tienes permiso para confirmar la recepción de envases.
         </div>
       }
     >
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <div>
           <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
             <PackageCheck className='w-6 h-6' />
@@ -436,7 +436,7 @@ export function ContainerReturnsPanel() {
             </Button>
           </div>
 
-          <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
+          <div className='bg-white dark:bg-slate-900/40 rounded-2xl shadow-md overflow-hidden'>
             <div className='overflow-x-auto'>
               <Table className='min-w-full text-center'>
                 <TableHeader>

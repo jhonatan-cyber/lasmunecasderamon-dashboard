@@ -56,8 +56,8 @@ export function UserFilters({
   };
 
   return (
-    <Card className='shadow-md border-none bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl overflow-hidden'>
-      <CardContent className='p-3 sm:p-6'>
+    <Card className='shadow-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl overflow-hidden'>
+      <CardContent className='p-4 sm:p-6'>
         <div className='flex flex-col lg:flex-row gap-6 items-end'>
           {}
           <div className='w-full lg:flex-1'>
@@ -76,9 +76,9 @@ export function UserFilters({
             />
           </div>
 
-          <div className='flex flex-wrap sm:flex-nowrap gap-4 w-full lg:w-auto items-end'>
+          <div className='grid w-full grid-cols-[minmax(0,1fr)_2.5rem] items-end gap-3 sm:flex sm:flex-nowrap sm:gap-4 lg:w-auto'>
             {}
-            <div className='w-[calc(50%-0.5rem)] sm:w-auto min-w-0 order-2 sm:order-2'>
+            <div className='order-2 col-span-2 w-full min-w-0 sm:order-2 sm:col-span-1 sm:w-auto'>
               <Label
                 htmlFor='status'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -98,7 +98,7 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[calc(50%-0.5rem)] sm:w-auto min-w-0 sm:min-w-[160px] order-1 sm:order-1'>
+            <div className='order-1 col-span-2 w-full min-w-0 sm:order-1 sm:col-span-1 sm:w-auto sm:min-w-[160px]'>
               <Label
                 htmlFor='role'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -124,7 +124,7 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[calc(50%-0.5rem)] sm:w-auto order-3 sm:order-3'>
+            <div className='order-3 col-span-1 min-w-0 sm:col-auto sm:w-auto'>
               <SelectElements
                 value={pageSize}
                 onChange={handlePageSizeChange}
@@ -134,16 +134,16 @@ export function UserFilters({
             </div>
 
             {}
-            <div className='w-[20%] sm:w-auto order-4 sm:order-4'>
+            <div className='order-4 col-span-1 flex justify-center sm:col-auto sm:w-auto'>
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
-                    <div className='w-full sm:w-auto'>
+                    <div className='w-10 sm:w-auto'>
                       <Button
                         onClick={onClearFilters}
                         size='icon'
                         aria-label='Limpiar filtros'
-                        className='w-full sm:w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
+                        className='h-10 w-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-slate-900/50 text-gray-900 dark:text-gray-100 transition-all duration-200 hover:scale-110 hover:bg-red-500! hover:text-white! hover:border-red-500!'
                       >
                         <Trash2 className='w-4 h-4' />
                       </Button>

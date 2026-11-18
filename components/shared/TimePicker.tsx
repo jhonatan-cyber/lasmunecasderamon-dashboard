@@ -17,6 +17,7 @@ interface TimePickerProps {
   ariaLabel?: string;
   placeholder?: string;
   className?: string;
+  minuteStep?: number;
 }
 
 /** Descompone `HH:MM` en hora y minuto numéricos. */
@@ -33,9 +34,6 @@ function formatTime(hours: number, minutes: number): string {
 
 /** Genera array de 0-23 para horas. */
 const hoursOptions = Array.from({ length: 24 }, (_, i) => i);
-/** Genera array de 0-55 para minutos (saltos de 5). */
-const minutesOptions = Array.from({ length: 12 }, (_, i) => i * 5);
-
 type Step = 'hour' | 'minute';
 
 /** Selector de hora shadcn: botón con formato de input + popover escalonado (hora → minutos). */
@@ -47,11 +45,16 @@ export function TimePicker({
   onBlur,
   ariaLabel,
   placeholder = 'HH:MM',
-  className
+  className,
+  minuteStep = 5
 }: TimePickerProps) {
   const [abierto, setAbierto] = useState(false);
   const [step, setStep] = useState<Step>('hour');
   const { hours, minutes } = parseTime(value);
+  const minutesOptions = Array.from(
+    { length: Math.ceil(60 / Math.max(1, minuteStep)) },
+    (_, index) => index * Math.max(1, minuteStep)
+  );
 
   const textoHora = value || placeholder;
 

@@ -234,11 +234,11 @@ export function ClientFormModal({
           />
         </div>
 
-        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
+        <div className='flex flex-col gap-3 rounded-b-2xl border-t bg-gray-50 p-4 dark:bg-slate-900/50 sm:flex-row sm:justify-center sm:p-6'>
           <Button
             variant='outline'
             onClick={handleCancel}
-            className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+            className='w-full rounded-full px-6 transition-all hover:scale-105 dark:hover:bg-white dark:hover:text-black sm:w-auto'
             disabled={isLoading}
           >
             Cancelar
@@ -246,7 +246,7 @@ export function ClientFormModal({
           <Button
             type='submit'
             form='client-form'
-            className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
+            className='w-full rounded-full border-2 bg-black px-8 text-white transition-all hover:scale-105 hover:bg-white! hover:text-black! dark:bg-black dark:text-white dark:hover:bg-white! dark:hover:text-black! sm:w-auto'
             disabled={isLoading}
           >
             {isLoading ? (

@@ -52,8 +52,8 @@ export default function ForecastInsights() {
   if (isLoading) {
     return (
       <div className='grid gap-6 grid-cols-1 lg:grid-cols-2'>
-        <Skeleton className='h-60 w-full rounded-3xl' />
-        <Skeleton className='h-60 w-full rounded-3xl' />
+        <Skeleton className='h-60 w-full rounded-2xl' />
+        <Skeleton className='h-60 w-full rounded-2xl' />
       </div>
     );
   }

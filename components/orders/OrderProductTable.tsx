@@ -649,7 +649,7 @@ const OrderProductTable = memo(function OrderProductTable({
   return (
     <div ref={containerRef} className='mt-6 w-full min-w-0 max-w-full'>
       {tableFits ? (
-        <div className='overflow-hidden rounded-3xl bg-white shadow-md dark:bg-slate-900/40 dark:shadow-black/20'>
+        <div className='overflow-hidden rounded-2xl bg-white shadow-md dark:bg-slate-900/40 dark:shadow-black/20'>
           <Table
             className='w-full table-fixed text-center [&_td]:align-middle [&_th]:whitespace-nowrap [&_td]:break-normal'
             style={{ minWidth: tableMinWidth }}

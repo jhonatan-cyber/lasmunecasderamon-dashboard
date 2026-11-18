@@ -152,7 +152,7 @@ export default function PurchasesPage() {
 
   return (
     <PermissionGuard module='products' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2'>
@@ -217,7 +217,7 @@ export default function PurchasesPage() {
         </div>
 
         <BoneyardSkeleton name='purchases-table' loading={loading}>
-          <div className='bg-white dark:bg-slate-900/40 rounded-3xl shadow-md overflow-hidden'>
+          <div className='bg-white dark:bg-slate-900/40 rounded-2xl shadow-md overflow-hidden'>
             <div className='overflow-x-auto'>
               <Table className='min-w-full text-center'>
                 <TableHeader>

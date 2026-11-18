@@ -186,7 +186,7 @@ export function BarProductosTab({
                 }
               />
             ) : showTableView ? (
-              <div className='overflow-hidden rounded-3xl border bg-card'>
+              <div className='overflow-hidden rounded-2xl border bg-card'>
                 <div className='overflow-x-auto'>
                   <BarReorderGroup enabled={puedeReordenar && !savingOrder} onMove={onMove}>
                     <Table className='min-w-full text-center'>

@@ -73,12 +73,12 @@ export function MetricCard({
   return (
     <Card
       className={cn(
-        'group overflow-hidden rounded-3xl border shadow-xs backdrop-blur-xs transition-transform duration-300 hover:scale-[1.02]',
+        'group overflow-hidden rounded-2xl border shadow-xs backdrop-blur-xs transition-transform duration-300 hover:scale-[1.02]',
         tones[tone],
         className
       )}
     >
-      <CardContent className='p-5'>
+      <CardContent className='p-4 sm:p-5'>
         <div className='mb-4 flex items-center justify-between gap-2'>
           <div className='rounded-2xl bg-current/10 p-2.5 [&_svg]:h-4 [&_svg]:w-4'>{icon}</div>
           {badge && (

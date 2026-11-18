@@ -27,7 +27,7 @@ interface ErrorStateProps {
 const sizeClasses: Record<ErrorStateSize, string> = {
   sm: 'rounded-lg px-4 py-3 text-sm',
   md: 'rounded-2xl p-4 text-sm',
-  lg: 'rounded-3xl p-5 text-sm'
+  lg: 'rounded-2xl p-5 text-sm'
 };
 
 /** Aviso de error reutilizable: panel `role="alert"`, mensaje y reintento opcional. */

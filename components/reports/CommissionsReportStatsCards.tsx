@@ -46,7 +46,7 @@ export function CommissionsReportStatsCards({ statistics }: CommissionsStatsCard
   ];
 
   return (
-    <div className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-6'>
+    <div className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-4'>
       {stats.map(stat => (
         <MetricCard
           key={stat.title}

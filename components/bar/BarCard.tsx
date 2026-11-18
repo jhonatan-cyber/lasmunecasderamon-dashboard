@@ -54,7 +54,7 @@ export function BarCard({ item, entranceIndex, dragHandle }: BarCardProps) {
 
   return (
     <StaggeredEntrance index={entranceIndex} className='w-full min-w-0'>
-      <Card className='flex w-full min-w-0 flex-col overflow-hidden rounded-3xl'>
+      <Card className='flex w-full min-w-0 flex-col overflow-hidden rounded-2xl'>
         <div className='flex flex-wrap items-center justify-between gap-2 px-4 pt-4 pb-2'>
           {dragHandle && <div className='shrink-0'>{dragHandle}</div>}
           <div

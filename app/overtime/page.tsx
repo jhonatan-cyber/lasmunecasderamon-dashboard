@@ -21,7 +21,7 @@ import Paginate from '@/components/shared/Paginate';
 const CajaAviso = ({ loading, hasOpenCaja }: { loading: boolean; hasOpenCaja: boolean }) => {
   if (loading || hasOpenCaja) return null;
   return (
-    <Card className='border-none shadow-md bg-amber-50 dark:bg-amber-900/20 rounded-3xl overflow-hidden'>
+    <Card className='rounded-2xl border border-amber-200 bg-amber-50 shadow-sm dark:border-amber-800 dark:bg-amber-900/20'>
       <CardContent className='p-4 flex items-center gap-4 text-amber-800 dark:text-amber-200'>
         <AlertCircle className='h-6 w-6 text-amber-600' />
         <p className='text-sm font-bold'>
@@ -75,12 +75,14 @@ export default function OvertimePage() {
 
   return (
     <PermissionGuard module='overtime' action='view'>
-      <div className='p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <div className='p-4 sm:p-6 lg:p-8 space-y-6'>
         {}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6'>
           <div className='flex flex-col'>
-            <h1 className='text-3xl font-bold tracking-tight'>Horas Extras</h1>
-            <p className='text-gray-600 dark:text-neutral-300 mt-1'>
+            <h1 className='text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl'>
+              Horas Extras
+            </h1>
+            <p className='mt-1 text-sm text-gray-600 sm:text-base dark:text-neutral-300'>
               Supervisión de registros, pagos y balances históricos del personal.
             </p>
           </div>

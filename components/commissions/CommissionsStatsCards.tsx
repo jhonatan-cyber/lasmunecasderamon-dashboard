@@ -31,9 +31,9 @@ export default function CommissionsStatsCards({
         {[1, 2, 3, 4].map(i => (
           <Card
             key={i}
-            className='shadow-xs border-none backdrop-blur-xs rounded-3xl overflow-hidden h-[140px]'
+            className='shadow-xs border-none backdrop-blur-xs rounded-2xl overflow-hidden h-[140px]'
           >
-            <CardContent className='p-5 h-full flex flex-col justify-between'>
+            <CardContent className='p-4 sm:p-5 h-full flex flex-col justify-between'>
               <div className='flex justify-between'>
                 <Skeleton className='h-10 w-10 rounded-2xl' />
                 <Skeleton className='h-6 w-20 rounded-full' />

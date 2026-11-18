@@ -63,15 +63,27 @@ export const DevolucionServiciosTable = ({
 
   if (loading) {
     return (
-      <div className='space-y-4'>
+      <div className='space-y-3'>
         {[...Array(5)].map((_, i) => (
-          <div key={i} className='flex items-center space-x-4'>
-            <Skeleton className='h-4 w-[100px]' />
-            <Skeleton className='h-4 w-[200px]' />
-            <Skeleton className='h-4 w-[100px]' />
-            <Skeleton className='h-4 w-[100px]' />
+          <div
+            key={i}
+            className='space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-slate-900/40 lg:hidden'
+          >
+            <Skeleton className='h-5 w-1/2' />
+            <Skeleton className='h-4 w-full' />
+            <Skeleton className='h-4 w-2/3' />
           </div>
         ))}
+        <div className='hidden space-y-3 lg:block'>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className='flex items-center gap-4'>
+              <Skeleton className='h-4 w-[100px]' />
+              <Skeleton className='h-4 w-[200px]' />
+              <Skeleton className='h-4 w-[100px]' />
+              <Skeleton className='h-4 w-[100px]' />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -79,7 +91,7 @@ export const DevolucionServiciosTable = ({
   if (servicios.length === 0) {
     return (
       <div className='text-center py-8 text-gray-500 text-sm sm:text-base'>
-        No se encontraron servicios activos
+        No se encontraron servicios {showAnularButton ? 'activos' : 'anulados'}
       </div>
     );
   }
@@ -87,47 +99,54 @@ export const DevolucionServiciosTable = ({
   const MobileCardView = () => (
     <div className='space-y-4 lg:hidden'>
       {servicios.map(servicio => (
-        <Card key={servicio.id_servicio} className='shadow-xs hover:shadow-md transition-shadow'>
+        <Card
+          key={servicio.id_servicio}
+          className='border border-neutral-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-slate-900/40'
+        >
           <CardContent className='p-4'>
             <div className='space-y-3'>
               {}
               <div className='flex items-center justify-between'>
-                <h3 className='font-semibold text-lg text-gray-900'>{servicio.codigo}</h3>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100'>
+                  {servicio.codigo}
+                </h3>
                 {getEstadoBadge(servicio.estado)}
               </div>
 
               {}
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
                 <div className='flex items-center gap-2'>
-                  <User className='text-gray-500 w-4 h-4' />
+                  <User className='h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium'>Cliente:</span>
-                  <span className='text-gray-700'>{servicio.cliente_nombre || 'Sin cliente'}</span>
+                  <span className='min-w-0 break-words text-gray-700 dark:text-gray-300'>
+                    {servicio.cliente_nombre || 'Sin cliente'}
+                  </span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <Bed className='text-gray-500 w-4 h-4' />
+                  <Bed className='h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium'>Habitación:</span>
-                  <span className='text-gray-700'>
+                  <span className='min-w-0 break-words text-gray-700 dark:text-gray-300'>
                     {servicio.habitacion_numero || 'Sin habitación'}
                   </span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <Clock className='text-gray-500 w-4 h-4' />
+                  <Clock className='h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium'>Tiempo:</span>
-                  <span className='text-gray-700'>{servicio.tiempo} min</span>
+                  <span className='text-gray-700 dark:text-gray-300'>{servicio.tiempo} min</span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <DollarSign className='text-gray-500 w-4 h-4' />
+                  <DollarSign className='h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium'>Total:</span>
-                  <span className='text-gray-700 font-semibold'>
+                  <span className='font-semibold text-gray-700 dark:text-gray-300'>
                     {formatCurrency(servicio.total)}
                   </span>
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <CreditCard className='text-gray-500 w-4 h-4' />
+                  <CreditCard className='h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium'>Pago:</span>
                   <Badge variant='outline' className='text-xs'>
                     {servicio.metodo_pago
@@ -138,9 +157,11 @@ export const DevolucionServiciosTable = ({
                 </div>
 
                 <div className='flex items-center gap-2'>
-                  <Calendar className='text-gray-500 w-4 h-4' />
+                  <Calendar className='h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400' />
                   <span className='font-medium'>Fecha:</span>
-                  <span className='text-gray-700'>{formatLongDateEs(servicio.fecha_crea)}</span>
+                  <span className='text-gray-700 dark:text-gray-300'>
+                    {formatLongDateEs(servicio.fecha_crea)}
+                  </span>
                 </div>
               </div>
 

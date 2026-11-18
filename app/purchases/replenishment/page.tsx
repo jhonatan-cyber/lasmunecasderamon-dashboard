@@ -100,7 +100,7 @@ export default function ReplenishmentPage() {
   return (
     <PermissionGuard module='products' action='view'>
       <style>{`@media print { body * { visibility: hidden; } #replenishment-order, #replenishment-order * { visibility: visible; } #replenishment-order { position: absolute; left: 0; top: 0; width: 100%; padding: 0; background: white; color: black; } #replenishment-order * { color: black !important; background: transparent !important; overflow: visible !important; } #replenishment-order tr { break-inside: avoid; } #replenishment-order table { width: 100%; border-collapse: collapse; } #replenishment-order th, #replenishment-order td { border-bottom: 1px solid #aaa; padding: 5px; font-size: 9px; } @page { size: A4 landscape; margin: 10mm; } }`}</style>
-      <main className='p-4 sm:p-6 lg:p-10 space-y-6 mt-4 sm:mt-6 lg:mt-10'>
+      <main className='p-4 sm:p-6 lg:p-8 space-y-6'>
         <div className='flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5'>
           <div className='space-y-2'>
             <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2'>
@@ -192,7 +192,7 @@ export default function ReplenishmentPage() {
         {loading ? (
           <div
             role='status'
-            className='rounded-3xl bg-white dark:bg-slate-900/40 p-12 flex items-center justify-center gap-3 text-sm text-muted-foreground'
+            className='rounded-2xl bg-white dark:bg-slate-900/40 p-12 flex items-center justify-center gap-3 text-sm text-muted-foreground'
           >
             <RefreshCw className='h-5 w-5 animate-spin' />
             Comprobando Bar y Bodega…

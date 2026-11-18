@@ -405,7 +405,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
 
   return (
     <TooltipProvider>
-      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
+      <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
         <div className='overflow-x-auto'>
           <DndContext
             sensors={sensors}

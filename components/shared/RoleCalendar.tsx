@@ -61,7 +61,7 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
 
   const renderMonthView = () => {
     return (
-      <div className='bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-xs border border-gray-200 dark:border-gray-700'>
+      <div className='bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-xs border border-gray-200 dark:border-gray-700'>
         <div className='flex flex-wrap items-center justify-between gap-2 p-3 border-b border-gray-200 dark:border-gray-700 sm:p-4'>
           <div className='flex items-center gap-2 sm:gap-4'>
             <Button
@@ -160,7 +160,7 @@ export default function RoleCalendar({ role, userId, backLink }: RoleCalendarPro
   };
 
   return (
-    <div className='min-h-screen p-4 sm:p-6 lg:p-10 flex flex-col bg-gray-50 dark:bg-gray-900'>
+    <div className='min-h-screen p-4 sm:p-6 lg:p-8 flex flex-col bg-gray-50 dark:bg-gray-900'>
       <div className='flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between'>
         <h1 className='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'>
           Calendario de {titleRole}

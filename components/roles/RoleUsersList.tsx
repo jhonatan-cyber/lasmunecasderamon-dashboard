@@ -39,7 +39,7 @@ export function RoleUsersList({ role }: { role: Role | null }) {
   }, [role]);
 
   return (
-    <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-md border-none p-4 sm:p-6'>
+    <div className='bg-white dark:bg-neutral-900 rounded-2xl shadow-md border-none p-4 sm:p-6'>
       <div className='flex items-center gap-2 mb-3'>
         <UsersIcon className='h-4 w-4 text-zinc-500 dark:text-neutral-400' />
         <h3 className='text-sm sm:text-base font-semibold text-black dark:text-neutral-100'>

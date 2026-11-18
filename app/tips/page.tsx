@@ -166,7 +166,7 @@ export default function TipsPage() {
   return (
     <PermissionGuard module='tips' action='view'>
       <TooltipProvider>
-        <div className='flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:p-10 mt-4 sm:mt-6 lg:mt-10'>
+        <div className='flex flex-col gap-6 p-4 sm:p-6 lg:p-8'>
           <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6'>
             <div>
               <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold'>Propinas</h1>

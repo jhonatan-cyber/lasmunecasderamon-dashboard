@@ -466,9 +466,9 @@ export function BiometricDevices() {
                 disabled={saving}
               />
             </div>
-            <div className='sm:col-span-2'>
+            <div className='flex justify-center sm:col-span-2 sm:justify-start'>
               <Button
-                className='rounded-full'
+                className='w-full justify-center rounded-full sm:w-auto'
                 type='submit'
                 disabled={saving || !nombre.trim() || !serial.trim()}
               >
