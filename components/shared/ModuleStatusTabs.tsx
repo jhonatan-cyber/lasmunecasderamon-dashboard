@@ -67,7 +67,7 @@ export function ModuleStatusTabs({
                 : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800'
             )}
           >
-            {item.label}
+            {item.label}{' '}
             {item.count !== undefined && (
               <span
                 className={cn('ml-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold', countStyle)}

@@ -92,7 +92,12 @@ export default function Settings() {
     const hiddenRight = triggerRect.right - (listRect.right - padding);
     const offset = hiddenLeft > 0 ? -hiddenLeft : hiddenRight > 0 ? hiddenRight : 0;
 
-    if (offset) list.scrollBy({ left: offset, behavior: 'smooth' });
+    if (!offset) return;
+    if (typeof list.scrollBy === 'function') {
+      list.scrollBy({ left: offset, behavior: 'smooth' });
+    } else {
+      list.scrollLeft += offset;
+    }
   }, [currentTab]);
 
   return (
