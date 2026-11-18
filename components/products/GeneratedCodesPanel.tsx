@@ -31,14 +31,14 @@ export function GeneratedCodesPanel({
         variant='unstyled'
         type='button'
         onClick={() => setMostrarCodigos(v => !v)}
-        className='w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors'
+        className='w-full flex items-center justify-between gap-2 px-3 py-3 bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors sm:px-4'
       >
-        <span className='text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+        <span className='min-w-0 truncate text-left text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
           Códigos generados ({isScoped ? codesCount : unidadesTotal}
           {unidadesInactivas > 0 ? ` · ${unidadesInactivas} inactivos` : ''})
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform ${mostrarCodigos ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 shrink-0 text-gray-400 transition-transform ${mostrarCodigos ? 'rotate-180' : ''}`}
         />
       </Button>
       {mostrarCodigos && (

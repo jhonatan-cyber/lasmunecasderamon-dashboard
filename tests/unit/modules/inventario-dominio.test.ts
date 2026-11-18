@@ -110,6 +110,56 @@ describe('transferencias de almacén al bar', () => {
     });
   });
 
+  it('registra el precio de botella sin anfitriona cuando no se vende con anfitriona', async () => {
+    const trx = vi.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM productos pr'))
+        return [
+          {
+            id_producto: 'prod-1',
+            system_key: null,
+            producto_nombre: 'Whisky',
+            presentacion_nombre: '750 ml'
+          }
+        ];
+      if (sql.includes('COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?'))
+        return [{ id: 'unit-1' }];
+      if (sql.includes('COUNT(*)')) return [{ total: 0 }];
+      return [];
+    });
+    const options = [
+      {
+        tipo: 'botella' as const,
+        precio: 0,
+        comision: 0,
+        precio_sin_anfitriona: 18000,
+        vender_con_anfitriona: false
+      }
+    ];
+    await conContextoOperacionExistente(trx, contexto =>
+      traspasarAlBar(
+        {
+          ...input,
+          cantidad: 1,
+          precio_venta: undefined,
+          comision: undefined,
+          opciones_venta: options
+        },
+        contexto
+      )
+    );
+    const movement = trx.mock.calls.find(([sql]) =>
+      sql.includes('INSERT INTO inventario_movimientos')
+    );
+    expect(movement).toBeDefined();
+    const [sql, values] = movement!;
+    const columns = String(sql)
+      .slice(String(sql).indexOf('(') + 1, String(sql).indexOf(')'))
+      .split(',')
+      .map(column => column.trim());
+    expect(values[columns.indexOf('precio_venta')]).toBe(18000);
+    expect(values[columns.indexOf('comision')]).toBe(0);
+  });
+
   it('emite transfers_updated al crear, aprobar y rechazar (refresco en vivo)', async () => {
     vi.mocked(sendNotificationToAll).mockClear();
     vi.mocked(query).mockClear();
@@ -509,6 +559,69 @@ describe('listarTransferencias historial', () => {
     ]);
     expect(rows[0].ml_shot).toBe(50);
     expect(rows[0].ml_shot_anfitriona).toBe(50);
+  });
+
+  it('sin venta por cortos no expone ml por shot aunque el producto tenga uno configurado', async () => {
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_movimientos')) {
+        return [
+          {
+            id: 'mov-botella',
+            cantidad: 1,
+            fecha_crea: '2026-11-18T20:00:00',
+            precio_venta: 15000,
+            comision: 0,
+            opciones_venta: [{ tipo: 'botella', precio: 15000, comision: 0 }],
+            estado: 'pendiente',
+            ml_shot: 50,
+            ml_shot_anfitriona: 50,
+            pres_precio: 15000,
+            pres_comision: 0,
+            producto_precio: 0,
+            producto_comision: 0
+          }
+        ];
+      }
+      return [];
+    });
+
+    const rows = await listarTransferencias(true);
+
+    expect(rows[0].ml_shot).toBeNull();
+    expect(rows[0].ml_shot_anfitriona).toBeNull();
+  });
+
+  it('con el corto en el traspaso pero sin precio no expone ml por shot', async () => {
+    (query as any).mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_movimientos')) {
+        return [
+          {
+            id: 'mov-corto-apagado',
+            cantidad: 1,
+            fecha_crea: '2026-11-18T20:00:00',
+            precio_venta: 15000,
+            comision: 0,
+            opciones_venta: [
+              { tipo: 'botella', precio: 15000, comision: 0 },
+              { tipo: 'shot', precio: 0, comision: 0 }
+            ],
+            estado: 'pendiente',
+            ml_shot: 50,
+            ml_shot_anfitriona: null,
+            pres_precio: 15000,
+            pres_comision: 0,
+            producto_precio: 0,
+            producto_comision: 0
+          }
+        ];
+      }
+      return [];
+    });
+
+    const rows = await listarTransferencias(true);
+
+    expect(rows[0].ml_shot).toBeNull();
+    expect(rows[0].ml_shot_anfitriona).toBeNull();
   });
 });
 

@@ -607,7 +607,11 @@ function TransfersContent() {
               ) : (
                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
                   {visiblePendientes.map(record => (
-                    <Card key={record.id} className='flex h-full min-w-0 flex-col rounded-2xl'>
+                    <Card
+                      key={record.id}
+                      className='flex h-full min-w-0 cursor-pointer flex-col rounded-2xl transition-shadow hover:shadow-md'
+                      onClick={() => setDetail(record)}
+                    >
                       <CardHeader className='gap-2'>
                         <Badge variant='secondary' className='w-fit'>
                           <Clock className='mr-1 size-3' aria-hidden='true' />
@@ -626,18 +630,24 @@ function TransfersContent() {
                         {puedeAprobar ? (
                           <>
                             <Button
-                              className='flex-1'
+                              className='flex-1 rounded-full'
                               disabled={resolvingId === record.id}
-                              onClick={() => void resolver(record.id, 'aprobar')}
+                              onClick={event => {
+                                event.stopPropagation();
+                                void resolver(record.id, 'aprobar');
+                              }}
                             >
                               <Check aria-hidden='true' />
                               Aprobar
                             </Button>
                             <Button
                               variant='outline'
-                              className='flex-1'
+                              className='flex-1 rounded-full'
                               disabled={resolvingId === record.id}
-                              onClick={() => void resolver(record.id, 'rechazar')}
+                              onClick={event => {
+                                event.stopPropagation();
+                                void resolver(record.id, 'rechazar');
+                              }}
                             >
                               <X aria-hidden='true' />
                               Rechazar

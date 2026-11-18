@@ -60,9 +60,9 @@ export function CategoryFilters({
             />
           </div>
 
-          <div className='w-full lg:w-auto grid grid-cols-2 gap-4 lg:flex lg:gap-4 lg:items-end'>
+          <div className='flex w-full flex-col gap-4 lg:w-auto lg:flex-row lg:items-end lg:gap-4'>
             {}
-            <div className='min-w-[160px]'>
+            <div className='w-full lg:min-w-[160px] lg:w-auto'>
               <Label
                 htmlFor='status'
                 className='mb-2 block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1'
@@ -82,8 +82,8 @@ export function CategoryFilters({
             </div>
 
             {}
-            <div className='flex items-end gap-2'>
-              <div>
+            <div className='flex w-full items-end gap-2 lg:w-auto'>
+              <div className='min-w-0 flex-1 lg:flex-none'>
                 <SelectElements
                   value={pageSize}
                   onChange={handlePageSizeChange}

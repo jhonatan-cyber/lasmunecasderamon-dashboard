@@ -31,7 +31,7 @@ function Prices({ rows }: { rows: { label: string; precio: number; comision: num
                 {formatCurrencyCLP(row.precio)}
               </TableCell>
               <TableCell className='pl-3 text-right tabular-nums text-muted-foreground'>
-                {formatCurrencyCLP(row.comision)}
+                {row.comision > 0 ? formatCurrencyCLP(row.comision) : '—'}
               </TableCell>
             </TableRow>
           ))}
@@ -64,7 +64,29 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
           {option.tipo === 'botella' ? (
             <>
               <Prices
-                rows={[{ label: 'Botella', precio: option.precio, comision: option.comision ?? 0 }]}
+                rows={[
+                  ...(Number(option.precio) > 0 || Number(option.precio_sin_anfitriona ?? 0) === 0
+                    ? [
+                        {
+                          label:
+                            Number(option.precio_sin_anfitriona ?? 0) > 0
+                              ? 'Con anfitriona'
+                              : 'Botella',
+                          precio: option.precio,
+                          comision: option.comision ?? 0
+                        }
+                      ]
+                    : []),
+                  ...(Number(option.precio_sin_anfitriona ?? 0) > 0
+                    ? [
+                        {
+                          label: 'Sin anfitriona',
+                          precio: Number(option.precio_sin_anfitriona),
+                          comision: 0
+                        }
+                      ]
+                    : [])
+                ]}
               />
               <dl className='grid grid-cols-1 gap-3 rounded-xl bg-muted/40 p-3 sm:grid-cols-2 sm:gap-4'>
                 <Measure

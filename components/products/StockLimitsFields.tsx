@@ -21,7 +21,7 @@ export function StockLimitsFields({
   onChange: (field: 'stock_minimo' | 'stock_maximo', value: string) => void;
 }) {
   return (
-    <div className='col-span-2 space-y-2'>
+    <div className='space-y-2 sm:col-span-2'>
       <div className='grid grid-cols-2 gap-2'>
         {(['stock_minimo', 'stock_maximo'] as const).map(field => (
           <div className='space-y-1' key={field}>

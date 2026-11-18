@@ -2,9 +2,60 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { PendingApprovals } from '@/components/bar/PendingApprovals';
+import { TransferSaleDetails } from '@/components/bar/TransferSaleDetails';
 import type { TransferRecord } from '@/types/transfer';
 
 afterEach(cleanup);
+
+const baseRecord: TransferRecord = {
+  id: 't2',
+  producto_id: 'p1',
+  producto_nombre: 'Whisky',
+  presentacion_nombre: '750 ml',
+  cantidad: 1,
+  fecha_crea: '2026-10-12T10:00:00',
+  usuario_nombre: 'Bodega',
+  usuario_id: 'u1',
+  estado: 'pendiente',
+  aceptado_por: null,
+  aceptado_nombre: null,
+  fecha_aceptacion: null,
+  precio_venta: 0,
+  comision: 0
+};
+
+it('separa el precio con y sin anfitriona y deja la comisión vacía cuando es cero', () => {
+  render(
+    <TransferSaleDetails
+      record={{
+        ...baseRecord,
+        opciones_venta: [
+          { tipo: 'botella', precio: 30000, comision: 5000, precio_sin_anfitriona: 18000 }
+        ]
+      }}
+    />
+  );
+  const detail = screen.getByLabelText('Detalle de venta enviado');
+  expect(
+    within(detail).getByRole('row', { name: 'Con anfitriona $30.000 $5.000' })
+  ).toBeInTheDocument();
+  expect(within(detail).getByRole('row', { name: 'Sin anfitriona $18.000 —' })).toBeInTheDocument();
+});
+
+it('sin venta con anfitriona muestra solo el precio sin anfitriona y sin comisión', () => {
+  render(
+    <TransferSaleDetails
+      record={{
+        ...baseRecord,
+        opciones_venta: [{ tipo: 'botella', precio: 0, comision: 0, precio_sin_anfitriona: 18000 }]
+      }}
+    />
+  );
+  const detail = screen.getByLabelText('Detalle de venta enviado');
+  expect(within(detail).queryByRole('row', { name: /Con anfitriona/ })).toBeNull();
+  expect(within(detail).getByRole('row', { name: 'Sin anfitriona $18.000 —' })).toBeInTheDocument();
+  expect(detail).toHaveTextContent('Máximo de anfitrionas0');
+});
 
 it('muestra al receptor precios, comisiones, medidas y bebidas antes de aprobar', () => {
   const record: TransferRecord = {

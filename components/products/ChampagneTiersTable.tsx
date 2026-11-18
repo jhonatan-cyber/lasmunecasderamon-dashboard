@@ -24,8 +24,8 @@ export function ChampagneTiersTable({
 }: ChampagneTiersTableProps) {
   return (
     <div className='space-y-3'>
-      <div className='flex items-center justify-between ml-1'>
-        <Label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+      <div className='flex flex-wrap items-center justify-between gap-2 ml-1'>
+        <Label className='block min-w-0 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
           Precios champagne por anfitrionas
         </Label>
         <Button

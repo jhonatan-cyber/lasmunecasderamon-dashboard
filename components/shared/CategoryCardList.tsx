@@ -306,13 +306,7 @@ function CatalogCategoryList<T extends CategoryListItem = CategoryListItem>({
               </div>
             );
             const countBadge = (
-              <span
-                className={
-                  countPlacement === 'top'
-                    ? 'inline-flex min-w-0 items-center gap-1 whitespace-normal break-words rounded-full bg-neutral-100 px-2 py-1 text-right text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
-                    : 'inline-flex shrink-0 items-center gap-1 rounded-full bg-neutral-100 px-2 py-1 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
-                }
-              >
+              <span className='inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-neutral-100 px-2 py-1 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'>
                 <Package2 className='h-3 w-3 shrink-0' aria-hidden='true' />
                 {cat?.total_products ?? cat?.productCount ?? 0}
                 {countLabel ? ` ${countLabel(cat)}` : ''}
@@ -339,7 +333,7 @@ function CatalogCategoryList<T extends CategoryListItem = CategoryListItem>({
                 {isCatalogVariant ? (
                   <>
                     {countPlacement === 'top' ? (
-                      <div className='mb-4 flex w-full items-start justify-between gap-2'>
+                      <div className='mb-4 flex w-full flex-wrap items-start justify-between gap-2'>
                         {iconTile}
                         {countBadge}
                       </div>

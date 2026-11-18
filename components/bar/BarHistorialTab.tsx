@@ -195,7 +195,7 @@ export function BarHistorialTab({
                             precio={m.precio_venta}
                             compact
                           />
-                        ) : m.opciones_venta ? (
+                        ) : m.opciones_venta?.length ? (
                           <SalePrices
                             options={m.opciones_venta}
                             field='precio'
@@ -211,7 +211,7 @@ export function BarHistorialTab({
                       <TableCell className='sm:px-4 text-center font-mono sm:text-sm'>
                         {isTierPricedItem(m) ? (
                           <span className='text-muted-foreground'>Según tabla</span>
-                        ) : m.opciones_venta ? (
+                        ) : m.opciones_venta?.length ? (
                           <SalePrices
                             options={m.opciones_venta}
                             field='comision'
@@ -219,7 +219,11 @@ export function BarHistorialTab({
                             mlShotAnfitriona={m.ml_shot_anfitriona}
                           />
                         ) : m.comision !== null && m.comision !== undefined ? (
-                          formatCurrencyCLP(Number(m.comision))
+                          Number(m.comision) > 0 ? (
+                            formatCurrencyCLP(Number(m.comision))
+                          ) : (
+                            '—'
+                          )
                         ) : (
                           '—'
                         )}

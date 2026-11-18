@@ -4,6 +4,7 @@ import { ServiceRequestService } from '@/modules/operacion';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { ValidationError } from '@/lib/errors/errors';
 import { esBaucherDataUrlValido } from '@/lib/business/baucher';
+import { AuthenticatedUser } from '@/lib/middleware/auth';
 
 export const GET = withPublicRoute(async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -14,7 +15,7 @@ export const GET = withPublicRoute(async (request: Request) => {
 
 export const POST = withRoute(
   { auth: true, audit: true, module: 'orders', action: 'write' },
-  async (request: Request, { user }: { params: any; user: any }) => {
+  async (request: Request, { user }: { params: unknown; user: AuthenticatedUser }) => {
     const body = await request.json();
     const baucherFoto =
       typeof body.baucher_foto === 'string' && body.baucher_foto ? body.baucher_foto : undefined;
@@ -28,9 +29,18 @@ export const POST = withRoute(
       throw new ValidationError('La foto del baucher no es una imagen válida');
     const result = await ServiceRequestService.create(body, user.id.toString());
 
+    // El aviso viaja con la identidad de quien solicita: el modal que se abre
+    // solo con este evento no consulta la base, así que si el nombre no viene
+    // acá se muestra "N/A". También lleva `id_solicitud`, que es la clave con la
+    // que el modal aprueba o rechaza.
+    const solicitadoPorNombre = `${user.name ?? ''} ${user.lastName ?? ''}`.trim();
     sendNotificationToAll('new_service_request', {
-      id: result.id,
       ...body,
+      id: result.id,
+      id_solicitud: result.id,
+      solicitado_por: String(user.id),
+      solicitado_por_nombre: solicitadoPorNombre || null,
+      solicitado_por_nick: user.nick ?? null,
       habitacion_nombre: result.habitacion_nombre,
       cliente_nombre: result.cliente_nombre
     });

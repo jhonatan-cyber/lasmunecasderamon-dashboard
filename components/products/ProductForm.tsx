@@ -56,7 +56,7 @@ export function ProductFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl'>
+      <DialogContent className='max-w-3xl max-h-[94dvh] flex flex-col p-0 overflow-hidden rounded-2xl'>
         <DialogHeader className='p-4 pb-2 pr-12 border-b sm:p-6 sm:pb-2 sm:pr-14'>
           <DialogTitle className='text-lg font-bold sm:text-xl'>
             {initialValues
@@ -84,11 +84,11 @@ export function ProductFormModal({
           />
         </div>
 
-        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex justify-center gap-3 rounded-b-2xl sm:p-6'>
+        <div className='border-t bg-gray-50 p-4 dark:bg-slate-900/50 flex flex-col gap-3 rounded-b-2xl sm:flex-row sm:justify-center sm:p-6'>
           <Button
             variant='outline'
             onClick={() => onOpenChange(false)}
-            className='rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105'
+            className='w-full rounded-full px-6 dark:hover:bg-white dark:hover:text-black transition-all hover:scale-105 sm:w-auto'
             disabled={isMutating}
           >
             {initialValues && presentation ? 'Cerrar' : 'Cancelar'}
@@ -97,7 +97,7 @@ export function ProductFormModal({
             <Button
               type='submit'
               form='product-form'
-              className='bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2'
+              className='w-full bg-black text-white dark:bg-black dark:text-white  dark:hover:bg-white! dark:hover:text-black! rounded-full px-8 hover:bg-white! hover:text-black! transition-all hover:scale-105 border-2 sm:w-auto'
               disabled={isMutating}
             >
               {isMutating ? (
@@ -227,8 +227,8 @@ export function ProductForm({
       />
 
       <div className='space-y-3'>
-        <div className='flex items-center justify-between ml-1'>
-          <Label className='block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
+        <div className='flex flex-wrap items-center justify-between gap-2 ml-1'>
+          <Label className='block min-w-0 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400'>
             {scoped
               ? 'Presentación'
               : `Presentaciones${isEdit ? ` (Stock total: ${unidadesTotal})` : ''}`}

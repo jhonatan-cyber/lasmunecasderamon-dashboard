@@ -334,7 +334,86 @@ export function ExpiredStockPanel({
 
           {!historialOnly && (
             <div className='bg-white dark:bg-slate-900/40 backdrop-blur-xs rounded-2xl border border-gray-200 dark:border-gray-800 shadow-md overflow-hidden'>
-              <div className='overflow-x-auto'>
+              <div className='space-y-3 p-3 sm:hidden'>
+                {lotes.length === 0 ? (
+                  <EmptyState
+                    variant='text'
+                    title={loading ? 'Cargando...' : 'No hay lotes vencidos'}
+                    description={
+                      loading ? undefined : 'Todo el stock con fecha de vencimiento sigue vigente.'
+                    }
+                  />
+                ) : (
+                  lotes.map(lote => (
+                    <article
+                      key={lote.presentacion_id}
+                      className='rounded-2xl border border-gray-200 p-4 dark:border-gray-800'
+                    >
+                      <div className='flex items-start justify-between gap-2'>
+                        <div className='min-w-0'>
+                          <p className='break-words font-semibold text-gray-900 dark:text-white'>
+                            {lote.producto}
+                          </p>
+                          <Badge variant='secondary' className='mt-1 rounded-full'>
+                            {lote.presentacion}
+                          </Badge>
+                        </div>
+                        {lote.fecha_vencimiento ? (
+                          <VencimientoBadge fecha={lote.fecha_vencimiento} />
+                        ) : (
+                          <span className='text-gray-400 dark:text-gray-500'>—</span>
+                        )}
+                      </div>
+                      {(lote.codigos ?? []).length > 0 && (
+                        <div className='mt-2 flex max-h-20 flex-wrap gap-1 overflow-auto'>
+                          {(lote.codigos ?? []).map(codigo => (
+                            <code
+                              key={codigo}
+                              className='rounded-md border bg-muted px-1.5 py-0.5 text-[10px] font-semibold'
+                            >
+                              {codigo}
+                            </code>
+                          ))}
+                        </div>
+                      )}
+                      <dl className='mt-3 grid grid-cols-3 gap-2 rounded-xl bg-gray-50 p-2 text-center dark:bg-slate-950/40'>
+                        <div>
+                          <dt className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
+                            Botellas
+                          </dt>
+                          <dd className='font-mono font-bold text-red-600 dark:text-red-400'>
+                            {lote.unidades_vencidas}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
+                            Bodega
+                          </dt>
+                          <dd className='font-mono font-bold'>{lote.unidades_bodega}</dd>
+                        </div>
+                        <div>
+                          <dt className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
+                            Bar
+                          </dt>
+                          <dd className='font-mono font-bold'>{lote.unidades_bar}</dd>
+                        </div>
+                      </dl>
+                      <PermissionGuard module='products' action='edit' fallback={null}>
+                        <Button
+                          variant='outline'
+                          onClick={() => setConfirmando(lote)}
+                          aria-label={`Dar de baja el lote vencido de ${lote.producto} ${lote.presentacion}`}
+                          className='mt-3 w-full rounded-full text-red-600'
+                        >
+                          <Trash2 className='h-4 w-4' aria-hidden='true' />
+                          Dar de baja
+                        </Button>
+                      </PermissionGuard>
+                    </article>
+                  ))
+                )}
+              </div>
+              <div className='hidden overflow-x-auto sm:block'>
                 <Table className='min-w-full text-center'>
                   <TableHeader>
                     <TableRow className='hover:bg-transparent'>
@@ -431,8 +510,70 @@ export function ExpiredStockPanel({
             </div>
           )}
 
-          <section>
-            <div className='overflow-x-auto'>
+          <section className='space-y-3'>
+            <div className='space-y-3 sm:hidden'>
+              {gruposRetirados.length === 0 ? (
+                <div className='rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-slate-900/40'>
+                  <EmptyState
+                    variant='text'
+                    title='No hay vencidos retirados'
+                    description='Las bajas aparecerán aquí con su información completa.'
+                  />
+                </div>
+              ) : (
+                gruposRetirados.map(grupo => (
+                  <article
+                    key={`${grupo.producto_nombre}-${grupo.presentacion_nombre}`}
+                    className='rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-slate-900/40'
+                  >
+                    <div className='flex items-start justify-between gap-2'>
+                      <div className='min-w-0'>
+                        <p className='break-words font-semibold text-gray-900 dark:text-white'>
+                          {grupo.producto_nombre}
+                        </p>
+                        <Badge variant='secondary' className='mt-1 rounded-full'>
+                          {grupo.presentacion_nombre}
+                        </Badge>
+                      </div>
+                      <span className='whitespace-nowrap text-xs text-muted-foreground'>
+                        {grupo.fecha_retiro
+                          ? new Date(grupo.fecha_retiro).toLocaleString('es-CL')
+                          : '—'}
+                      </span>
+                    </div>
+                    {grupo.fecha_vencimientos.length > 0 && (
+                      <div className='mt-2 flex flex-wrap gap-1'>
+                        {grupo.fecha_vencimientos.map(fecha => (
+                          <Badge key={String(fecha)} variant='destructive' className='rounded-full'>
+                            {String(fecha)}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <div className='mt-3 flex items-center justify-between gap-2 border-t pt-3'>
+                      <div className='flex items-center gap-2'>
+                        <Badge variant='secondary' className='rounded-full'>
+                          {grupo.unidades} u.
+                        </Badge>
+                        <span className='font-semibold text-red-600'>
+                          {formatCurrencyCLP(grupo.valor)}
+                        </span>
+                      </div>
+                      <Button
+                        variant='outline'
+                        size='icon'
+                        className='rounded-full'
+                        onClick={() => setDetalleSeleccionado(grupo.registros)}
+                        aria-label={`Ver detalle de unidades retiradas de ${grupo.producto_nombre} ${grupo.presentacion_nombre}`}
+                      >
+                        <Eye className='h-4 w-4' />
+                      </Button>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+            <div className='hidden overflow-x-auto sm:block'>
               <Table className='min-w-[700px] text-center'>
                 <TableHeader>
                   <TableRow>

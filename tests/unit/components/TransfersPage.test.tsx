@@ -150,6 +150,27 @@ it('el administrador puede aprobar y transferir aunque su rol no sea Barman', as
   expect(screen.getByRole('button', { name: 'Rechazar' })).toBeInTheDocument();
 });
 
+it('la tarjeta pendiente abre el detalle al hacer clic', async () => {
+  render(<TransfersPage />);
+  await abrirPendientes();
+
+  fireEvent.click(await screen.findByText('Whisky'));
+
+  const dialog = await screen.findByRole('dialog');
+  expect(within(dialog).getByText('Detalle de transferencia')).toBeInTheDocument();
+  expect(within(dialog).getByText('Whisky · 750 ml')).toBeInTheDocument();
+  expect(within(dialog).getByText('Pendiente')).toBeInTheDocument();
+});
+
+it('aprobar desde la tarjeta pendiente no abre el detalle', async () => {
+  render(<TransfersPage />);
+  await abrirPendientes();
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Aprobar' }));
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
 it('el botón Transferir usa products/create (write en la API), no accept_transfer', async () => {
   auth.role = 'cajero';
   auth.grants = [

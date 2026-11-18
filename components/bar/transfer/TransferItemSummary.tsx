@@ -37,6 +37,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
     | 'opcionesGuardadas'
     | 'tipos'
     | 'precioVenta'
+    | 'precioSinAnfitriona'
     | 'comision'
     | 'precioShot'
     | 'precioShotAnfitriona'
@@ -78,6 +79,9 @@ export const TransferItemSummary = memo(function TransferItemSummary({
             tipo === 'botella' && !esVentaSimple && !configuration.venderConAnfitriona
               ? 0
               : amount(tipo === 'botella' ? configuration.precioVenta : configuration.precioShot),
+          ...(tipo === 'botella' && configuration.precioSinAnfitriona.trim()
+            ? { precio_sin_anfitriona: amount(configuration.precioSinAnfitriona) }
+            : {}),
           comision: amount(
             tipo === 'botella' && (esVentaSimple || configuration.venderConAnfitriona)
               ? configuration.comision
@@ -178,40 +182,73 @@ export const TransferItemSummary = memo(function TransferItemSummary({
         >
           <p className='font-semibold text-foreground'>Configuración actual</p>
           {options.length === 0 && <p>Selecciona un tipo de venta.</p>}
-          {options.map(option => (
-            <div key={option.tipo} className='space-y-1'>
-              <p>
-                {esCig ? 'Cajetilla' : option.tipo === 'botella' ? 'Botella' : 'Corto cliente'}:{' '}
-                <span className='font-semibold text-foreground'>
-                  {option.tipo === 'shot' && option.precio <= 0
-                    ? 'No habilitado'
-                    : formatCurrencyCLP(option.precio)}
-                </span>
-                {!esCig &&
-                  !esAnalcoholica &&
-                  option.tipo === 'botella' &&
-                  ` · Comisión: ${formatCurrencyCLP(option.comision ?? 0)}`}
-              </p>
-              {option.tipo === 'shot' && (
-                <>
-                  {preciosCortoAnfitriona(option).map((row, index) => (
-                    <p key={index}>
-                      Corto anfitriona {index + 1}: {formatCurrencyCLP(row.precio)} · Comisión:{' '}
-                      {formatCurrencyCLP(row.comision)}
+          {options.map(option => {
+            const precioSinAnfitriona =
+              option.tipo === 'botella' ? Number(option.precio_sin_anfitriona ?? 0) : 0;
+            // Sin precio "con anfitriona" solo queda la venta sin anfitriona:
+            // mostrar el $0 de la botella deshabilitada sería engañoso.
+            const mostrarConAnfitriona =
+              option.tipo !== 'botella' || Number(option.precio) > 0 || precioSinAnfitriona === 0;
+            return (
+              <div key={option.tipo} className='space-y-1'>
+                {option.tipo === 'botella' ? (
+                  <>
+                    {mostrarConAnfitriona && (
+                      <p>
+                        {esCig
+                          ? 'Cajetilla'
+                          : precioSinAnfitriona > 0
+                            ? 'Con anfitriona'
+                            : 'Botella'}
+                        :{' '}
+                        <span className='font-semibold text-foreground'>
+                          {formatCurrencyCLP(option.precio)}
+                        </span>
+                        {!esCig &&
+                          !esAnalcoholica &&
+                          Number(option.comision) > 0 &&
+                          ` · Comisión: ${formatCurrencyCLP(option.comision)}`}
+                      </p>
+                    )}
+                    {precioSinAnfitriona > 0 && (
+                      <p>
+                        Botella sin anfitriona:{' '}
+                        <span className='font-semibold text-foreground'>
+                          {formatCurrencyCLP(precioSinAnfitriona)}
+                        </span>
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    Corto cliente:{' '}
+                    <span className='font-semibold text-foreground'>
+                      {option.precio <= 0 ? 'No habilitado' : formatCurrencyCLP(option.precio)}
+                    </span>
+                  </p>
+                )}
+                {option.tipo === 'shot' && (
+                  <>
+                    {preciosCortoAnfitriona(option).map((row, index) => (
+                      <p key={index}>
+                        Corto anfitriona {index + 1}: {formatCurrencyCLP(row.precio)}
+                        {Number(row.comision) > 0 &&
+                          ` · Comisión: ${formatCurrencyCLP(row.comision)}`}
+                      </p>
+                    ))}
+                    <p>
+                      Cliente: {configuration.mlPorShot} ml · Anfitriona:{' '}
+                      {configuration.mlPorShotAnfitriona} ml
                     </p>
-                  ))}
-                  <p>
-                    Cliente: {configuration.mlPorShot} ml · Anfitriona:{' '}
-                    {configuration.mlPorShotAnfitriona} ml
-                  </p>
-                  <p>
-                    Cliente: producto completo · Bebida analcohólica anfitriona:{' '}
-                    {option.ml_acompanamiento_anfitriona ?? 0} ml
-                  </p>
-                </>
-              )}
-            </div>
-          ))}
+                    <p>
+                      Cliente: producto completo · Bebida analcohólica anfitriona:{' '}
+                      {option.ml_acompanamiento_anfitriona ?? 0} ml
+                    </p>
+                  </>
+                )}
+              </div>
+            );
+          })}
           {bottle && Number(bottle.comision) > 0 && Number(maxHostesses) >= 2 && (
             <div className='space-y-1'>
               <p className='font-semibold text-foreground'>Botella por anfitrionas</p>

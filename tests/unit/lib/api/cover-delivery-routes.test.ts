@@ -6,23 +6,25 @@ const mocks = vi.hoisted(() => ({
   crear: vi.fn(),
   obtener: vi.fn(),
   listar: vi.fn(),
+  rechazar: vi.fn(),
   venta: vi.fn(),
   notificar: vi.fn()
 }));
 vi.mock('@/lib/api/withRoute', () => ({
   withRoute:
     (_config: unknown, handler: (request: Request, context: unknown) => Promise<Response>) =>
-    (request: Request, context: { params?: unknown } = {}) =>
+    (request: Request, context: { params?: unknown; user?: unknown } = {}) =>
       handler(request, {
         params: context.params ?? Promise.resolve({ id: 's1' }),
-        user: { id: 'cajero', name: 'Caja', lastName: 'Prueba' }
+        user: context.user ?? { id: 'cajero', name: 'Caja', lastName: 'Prueba' }
       })
 }));
 vi.mock('@/modules/entradas', () => ({
   entregarGrupoEntradas: mocks.entregar,
   crearSolicitudCover: mocks.crear,
   obtenerSolicitudCover: mocks.obtener,
-  listarSolicitudesCover: mocks.listar
+  listarSolicitudesCover: mocks.listar,
+  rechazarSolicitudCover: mocks.rechazar
 }));
 vi.mock('@/workflows/ventas', () => ({ SaleService: { createSale: mocks.venta } }));
 vi.mock('@/lib/notifications/entradaNotificationUtils', () => ({
@@ -32,6 +34,9 @@ vi.mock('@/lib/notifications/entradaNotificationUtils', () => ({
 import { POST } from '@/app/api/tickets/entregar-grupo/route';
 import { POST as solicitar } from '@/app/api/tickets/cover-solicitudes/route';
 import { PATCH as aprobar } from '@/app/api/tickets/cover-solicitudes/[id]/approve/route';
+import { PATCH as rechazar } from '@/app/api/tickets/cover-solicitudes/[id]/reject/route';
+
+const barman = { id: 'b1', name: 'Bar', lastName: 'Man', role: 'Barman' };
 
 const payload = {
   entrada_ids: ['e1', 'e2'],
@@ -150,5 +155,24 @@ describe('contratos HTTP de entrega de covers', () => {
       expect.any(Function)
     );
     expect(mocks.entregar).toHaveBeenCalledTimes(1);
+  });
+
+  it('no deja que el barman apruebe la solicitud que él envió', async () => {
+    const respuesta = await aprobar(request({}), {
+      params: Promise.resolve({ id: 's1' }),
+      user: barman
+    } as unknown as { params: Promise<{ id: string }> });
+    expect(respuesta.status).toBe(403);
+    expect(mocks.entregar).not.toHaveBeenCalled();
+    expect(mocks.notificar).not.toHaveBeenCalled();
+  });
+
+  it('no deja que el barman rechace la solicitud que él envió', async () => {
+    const respuesta = await rechazar(request({ motivo: 'Stock insuficiente' }), {
+      params: Promise.resolve({ id: 's1' }),
+      user: barman
+    } as unknown as { params: Promise<{ id: string }> });
+    expect(respuesta.status).toBe(403);
+    expect(mocks.rechazar).not.toHaveBeenCalled();
   });
 });

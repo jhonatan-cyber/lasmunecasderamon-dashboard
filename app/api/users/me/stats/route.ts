@@ -52,7 +52,10 @@ export const GET = withRoute(
           montoAnticipoMaximo: anticipoBalances.montoMaximo,
           montoAsistencia: anticipoBalances.montoAsistencia,
           montoComisiones: anticipoBalances.montoComision,
-          montoPropinas: anticipoBalances.montoPropina
+          montoPropinas: anticipoBalances.montoPropina,
+          montoHorasExtras: anticipoBalances.montoHorasExtras,
+          montoGratificaciones: anticipoBalances.montoGratificaciones,
+          montoAnticipos: anticipoBalances.montoAnticipos
         }
       }
     });

@@ -94,7 +94,7 @@ export function SalePrices({
                         {formatCurrencyCLP(row.precio)}
                       </span>
                       <span className='text-right text-xs tabular-nums text-muted-foreground'>
-                        {formatCurrencyCLP(row.comision)}
+                        {Number(row.comision) > 0 ? formatCurrencyCLP(row.comision) : '—'}
                       </span>
                     </React.Fragment>
                   ))}
@@ -180,8 +180,12 @@ export function SalePrices({
                   <span className='flex flex-col gap-1'>
                     {preciosCortoAnfitriona(option).map((row, index) => (
                       <span key={index} className='text-xs'>
-                        Anfitriona {field !== 'comision' && formatCurrencyCLP(row.precio)}{' '}
-                        {field !== 'precio' && `· Comisión ${formatCurrencyCLP(row.comision)}`}
+                        Anfitriona {index + 1}
+                        {field !== 'comision' && ` ${formatCurrencyCLP(row.precio)}`}
+                        {field !== 'precio' &&
+                          (Number(row.comision) > 0
+                            ? ` · Comisión ${formatCurrencyCLP(row.comision)}`
+                            : ' · Sin comisión')}
                       </span>
                     ))}
                   </span>

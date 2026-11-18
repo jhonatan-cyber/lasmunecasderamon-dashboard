@@ -24,7 +24,10 @@ vi.mock('@/lib/api/withRoute', () => ({
     // sale como respuesta HTTP en lugar de propagarse.
     return async (request: Request) => {
       try {
-        return await handler(request, { user: { id: 'user-1' }, params: {} });
+        return await handler(request, {
+          user: { id: 'user-1', name: 'Ana', lastName: 'Pérez', nick: 'anita' },
+          params: {}
+        });
       } catch (error) {
         return ApiResponse.error(error as Error);
       }
@@ -141,6 +144,21 @@ describe('POST /api/service-requests', () => {
     expect(operacion.ServiceRequestService.create).toHaveBeenCalledWith(
       expect.not.objectContaining({ baucher_foto: expect.anything() }),
       'user-1'
+    );
+  });
+
+  it('el aviso lleva la identidad de quien solicita y la clave que usa el modal', async () => {
+    await (POST as Handler)(solicitud(BASE));
+
+    expect(sse.sendNotificationToAll).toHaveBeenCalledWith(
+      'new_service_request',
+      expect.objectContaining({
+        id: 'sol-1',
+        id_solicitud: 'sol-1',
+        solicitado_por: 'user-1',
+        solicitado_por_nombre: 'Ana Pérez',
+        solicitado_por_nick: 'anita'
+      })
     );
   });
 });

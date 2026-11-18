@@ -99,6 +99,8 @@ function stubCatalogo(
     const ok = (data: unknown) => ({ ok: true, json: async () => ({ success: true, data }) });
     if (url.includes('solo_cover=true')) return ok(covers);
     if (url.startsWith('/api/products/for-sale')) return ok(productos);
+    if (url === '/api/tickets/cover-solicitudes' && init?.method === 'POST')
+      return ok({ id: 'solicitud-1' });
     if (url === '/api/tickets/entregar-grupo' && init?.method === 'POST') {
       if (fallaEntrega)
         return { ok: false, json: async () => ({ success: false, message: 'Stock cambió' }) };
@@ -116,7 +118,12 @@ function stubCatalogo(
   return fetchMock;
 }
 
-function renderDialog(cantidad: number, montoEntrada: number, tope: number) {
+function renderDialog(
+  cantidad: number,
+  montoEntrada: number,
+  tope: number,
+  modo: 'entrega' | 'solicitud' = 'entrega'
+) {
   const onClose = vi.fn();
   const onEntregado = vi.fn();
   render(
@@ -126,6 +133,7 @@ function renderDialog(cantidad: number, montoEntrada: number, tope: number) {
       <EntregaCoversDialog
         grupo={grupo(cantidad, montoEntrada)}
         tope={tope}
+        modo={modo}
         onClose={onClose}
         onEntregado={onEntregado}
       />
@@ -348,6 +356,28 @@ describe('EntregaCoversDialog', () => {
     screen
       .getAllByRole('button', { name: 'Agregar una unidad' })
       .forEach(boton => expect(boton).toBeDisabled());
+  });
+
+  it('en modo solicitud pide autorización al cajero en vez de entregar', async () => {
+    const fetchMock = stubCatalogo([bebida('Whisky', 'Licores', 2000)]);
+    const { onClose, onEntregado } = renderDialog(1, 5000, 1, 'solicitud');
+
+    fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Solicitar 1 covers' }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onEntregado).toHaveBeenCalledTimes(1);
+    const pedidos = fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST');
+    expect(pedidos).toHaveLength(1);
+    expect(pedidos[0]![0]).toBe('/api/tickets/cover-solicitudes');
+    expect(JSON.parse(String(pedidos[0]![1]?.body))).toMatchObject({
+      grupo_registro_id: 'g-1',
+      cliente_nombre: 'Mesa 1',
+      entrada_ids: ['t-0'],
+      monto_adicional: 0,
+      unidades: [{ presentacion_id: 'p-Whisky', tipo_entrega: 'corte', acompanamientos: null }]
+    });
+    expect(fetchMock.mock.calls.some(([url]) => url === '/api/tickets/entregar-grupo')).toBe(false);
   });
 
   it('con el presupuesto bajo el precio más barato no ofrece productos', async () => {
