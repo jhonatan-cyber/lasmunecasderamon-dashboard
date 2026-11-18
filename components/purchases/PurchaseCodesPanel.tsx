@@ -57,11 +57,19 @@ export function PurchaseCodesPanel({
           Sin códigos generados en esta compra.
         </p>
       ) : (
-        <UnitLabelSelector units={units} defaultGroupBy='product' />
+        <UnitLabelSelector
+          units={units}
+          defaultGroupBy='presentation'
+          scrollable={false}
+          gridClassName='grid-cols-2'
+          hideSelectPending
+          lockGrouping
+          collapsibleGroups
+        />
       )}
 
-      <div className='flex justify-end'>
-        <Button type='button' onClick={onClose} className='rounded-full px-6'>
+      <div className='sticky bottom-0 z-10 -mx-4 flex justify-end border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'>
+        <Button type='button' onClick={onClose} className='w-full rounded-full sm:w-auto sm:px-6'>
           Cerrar
         </Button>
       </div>

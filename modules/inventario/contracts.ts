@@ -253,6 +253,8 @@ export interface TraspasoResultado {
   transferencia_id?: string;
   trasladadas: number;
   stock_bar: number;
+  producto_nombre?: string | null;
+  presentacion_nombre?: string | null;
 }
 
 /** Alta de una presentación de catálogo. */

@@ -2,9 +2,10 @@
 import { Input } from '@/components/ui/input';
 
 import { useId, useState } from 'react';
-import { Printer, Trash2 } from 'lucide-react';
+import { ChevronDown, Printer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -14,6 +15,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { printUnitLabels } from '@/lib/utils/printUnitLabels';
+import { cn } from '@/lib/utils/utils';
 import {
   groupLabelUnits,
   labelDate,
@@ -29,6 +31,11 @@ export function UnitLabelSelector({
   units,
   defaultGroupBy = 'purchase',
   buttonClassName = '',
+  scrollable = true,
+  gridClassName,
+  hideSelectPending = false,
+  lockGrouping = false,
+  collapsibleGroups = false,
   onDelete
 }: {
   units: LabelUnit[];
@@ -36,6 +43,16 @@ export function UnitLabelSelector({
   defaultGroupBy?: LabelGroupBy;
   /** Estilo del módulo que incorpora el selector, si necesita una variante local. */
   buttonClassName?: string;
+  /** Limita la lista a un alto fijo con scroll interno; `false` la deja fluir. */
+  scrollable?: boolean;
+  /** Columnas de la lista de códigos; por defecto 1 en móvil y 2 desde `sm`. */
+  gridClassName?: string;
+  /** Oculta "Seleccionar pendientes" cuando todos los códigos son recién creados. */
+  hideSelectPending?: boolean;
+  /** Deshabilita el selector "Agrupar por". */
+  lockGrouping?: boolean;
+  /** Permite contraer y expandir cada grupo de códigos. */
+  collapsibleGroups?: boolean;
   /**
    * Habilita la baja manual de códigos. Sólo el detalle de producto la ofrece:
    * el selector de compras se limita a imprimir.
@@ -48,6 +65,7 @@ export function UnitLabelSelector({
   const [status, setStatus] = useState('all');
   const [confirmed, setConfirmed] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<string[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const current = units
     .filter(unit => !unit.estado || unit.estado === 'almacen')
@@ -122,10 +140,11 @@ export function UnitLabelSelector({
             value={groupBy}
             onValueChange={(value: string) => setGroupBy(value as LabelGroupBy)}
           >
-            <SelectTrigger id={`${id}-group`} className='w-full sm:w-52'>
+            <SelectTrigger id={`${id}-group`} className='w-full sm:w-52' disabled={lockGrouping}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value='presentation'>Presentación</SelectItem>
               <SelectItem value='product'>Producto</SelectItem>
               <SelectItem value='purchase'>Compra</SelectItem>
               <SelectItem value='date'>Fecha de ingreso</SelectItem>
@@ -159,17 +178,19 @@ export function UnitLabelSelector({
           >
             Seleccionar todos
           </Button>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            className={`rounded-full ${buttonClassName}`}
-            onClick={() =>
-              setSelected(new Set(visible.filter(u => !u.fecha_impresion).map(u => u.id)))
-            }
-          >
-            Seleccionar pendientes
-          </Button>
+          {!hideSelectPending && (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className={`rounded-full ${buttonClassName}`}
+              onClick={() =>
+                setSelected(new Set(visible.filter(u => !u.fecha_impresion).map(u => u.id)))
+              }
+            >
+              Seleccionar pendientes
+            </Button>
+          )}
           <Button
             type='button'
             variant='ghost'
@@ -248,13 +269,14 @@ export function UnitLabelSelector({
       <p className='text-xs text-muted-foreground'>
         Etiquetas de 50 × 30 mm en A4. Imprime al 100 % y desactiva encabezados y pies de página.
       </p>
-      <div className='flex max-h-80 flex-col gap-3 overflow-y-auto p-1'>
+      <div className={cn('flex flex-col gap-3 p-1', scrollable && 'max-h-80 overflow-y-auto')}>
         {!groups.length && (
           <p className='text-sm text-muted-foreground'>No hay códigos con este estado.</p>
         )}
-        {groups.map(group => (
-          <section key={group.title} className='rounded-lg border p-3' aria-label={group.title}>
-            <div className='mb-2 flex flex-wrap items-center justify-between gap-2'>
+        {groups.map(group => {
+          const abierto = !collapsedGroups.has(group.title);
+          const header = (
+            <div className='flex flex-wrap items-center justify-between gap-2'>
               <div>
                 <h4 className='text-sm font-medium'>{group.title}</h4>
                 <p className='text-xs text-muted-foreground'>
@@ -262,21 +284,44 @@ export function UnitLabelSelector({
                   {group.units.filter(u => !!u.fecha_impresion).length} impresos
                 </p>
               </div>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                className={`rounded-full ${buttonClassName}`}
-                onClick={() =>
-                  setSelected(previous => new Set([...previous, ...group.units.map(u => u.id)]))
-                }
-              >
-                Seleccionar grupo
-              </Button>
+              <div className='flex items-center gap-2'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className={`rounded-full ${buttonClassName}`}
+                  onClick={() =>
+                    setSelected(previous => new Set([...previous, ...group.units.map(u => u.id)]))
+                  }
+                >
+                  Seleccionar grupo
+                </Button>
+                {collapsibleGroups && (
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon'
+                      className={`size-8 shrink-0 ${buttonClassName}`}
+                      aria-label={abierto ? `Contraer ${group.title}` : `Expandir ${group.title}`}
+                    >
+                      <ChevronDown
+                        className={cn('size-4 transition-transform', abierto && 'rotate-180')}
+                        aria-hidden='true'
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                )}
+              </div>
             </div>
-            <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+          );
+          const codigos = (
+            <div className={cn('grid grid-cols-1 gap-2 sm:grid-cols-2', gridClassName)}>
               {group.units.map(unit => (
-                <div key={unit.id} className='flex items-center gap-3 rounded-lg border p-3'>
+                <div
+                  key={unit.id}
+                  className='flex items-center gap-2 rounded-lg border p-2 sm:gap-3 sm:p-3'
+                >
                   <Input
                     type='checkbox'
                     checked={selected.has(unit.id)}
@@ -292,7 +337,9 @@ export function UnitLabelSelector({
                     }}
                   />
                   <span className='flex min-w-0 flex-1 flex-col gap-1'>
-                    <span className='font-mono text-xs'>{unit.codigo_barras || unit.codigo}</span>
+                    <span className='font-mono text-xs break-all'>
+                      {unit.codigo_barras || unit.codigo}
+                    </span>
                     <span className='text-xs text-muted-foreground'>
                       {unit.fecha_impresion
                         ? `Impreso · ${labelDate(unit.fecha_impresion)}`
@@ -324,8 +371,34 @@ export function UnitLabelSelector({
                 </div>
               ))}
             </div>
-          </section>
-        ))}
+          );
+
+          return (
+            <section key={group.title} className='rounded-lg border p-3' aria-label={group.title}>
+              {collapsibleGroups ? (
+                <Collapsible
+                  open={abierto}
+                  onOpenChange={open =>
+                    setCollapsedGroups(previous => {
+                      const next = new Set(previous);
+                      if (open) next.delete(group.title);
+                      else next.add(group.title);
+                      return next;
+                    })
+                  }
+                >
+                  {header}
+                  <CollapsibleContent className='pt-2'>{codigos}</CollapsibleContent>
+                </Collapsible>
+              ) : (
+                <>
+                  <div className='mb-2'>{header}</div>
+                  {codigos}
+                </>
+              )}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

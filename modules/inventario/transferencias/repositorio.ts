@@ -67,11 +67,21 @@ export async function traspasarAlBar(
   input: TraspasoInput
 ): Promise<TraspasoResultado> {
   // Serializa traspasos del mismo producto, incluso entre distintas presentaciones.
-  const producto = await trx<{ id_producto: string; system_key: string | null }[]>(
-    `SELECT pr.id_producto, c.system_key
-       FROM productos pr LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
+  const producto = await trx<
+    {
+      id_producto: string;
+      system_key: string | null;
+      producto_nombre: string | null;
+      presentacion_nombre: string | null;
+    }[]
+  >(
+    `SELECT pr.id_producto, pr.nombre AS producto_nombre, c.system_key,
+            p.nombre AS presentacion_nombre
+       FROM productos pr
+       LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
+       LEFT JOIN inventario_presentaciones p ON p.id = ?
       WHERE pr.id_producto = ? FOR UPDATE OF pr`,
-    [input.producto_id]
+    [input.presentacion_id, input.producto_id]
   );
   if (!producto.length) throw new BusinessError('El producto no existe');
   // Un lote vencido no baja al bar: se queda en bodega hasta que se le da de
@@ -199,7 +209,9 @@ export async function traspasarAlBar(
   return {
     transferencia_id: movimientoId,
     trasladadas: input.cantidad,
-    stock_bar: Number(enBar[0]?.total ?? 0)
+    stock_bar: Number(enBar[0]?.total ?? 0),
+    producto_nombre: producto[0]?.producto_nombre ?? null,
+    presentacion_nombre: producto[0]?.presentacion_nombre ?? null
   };
 }
 

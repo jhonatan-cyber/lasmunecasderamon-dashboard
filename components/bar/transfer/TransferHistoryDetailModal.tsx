@@ -4,15 +4,28 @@ import type { ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
-  DialogTitle,
-  DialogDescription
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { SalePrices } from '@/components/bar/SalePrices';
 import { BarAnfitrionas, isTierPricedItem } from '@/components/bar/BarAnfitrionas';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { cn } from '@/lib/utils/utils';
 import type { TransferRecord } from '@/types/transfer';
+import {
+  ArrowLeftRight,
+  CalendarClock,
+  CircleCheck,
+  Package,
+  ReceiptText,
+  SlidersHorizontal,
+  UserRound,
+  type LucideIcon
+} from 'lucide-react';
 
 /** Etiqueta legible del estado de una transferencia. */
 export function estadoLabel(estado: TransferRecord['estado']): string {
@@ -27,6 +40,19 @@ export function estadoLabel(estado: TransferRecord['estado']): string {
       return 'Histórica';
     default:
       return estado;
+  }
+}
+
+function estadoBadgeClass(estado: TransferRecord['estado']): string {
+  switch (estado) {
+    case 'aceptada':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300';
+    case 'rechazada':
+      return 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300';
+    case 'pendiente':
+      return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300';
+    default:
+      return 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300';
   }
 }
 
@@ -45,14 +71,48 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({
+  icon: Icon,
+  title,
+  children
+}: {
+  icon: LucideIcon;
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <section className='space-y-3'>
-      <h3 className='text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400'>
-        {title}
-      </h3>
+    <section className='rounded-xl border bg-card p-3 sm:p-5'>
+      <div className='mb-3 flex items-center gap-2'>
+        <Icon className='h-4 w-4 shrink-0 text-muted-foreground' aria-hidden='true' />
+        <h3 className='text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400'>
+          {title}
+        </h3>
+      </div>
       {children}
     </section>
+  );
+}
+
+function TimelineBlock({
+  icon: Icon,
+  title,
+  person,
+  date
+}: {
+  icon: LucideIcon;
+  title: string;
+  person: string;
+  date: string;
+}) {
+  return (
+    <div className='min-w-0'>
+      <div className='flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
+        <Icon className='h-3.5 w-3.5' aria-hidden='true' />
+        {title}
+      </div>
+      <p className='mt-1 break-words text-sm font-semibold'>{person}</p>
+      <p className='text-xs text-muted-foreground'>{date}</p>
+    </div>
   );
 }
 
@@ -67,50 +127,69 @@ export function TransferHistoryDetailModal({
 }: TransferHistoryDetailModalProps) {
   return (
     <Dialog open={record !== null} onOpenChange={onOpenChange}>
-      <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_2rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl p-0 [&>button]:top-2 [&>button]:right-2 [&>button]:flex [&>button]:h-10 [&>button]:w-10 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button:hover]:bg-accent'>
+      <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_1rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl p-0 [&>button]:top-2 [&>button]:right-2 [&>button]:flex [&>button]:h-10 [&>button]:w-10 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button:hover]:bg-accent'>
         {record && (
           <>
-            <DialogHeader className='shrink-0 gap-1 border-b px-5 py-4 pr-14 text-left sm:px-6'>
-              <DialogTitle className='text-lg font-bold'>Detalle de transferencia</DialogTitle>
-              <DialogDescription className='truncate'>
-                {record.producto_nombre} · {record.presentacion_nombre}
-              </DialogDescription>
+            <DialogHeader className='shrink-0 gap-0 border-b px-4 py-4 pr-14 text-left sm:px-6'>
+              <div className='flex min-w-0 items-center gap-3'>
+                <div className='hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300 sm:flex'>
+                  <ArrowLeftRight className='h-5 w-5' aria-hidden='true' />
+                </div>
+                <div className='min-w-0'>
+                  <DialogTitle className='text-base font-bold sm:text-lg'>
+                    Detalle de transferencia
+                  </DialogTitle>
+                  <DialogDescription className='truncate text-sm'>
+                    {record.producto_nombre} · {record.presentacion_nombre}
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
-            <div className='min-h-0 space-y-6 overflow-y-auto overscroll-contain p-5 sm:p-6'>
-              <Section title='Datos de la transferencia'>
-                <dl className='grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2'>
+
+            <div className='min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-muted/20 p-3 sm:p-6'>
+              <Section icon={Package} title='Resumen'>
+                <div className='mb-4 flex flex-wrap items-center gap-2'>
+                  <Badge
+                    variant='outline'
+                    className={cn(
+                      'whitespace-nowrap px-2.5 py-0.5',
+                      estadoBadgeClass(record.estado)
+                    )}
+                  >
+                    {estadoLabel(record.estado)}
+                  </Badge>
+                </div>
+                <dl className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
                   <Field label='Producto'>{record.producto_nombre}</Field>
                   <Field label='Presentación'>{record.presentacion_nombre}</Field>
-                  <Field label='Categoría'>{record.categoria_nombre || 'Sin categoría'}</Field>
                   <Field label='Cantidad'>{record.cantidad}</Field>
-                  <Field label='Estado'>
-                    <Badge
-                      variant={record.estado === 'aceptada' ? 'default' : 'secondary'}
-                      className='whitespace-nowrap'
-                    >
-                      {estadoLabel(record.estado)}
-                    </Badge>
-                  </Field>
-                  <Field label='Solicitada por'>{record.usuario_nombre}</Field>
-                  <Field label='Fecha de solicitud'>{formatFecha(record.fecha_crea)}</Field>
+                  <Field label='Categoría'>{record.categoria_nombre || 'Sin categoría'}</Field>
                 </dl>
               </Section>
 
-              <Section title='Resolución'>
-                <dl className='grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2'>
-                  <Field label='Recibida por'>
-                    {record.aceptado_nombre || 'Sin recepción registrada'}
-                  </Field>
-                  <Field label='Fecha de recepción'>{formatFecha(record.fecha_aceptacion)}</Field>
-                </dl>
+              <Section icon={CalendarClock} title='Trazabilidad'>
+                <div className='grid gap-3 sm:grid-cols-2'>
+                  <TimelineBlock
+                    icon={UserRound}
+                    title='Solicitud'
+                    person={record.usuario_nombre}
+                    date={formatFecha(record.fecha_crea)}
+                  />
+                  <TimelineBlock
+                    icon={CircleCheck}
+                    title='Recepción'
+                    person={record.aceptado_nombre || 'Sin recepción registrada'}
+                    date={formatFecha(record.fecha_aceptacion)}
+                  />
+                </div>
               </Section>
 
-              <Section title='Venta configurada'>
-                <dl className='grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2'>
+              <Section icon={ReceiptText} title='Venta configurada'>
+                <dl className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                   <Field label='Precio de venta'>{formatCurrencyCLP(record.precio_venta)}</Field>
                   <Field label='Comisión'>{formatCurrencyCLP(record.comision)}</Field>
                 </dl>
-                <div className='rounded-xl border bg-muted/30 p-3'>
+                <div className='mt-4 border-t pt-4'>
                   <p className='mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground'>
                     Tipos de venta
                   </p>
@@ -138,8 +217,8 @@ export function TransferHistoryDetailModal({
                 </div>
               </Section>
 
-              <Section title='Parámetros de servicio'>
-                <dl className='grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2'>
+              <Section icon={SlidersHorizontal} title='Parámetros de servicio'>
+                <dl className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                   <Field label='ml por shot (cliente)'>
                     {record.ml_shot != null ? `${record.ml_shot} ml` : 'Según configuración'}
                   </Field>
@@ -155,6 +234,17 @@ export function TransferHistoryDetailModal({
                 </dl>
               </Section>
             </div>
+
+            <DialogFooter className='shrink-0 border-t bg-background px-4 py-3 sm:px-6 sm:py-4'>
+              <Button
+                type='button'
+                variant='outline'
+                className='w-full rounded-full px-8 py-2 transition-all duration-200 hover:scale-105 sm:w-auto dark:hover:bg-white dark:hover:text-black'
+                onClick={() => onOpenChange(false)}
+              >
+                Cerrar
+              </Button>
+            </DialogFooter>
           </>
         )}
       </DialogContent>

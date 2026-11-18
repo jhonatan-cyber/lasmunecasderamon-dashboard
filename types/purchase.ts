@@ -22,6 +22,8 @@ export interface PurchaseDetail extends PurchaseDetailInput {
   subtotal: number;
   producto_nombre: string;
   presentacion_nombre: string;
+  producto_foto?: string | null;
+  presentacion_foto?: string | null;
 }
 
 export interface PurchaseRecord {

@@ -20,8 +20,11 @@ export function ReplenishmentNotice({
   );
   if (compact)
     return (
-      <div className='flex flex-col items-start gap-1'>
-        <Button asChild className='shrink-0 rounded-full'>
+      <div className='flex w-full flex-col items-start gap-1'>
+        <Button
+          asChild
+          className='min-h-10 w-full shrink-0 whitespace-normal rounded-full px-3 py-2 leading-snug sm:px-4'
+        >
           <Link href='/purchases/replenishment'>
             Órdenes de compra
             <span className='inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-primary-foreground/20 px-1.5 text-xs tabular-nums'>

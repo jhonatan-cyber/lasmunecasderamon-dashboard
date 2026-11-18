@@ -226,6 +226,7 @@ it('agrupa los productos por categoría y entra al elegir una', async () => {
   const cards = screen.getAllByRole('button');
   expect(cards).toHaveLength(3);
   expect(cards[cards.length - 1]).toHaveTextContent('Sin categoría');
+  expect(screen.getAllByText('1 presentación')).toHaveLength(3);
   // Los productos recién aparecen al entrar a la categoría.
   expect(
     screen.queryByRole('button', { name: 'Transferir Whisky 750 ml' })

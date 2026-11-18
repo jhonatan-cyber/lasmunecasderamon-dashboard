@@ -8,13 +8,47 @@
  * presentación, así que su escritura ahora es del módulo de punta a punta y no
  * necesita el puente de transacción heredada.
  *
- * Mismo SQL, mismo folio por secuencia y mismos códigos generados que antes:
- * este corte mueve código, no cambia reglas.
+ * El folio de compra es un código aleatorio de 8 caracteres en mayúsculas:
+ * letras y dígitos, con al menos una letra y un número. Antes de insertar se
+ * comprueba contra los folios existentes; el UNIQUE de `compras.folio` sigue
+ * siendo la garantía final.
  */
+import { randomInt } from 'node:crypto';
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { BaseRepository } from '@/lib/database/base-repository';
-import type { PurchaseDetailInput } from '@/types/purchase';
+import type { PurchaseDetailInput, PurchaseGeneratedCode } from '@/types/purchase';
+
+const FOLIO_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const FOLIO_DIGITS = '0123456789';
+const FOLIO_ALPHABET = `${FOLIO_LETTERS}${FOLIO_DIGITS}`;
+const FOLIO_LENGTH = 8;
+const FOLIO_ATTEMPTS = 5;
+
+function generarFolioCompra(): string {
+  const chars = [
+    FOLIO_LETTERS[randomInt(FOLIO_LETTERS.length)],
+    FOLIO_DIGITS[randomInt(FOLIO_DIGITS.length)],
+    ...Array.from(
+      { length: FOLIO_LENGTH - 2 },
+      () => FOLIO_ALPHABET[randomInt(FOLIO_ALPHABET.length)]
+    )
+  ];
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}
+
+async function generarFolioCompraUnico(trx: TransactionQuery): Promise<string> {
+  for (let intento = 0; intento < FOLIO_ATTEMPTS; intento += 1) {
+    const folio = generarFolioCompra();
+    const existentes = await trx<any[]>('SELECT 1 FROM compras WHERE folio = ? LIMIT 1', [folio]);
+    if (existentes.length === 0) return folio;
+  }
+  throw new Error('No se pudo generar un folio de compra único');
+}
 
 export interface CompraRow {
   id: string;
@@ -40,8 +74,7 @@ export async function crearCompra(
   detalles: (PurchaseDetailInput & { subtotal: number })[]
 ): Promise<CompraRow> {
   const id = generateUUID();
-  const folioRows = await trx<any[]>(`SELECT nextval('compras_folio_seq') AS seq`, []);
-  const folio = `C-${String(Number(folioRows[0]?.seq ?? 0)).padStart(4, '0')}`;
+  const folio = await generarFolioCompraUnico(trx);
   await BaseRepository.insert(trx, 'compras', {
     id,
     folio,
@@ -106,7 +139,8 @@ export async function listarCompras(limit = 100): Promise<any[]> {
   const ids = compras.map(c => String(c.id));
   const placeholders = ids.map(() => '?').join(',');
   const detalles = await query<any[]>(
-    `SELECT d.*, pr.nombre AS producto_nombre, p.nombre AS presentacion_nombre
+    `SELECT d.*, pr.foto AS producto_foto, p.foto AS presentacion_foto,
+            pr.nombre AS producto_nombre, p.nombre AS presentacion_nombre
        FROM detalle_compras d
        LEFT JOIN productos pr ON pr.id_producto = d.producto_id
        LEFT JOIN inventario_presentaciones p ON p.id = d.presentacion_id
@@ -122,12 +156,40 @@ export async function listarCompras(limit = 100): Promise<any[]> {
       precio_compra: Number(d.precio_compra ?? 0),
       subtotal: Number(d.subtotal ?? 0),
       producto_nombre: d.producto_nombre ?? 'Producto eliminado',
-      presentacion_nombre: d.presentacion_nombre ?? 'Presentación eliminada'
+      presentacion_nombre: d.presentacion_nombre ?? 'Presentación eliminada',
+      producto_foto: d.producto_foto ?? null,
+      presentacion_foto: d.presentacion_foto ?? null
     });
   }
   return compras.map(c => ({
     ...c,
     total: Number(c.total ?? 0),
     detalles: porCompra[String(c.id)] ?? []
+  }));
+}
+
+/** Códigos de las unidades que ingresaron con una compra, agrupables por presentación. */
+export async function listarCodigosDeCompra(compraId: string): Promise<PurchaseGeneratedCode[]> {
+  const rows = await query<any[]>(
+    `SELECT u.id, u.codigo, u.codigo_barras, u.producto_id, u.presentacion_id,
+            pr.nombre AS producto_nombre, p.nombre AS presentacion_nombre,
+            c.folio AS compra_folio
+       FROM inventario_unidades u
+       JOIN compras c ON c.id = u.compra_id
+       LEFT JOIN productos pr ON pr.id_producto = u.producto_id
+       LEFT JOIN inventario_presentaciones p ON p.id = u.presentacion_id
+       WHERE u.compra_id = ?
+       ORDER BY u.codigo ASC`,
+    [compraId]
+  );
+  return rows.map(row => ({
+    id: String(row.id),
+    codigo: String(row.codigo ?? ''),
+    codigo_barras: String(row.codigo_barras ?? ''),
+    producto_id: String(row.producto_id ?? ''),
+    producto_nombre: row.producto_nombre ?? 'Producto eliminado',
+    presentacion_id: String(row.presentacion_id ?? ''),
+    presentacion_nombre: row.presentacion_nombre ?? 'Presentación eliminada',
+    compra_folio: String(row.compra_folio ?? '')
   }));
 }

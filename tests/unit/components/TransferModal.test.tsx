@@ -822,12 +822,12 @@ it('oculta la configuración de venta para bebida analcohólica deshabilitada', 
     screen.queryByText('Esta bebida está desactivada para la venta por botella.')
   ).not.toBeInTheDocument();
 
-  expect(screen.getByLabelText('Resumen de configuración')).toHaveTextContent('Botella: $0');
+  expect(screen.queryByLabelText('Resumen de configuración')).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
     target: { value: '1' }
   });
-  expect(screen.getByText('$0 c/u')).toBeInTheDocument();
-  expect(screen.getByText('$0', { selector: 'p' })).toBeInTheDocument();
+  expect(screen.queryByText('$0 c/u')).not.toBeInTheDocument();
+  expect(screen.queryByText('$0', { selector: 'p' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
   await waitFor(() => expect(done).toHaveBeenCalledOnce());
   expect(postBody(request).opciones_venta[0]).toMatchObject({
@@ -836,6 +836,47 @@ it('oculta la configuración de venta para bebida analcohólica deshabilitada', 
     precio_sin_anfitriona: 0,
     vender_con_anfitriona: false,
     acompanamiento: { unidades: 0 },
+    en_venta: false
+  });
+});
+
+it('oculta el valor del pie al desactivar la venta tras editar precios', async () => {
+  const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+  vi.stubGlobal('fetch', request);
+  const done = vi.fn();
+  render(
+    <TransferModal
+      open
+      item={{
+        ...item,
+        categoria_nombre: 'Bebidas analcohólicas',
+        opciones_venta: [{ tipo: 'botella', precio: 2000, comision: 0 }]
+      }}
+      onOpenChange={vi.fn()}
+      onDone={done}
+    />
+  );
+
+  await screen.findByRole('button', { name: 'Modificar precios' });
+  fireEvent.click(screen.getByRole('button', { name: 'Modificar precios' }));
+  const venta = screen.getByLabelText('Poner la bebida a la venta');
+  expect(venta).toBeChecked();
+  fireEvent.click(venta);
+  expect(venta).not.toBeChecked();
+  fireEvent.change(screen.getByLabelText('Unidades a transferir al bar'), {
+    target: { value: '4' }
+  });
+
+  expect(screen.queryByText('$2.000 c/u')).not.toBeInTheDocument();
+  expect(screen.queryByText('$8.000')).not.toBeInTheDocument();
+  expect(screen.getByText('Quedarán 1 en bodega · 6 en el bar')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Transferir' }));
+  await waitFor(() => expect(done).toHaveBeenCalledOnce());
+  expect(postBody(request).opciones_venta[0]).toMatchObject({
+    tipo: 'botella',
+    precio: 0,
+    comision: 0,
     en_venta: false
   });
 });

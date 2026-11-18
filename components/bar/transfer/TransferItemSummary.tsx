@@ -59,6 +59,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
   // Analcohólicas: modo simple, tampoco muestran comisión ni bebida de cover.
   const esAnalcoholica = esBebidaAnalcoholica(item.categoria_nombre);
   const esVentaSimple = esAnalcoholica || esCig;
+  const ventaDeshabilitada = esAnalcoholica && configuration?.enVenta === false;
   const amount = (value: string) => Number(value.replace(/\./g, '')) || 0;
   const options: SaleOption[] = configuration
     ? configuration.usarConfigGuardada
@@ -132,7 +133,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
-                <span className='font-semibold text-gray-900 dark:text-neutral-100 block truncate cursor-help'>
+                <span className='block cursor-help break-words font-semibold text-gray-900 dark:text-neutral-100'>
                   {item.categoria_nombre ? `${item.categoria_nombre} ` : ''}
                   {item.producto_nombre} de {item.nombre}
                 </span>
@@ -170,7 +171,7 @@ export const TransferItemSummary = memo(function TransferItemSummary({
           </span>
         </div>
       </div>
-      {configuration && (
+      {configuration && !ventaDeshabilitada && (
         <div
           className='space-y-2 text-xs text-muted-foreground'
           aria-label='Resumen de configuración'

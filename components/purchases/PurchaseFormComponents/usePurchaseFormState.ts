@@ -6,9 +6,24 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { matchesProductSearch } from '@/lib/utils/productSearch';
 import { matchesInventoryQuery } from '@/lib/utils/inventoryQueries';
-import { vencimientoCalculado } from '@/lib/business/vencimiento';
+import { hoyDelNegocio, vencimientoCalculado } from '@/lib/business/vencimiento';
 import type { PurchaseRegistered } from '@/types/purchase';
 import { Line, PurchaseCatalogItem, formatMiles, toNumber } from './types';
+
+export function errorFechasCompra(
+  lines: Pick<Line, 'fecha_elaboracion' | 'fecha_vencimiento'>[],
+  hoy: string = hoyDelNegocio()
+): string | null {
+  for (const line of lines) {
+    if (line.fecha_elaboracion && line.fecha_elaboracion > hoy) {
+      return 'La fecha de elaboración no puede ser futura';
+    }
+    if (line.fecha_vencimiento && line.fecha_vencimiento < hoy) {
+      return 'La fecha de vencimiento no puede ser anterior a hoy';
+    }
+  }
+  return null;
+}
 
 export function usePurchaseFormState(
   catalog: PurchaseCatalogItem[],
@@ -173,11 +188,39 @@ export function usePurchaseFormState(
     setSearch('');
   }, []);
 
+  const faltaVencimiento = useCallback(() => lines.some(line => !line.fecha_vencimiento), [lines]);
+
+  const validarFechas = useCallback((): string | null => errorFechasCompra(lines), [lines]);
+
+  const handleNext = useCallback(() => {
+    if (step === 2) {
+      if (faltaVencimiento()) {
+        toast.error('Indica la fecha de vencimiento de todos los productos');
+        return;
+      }
+      const errorFechas = validarFechas();
+      if (errorFechas) {
+        toast.error(errorFechas);
+        return;
+      }
+    }
+    setStep(3);
+  }, [step, faltaVencimiento, validarFechas]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting.current || result || step !== 3) return;
     if (lines.length === 0) {
       toast.error('Selecciona al menos un producto');
+      return;
+    }
+    if (faltaVencimiento()) {
+      toast.error('Indica la fecha de vencimiento de todos los productos');
+      return;
+    }
+    const errorFechas = validarFechas();
+    if (errorFechas) {
+      toast.error(errorFechas);
       return;
     }
 
@@ -191,8 +234,6 @@ export function usePurchaseFormState(
       fecha_vencimiento: l.fecha_vencimiento || null
     }));
 
-    const hoy = new Date().toISOString().slice(0, 10);
-
     for (const d of detalles) {
       if (!Number.isInteger(d.cantidad) || d.cantidad < 1 || d.cantidad > 1000) {
         toast.error('Cantidad inválida en uno de los productos');
@@ -200,14 +241,6 @@ export function usePurchaseFormState(
       }
       if (!Number.isInteger(d.precio_compra) || d.precio_compra < 0) {
         toast.error('Precio inválido en uno de los productos');
-        return;
-      }
-      if (d.fecha_elaboracion && d.fecha_elaboracion > hoy) {
-        toast.error('La fecha de elaboración no puede ser futura');
-        return;
-      }
-      if (d.fecha_vencimiento && d.fecha_vencimiento < hoy) {
-        toast.error('La fecha de vencimiento no puede ser anterior a hoy');
         return;
       }
     }
@@ -268,6 +301,7 @@ export function usePurchaseFormState(
     removeItem,
     adjustQuantity,
     changeLineFechas,
+    handleNext,
     handleSubmit
   };
 }

@@ -29,9 +29,6 @@ vi.mock('@/components/auth/PermissionGuard', () => ({
   PermissionGuard: ({ children }: any) => children
 }));
 vi.mock('boneyard-js/react', () => ({ Skeleton: ({ children }: any) => children }));
-vi.mock('@/components/products/SortableInventoryCategory', () => ({
-  SortableInventoryCategory: () => null
-}));
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children, onDragEnd }: any) => {
     state.dragEnd = onDragEnd;
@@ -42,6 +39,20 @@ vi.mock('@dnd-kit/core', () => ({
   KeyboardSensor: vi.fn(),
   useSensor: vi.fn(),
   useSensors: vi.fn()
+}));
+vi.mock('@dnd-kit/sortable', () => ({
+  SortableContext: ({ children }: any) => children,
+  sortableKeyboardCoordinates: vi.fn(),
+  rectSortingStrategy: vi.fn(),
+  arrayMove: (array: any[], from: number, to: number) => {
+    const next = array.slice();
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    return next;
+  }
+}));
+vi.mock('@/components/products/SortableInventoryCategory', () => ({
+  SortableInventoryCategory: () => null
 }));
 afterEach(() => {
   cleanup();

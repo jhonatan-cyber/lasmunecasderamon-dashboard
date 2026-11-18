@@ -24,7 +24,9 @@ import dynamic from 'next/dynamic';
 import { ServiceRequestModal } from './ServiceRequestModal';
 import { appEventBus, type AppEvents } from '@/lib/utils/eventBus';
 import { useGenericFetch } from '@/hooks/shared/useGenericFetch';
+import { useTransferPermissions } from '@/hooks/transfers/useTransferPermissions';
 import type { OrdenReposicion } from '@/modules/inventario/contracts';
+import type { TransferRecord } from '@/types/transfer';
 
 const OrderDetailModal = dynamic(() => import('@/components/orders/OrderDetailModal'), {
   loading: () => null,
@@ -69,9 +71,15 @@ export function HeaderNotifications() {
   const [selectedServiceRequest, setSelectedServiceRequest] = useState<any | null>(null);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
 
+  const { puedeAprobar } = useTransferPermissions();
+  const [pendingTransfers, setPendingTransfers] = useState<TransferRecord[]>([]);
+
   const { pendingOrdersCount = 0, pendingServiceRequestsCount = 0 } = useNotificationsContext();
   const totalNotifications =
-    pendingOrdersCount + pendingServiceRequestsCount + lowStockProducts.length;
+    pendingOrdersCount +
+    pendingServiceRequestsCount +
+    lowStockProducts.length +
+    pendingTransfers.length;
 
   const isAnfitriona = user?.role?.toLowerCase() === 'anfitriona';
   const isGarzon = user?.role?.toLowerCase() === 'garzon';
@@ -240,6 +248,36 @@ export function HeaderNotifications() {
     return () => unsubscribe();
   }, [fetchPendingServiceRequests]);
 
+  const fetchPendingTransfers = useCallback(async () => {
+    if (!puedeAprobar) {
+      setPendingTransfers([]);
+      return;
+    }
+    try {
+      const response = await fetch('/api/transfers/pending', { cache: 'no-store' });
+      const data = await response.json();
+      setPendingTransfers(data.success && Array.isArray(data.data) ? data.data : []);
+    } catch {
+      setPendingTransfers([]);
+    }
+  }, [puedeAprobar]);
+
+  useEffect(() => {
+    fetchPendingTransfers();
+  }, [fetchPendingTransfers]);
+
+  useEffect(() => {
+    const handleUpdatePendingTransfers = () => fetchPendingTransfers();
+    const unsubscribe = appEventBus.on('updatePendingTransfers', handleUpdatePendingTransfers);
+    return () => unsubscribe();
+  }, [fetchPendingTransfers]);
+
+  const openPendingTransfers = () => {
+    setShowDropdown(false);
+    appEventBus.emit('openBarPendingTransfers');
+    router.push('/bar?tab=pendientes');
+  };
+
   const handleServiceClick = (solicitud: any) => {
     setSelectedServiceRequest(solicitud);
     setServiceModalOpen(true);
@@ -306,6 +344,42 @@ export function HeaderNotifications() {
                     </span>
                     <span className='text-xs font-semibold text-amber-600 dark:text-amber-400'>
                       Comprar {product.cantidad.toLocaleString('es-CL')} · Ver orden de compra
+                    </span>
+                  </DropdownMenuItem>
+                ))
+              )}
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {puedeAprobar && (
+            <>
+              <DropdownMenuLabel>Traspasos por aceptar</DropdownMenuLabel>
+              {pendingTransfers.length === 0 ? (
+                <div className='text-xs text-gray-500 dark:text-gray-400 px-4 py-2'>
+                  No hay traspasos pendientes
+                </div>
+              ) : (
+                pendingTransfers.map(transfer => (
+                  <DropdownMenuItem
+                    key={`traspaso-${transfer.id}`}
+                    className='flex flex-col items-start gap-1 cursor-pointer'
+                    onSelect={openPendingTransfers}
+                  >
+                    <div className='flex w-full justify-between gap-2'>
+                      <span className='font-semibold text-sm break-words'>
+                        {transfer.producto_nombre} · {transfer.presentacion_nombre}
+                      </span>
+                      <span className='shrink-0 text-xs text-gray-500'>
+                        {formatShortTimeEs(transfer.fecha_crea)}
+                      </span>
+                    </div>
+                    <div className='text-xs text-gray-700'>
+                      {transfer.cantidad} {transfer.cantidad === 1 ? 'unidad' : 'unidades'} ·
+                      Enviado por {transfer.usuario_nombre || 'usuario'}
+                    </div>
+                    <span className='text-xs font-semibold text-amber-600 dark:text-amber-400'>
+                      Ver y aceptar
                     </span>
                   </DropdownMenuItem>
                 ))

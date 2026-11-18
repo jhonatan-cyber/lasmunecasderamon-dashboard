@@ -10,7 +10,7 @@ import React, {
   useMemo
 } from 'react';
 import { toast } from 'sonner';
-import { useSharedSSE } from '@/hooks/shared';
+import { useSharedSSE } from '@/hooks/shared/useSharedSSE';
 import logger from '@/lib/utils/logger';
 
 interface AnulacionContextType {

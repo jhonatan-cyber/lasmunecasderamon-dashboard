@@ -16,7 +16,7 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy
 } from '@dnd-kit/sortable';
-import { Category } from '@/hooks/products/useCategories';
+import type { Category } from '@/hooks/products/useCategories';
 import SortableCategoryCard from './SortableCategoryCard';
 
 interface CategoryGridProps {

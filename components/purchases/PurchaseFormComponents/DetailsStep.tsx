@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/shared/DatePicker';
+import { hoyDelNegocio } from '@/lib/business/vencimiento';
 import {
   Select,
   SelectContent,
@@ -52,23 +53,18 @@ export function DetailsStep({
   removeItem: (id: string) => void;
   changeLineFechas: (id: string, c: any, v: string) => void;
 }) {
+  const hoy = hoyDelNegocio();
+
   return (
-    <div className='mx-auto max-w-4xl space-y-6'>
+    <div className='space-y-6'>
       <div className='space-y-3'>
         <div>
           <h2 className='text-lg font-semibold'>Cantidades y precios</h2>
-          <p className='text-sm text-muted-foreground'>
-            Define cuántas unidades ingresan y su precio de compra.
-          </p>
-          <p className='mt-1 text-xs text-muted-foreground'>
-            Fechas de lote (opcional): con la elaboración y la duración el vencimiento se calcula
-            solo; si ingresas el vencimiento, elaboración y duración no son necesarias.
-          </p>
         </div>
         {lines.map(line => (
           <div
             key={line.presentacion_id}
-            className='grid grid-cols-[3.5rem_minmax(0,1fr)] items-end gap-3 rounded-xl border p-3 sm:grid-cols-[4rem_minmax(0,1fr)_10rem_8rem_auto]'
+            className='grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-end gap-3 rounded-xl border p-3 sm:grid-cols-[4rem_minmax(0,1fr)_10rem_8rem_auto]'
           >
             <Image
               src={
@@ -91,14 +87,14 @@ export function DetailsStep({
               <p className='truncate text-sm font-semibold'>{line.producto_nombre}</p>
               <p className='truncate text-xs text-muted-foreground'>{line.presentacion_nombre}</p>
             </div>
-            <div className='col-span-2 flex flex-col gap-1 sm:col-span-1'>
+            <div className='col-span-3 flex min-w-0 flex-col gap-1 sm:col-span-1'>
               <Label htmlFor={`${formId}-cantidad-${line.presentacion_id}`}>Cantidad</Label>
               <div className='flex items-center gap-1'>
                 <Button
                   type='button'
                   variant='outline'
                   size='icon'
-                  className='rounded-full'
+                  className='shrink-0 rounded-full'
                   aria-label={`Disminuir cantidad de ${line.producto_nombre}`}
                   disabled={toNumber(line.cantidad) <= 1}
                   onClick={() => adjustQuantity(line.presentacion_id, -1)}
@@ -118,13 +114,13 @@ export function DetailsStep({
                       )
                     )
                   }
-                  className='text-center'
+                  className='min-w-0 flex-1 text-center'
                 />
                 <Button
                   type='button'
                   variant='outline'
                   size='icon'
-                  className='rounded-full'
+                  className='shrink-0 rounded-full'
                   aria-label={`Aumentar cantidad de ${line.producto_nombre}`}
                   disabled={toNumber(line.cantidad) >= 1000}
                   onClick={() => adjustQuantity(line.presentacion_id, 1)}
@@ -133,7 +129,7 @@ export function DetailsStep({
                 </Button>
               </div>
             </div>
-            <div className='flex flex-col gap-1'>
+            <div className='col-span-3 flex min-w-0 flex-col gap-1 sm:col-span-1'>
               <Label htmlFor={`${formId}-precio-${line.presentacion_id}`}>Precio unitario</Label>
               <Input
                 id={`${formId}-precio-${line.presentacion_id}`}
@@ -155,7 +151,7 @@ export function DetailsStep({
               type='button'
               variant='ghost'
               size='icon'
-              className='rounded-full'
+              className='col-start-3 row-start-1 justify-self-end self-start rounded-full sm:col-start-auto sm:row-start-auto sm:justify-self-auto sm:self-auto'
               aria-label={`Quitar ${line.producto_nombre}`}
               onClick={() => removeItem(line.presentacion_id)}
             >
@@ -170,6 +166,7 @@ export function DetailsStep({
                   id={`${formId}-elaboracion-${line.presentacion_id}`}
                   value={line.fecha_elaboracion}
                   onChange={f => changeLineFechas(line.presentacion_id, 'fecha_elaboracion', f)}
+                  maxDate={hoy}
                   displayFormat='short'
                 />
               </div>
@@ -188,13 +185,19 @@ export function DetailsStep({
                 />
               </div>
               <div className='flex flex-col gap-1'>
-                <Label htmlFor={`${formId}-vencimiento-${line.presentacion_id}`}>
-                  Fecha de vencimiento
-                </Label>
+                <div className='flex items-center gap-1'>
+                  <Label htmlFor={`${formId}-vencimiento-${line.presentacion_id}`}>
+                    Fecha de vencimiento
+                  </Label>
+                  <span className='text-red-500' aria-hidden='true'>
+                    *
+                  </span>
+                </div>
                 <DatePicker
                   id={`${formId}-vencimiento-${line.presentacion_id}`}
                   value={line.fecha_vencimiento}
                   onChange={f => changeLineFechas(line.presentacion_id, 'fecha_vencimiento', f)}
+                  minDate={hoy}
                   displayFormat='short'
                 />
               </div>

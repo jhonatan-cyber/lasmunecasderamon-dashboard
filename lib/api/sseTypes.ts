@@ -52,6 +52,13 @@ export interface ServiceChangedData {
 
 export interface TransfersUpdatedData {
   action: 'created' | 'accepted' | 'rejected';
+  id?: string;
+  producto_id?: string;
+  presentacion_id?: string;
+  cantidad?: number;
+  usuario_id?: string | null;
+  producto_nombre?: string | null;
+  presentacion_nombre?: string | null;
   [key: string]: unknown;
 }
 

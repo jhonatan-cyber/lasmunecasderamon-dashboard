@@ -37,4 +37,30 @@ describe('grupos de etiquetas', () => {
       { title: 'Sin producto', units: [{ id: '1', codigo: '1', producto_nombre: '   ' }] }
     ]);
   });
+
+  it('agrupa por presentación combinando producto y presentación', () => {
+    const unidades = [
+      {
+        id: '1',
+        codigo: '1',
+        producto_nombre: 'Ron Habana',
+        presentacion_nombre: 'Botella 750 ml'
+      },
+      {
+        id: '2',
+        codigo: '2',
+        producto_nombre: 'Ron Habana',
+        presentacion_nombre: 'Botella 750 ml'
+      },
+      { id: '3', codigo: '3', producto_nombre: 'Ron Habana', presentacion_nombre: 'Botella 1 L' },
+      { id: '4', codigo: '4', producto_nombre: '   ' }
+    ];
+    const grupos = groupLabelUnits(unidades, 'presentation');
+    expect(grupos.map(g => g.title)).toEqual([
+      'Ron Habana · Botella 750 ml',
+      'Ron Habana · Botella 1 L',
+      'Sin presentación'
+    ]);
+    expect(grupos.map(g => g.units.length)).toEqual([2, 1, 1]);
+  });
 });

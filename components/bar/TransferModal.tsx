@@ -72,13 +72,13 @@ export function TransferModal({
     : form.tipos.includes('botella');
 
   const unidades = Number(form.cantidad.replace(/\./g, '')) || 0;
-  const precioBotella = form.usarConfigGuardada
-    ? ventaDeshabilitada
-      ? 0
-      : Number(form.opcionesGuardadas.find(option => option.tipo === 'botella')?.precio ?? 0)
-    : esVentaSimple || form.venderConAnfitriona
-      ? Number(form.precioVenta.replace(/\./g, '')) || 0
-      : 0;
+  const precioBotella = ventaDeshabilitada
+    ? 0
+    : form.usarConfigGuardada
+      ? Number(form.opcionesGuardadas.find(option => option.tipo === 'botella')?.precio ?? 0)
+      : esVentaSimple || form.venderConAnfitriona
+        ? Number(form.precioVenta.replace(/\./g, '')) || 0
+        : 0;
 
   const stockBodegaFinal = Math.max(form.disponible - unidades, 0);
   const stockBarFinal = (item?.stock_bar ?? 0) + unidades;
@@ -89,11 +89,11 @@ export function TransferModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_2rem)] max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-6xl'>
-        <DialogHeader className='shrink-0 gap-1 border-b px-5 py-4 pr-12 sm:px-6'>
-          <DialogTitle className='text-lg font-bold'>Transferir al bar</DialogTitle>
+      <DialogContent className='flex max-h-[92dvh] w-[calc(100vw_-_1rem)] max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:w-[calc(100vw_-_2rem)]'>
+        <DialogHeader className='shrink-0 gap-1 border-b px-4 py-4 pr-12 sm:px-6'>
+          <DialogTitle className='text-base font-bold sm:text-lg'>Transferir al bar</DialogTitle>
           {item && (
-            <p className='truncate text-sm text-muted-foreground'>
+            <p className='break-words text-sm text-muted-foreground'>
               {item.categoria_nombre ? `${item.categoria_nombre} · ` : ''}
               {item.producto_nombre} de {item.nombre}
             </p>
@@ -104,7 +104,7 @@ export function TransferModal({
         </DialogHeader>
         {!item ? null : (
           <form onSubmit={handleSubmit} className='flex min-h-0 flex-col'>
-            <div className='min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6'>
+            <div className='min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6'>
               <div className='grid min-w-0 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]'>
                 <section className='min-w-0 space-y-5 lg:sticky lg:top-0 lg:z-10 lg:self-start lg:bg-background'>
                   <h2 className='text-sm font-semibold'>Unidades a transferir</h2>
@@ -145,7 +145,7 @@ export function TransferModal({
                         placeholder={`1 - ${form.disponible}`}
                         inputMode='numeric'
                         disabled={saving}
-                        className='h-12 text-center text-lg font-semibold tabular-nums'
+                        className='h-12 min-w-0 text-center text-lg font-semibold tabular-nums'
                       />
                       <Button
                         type='button'
@@ -406,38 +406,34 @@ export function TransferModal({
               </div>
             </div>
 
-            <div className='shrink-0 border-t bg-background px-5 py-4 sm:px-6'>
-              <div className='sm:ml-auto sm:max-w-md'>
-                <TransferFooter
-                  saving={saving}
-                  disabled={
-                    saving ||
-                    form.disponible === 0 ||
-                    (!form.usarConfigGuardada && form.tipos.length === 0)
-                  }
-                  summary={
-                    <div className='flex items-end justify-between gap-4'>
-                      <div className='text-xs text-muted-foreground'>
-                        <p className='text-sm font-semibold text-foreground'>
-                          {unidades > 0
-                            ? `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}`
-                            : 'Sin unidades seleccionadas'}
-                        </p>
-                        {(precioBotella > 0 || ventaDeshabilitada) && (
-                          <p>{formatCurrencyCLP(precioBotella)} c/u</p>
-                        )}
-                        <p className='mt-1'>{`Quedarán ${stockBodegaFinal} en bodega · ${stockBarFinal} en el bar`}</p>
-                      </div>
-                      {(precioBotella > 0 || ventaDeshabilitada) && unidades > 0 && (
-                        <p className='text-xl font-bold tabular-nums' aria-live='polite'>
-                          {formatCurrencyCLP(precioBotella * unidades)}
-                        </p>
-                      )}
+            <div className='shrink-0 border-t bg-background px-4 py-4 sm:px-6'>
+              <TransferFooter
+                saving={saving}
+                disabled={
+                  saving ||
+                  form.disponible === 0 ||
+                  (!form.usarConfigGuardada && form.tipos.length === 0)
+                }
+                summary={
+                  <div className='flex flex-wrap items-end justify-between gap-x-4 gap-y-1 sm:mx-auto sm:max-w-md'>
+                    <div className='min-w-0 text-xs text-muted-foreground'>
+                      <p className='text-sm font-semibold text-foreground'>
+                        {unidades > 0
+                          ? `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}`
+                          : 'Sin unidades seleccionadas'}
+                      </p>
+                      {precioBotella > 0 && <p>{formatCurrencyCLP(precioBotella)} c/u</p>}
+                      <p className='mt-1'>{`Quedarán ${stockBodegaFinal} en bodega · ${stockBarFinal} en el bar`}</p>
                     </div>
-                  }
-                  onCancel={() => handleOpenChange(false)}
-                />
-              </div>
+                    {precioBotella > 0 && unidades > 0 && (
+                      <p className='shrink-0 text-xl font-bold tabular-nums' aria-live='polite'>
+                        {formatCurrencyCLP(precioBotella * unidades)}
+                      </p>
+                    )}
+                  </div>
+                }
+                onCancel={() => handleOpenChange(false)}
+              />
             </div>
           </form>
         )}

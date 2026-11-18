@@ -9,9 +9,10 @@
  */
 import { withTransaction } from '@/lib/database/db';
 import { sendNotificationToAll } from '@/lib/api/sseService';
-import { sendPushByPermission } from '@/modules/comunicaciones';
+import { NotificationService, sendPushByPermission } from '@/modules/comunicaciones';
 import { TRANSFER_RESOLVE_PERMISSION } from '@/lib/constants/transferPermissions';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import logger from '@/lib/utils/logger';
 import type { ContextoOperacion } from '@/lib/transaction/contract';
 import type { TraspasoInput, TraspasoResultado } from '../contracts';
 import {
@@ -23,6 +24,18 @@ import {
 
 export { listarTransferencias };
 
+const TRANSFER_PENDING_TIPO = 'transfer_pending';
+
+function mensajePendiente(resultado: TraspasoResultado): string {
+  const detalle = [resultado.producto_nombre, resultado.presentacion_nombre]
+    .filter(Boolean)
+    .join(' · ');
+  const unidades = resultado.trasladadas;
+  return `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}${
+    detalle ? ` de ${detalle}` : ''
+  } esperan aprobación en el bar.`;
+}
+
 export async function traspasarAlBar(
   input: TraspasoInput,
   contexto?: ContextoOperacion
@@ -32,21 +45,38 @@ export async function traspasarAlBar(
   await withTransaction(async trx => {
     resultado = await traspasarEnRepositorio(trx, input);
   });
-  // Sólo después del commit: el módulo Transferencias se refresca en vivo.
+  const mensaje = mensajePendiente(resultado);
+  // Sólo después del commit: el módulo Transferencias se refresca en vivo y el
+  // Barman recibe el aviso con el producto y la cantidad.
   sendNotificationToAll('transfers_updated', {
     action: 'created',
     id: resultado.transferencia_id,
     producto_id: input.producto_id,
     presentacion_id: input.presentacion_id,
-    cantidad: resultado.trasladadas
+    cantidad: resultado.trasladadas,
+    usuario_id: input.usuario_id,
+    producto_nombre: resultado.producto_nombre,
+    presentacion_nombre: resultado.presentacion_nombre
   });
-  // Aviso a quien puede aprobarlo según el permiso (no según el nombre del rol):
+  // Fila persistida por rol (historial `/notifications` y badge de la app):
+  // cualquier Barman puede aceptarla, así que una sola fila basta.
+  void NotificationService.crearParaRol({
+    rol: 'barman',
+    tipo: TRANSFER_PENDING_TIPO,
+    titulo: 'Nuevo traspaso pendiente',
+    mensaje,
+    data: JSON.stringify({
+      transferencia_id: resultado.transferencia_id,
+      url: '/bar?tab=pendientes'
+    })
+  }).catch(error => logger.captureException(error, { context: 'traspaso.notificarBarman' }));
+  // Push a quien puede aprobarlo según el permiso (no según el nombre del rol):
   // el mismo par que gobierna los botones de Aprobar en la UI.
   void sendPushByPermission(
     TRANSFER_RESOLVE_PERMISSION.module,
     TRANSFER_RESOLVE_PERMISSION.action,
     'Nuevo traspaso pendiente',
-    `${resultado.trasladadas} unidad(es) esperan aprobación en el bar.`,
+    mensaje,
     { type: 'transfer_created', id: resultado.transferencia_id }
   );
   return resultado;

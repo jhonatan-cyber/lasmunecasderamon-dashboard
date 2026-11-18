@@ -19,7 +19,7 @@ import type { PurchaseCreate, PurchaseGeneratedCode } from '@/types/purchase';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
 import { listarPresentacionesPorProductos } from '../presentaciones/repositorio';
 import type { PresentacionRow } from '../tipos';
-import { crearCompra, listarCompras, type CompraRow } from './repositorio';
+import { crearCompra, listarCompras, listarCodigosDeCompra, type CompraRow } from './repositorio';
 import { productosPorIds } from '../productos/repositorio';
 
 const DetalleSchema = z.object({
@@ -200,4 +200,10 @@ export async function registrarCompra(
 export async function listar(limit?: unknown): Promise<any[]> {
   const n = Number(limit);
   return await listarCompras(Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 500) : 100);
+}
+
+/** Códigos generados por una compra ya registrada. */
+export async function obtenerCodigosCompra(compraId: string): Promise<PurchaseGeneratedCode[]> {
+  if (!compraId) return [];
+  return await listarCodigosDeCompra(compraId);
 }

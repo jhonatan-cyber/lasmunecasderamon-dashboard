@@ -18,6 +18,7 @@ import {
   type FiltroTipoMovimiento
 } from '@/components/bar/BarTabToolbars';
 import { toast } from 'sonner';
+import { appEventBus } from '@/lib/utils/eventBus';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTransferPermissions } from '@/hooks/transfers/useTransferPermissions';
@@ -75,6 +76,11 @@ export default function BarPage() {
     if (tabUrl === 'cortesias') setTab('covers');
     else if (tabUrl === 'pendientes' || tabUrl === 'covers' || tabUrl === 'vencidos')
       setTab(tabUrl);
+  }, []);
+  // La campana y el aviso de un traspaso abren la cola aunque ya estemos en /bar.
+  useEffect(() => {
+    const unsubscribe = appEventBus.on('openBarPendingTransfers', () => setTab('pendientes'));
+    return () => unsubscribe();
   }, []);
   useEffect(
     () => () => {

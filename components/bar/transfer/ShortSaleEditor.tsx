@@ -118,7 +118,7 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
         </section>
         <section className={optionPanelClass} aria-label='Corto para anfitriona'>
           <h3 className={optionPanelHeadingClass}>Anfitriona</h3>
-          <div className='grid grid-cols-2 items-end gap-3'>
+          <div className='grid grid-cols-1 items-end gap-3 sm:grid-cols-2'>
             {field(
               'price-shot-anfitriona',
               'Precio corto anfitriona',
@@ -139,7 +139,7 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               {rows.map((row, index) => (
                 <div
                   key={index}
-                  className='grid min-w-0 grid-cols-2 items-end gap-3 border-b pb-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'
+                  className='grid min-w-0 grid-cols-1 items-end gap-3 border-b pb-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]'
                 >
                   {field(
                     `extra-shot-price-${index}`,
@@ -169,7 +169,7 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
                           variant='ghost'
                           size='icon'
                           aria-label={`Quitar precio ${index + 2}`}
-                          className='col-span-2 justify-self-end rounded-full hover:bg-red-50 hover:text-red-600 focus-visible:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 sm:col-span-1'
+                          className='justify-self-end rounded-full hover:bg-red-50 hover:text-red-600 focus-visible:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400'
                           disabled={saving}
                           onClick={() => onRows(rows.filter((_, i) => i !== index))}
                         >
@@ -198,7 +198,7 @@ export function ShortSaleEditor(props: ShortSaleEditorProps) {
               Agregar
             </Button>
           </div>
-          <div className='grid grid-cols-2 items-end gap-3'>
+          <div className='grid grid-cols-1 items-end gap-3 sm:grid-cols-2'>
             {field(
               'transfer-ml-shot-anfitriona',
               'Ml corto anfitriona',

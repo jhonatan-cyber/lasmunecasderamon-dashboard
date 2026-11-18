@@ -143,6 +143,15 @@ export const SaleCreateSchema = z.object({
             ]).size <= detail.cantidad,
           'Se permite una anfitriona por unidad de corto'
         )
+        .refine(
+          detail =>
+            detail.sub_total === undefined ||
+            !(Number(detail.recargo_acompanamiento) > 0) ||
+            detail.sub_total ===
+              (Number(detail.precio) + Number(detail.recargo_acompanamiento)) *
+                Number(detail.cantidad),
+          'El subtotal del producto debe incluir el exceso del acompañamiento'
+        )
     )
     .min(1, 'Al menos un detalle es requerido')
 });

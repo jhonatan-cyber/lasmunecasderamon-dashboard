@@ -1,6 +1,8 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
 import { PurchaseForm, type PurchaseCatalogItem } from '@/components/purchases/PurchaseForm';
+import { errorFechasCompra } from '@/components/purchases/PurchaseFormComponents/usePurchaseFormState';
 import { fechaCorta, seleccionarFecha } from '../helpers/datePicker';
 
 const push = vi.fn();
@@ -48,6 +50,12 @@ const catalog: PurchaseCatalogItem[] = [
   }
 ];
 
+// El paso 1 arranca en la lista de categorías; el catálogo de prueba cae en
+// "Sin categoría", así que hay que entrar para ver las tarjetas de producto.
+function abrirCategoria(): void {
+  fireEvent.click(screen.getByRole('button', { name: /Sin categoría/ }));
+}
+
 describe('flujo guiado de compra', () => {
   it('selecciona presentaciones en tarjetas, captura proveedor y pago y finaliza mostrando los códigos', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -66,6 +74,7 @@ describe('flujo guiado de compra', () => {
       )
     );
     render(<PurchaseForm catalog={catalog} />);
+    abrirCategoria();
 
     expect(screen.getByRole('img', { name: 'Ron Habana Botella 750 ml' })).toHaveAttribute(
       'data-src',
@@ -95,6 +104,7 @@ describe('flujo guiado de compra', () => {
     expect(screen.getByLabelText('Cantidad')).toHaveValue('1');
     fireEvent.click(screen.getByRole('button', { name: 'Aumentar cantidad de Ron Habana' }));
     expect(screen.getByLabelText('Cantidad')).toHaveValue('2');
+    seleccionarFecha('Fecha de vencimiento', '2026-12-01');
     fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
 
     expect(screen.getByText('Distribuidora Sur')).toBeInTheDocument();
@@ -138,6 +148,7 @@ describe('flujo guiado de compra', () => {
       )
     );
     render(<PurchaseForm catalog={catalog} />);
+    abrirCategoria();
     fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -182,6 +193,7 @@ describe('flujo guiado de compra', () => {
       )
     );
     render(<PurchaseForm catalog={catalog} />);
+    abrirCategoria();
     fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -206,8 +218,10 @@ describe('flujo guiado de compra', () => {
 
   it('permite avanzar sin proveedor, teléfono ni descripción', () => {
     render(<PurchaseForm catalog={catalog} />);
+    abrirCategoria();
     fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    seleccionarFecha('Fecha de vencimiento', '2026-12-01');
     fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
 
     // Proveedor y teléfono son opcionales: ambos caen en el mismo texto.
@@ -217,9 +231,21 @@ describe('flujo guiado de compra', () => {
   });
 });
 
+it('no avanza a la confirmación sin fecha de vencimiento', () => {
+  render(<PurchaseForm catalog={catalog} />);
+  abrirCategoria();
+  fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
+
+  expect(toast.error).toHaveBeenCalledWith('Indica la fecha de vencimiento de todos los productos');
+  expect(screen.queryByRole('button', { name: 'Finalizar compra' })).not.toBeInTheDocument();
+});
+
 it('no registra al presionar Enter antes del paso de confirmacion', () => {
   const request = vi.spyOn(global, 'fetch').mockResolvedValue(Response.json({ success: true }));
   render(<PurchaseForm catalog={catalog} />);
+  abrirCategoria();
   fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
   fireEvent.submit(
     screen.getByRole('button', { name: 'Continuar' }).closest('section')!.querySelector('form')!
@@ -235,12 +261,14 @@ it('agrega una sola linea y envia una compra ante dos submit inmediatos', async 
       })
   );
   render(<PurchaseForm catalog={catalog} />);
+  abrirCategoria();
   const add = screen.getByRole('button', { name: /Agregar/ });
   act(() => {
     add.click();
     add.click();
   });
   fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  seleccionarFecha('Fecha de vencimiento', '2026-12-01');
   fireEvent.click(screen.getByRole('button', { name: 'Revisar compra' }));
   const confirm = screen.getByRole('button', { name: 'Finalizar compra' });
   const form = confirm.closest('form')!;
@@ -257,4 +285,32 @@ it('agrega una sola linea y envia una compra ante dos submit inmediatos', async 
     release(Response.json({ success: false, message: 'Revisa datos' }, { status: 400 }));
   });
   expect(confirm).toBeEnabled();
+});
+
+it('rechaza un vencimiento anterior a hoy y una elaboración futura', () => {
+  const hoy = '2026-02-01';
+  const linea = { fecha_elaboracion: '2026-01-31', fecha_vencimiento: hoy };
+
+  expect(errorFechasCompra([linea], hoy)).toBeNull();
+  expect(errorFechasCompra([{ ...linea, fecha_vencimiento: '2026-01-31' }], hoy)).toBe(
+    'La fecha de vencimiento no puede ser anterior a hoy'
+  );
+  expect(errorFechasCompra([{ ...linea, fecha_elaboracion: '2026-02-02' }], hoy)).toBe(
+    'La fecha de elaboración no puede ser futura'
+  );
+});
+
+it('muestra el estado en bodega contraído por defecto y lo expande al pulsar', () => {
+  render(<PurchaseForm catalog={catalog} />);
+  abrirCategoria();
+  fireEvent.click(screen.getByRole('button', { name: /Agregar/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  const trigger = screen.getByRole('button', { name: 'Estado actual en bodega' });
+  expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByText('Vencidos')).not.toBeInTheDocument();
+
+  fireEvent.click(trigger);
+  expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByText('Vencidos')).toBeInTheDocument();
 });

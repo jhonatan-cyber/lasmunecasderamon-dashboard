@@ -3,9 +3,10 @@
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { ReplenishmentNotice } from '@/components/purchases/ReplenishmentNotice';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { PurchaseDetailModal } from '@/components/purchases/PurchaseDetailModal';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Plus, Search, ShoppingBag } from 'lucide-react';
+import { Eye, Plus, Search, ShoppingBag } from 'lucide-react';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +22,6 @@ import {
 import { Skeleton as BoneyardSkeleton } from 'boneyard-js/react';
 import type { PurchaseRecord } from '@/types/purchase';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
-import { cn } from '@/lib/utils/utils';
 import SelectElements from '@/components/shared/SelectElements';
 import Paginate from '@/components/shared/Paginate';
 import { SortSelect } from '@/components/shared/selects/SortSelect';
@@ -40,7 +40,7 @@ export default function PurchasesPage() {
   const [history, setHistory] = useState<PurchaseRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [selectedPurchase, setSelectedPurchase] = useState<PurchaseRecord | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState('date-desc');
@@ -183,7 +183,6 @@ export default function PurchasesPage() {
               onChange={e => {
                 setSearch(e.target.value);
                 setPage(1);
-                setExpanded(null);
               }}
               placeholder='Buscar folio, usuario, producto...'
               className='pl-9 rounded-full'
@@ -198,26 +197,85 @@ export default function PurchasesPage() {
               onChange={(field, direction) => {
                 setSortBy(`${field}-${direction}`);
                 setPage(1);
-                setExpanded(null);
               }}
               className='w-full sm:w-52'
             />
-            <SelectElements
-              value={pageSize}
-              onChange={value => {
-                setPageSize(value);
-                setPage(1);
-                setExpanded(null);
-              }}
-              options={PAGE_SIZES}
-              label='Por página'
-            />
-            <ReplenishmentNotice compact />
+            <div className='flex w-full items-end gap-3 sm:w-auto'>
+              <div className='min-w-0 flex-1 sm:flex-none'>
+                <SelectElements
+                  value={pageSize}
+                  onChange={value => {
+                    setPageSize(value);
+                    setPage(1);
+                  }}
+                  options={PAGE_SIZES}
+                  label='Por página'
+                />
+              </div>
+              <div className='min-w-0 flex-1 sm:flex-none'>
+                <ReplenishmentNotice compact />
+              </div>
+            </div>
           </div>
         </div>
 
         <BoneyardSkeleton name='purchases-table' loading={loading}>
-          <div className='bg-white dark:bg-slate-900/40 rounded-2xl shadow-md overflow-hidden'>
+          <div className='space-y-3 sm:hidden'>
+            {filtered.length === 0 ? (
+              <div className='rounded-2xl border border-gray-200 bg-white p-8 shadow-xs dark:border-gray-800 dark:bg-slate-900/40'>
+                <EmptyState
+                  variant='text'
+                  title={loading ? 'Cargando...' : 'Sin compras registradas.'}
+                />
+              </div>
+            ) : (
+              paginated.map(h => (
+                <div
+                  key={h.id}
+                  className='rounded-2xl border border-gray-200 bg-white p-4 shadow-xs dark:border-gray-800 dark:bg-slate-900/40'
+                >
+                  <div className='flex items-start justify-between gap-3'>
+                    <div className='min-w-0'>
+                      <p className='truncate font-bold text-gray-900 dark:text-white'>{h.folio}</p>
+                      <p className='text-xs text-gray-500'>
+                        {h.fecha_crea ? String(h.fecha_crea).replace('T', ' ').slice(0, 16) : '—'}
+                      </p>
+                    </div>
+                    <span className='shrink-0 font-mono text-sm font-semibold text-gray-900 dark:text-white'>
+                      {formatCurrencyCLP(Number(h.total || 0))}
+                    </span>
+                  </div>
+
+                  <div className='mt-3 grid grid-cols-2 gap-2 text-xs'>
+                    <div className='min-w-0'>
+                      <span className='text-gray-500'>Proveedor</span>
+                      <p className='truncate font-medium text-gray-900 dark:text-white'>
+                        {h.proveedor || '—'}
+                      </p>
+                    </div>
+                    <div className='min-w-0'>
+                      <span className='text-gray-500'>Registró</span>
+                      <p className='truncate font-medium text-gray-900 dark:text-white'>
+                        {h.usuario_nombre || '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant='outline'
+                    type='button'
+                    onClick={() => setSelectedPurchase(h)}
+                    className='mt-3 w-full rounded-full'
+                  >
+                    <Eye className='h-4 w-4' />
+                    Ver detalle
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className='hidden bg-white dark:bg-slate-900/40 rounded-2xl shadow-md overflow-hidden sm:block'>
             <div className='overflow-x-auto'>
               <Table className='min-w-full text-center'>
                 <TableHeader>
@@ -243,76 +301,38 @@ export default function PurchasesPage() {
                     </TableRow>
                   ) : (
                     paginated.map(h => (
-                      <Fragment key={h.id}>
-                        <TableRow className='border-b transition-colors'>
-                          <TableCell className='text-center'>
-                            <Button
-                              variant='unstyled'
-                              type='button'
-                              onClick={() => setExpanded(v => (v === h.id ? null : h.id))}
-                              className='rounded-full p-1'
-                              aria-label='Ver detalle'
-                            >
-                              <ChevronDown
-                                className={cn(
-                                  'w-4 h-4 transition-transform',
-                                  expanded === h.id && 'rotate-180'
-                                )}
-                              />
-                            </Button>
-                          </TableCell>
-                          <TableCell className='sm:px-4 font-bold'>{h.folio}</TableCell>
-                          <TableCell className='sm:px-4 sm:text-sm whitespace-nowrap'>
-                            {h.fecha_crea
-                              ? String(h.fecha_crea).replace('T', ' ').slice(0, 16)
-                              : '—'}
-                          </TableCell>
-                          <TableCell className='sm:px-4 sm:text-sm'>
-                            {h.proveedor || '—'}
-                            {h.telefono && (
-                              <span className='block text-gray-400'>{h.telefono}</span>
-                            )}
-                          </TableCell>
-                          <TableCell className='sm:px-4 sm:text-sm'>
-                            {h.usuario_nombre || '—'}
-                          </TableCell>
-                          <TableCell className='sm:px-4'>
-                            <Badge className='bg-blue-100 text-blue-700 rounded-full px-3 py-1'>
-                              {h.detalles.reduce((acc, d) => acc + Number(d.cantidad || 0), 0)} un.
-                            </Badge>
-                          </TableCell>
-                          <TableCell className='sm:px-4 font-mono font-semibold'>
-                            {formatCurrencyCLP(Number(h.total || 0))}
-                          </TableCell>
-                        </TableRow>
-                        {expanded === h.id && (
-                          <TableRow key={`${h.id}-detail`}>
-                            <TableCell />
-                            <TableCell colSpan={6} className='text-left'>
-                              <div className='space-y-1'>
-                                {h.detalles.map(d => (
-                                  <p key={d.id} className='text-xs sm:text-sm'>
-                                    <span className='font-medium'>
-                                      {d.producto_nombre} — {d.presentacion_nombre}
-                                    </span>{' '}
-                                    <span className='text-gray-500'>
-                                      × {d.cantidad} · {formatCurrencyCLP(d.precio_compra)} c/u ={' '}
-                                      <span className='font-semibold text-gray-700'>
-                                        {formatCurrencyCLP(d.subtotal)}
-                                      </span>
-                                    </span>
-                                  </p>
-                                ))}
-                                {h.observaciones && (
-                                  <p className='text-xs text-gray-400 pt-1'>
-                                    Obs: {h.observaciones}
-                                  </p>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </Fragment>
+                      <TableRow key={h.id} className='border-b transition-colors'>
+                        <TableCell className='text-center'>
+                          <Button
+                            variant='unstyled'
+                            type='button'
+                            onClick={() => setSelectedPurchase(h)}
+                            className='rounded-full p-1'
+                            aria-label={`Ver detalle de la compra ${h.folio}`}
+                          >
+                            <Eye className='w-4 h-4' />
+                          </Button>
+                        </TableCell>
+                        <TableCell className='sm:px-4 font-bold'>{h.folio}</TableCell>
+                        <TableCell className='sm:px-4 sm:text-sm whitespace-nowrap'>
+                          {h.fecha_crea ? String(h.fecha_crea).replace('T', ' ').slice(0, 16) : '—'}
+                        </TableCell>
+                        <TableCell className='sm:px-4 sm:text-sm'>
+                          {h.proveedor || '—'}
+                          {h.telefono && <span className='block text-gray-400'>{h.telefono}</span>}
+                        </TableCell>
+                        <TableCell className='sm:px-4 sm:text-sm'>
+                          {h.usuario_nombre || '—'}
+                        </TableCell>
+                        <TableCell className='sm:px-4'>
+                          <Badge className='bg-blue-100 text-blue-700 rounded-full px-3 py-1'>
+                            {h.detalles.reduce((acc, d) => acc + Number(d.cantidad || 0), 0)} un.
+                          </Badge>
+                        </TableCell>
+                        <TableCell className='sm:px-4 font-mono font-semibold'>
+                          {formatCurrencyCLP(Number(h.total || 0))}
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
                 </TableBody>
@@ -322,16 +342,14 @@ export default function PurchasesPage() {
         </BoneyardSkeleton>
         {!loading && filtered.length > 0 && (
           <div className='flex justify-center'>
-            <Paginate
-              page={currentPage}
-              totalPages={totalPages}
-              setPage={value => {
-                setPage(value);
-                setExpanded(null);
-              }}
-            />
+            <Paginate page={currentPage} totalPages={totalPages} setPage={setPage} />
           </div>
         )}
+
+        <PurchaseDetailModal
+          purchase={selectedPurchase}
+          onClose={() => setSelectedPurchase(null)}
+        />
       </div>
     </PermissionGuard>
   );

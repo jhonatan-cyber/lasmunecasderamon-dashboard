@@ -61,7 +61,15 @@ describe('transferencias de almacén al bar', () => {
 
   it('reserva las unidades en tránsito y deja la solicitud pendiente', async () => {
     const trx = vi.fn().mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM productos pr')) return [{ id_producto: 'prod-1', system_key: null }];
+      if (sql.includes('FROM productos pr'))
+        return [
+          {
+            id_producto: 'prod-1',
+            system_key: null,
+            producto_nombre: 'Whisky',
+            presentacion_nombre: '750 ml'
+          }
+        ];
       // Candidatas al traspaso: las que vencen después o no tienen vencimiento.
       if (sql.includes('COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?'))
         return [{ id: 'unit-1' }, { id: 'unit-2' }];
@@ -93,14 +101,29 @@ describe('transferencias de almacén al bar', () => {
     expect(trx.mock.calls.some(([sql]) => sql.includes('UPDATE inventario_presentaciones'))).toBe(
       false
     );
-    expect(result).toEqual({ transferencia_id: 'uuid-test', trasladadas: 2, stock_bar: 3 });
+    expect(result).toEqual({
+      transferencia_id: 'uuid-test',
+      trasladadas: 2,
+      stock_bar: 3,
+      producto_nombre: 'Whisky',
+      presentacion_nombre: '750 ml'
+    });
   });
 
   it('emite transfers_updated al crear, aprobar y rechazar (refresco en vivo)', async () => {
     vi.mocked(sendNotificationToAll).mockClear();
+    vi.mocked(query).mockClear();
 
     const trx = vi.fn().mockImplementation(async (sql: string) => {
-      if (sql.includes('FROM productos pr')) return [{ id_producto: 'prod-1', system_key: null }];
+      if (sql.includes('FROM productos pr'))
+        return [
+          {
+            id_producto: 'prod-1',
+            system_key: null,
+            producto_nombre: 'Whisky',
+            presentacion_nombre: '750 ml'
+          }
+        ];
       // Candidatas al traspaso: las que vencen después o no tienen vencimiento.
       if (sql.includes('COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?'))
         return [{ id: 'unit-1' }, { id: 'unit-2' }];
@@ -114,8 +137,16 @@ describe('transferencias de almacén al bar', () => {
       id: 'uuid-test',
       producto_id: 'prod-1',
       presentacion_id: 'pres-1',
-      cantidad: 2
+      cantidad: 2,
+      usuario_id: 'user-1',
+      producto_nombre: 'Whisky',
+      presentacion_nombre: '750 ml'
     });
+    // Además del refresco en vivo, queda una fila persistida para el Barman.
+    const aviso = vi
+      .mocked(query)
+      .mock.calls.find(([sql]) => String(sql).includes('INSERT INTO notificaciones'));
+    expect(aviso?.[1]).toEqual(expect.arrayContaining(['barman', 'transfer_pending']));
 
     // Aprobación del Barman: el listado del módulo Transferencias se repinta en todas las sesiones.
     const movimiento = {
