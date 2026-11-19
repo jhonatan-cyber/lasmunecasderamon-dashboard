@@ -45,7 +45,7 @@ const ADMIN_PERMS: UserPermissions = {
   returns: { read: true, write: true, delete: true },
   dashboard: { read: true },
   private_rooms: { read: true, write: true },
-  entradas: { view: true, create: true, deliver: true },
+  entradas: { view: true, create: true, deliver: true, authorize_cover: true },
   quinchos: { read: true, write: true, delete: true }
 };
 

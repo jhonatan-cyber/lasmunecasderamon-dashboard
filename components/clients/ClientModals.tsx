@@ -39,6 +39,8 @@ interface ClientModalsProps {
       display: string;
     }>
   ) => void;
+  prepagoBaucherFoto: string | null;
+  onPrepagoBaucherFotoChange: (foto: string | null) => void;
   onPrepagoSubmit: (e: React.FormEvent) => Promise<boolean>;
   isPrepagoSubmitting: boolean;
   prepagoCajaCerrada?: boolean;
@@ -78,6 +80,8 @@ export function ClientModals({
   onPrepagoPaymentMethodChange,
   prepagoMixedPayments,
   onPrepagoMixedPaymentsChange,
+  prepagoBaucherFoto,
+  onPrepagoBaucherFotoChange,
   onPrepagoSubmit,
   isPrepagoSubmitting,
   prepagoCajaCerrada,
@@ -122,6 +126,8 @@ export function ClientModals({
         onPaymentMethodChange={onPrepagoPaymentMethodChange}
         mixedPayments={prepagoMixedPayments}
         onMixedPaymentsChange={onPrepagoMixedPaymentsChange}
+        baucherFoto={prepagoBaucherFoto}
+        onBaucherFotoChange={onPrepagoBaucherFotoChange}
         onSubmit={onPrepagoSubmit}
         isSubmitting={isPrepagoSubmitting}
         cajaCerrada={prepagoCajaCerrada}

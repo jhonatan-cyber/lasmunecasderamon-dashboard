@@ -34,6 +34,8 @@ export interface UserPermissions {
     return_container?: boolean;
     /** Confirmar que la bodega recibió el envase entregado por el bar (033). */
     confirm_container_return?: boolean;
+    /** Entregar la colación del turno a un trabajador (121). */
+    register_colacion?: boolean;
   };
   clients: {
     read: boolean;
@@ -127,16 +129,18 @@ export interface UserPermissions {
     write: boolean;
   };
   /**
-   * Módulo `entradas` del catálogo (migración 097). `view` abre la pantalla,
-   * `create` cobra en la puerta y `deliver` sirve la bebida en la barra. Los tres
-   * flags son homónimos del par del catálogo porque la acción no colapsa a
-   * `read`/`write` de otro concepto: cobrar en la puerta y entregar en la barra
-   * son operaciones distintas.
+   * Módulo `entradas` del catálogo (migraciones 097 y 122). `view` abre la
+   * pantalla, `create` cobra en la puerta, `deliver` sirve la bebida en la
+   * barra y `authorize_cover` responde las solicitudes de covers del barman
+   * (aprobar o rechazar). Los flags son homónimos del par del catálogo porque
+   * la acción no colapsa a `read`/`write`: cobrar en la puerta, autorizar la
+   * solicitud y entregar la bebida son operaciones distintas.
    */
   entradas: {
     view: boolean;
     create: boolean;
     deliver: boolean;
+    authorize_cover: boolean;
   };
   /**
    * Módulo `quinchos` (migración 102): `read` lista las reservas, `write` cobra
@@ -192,7 +196,8 @@ export function createEmptyPermissions(): UserPermissions {
       delete: false,
       accept_transfer: false,
       return_container: false,
-      confirm_container_return: false
+      confirm_container_return: false,
+      register_colacion: false
     },
     clients: { read: false, write: false, delete: false },
     finances: { read: false, write: false, delete: false },
@@ -212,7 +217,7 @@ export function createEmptyPermissions(): UserPermissions {
     returns: { read: false, write: false, delete: false },
     dashboard: { read: false },
     private_rooms: { read: false, write: false },
-    entradas: { view: false, create: false, deliver: false },
+    entradas: { view: false, create: false, deliver: false, authorize_cover: false },
     quinchos: { read: false, write: false, delete: false }
   };
 }

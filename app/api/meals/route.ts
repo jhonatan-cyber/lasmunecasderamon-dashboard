@@ -17,10 +17,11 @@ export const GET = withRoute({ auth: true, module: 'products', action: 'read' },
 });
 
 export const POST = withRoute(
-  { auth: true, audit: true, module: 'products', action: 'write' },
+  { auth: true, audit: true, module: 'products', action: 'register_colacion' },
   async (request, { user }) => {
-    // Anfitriona y garzón reciben colación, pero no la registran: el registro
-    // tiene que venir de caja o administración aunque llamen directo a la API.
+    // La colación la entrega el barman: anfitriona, garzón y cajero solo la
+    // reciben. El permiso ya lo niega, y esta validación cubre el caso aunque
+    // el rol llegue a tener el permiso por catálogo.
     if (rolSoloRecibeColacion(user.role)) {
       return NextResponse.json(
         { success: false, message: 'Este rol solo recibe colación: no puede registrarla' },

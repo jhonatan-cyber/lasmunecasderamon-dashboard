@@ -529,8 +529,15 @@ describe('permisos de la pestaña', () => {
   });
 
   it('muestra el formulario con permiso de edición de productos', async () => {
-    // `products.edit` concede el flag `products.write` que exige el POST.
     permisos.set = new Set(['products.view', 'products.edit']);
+    stubFetch();
+    render(<ColacionesTab />);
+
+    expect(await screen.findByRole('button', { name: 'Registrar corto' })).toBeInTheDocument();
+  });
+
+  it('muestra el formulario al barman con permiso para entregar colaciones', async () => {
+    permisos.set = new Set(['products.view', 'products.register_colacion']);
     stubFetch();
     render(<ColacionesTab />);
 

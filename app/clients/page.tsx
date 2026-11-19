@@ -64,6 +64,8 @@ export default function Clients() {
     setPrepagoPaymentMethod,
     prepagoMixedPayments,
     setPrepagoMixedPayments,
+    prepagoBaucherFoto,
+    setPrepagoBaucherFoto,
     prepagoSubmitting,
     prepagoCajaCerrada,
     closePrepagoModal,
@@ -188,6 +190,8 @@ export default function Clients() {
             onPrepagoPaymentMethodChange={setPrepagoPaymentMethod}
             prepagoMixedPayments={prepagoMixedPayments}
             onPrepagoMixedPaymentsChange={setPrepagoMixedPayments}
+            prepagoBaucherFoto={prepagoBaucherFoto}
+            onPrepagoBaucherFotoChange={setPrepagoBaucherFoto}
             onPrepagoSubmit={e => handlePrepagoSubmit(e, updateClientSaldo)}
             isPrepagoSubmitting={prepagoSubmitting}
             prepagoCajaCerrada={prepagoCajaCerrada}

@@ -4,6 +4,14 @@ import logger from '@/lib/utils/logger';
 
 const expo = new Expo();
 
+/**
+ * Mismo canal que crea la app (`ANDROID_NOTIFICATION_CHANNEL_ID` en
+ * services/pushNotifications.ts): alta importancia, sonido y vibración.
+ * Sin `channelId`, Android usa su canal de respaldo y el aviso puede quedar
+ * mudo según la configuración del equipo.
+ */
+const ANDROID_CHANNEL_ID = 'alertas';
+
 type PushData = Record<string, unknown>;
 
 type PushUserRow = {
@@ -36,6 +44,8 @@ export async function sendPushNotification(
       messages.push({
         to: user.push_token,
         sound: 'default',
+        priority: 'high',
+        channelId: ANDROID_CHANNEL_ID,
         title,
         body,
         data: data || {}
@@ -101,6 +111,8 @@ export async function sendPushByPermission(
     const messages: ExpoPushMessage[] = tokens.map(token => ({
       to: token,
       sound: 'default',
+      priority: 'high',
+      channelId: ANDROID_CHANNEL_ID,
       title,
       body,
       data: data || {}
@@ -141,6 +153,8 @@ export async function sendPushByRole(role: string, title: string, body: string, 
     const messages: ExpoPushMessage[] = tokens.map(token => ({
       to: token,
       sound: 'default',
+      priority: 'high',
+      channelId: ANDROID_CHANNEL_ID,
       title,
       body,
       data: data || {}

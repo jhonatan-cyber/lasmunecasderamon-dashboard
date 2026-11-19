@@ -20,6 +20,7 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { fechaDeNegocio } from '@/lib/business/timezoneService';
+import { puedeAutorizarCovers } from '@/lib/business/coverAuthorization';
 import { cn } from '@/lib/utils/utils';
 
 type JsonRecord = Record<string, unknown>;
@@ -115,29 +116,42 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
   const { hasPermission } = useUserPermissions();
   const esBarman = (user?.role ?? '').toLowerCase() === 'barman';
   const puedeEntregar = hasPermission('entradas', 'deliver');
-  const puedeAutorizar = puedeEntregar && !esBarman;
+  const puedeAutorizar =
+    hasPermission('entradas', 'authorize_cover') && puedeAutorizarCovers(user?.role);
   const topeCover = Number(useConfigValue('comisiones', 'monto_base_trago_cover_cliente', 10000));
 
-  const cargarCola = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setErrorCola(null);
-    try {
-      const respuesta = await fetch(
-        `/api/tickets/pendientes?fecha=${encodeURIComponent(fechaDeNegocio())}`,
-        { cache: 'no-store' }
-      );
-      const json: unknown = await respuesta.json().catch(() => null);
-      const lista = listaDe(json);
-      if (!respuesta.ok || lista === null)
-        throw new Error(mensajeDe(json, 'No se pudo cargar la cola de covers'));
-      setEntradas(lista.map(aEntrada).filter((fila): fila is EntradaPendiente => fila !== null));
-    } catch (error) {
-      setErrorCola(error instanceof Error ? error.message : 'No se pudo cargar la cola de covers');
-      setEntradas([]);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
+  const cargarCola = useCallback(
+    async (silent = false) => {
+      // Caja no entrega covers: solo responde las solicitudes.
+      if (!puedeEntregar) {
+        setEntradas([]);
+        setErrorCola(null);
+        setLoading(false);
+        return;
+      }
+      if (!silent) setLoading(true);
+      setErrorCola(null);
+      try {
+        const respuesta = await fetch(
+          `/api/tickets/pendientes?fecha=${encodeURIComponent(fechaDeNegocio())}`,
+          { cache: 'no-store' }
+        );
+        const json: unknown = await respuesta.json().catch(() => null);
+        const lista = listaDe(json);
+        if (!respuesta.ok || lista === null)
+          throw new Error(mensajeDe(json, 'No se pudo cargar la cola de covers'));
+        setEntradas(lista.map(aEntrada).filter((fila): fila is EntradaPendiente => fila !== null));
+      } catch (error) {
+        setErrorCola(
+          error instanceof Error ? error.message : 'No se pudo cargar la cola de covers'
+        );
+        setEntradas([]);
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [puedeEntregar]
+  );
 
   // El barman no repite la solicitud de una compra que ya espera al cajero.
   const cargarSolicitudes = useCallback(async () => {
@@ -285,7 +299,11 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
           </div>
         </div>
 
-        {loading ? (
+        {!puedeEntregar ? (
+          <div className='p-6 text-sm text-muted-foreground'>
+            La barra y la administración entregan los covers; caja solo autoriza las solicitudes.
+          </div>
+        ) : loading ? (
           <div className='flex items-center gap-2 p-6 text-sm text-muted-foreground'>
             <LoaderCircle className='size-4 animate-spin' /> Cargando covers…
           </div>
@@ -442,11 +460,6 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
             </Table>
           </div>
         )}
-        {!puedeEntregar ? (
-          <p className='border-t p-4 text-sm text-muted-foreground'>
-            No tienes permiso para entregar covers.
-          </p>
-        ) : null}
       </section>
 
       <EntregaCoversDialog

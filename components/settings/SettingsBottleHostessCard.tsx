@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { SaleOptionsSchema } from '@/lib/business/schemas/sale-options';
-import { Users, RotateCcw, ArrowLeft } from 'lucide-react';
+import { Users, RotateCcw, ArrowLeft, SaveAll, Dot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CollapsibleCard } from '@/components/ui/collapsible-card';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
@@ -27,6 +27,7 @@ import {
 } from './SettingsSaleOptionsEditor';
 import type { SaleOption } from '@/types/sale-options';
 import { SettingsCategoryCard } from './SettingsCategoryCard';
+import { SettingsProductCard } from './SettingsProductCard';
 
 type PresentacionComisiones = {
   codigo_barras?: string | null;
@@ -156,6 +157,18 @@ type SaveConfiguration = {
   tiers?: ReturnType<SettingsTiersHandle['getTiers']>;
 };
 
+// Edición pendiente de un producto (no enviada a la API aún)
+type PendingEdit = {
+  presentacionId: string;
+  productoId: string;
+  maximo: number | null;
+  guardarProducto: boolean;
+  config: ReturnType<SettingsSaleOptionsHandle['getConfig']>;
+  tiers?: ReturnType<SettingsTiersHandle['getTiers']>;
+  // Para saber si se reseteó al default
+  resetToDefault?: boolean;
+};
+
 function ProductSelectorPhoto({ foto }: { foto?: string | null }) {
   const src =
     !foto || foto === 'default.png'
@@ -184,6 +197,13 @@ export function SettingsBottleHostessCard() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const saleOptionsRef = useRef<SettingsSaleOptionsHandle>(null);
   const tiersRef = useRef<SettingsTiersHandle>(null);
+  // Mapa de ediciones pendientes por presentacionId
+  const [pendingEdits, setPendingEdits] = useState<Map<string, PendingEdit>>(new Map());
+  const [savingAll, setSavingAll] = useState(false);
+
+  // IDs de productos con cambios pendientes
+  const pendingIds = useMemo(() => new Set(pendingEdits.keys()), [pendingEdits]);
+  const pendingCount = pendingIds.size;
   const barQuery = useQuery({
     queryKey: ['settings', 'bar', 'presentations'],
     queryFn: ({ signal }) => cargarPresentaciones(signal),
@@ -264,7 +284,7 @@ export function SettingsBottleHostessCard() {
       toast.error(error.message);
     }
   });
-  const saving = saveMutation.isPending || defaultMutation.isPending;
+  const saving = saveMutation.isPending || defaultMutation.isPending || savingAll;
 
   const productos = useMemo(
     () =>
@@ -357,7 +377,45 @@ export function SettingsBottleHostessCard() {
   });
   const { maximo, precio, comision } = watch();
 
+  // Guardar la edición actual en el mapa de pendientes antes de cambiar de producto
+  const stashCurrentEdit = () => {
+    if (!selectedId || !seleccionado) return;
+    const config = saleOptionsRef.current?.getConfig();
+    if (!config) return;
+    const maximoValor = maximo.trim() === '' ? null : Number(maximo);
+    const tiers =
+      !esVentaSimple && maximoValor !== null && maximoValor >= 2
+        ? tiersRef.current?.getTiers()
+        : undefined;
+    const vigenteNow =
+      seleccionado?.max_anfitrionas !== null &&
+      seleccionado?.max_anfitrionas !== undefined &&
+      Number(seleccionado.max_anfitrionas) > 0
+        ? Number(seleccionado.max_anfitrionas)
+        : null;
+    setPendingEdits(prev => {
+      const next = new Map(prev);
+      next.set(selectedId, {
+        presentacionId: selectedId,
+        productoId: seleccionado.producto_id,
+        maximo: maximoValor,
+        guardarProducto:
+          maximoValor !== vigenteNow ||
+          (config.ml_shot !== undefined &&
+            (config.ml_shot !== (seleccionado.ml_shot ?? null) ||
+              config.ml_shot_anfitriona !== (seleccionado.ml_shot_anfitriona ?? null))),
+        config,
+        tiers
+      });
+      return next;
+    });
+  };
+
   const handleSelectChange = (id: string) => {
+    // Si cambiamos de producto, guardar la edición actual
+    if (selectedId && selectedId !== id) {
+      stashCurrentEdit();
+    }
     setSelectedId(id);
     const producto = productos.find(p => String(p.id) === id);
     if (producto && producto.categoria) {
@@ -371,6 +429,10 @@ export function SettingsBottleHostessCard() {
   };
 
   const handleCategorySelect = (categoria: string) => {
+    // Si salimos de una categoría con un producto seleccionado, guardar la edición
+    if (selectedId && seleccionado) {
+      stashCurrentEdit();
+    }
     setSelectedCategory(categoria);
     setSelectedId('');
     const primerProducto = productosAgrupados.find(([cat]) => cat === categoria)?.[1]?.[0];
@@ -386,6 +448,10 @@ export function SettingsBottleHostessCard() {
   };
 
   const handleBackToCategories = () => {
+    // Guardar la edición actual antes de volver
+    if (selectedId && seleccionado) {
+      stashCurrentEdit();
+    }
     setSelectedCategory(null);
     setSelectedId('');
   };
@@ -400,10 +466,32 @@ export function SettingsBottleHostessCard() {
       return;
     }
     if (saving) return;
-    defaultMutation.mutate({ productoId: seleccionado.producto_id, valor });
+    // En lugar de guardar inmediatamente, marcar como pendiente (reset al default)
+    if (valor === null) {
+      setPendingEdits(prev => {
+        const next = new Map(prev);
+        next.set(selectedId, {
+          presentacionId: selectedId,
+          productoId: seleccionado.producto_id,
+          maximo: null,
+          guardarProducto: true,
+          config: saleOptionsRef.current?.getConfig() || {
+            opciones_venta: seleccionado.opciones_venta,
+            ml_shot: seleccionado.ml_shot,
+            ml_shot_anfitriona: seleccionado.ml_shot_anfitriona
+          },
+          resetToDefault: true
+        });
+        return next;
+      });
+      toast.success('Marcado para volver al default — usá "Guardar Todo" para aplicar');
+    } else {
+      defaultMutation.mutate({ productoId: seleccionado.producto_id, valor });
+    }
   };
 
-  const handleSave = handleSubmit(
+  // Guardar la edición actual en el mapa de pendientes (sin enviar a la API)
+  const handleStashEdit = handleSubmit(
     ({ maximo }) => {
       if (!seleccionado || saving || barQuery.isFetching || barError) return;
       const maximoValor = maximo.trim() === '' ? null : Number(maximo);
@@ -416,25 +504,106 @@ export function SettingsBottleHostessCard() {
             : undefined;
         if (!esVentaSimple && maximoValor !== null && maximoValor >= 2 && !tiers)
           throw new Error('Esperá a que se cargue la tabla de precios');
-        saveMutation.mutate({
-          presentacionId: selectedId,
-          productoId: seleccionado.producto_id,
-          maximo: maximoValor,
-          config,
-          tiers,
-          guardarProducto:
-            maximoValor !== vigente ||
-            (config.ml_shot !== undefined &&
-              (config.ml_shot !== (seleccionado.ml_shot ?? null) ||
-                config.ml_shot_anfitriona !== (seleccionado.ml_shot_anfitriona ?? null)))
+        const vigenteNow =
+          seleccionado?.max_anfitrionas !== null &&
+          seleccionado?.max_anfitrionas !== undefined &&
+          Number(seleccionado.max_anfitrionas) > 0
+            ? Number(seleccionado.max_anfitrionas)
+            : null;
+        setPendingEdits(prev => {
+          const next = new Map(prev);
+          next.set(selectedId, {
+            presentacionId: selectedId,
+            productoId: seleccionado.producto_id,
+            maximo: maximoValor,
+            guardarProducto:
+              maximoValor !== vigenteNow ||
+              (config.ml_shot !== undefined &&
+                (config.ml_shot !== (seleccionado.ml_shot ?? null) ||
+                  config.ml_shot_anfitriona !== (seleccionado.ml_shot_anfitriona ?? null))),
+            config,
+            tiers
+          });
+          return next;
         });
+        toast.success('Cambios guardados localmente — usá "Guardar Todo" para aplicar');
       } catch (error) {
-        logger.captureException(error, { context: 'SettingsBottleHostessCard:save' });
+        logger.captureException(error, { context: 'SettingsBottleHostessCard:stash' });
         toast.error(error instanceof Error ? error.message : 'Error al guardar');
       }
     },
     errors => toast.error(errors.maximo?.message || 'Configuración inválida')
   );
+
+  // Guardar todas las ediciones pendientes a la API de una vez
+  const handleSaveAll = async () => {
+    if (pendingEdits.size === 0 || savingAll) return;
+    setSavingAll(true);
+    let successCount = 0;
+    let failCount = 0;
+    const errors: string[] = [];
+
+    for (const [id, edit] of pendingEdits) {
+      try {
+        let etapa = `No se pudo guardar ${id}`;
+        const principal =
+          edit.config.opciones_venta.find(o => o.tipo === 'botella') ??
+          edit.config.opciones_venta[0];
+        await guardarConfiguracion('/api/products/presentations', 'PATCH', {
+          id: edit.presentacionId,
+          precio_venta: principal?.precio ?? 0,
+          comision: principal?.comision ?? 0,
+          opciones_venta: edit.config.opciones_venta
+        });
+        etapa = 'Presentación guardada; no se pudo guardar la tabla por anfitrionas';
+        if (edit.tiers)
+          await guardarConfiguracion(`/api/products/${edit.productoId}/tiers`, 'PUT', {
+            tiers: edit.tiers
+          });
+        etapa = `${edit.tiers ? 'Presentación y tabla guardadas' : 'Presentación guardada'}; no se pudo guardar el máximo de anfitrionas`;
+        if (edit.guardarProducto) {
+          await guardarConfiguracion(`/api/products/${edit.productoId}`, 'PUT', {
+            max_anfitrionas: edit.maximo,
+            ml_shot: edit.config.ml_shot,
+            ml_shot_anfitriona: edit.config.ml_shot_anfitriona
+          });
+        }
+        successCount++;
+      } catch (error) {
+        failCount++;
+        const msg = error instanceof Error ? error.message : 'Error desconocido';
+        errors.push(`${id}: ${msg}`);
+        logger.captureException(error, { context: 'SettingsBottleHostessCard:saveAll' });
+      }
+    }
+
+    if (failCount === 0) {
+      setPendingEdits(new Map());
+      const actualizado = await refrescarPersistidos();
+      if (actualizado)
+        toast.success(
+          `${successCount} producto${successCount > 1 ? 's' : ''} actualizado${successCount > 1 ? 's' : ''}`
+        );
+      else toast.error('Productos guardados pero no se pudieron recargar los datos');
+    } else {
+      // Eliminar solo los que fallaron para reintentar
+      setPendingEdits(prev => {
+        const next = new Map(prev);
+        for (const [id] of prev) {
+          if (!errors.some(e => e.startsWith(id))) {
+            next.delete(id);
+          }
+        }
+        return next;
+      });
+      await refrescarPersistidos();
+      toast.error(`Se guardaron ${successCount}, pero fallaron ${failCount}. Revisá los errores.`);
+      if (errors.length > 0 && errors.length <= 3) {
+        errors.forEach(e => toast.error(e));
+      }
+    }
+    setSavingAll(false);
+  };
 
   return (
     <CollapsibleCard
@@ -531,42 +700,37 @@ export function SettingsBottleHostessCard() {
                 </h3>
               </div>
 
-              {/* Product list for this category */}
-              <div className='space-y-2 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-3 dark:border-neutral-800 dark:bg-neutral-950/40'>
-                <p className='mb-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400'>
-                  Seleccioná un producto para editar
-                </p>
-                <div className='space-y-1 max-h-64 overflow-y-auto'>
+              {/* Product cards grid for this category */}
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between'>
+                  <p className='text-xs font-semibold text-neutral-600 dark:text-neutral-400'>
+                    Seleccioná un producto para editar
+                  </p>
+                  {pendingCount > 0 && (
+                    <span className='flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'>
+                      <Dot className='h-3 w-3' />
+                      {pendingCount} cambio{pendingCount > 1 ? 's' : ''} pendiente
+                      {pendingCount > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
                   {productosAgrupados
                     .find(([cat]) => cat === selectedCategory)?.[1]
                     ?.map(p => (
-                      <Button
+                      <SettingsProductCard
                         key={p.id}
-                        variant='unstyled'
-                        type='button'
+                        id={String(p.id)}
+                        name={p.name}
+                        presentacion={p.presentacion}
+                        foto={p.foto}
+                        price={Number(p.price ?? 0)}
+                        commission={Number(p.commission ?? 0)}
+                        maxAnfitrionas={p.max_anfitrionas}
+                        isSelected={String(p.id) === selectedId}
+                        hasPending={pendingIds.has(String(p.id))}
                         onClick={() => handleSelectChange(String(p.id))}
-                        className={cn(
-                          'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150',
-                          String(p.id) === selectedId
-                            ? 'bg-black text-white dark:bg-white dark:text-black'
-                            : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                        )}
-                      >
-                        <ProductSelectorPhoto foto={p.foto} />
-                        <div className='min-w-0 flex-1'>
-                          <p className='text-sm font-medium truncate'>{p.name}</p>
-                          <p
-                            className={cn(
-                              'text-xs truncate',
-                              String(p.id) === selectedId
-                                ? 'text-neutral-300 dark:text-neutral-600'
-                                : 'text-neutral-500 dark:text-neutral-400'
-                            )}
-                          >
-                            {p.presentacion}
-                          </p>
-                        </div>
-                      </Button>
+                      />
                     ))}
                 </div>
               </div>
@@ -607,30 +771,42 @@ export function SettingsBottleHostessCard() {
                   />
                 )}
 
-              <div className='flex flex-col-reverse items-center gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-center dark:border-neutral-800'>
-                {vigente !== null && !esVentaSimple && (
+              <div className='flex flex-col-reverse items-center gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-between dark:border-neutral-800'>
+                <div className='flex items-center gap-2 sm:justify-center flex-1'>
+                  {vigente !== null && !esVentaSimple && (
+                    <Button
+                      variant='unstyled'
+                      type='button'
+                      onClick={() => guardarMaximo(null)}
+                      disabled={saving}
+                      className='inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
+                    >
+                      <RotateCcw className='h-4 w-4' />
+                      Volver al default
+                    </Button>
+                  )}
                   <Button
                     variant='unstyled'
                     type='button'
-                    onClick={() => guardarMaximo(null)}
-                    disabled={saving}
-                    className='inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
-                  >
-                    <RotateCcw className='h-4 w-4' />
-                    Volver al default
-                  </Button>
-                )}
-                <div className='flex w-full justify-center sm:w-auto'>
-                  <Button
-                    variant='unstyled'
-                    type='button'
-                    onClick={handleSave}
+                    onClick={handleStashEdit}
                     disabled={saving || loading || barQuery.isFetching || barError}
-                    className='rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200'
+                    className='rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800'
                   >
-                    {saving ? 'Guardando...' : 'Guardar Cambios'}
+                    {pendingIds.has(selectedId) ? '✓ Guardado local' : 'Guardar localmente'}
                   </Button>
                 </div>
+                <Button
+                  variant='unstyled'
+                  type='button'
+                  onClick={handleSaveAll}
+                  disabled={savingAll || pendingCount === 0}
+                  className='flex items-center justify-center gap-2 rounded-full bg-black px-5 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200'
+                >
+                  <SaveAll className='h-4 w-4' />
+                  {savingAll
+                    ? 'Guardando...'
+                    : `Guardar Todo${pendingCount > 0 ? ` (${pendingCount})` : ''}`}
+                </Button>
               </div>
             </div>
           )}

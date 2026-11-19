@@ -31,6 +31,7 @@ export function useClientModals() {
   const [prepagoPaymentMethod, setPrepagoPaymentMethod] = useState('efectivo');
   const [prepagoMixedPayments, setPrepagoMixedPayments] = useState<PrepagoMixedPayment[]>([]);
   const [isPrepagoAmountManual, setIsPrepagoAmountManual] = useState(false);
+  const [prepagoBaucherFoto, setPrepagoBaucherFoto] = useState<string | null>(null);
   const [isDevolucionModalOpen, setIsDevolucionModalOpen] = useState(false);
   const [devolucionClient, setDevolucionClient] = useState<Client | null>(null);
   const [devolucionAmount, setDevolucionAmount] = useState('');
@@ -173,6 +174,7 @@ export function useClientModals() {
       setPrepagoAmount('');
       setPrepagoPaymentMethod('efectivo');
       setPrepagoMixedPayments([]);
+      setPrepagoBaucherFoto(null);
       setIsPrepagoAmountManual(false);
       setIsPrepagoModalOpen(true);
     },
@@ -185,6 +187,7 @@ export function useClientModals() {
     setPrepagoAmount('');
     setPrepagoPaymentMethod('efectivo');
     setPrepagoMixedPayments([]);
+    setPrepagoBaucherFoto(null);
     setIsPrepagoAmountManual(false);
   }, [setPrepagoAmount]);
 
@@ -218,6 +221,11 @@ export function useClientModals() {
 
       setPrepagoSubmitting(true);
       try {
+        const hasTransferencia =
+          prepagoPaymentMethod === 'transferencia' ||
+          (prepagoPaymentMethod === 'mixto' &&
+            prepagoMixedPayments.some(p => p.metodo === 'transferencia'));
+
         const response = await fetch('/api/clients/prepaid', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -234,6 +242,10 @@ export function useClientModals() {
                       metodo: pago.metodo,
                       monto: pago.monto
                     }))
+                : undefined,
+            metadatos:
+              hasTransferencia && prepagoBaucherFoto
+                ? { baucher_foto: prepagoBaucherFoto }
                 : undefined
           })
         });
@@ -262,6 +274,7 @@ export function useClientModals() {
       hasOpenCaja,
       numericAmount,
       prepagoAmount,
+      prepagoBaucherFoto,
       prepagoClient,
       prepagoMixedPayments,
       prepagoPaymentMethod
@@ -368,6 +381,8 @@ export function useClientModals() {
     setPrepagoPaymentMethod,
     prepagoMixedPayments,
     setPrepagoMixedPayments,
+    prepagoBaucherFoto,
+    setPrepagoBaucherFoto,
     prepagoSubmitting,
     closePrepagoModal,
 
