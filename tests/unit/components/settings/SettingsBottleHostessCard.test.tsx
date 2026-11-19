@@ -190,7 +190,7 @@ describe('SettingsBottleHostessCard', () => {
     const max = await screen.findByLabelText('Máximo de anfitrionas');
     expect(max).toHaveAttribute('placeholder', 'Default');
     expect(screen.queryByText('regla por defecto')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Todo|Guardar Cambios/i }));
     await waitFor(() =>
       expect(request).toHaveBeenCalledWith(
         '/api/products/presentations',
@@ -279,7 +279,7 @@ describe('SettingsBottleHostessCard', () => {
     fireEvent.change(screen.getByLabelText('Ml bebida analcohólica anfitriona'), {
       target: { value: '150' }
     });
-    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Todo|Guardar Cambios/ }));
 
     await waitFor(() => {
       const patch = request.mock.calls.find(args => args[1]?.method === 'PATCH');
@@ -366,7 +366,7 @@ describe('SettingsBottleHostessCard', () => {
     fireEvent.change(max, { target: { value: '12' } });
     await screen.findByLabelText('Precio para 12 anfitrionas');
     expect(screen.queryByLabelText('Precio para 13 anfitrionas')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Todo|Guardar Cambios/ }));
 
     await waitFor(() => {
       const productPut = request.mock.calls.find(
@@ -491,7 +491,7 @@ describe('SettingsBottleHostessCard', () => {
     fireEvent.change(screen.getByLabelText('Precio para 2 anfitrionas'), {
       target: { value: '170000' }
     });
-    fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar Todo|Guardar Cambios/ }));
     await waitFor(() => {
       const put = request.mock.calls.find(
         args => args[1]?.method === 'PUT' && String(args[0]).includes('/tiers')
