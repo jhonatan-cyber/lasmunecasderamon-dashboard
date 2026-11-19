@@ -39,10 +39,10 @@ export const ROLES_COLACION = ['anfitriona', ...ROLES_BAR] as const;
 export type RolColacion = (typeof ROLES_COLACION)[number];
 
 /**
- * Roles que reciben colación pero no pueden registrarla: el registro lo hace
- * caja o administración por ellos, aunque llamen directo a la API.
+ * Roles que reciben colación pero no pueden entregarla: quien la registra es
+ * el barman o administración, aunque llamen directo a la API.
  */
-export const ROLES_SOLO_RECEPTOR_COLACION = ['anfitriona', 'garzon'] as const;
+export const ROLES_SOLO_RECEPTOR_COLACION = ['anfitriona', 'garzon', 'cajero', 'cajera'] as const;
 
 export function rolSoloRecibeColacion(rol?: string | null): boolean {
   return (ROLES_SOLO_RECEPTOR_COLACION as readonly string[]).includes(

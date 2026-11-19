@@ -35,6 +35,7 @@ export interface Colacion {
   caja_id: string;
   registrado_por: string;
   registrado_por_nombre: string;
+  registrado_por_nick: string | null;
   fecha: string;
   fecha_crea: string;
 }
@@ -52,7 +53,7 @@ export async function listarColaciones(
             CASE WHEN c.acompanamiento_presentacion_id IS NULL THEN NULL
                  ELSE NULLIF(TRIM(apr.nombre || ' ' || ap.nombre), '') END AS acompanamiento_nombre,
             c.caja_id,
-            c.registrado_por, (r.nombre || ' ' || r.apellido) AS registrado_por_nombre,
+            c.registrado_por, (r.nombre || ' ' || r.apellido) AS registrado_por_nombre, r.nick AS registrado_por_nick,
             c.fecha, c.fecha_crea
        FROM colaciones c
        JOIN usuarios u ON u.id_usuario = c.usuario_id

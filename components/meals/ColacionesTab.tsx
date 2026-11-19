@@ -322,11 +322,13 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
   // no existe en el catálogo: ningún rol podía concederlo y el control quedaba
   // muerto para todos los no-administradores.
   //
-  // `products.write` (lo que exige el POST) lo conceden `create` y `edit`: el
-  // formulario se ofrece a quien tenga cualquiera de los dos, igual que el
-  // servidor. Con solo `create` se escondía el formulario a un usuario que sí
-  // podía registrar por API.
-  const canCreate = hasPermission('products', 'create') || hasPermission('products', 'edit');
+  // `products.write` (recetas, edición de productos) ya no abre el formulario:
+  // desde la 121 la colación la entrega el barman con `register_colacion`. El
+  // administrador pasa siempre.
+  const canCreate =
+    hasPermission('products', 'register_colacion') ||
+    hasPermission('products', 'create') ||
+    hasPermission('products', 'edit');
   // Mismo permiso que GET /api/meals: sin lectura no hay detalle que exportar.
   const canRead = hasPermission('products', 'view');
 

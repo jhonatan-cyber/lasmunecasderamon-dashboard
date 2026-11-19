@@ -32,7 +32,12 @@ describe('tokens de Comunicaciones', () => {
     await sendPushNotification('usuario-1', 'Título', 'Mensaje');
     expect(mocks.query.mock.calls[0][0]).toContain('FROM push_tokens');
     expect(mocks.enviar).toHaveBeenCalledWith([
-      expect.objectContaining({ to: 'ExponentPushToken[activo]' })
+      expect.objectContaining({
+        to: 'ExponentPushToken[activo]',
+        sound: 'default',
+        priority: 'high',
+        channelId: 'alertas'
+      })
     ]);
     expect(mocks.query).toHaveBeenLastCalledWith('DELETE FROM push_tokens WHERE token = ?', [
       'ExponentPushToken[activo]'
@@ -56,7 +61,10 @@ describe('tokens de Comunicaciones', () => {
     expect(sql).toContain("LOWER(r.nombre) = 'administrador'");
     expect(params).toEqual(['products', 'accept_transfer']);
     expect(mocks.enviar).toHaveBeenCalledWith([
-      expect.objectContaining({ to: 'ExponentPushToken[activo]' })
+      expect.objectContaining({
+        to: 'ExponentPushToken[activo]',
+        channelId: 'alertas'
+      })
     ]);
   });
 

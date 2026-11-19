@@ -2,17 +2,17 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { ApiResponse } from '@/lib/api/api-response';
 import { ValidationError } from '@/lib/errors/errors';
+import { puedeAutorizarCovers } from '@/lib/business/coverAuthorization';
 import { entregaGrupoCoverSchema } from '@/lib/business/schemas/entrada-cover';
 import { entregarGrupoEntradas, obtenerSolicitudCover } from '@/modules/entradas';
 import { SaleService } from '@/workflows/ventas';
 import { notificarEntradaActualizada } from '@/lib/notifications/entradaNotificationUtils';
 
 export const PATCH = withRoute(
-  { auth: true, audit: true, module: 'entradas', action: 'deliver' },
+  { auth: true, audit: true, module: 'entradas', action: 'authorize_cover' },
   async (_request, { params, user }) => {
-    // El barman entrega covers solicitando autorización: no puede aprobar la
-    // solicitud que él mismo envió.
-    if (user.role?.toLowerCase() === 'barman')
+    // La solicitud la responde caja o administración; el barman solo la envía.
+    if (!puedeAutorizarCovers(user.role))
       return ApiResponse.forbidden('La solicitud la autoriza la caja o la administración');
     const { id } = await params;
     const solicitud = await obtenerSolicitudCover(id);

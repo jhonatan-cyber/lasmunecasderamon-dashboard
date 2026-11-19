@@ -3,8 +3,10 @@ import { withRoute } from '@/lib/api/withRoute';
 import { crearSolicitudCover, listarSolicitudesCover } from '@/modules/entradas';
 import { solicitudCoverSchema } from '@/lib/business/schemas/entrada-cover';
 
+// La lista la leen la barra (para no repetir una solicitud ya enviada) y caja
+// (para responderla): ambos roles tienen `entradas.view`.
 export const GET = withRoute(
-  { auth: true, module: 'entradas', action: 'deliver' },
+  { auth: true, module: 'entradas', action: 'view' },
   async (request: Request) => {
     const estado = new URL(request.url).searchParams.get('estado') || 'pendiente';
     const rows = await listarSolicitudesCover(estado);

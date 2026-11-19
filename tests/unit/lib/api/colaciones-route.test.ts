@@ -19,8 +19,11 @@ vi.mock('@/lib/utils/logger', () => ({
     info: vi.fn(),
     debug: vi.fn(),
     captureException: vi.fn()
-  }
-, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+  },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 
 import { POST } from '@/app/api/meals/route';
 
@@ -60,7 +63,8 @@ beforeEach(() => {
 describe('POST /api/meals', () => {
   it.each([
     ['garzón', 'Garzon'],
-    ['anfitriona', 'Anfitriona']
+    ['anfitriona', 'Anfitriona'],
+    ['cajero', 'cajero']
   ])('rechaza al %s como registrador', async (_rol, role) => {
     const response = await call({ usuario_id: 'w-1', presentacion_id: 'p-1' }, { id: 'u-r', role });
 
@@ -72,10 +76,10 @@ describe('POST /api/meals', () => {
     expect(registrarColacion).not.toHaveBeenCalled();
   });
 
-  it('deja registrar al resto de los roles', async () => {
+  it('deja registrar al barman', async () => {
     const response = await call(
       { usuario_id: 'w-1', presentacion_id: 'p-1' },
-      { id: 'u-c', role: 'cajero' }
+      { id: 'u-b', role: 'barman' }
     );
 
     expect(response.status).toBe(201);

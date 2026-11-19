@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PaymentMethodSelect } from '@/components/shared/selects';
+import { BaucherFileInput } from '@/components/shared/BaucherFileInput';
 import { metodoPagoLabels } from '@/lib/business/salesUtils';
 import { formatCurrencyCLP, formatNumberInput, parseNumberInput } from '@/lib/utils/formatters';
 import { Client } from '@/types/client';
@@ -29,9 +30,11 @@ interface PrepagoFormProps {
   amount: string;
   paymentMethod: string;
   mixedPayments: MixedPayment[];
+  baucherFoto: string | null;
   onAmountChange: (value: string) => void;
   onPaymentMethodChange: (value: string) => void;
   onMixedPaymentsChange: (payments: MixedPayment[]) => void;
+  onBaucherFotoChange: (foto: string | null) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -43,9 +46,11 @@ function PrepagoForm({
   amount,
   paymentMethod,
   mixedPayments,
+  baucherFoto,
   onAmountChange,
   onPaymentMethodChange,
   onMixedPaymentsChange,
+  onBaucherFotoChange,
   onSubmit,
   onCancel,
   isSubmitting,
@@ -64,6 +69,9 @@ function PrepagoForm({
   const availableMethods = ['efectivo', 'tarjeta', 'transferencia'] as const;
 
   const isMixedPayment = paymentMethod === 'mixto';
+  const hasTransferencia =
+    paymentMethod === 'transferencia' ||
+    (isMixedPayment && mixedPayments.some(p => p.metodo === 'transferencia'));
 
   return (
     <form id='prepago-form' onSubmit={onSubmit} className='space-y-6'>
@@ -232,6 +240,16 @@ function PrepagoForm({
         </div>
       )}
 
+      {hasTransferencia && (
+        <BaucherFileInput
+          id='prepago-baucher'
+          value={baucherFoto}
+          onChange={onBaucherFotoChange}
+          label='Foto del comprobante de transferencia'
+          hint='Adjunta la captura o foto del comprobante de la transferencia.'
+        />
+      )}
+
       {}
       <div className='space-y-2'>
         <Label
@@ -291,9 +309,11 @@ interface PrepagoModalProps {
   amount: string;
   paymentMethod: string;
   mixedPayments: MixedPayment[];
+  baucherFoto: string | null;
   onAmountChange: (amount: string) => void;
   onPaymentMethodChange: (method: string) => void;
   onMixedPaymentsChange: (payments: MixedPayment[]) => void;
+  onBaucherFotoChange: (foto: string | null) => void;
   onSubmit: (e: React.FormEvent) => Promise<boolean>;
   isSubmitting: boolean;
   cajaCerrada?: boolean;
@@ -306,9 +326,11 @@ export function PrepagoModal({
   amount,
   paymentMethod,
   mixedPayments,
+  baucherFoto,
   onAmountChange,
   onPaymentMethodChange,
   onMixedPaymentsChange,
+  onBaucherFotoChange,
   onSubmit,
   isSubmitting,
   cajaCerrada = false
@@ -346,9 +368,11 @@ export function PrepagoModal({
             amount={amount}
             paymentMethod={paymentMethod}
             mixedPayments={mixedPayments}
+            baucherFoto={baucherFoto}
             onAmountChange={onAmountChange}
             onPaymentMethodChange={onPaymentMethodChange}
             onMixedPaymentsChange={onMixedPaymentsChange}
+            onBaucherFotoChange={onBaucherFotoChange}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}

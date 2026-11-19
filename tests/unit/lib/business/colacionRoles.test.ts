@@ -92,15 +92,15 @@ describe('reglaColacionPorRol', () => {
 });
 
 describe('rolSoloRecibeColacion', () => {
-  it.each(['anfitriona', ' Anfitriona ', 'garzon', ' Garzon '])(
-    '%s recibe colación pero no puede registrarla',
+  it.each(['anfitriona', ' Anfitriona ', 'garzon', ' Garzon ', 'cajero', ' Cajera '])(
+    '%s recibe colación pero no puede entregarla',
     rol => {
       expect(rolSoloRecibeColacion(rol)).toBe(true);
     }
   );
 
-  it.each(['cajero', 'barman', 'supervisor', '', null, undefined])(
-    'no restringe el registro al rol %s',
+  it.each(['barman', 'administrador', 'supervisor', '', null, undefined])(
+    'no restringe la entrega al rol %s',
     rol => {
       expect(rolSoloRecibeColacion(rol)).toBe(false);
     }

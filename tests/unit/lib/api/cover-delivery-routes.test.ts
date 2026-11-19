@@ -16,7 +16,7 @@ vi.mock('@/lib/api/withRoute', () => ({
     (request: Request, context: { params?: unknown; user?: unknown } = {}) =>
       handler(request, {
         params: context.params ?? Promise.resolve({ id: 's1' }),
-        user: context.user ?? { id: 'cajero', name: 'Caja', lastName: 'Prueba' }
+        user: context.user ?? { id: 'b1', name: 'Bar', lastName: 'Man', role: 'Barman' }
       })
 }));
 vi.mock('@/modules/entradas', () => ({
@@ -37,6 +37,9 @@ import { PATCH as aprobar } from '@/app/api/tickets/cover-solicitudes/[id]/appro
 import { PATCH as rechazar } from '@/app/api/tickets/cover-solicitudes/[id]/reject/route';
 
 const barman = { id: 'b1', name: 'Bar', lastName: 'Man', role: 'Barman' };
+const cajero = { id: 'cajero', name: 'Caja', lastName: 'Prueba', role: 'Cajero' };
+const garzon = { id: 'g1', name: 'Gar', lastName: 'Zon', role: 'Garzon' };
+const administrador = { id: 'a1', name: 'Admin', lastName: 'Istrador', role: 'Administrador' };
 
 const payload = {
   entrada_ids: ['e1', 'e2'],
@@ -80,7 +83,7 @@ describe('contratos HTTP de entrega de covers', () => {
       entradaIds: ['e1', 'e2'],
       montoAdicional: 10000,
       unidades: payload.unidades,
-      usuarioId: 'cajero'
+      usuarioId: 'b1'
     });
     expect(mocks.notificar).toHaveBeenCalledTimes(2);
     expect(mocks.notificar.mock.invocationCallOrder[0]).toBeGreaterThan(
@@ -106,7 +109,7 @@ describe('contratos HTTP de entrega de covers', () => {
         totalVenta: 30000,
         metodoPago: 'efectivo',
         entradaId: 'e1',
-        usuarioId: 'cajero',
+        usuarioId: 'b1',
         detalles: []
       },
       { id: 'unidad' },
@@ -138,12 +141,15 @@ describe('contratos HTTP de entrega de covers', () => {
         unidades: [...payload.unidades, ...payload.unidades],
         montoTotal: 10000
       },
-      'cajero'
+      'b1'
     );
   });
 
   it('aprueba el lote con el id de solicitud para bloquearlo en la transacción', async () => {
-    await aprobar(request({}), { params: Promise.resolve({ id: 's1' }) });
+    await aprobar(request({}), {
+      params: Promise.resolve({ id: 's1' }),
+      user: cajero
+    } as unknown as { params: Promise<{ id: string }> });
     expect(mocks.entregar).toHaveBeenCalledWith(
       {
         entradaIds: ['e1', 'e2'],
@@ -174,5 +180,36 @@ describe('contratos HTTP de entrega de covers', () => {
     } as unknown as { params: Promise<{ id: string }> });
     expect(respuesta.status).toBe(403);
     expect(mocks.rechazar).not.toHaveBeenCalled();
+  });
+
+  it('no deja que el garzón apruebe covers', async () => {
+    const respuesta = await aprobar(request({}), {
+      params: Promise.resolve({ id: 's1' }),
+      user: garzon
+    } as unknown as { params: Promise<{ id: string }> });
+    expect(respuesta.status).toBe(403);
+    expect(mocks.entregar).not.toHaveBeenCalled();
+    expect(mocks.notificar).not.toHaveBeenCalled();
+  });
+
+  it('no deja que el garzón rechace covers', async () => {
+    const respuesta = await rechazar(request({ motivo: 'Stock insuficiente' }), {
+      params: Promise.resolve({ id: 's1' }),
+      user: garzon
+    } as unknown as { params: Promise<{ id: string }> });
+    expect(respuesta.status).toBe(403);
+    expect(mocks.rechazar).not.toHaveBeenCalled();
+  });
+
+  it('la administración sí puede aprobar la solicitud', async () => {
+    const respuesta = await aprobar(request({}), {
+      params: Promise.resolve({ id: 's1' }),
+      user: administrador
+    } as unknown as { params: Promise<{ id: string }> });
+    expect(respuesta.status).toBe(200);
+    expect(mocks.entregar).toHaveBeenCalledWith(
+      expect.objectContaining({ solicitudId: 's1' }),
+      expect.any(Function)
+    );
   });
 });
