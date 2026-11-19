@@ -149,7 +149,8 @@ function mockPersistedSettings(maximo: number | null = null) {
   return { state, request };
 }
 
-const saveButton = () => screen.getByRole('button', { name: /Guardar Cambios|Guardando/i });
+const saveButton = () =>
+  screen.getByRole('button', { name: /Guardar Todo|Guardar Cambios|Guardando/i });
 const waitForSave = () => waitFor(() => expect(saveButton()).toBeEnabled());
 
 describe('SettingsBottleHostessCard', () => {
