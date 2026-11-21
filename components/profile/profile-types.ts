@@ -11,6 +11,7 @@ export function normalizeProfileUserData(rawUser: any): ProfileUserData {
     rol_id: rawUser.rol_id ?? rawUser.roleId ?? '',
     role: rawUser.role || '',
     email: rawUser.email || '',
+    recovery_email: rawUser.recovery_email ?? rawUser.recoveryEmail ?? '',
     foto: rawUser.foto ?? null,
     fecha_mod: rawUser.fecha_mod ?? rawUser.updated_at ?? null,
     password: rawUser.password ?? ''
@@ -48,6 +49,7 @@ export interface ProfileUserData {
   rol_id: string | number;
   role: string;
   email: string;
+  recovery_email?: string;
   foto?: string | null;
   fecha_mod?: string | null;
   password?: string;

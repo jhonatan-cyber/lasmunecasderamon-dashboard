@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ trx: vi.fn(), hash: vi.fn(), whatsapp: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  trx: vi.fn(),
+  hash: vi.fn(),
+  whatsapp: vi.fn(),
+  email: vi.fn()
+}));
 vi.mock('@/lib/database/db', () => ({ query: vi.fn(), generateUUID: vi.fn() }));
 vi.mock('argon2', () => ({ hash: mocks.hash }));
 vi.mock('@/lib/auth/auth', () => ({ generateToken: vi.fn() }));
@@ -11,13 +16,21 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-10-12'
 }));
 vi.mock('@/modules/auditoria', () => ({ SecurityAlertService: {} }));
-vi.mock('@/lib/utils/logger', () => ({ default: { error: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+vi.mock('@/lib/utils/logger', () => ({
+  default: { error: vi.fn() },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 vi.mock('@/modules/identidad/autenticacion/codigos', () => ({ regenerateAttendanceCode: vi.fn() }));
 vi.mock('@/lib/transaction/contract', () => ({
   enUnaUnidad: (fn: any) => fn({ ejecutar: (work: any) => work({}) })
 }));
 vi.mock('@/lib/transaction/infrastructure', () => ({ resolverTransaccion: () => mocks.trx }));
-vi.mock('@/modules/comunicaciones', () => ({ enviarWhatsApp: mocks.whatsapp }));
+vi.mock('@/modules/comunicaciones', () => ({
+  enviarWhatsApp: mocks.whatsapp,
+  enviarEmailRecuperacionContrasena: mocks.email
+}));
 import { resetPassword } from '@/modules/identidad/autenticacion/consultas';
 
 describe('reset de usuarios al RUT registrado', () => {
@@ -27,7 +40,16 @@ describe('reset de usuarios al RUT registrado', () => {
     mocks.trx.mockResolvedValue([]);
   });
   it('restablece solo la cuenta indicada, fuerza cambio y cierra sus sesiones sin WhatsApp', async () => {
-    mocks.trx.mockResolvedValueOnce([{ id_usuario: 'u2', run: '12345678-9' }]);
+    // Un rol que no está en ROLES_USAN_CORREO para que caiga en el fallback de contraseña = RUT.
+    mocks.trx.mockResolvedValueOnce([
+      {
+        id_usuario: 'u2',
+        run: '12345678-9',
+        recovery_email: null,
+        nick: null,
+        rol_nombre: 'bar'
+      }
+    ]);
     const result = await resetPassword(' 12.345.678-9 ', 'usuarios');
     expect(mocks.trx.mock.calls[0][0]).toContain("NOT IN ('administrador', 'admin')");
     expect(mocks.trx.mock.calls[0][0]).toContain('FOR UPDATE OF u');
@@ -46,8 +68,8 @@ describe('reset de usuarios al RUT registrado', () => {
   it('no cambia contraseñas si no hay coincidencia o el RUT es ambiguo', async () => {
     const absent = await resetPassword('12345678-9', 'usuarios');
     mocks.trx.mockResolvedValueOnce([
-      { id_usuario: 'u1', run: '12345678-9' },
-      { id_usuario: 'u2', run: '12345678-9' }
+      { id_usuario: 'u1', run: '12345678-9', recovery_email: null, nick: null, rol_nombre: 'bar' },
+      { id_usuario: 'u2', run: '12345678-9', recovery_email: null, nick: null, rol_nombre: 'bar' }
     ]);
     expect(await resetPassword('12345678-9', 'usuarios')).toEqual(absent);
     expect(mocks.hash).not.toHaveBeenCalled();

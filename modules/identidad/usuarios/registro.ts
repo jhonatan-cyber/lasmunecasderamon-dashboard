@@ -19,6 +19,7 @@ export class UserRepository {
       name: row.nombre,
       lastName: row.apellido,
       email: row.email,
+      recoveryEmail: row.recovery_email,
       phone: row.telefono,
       address: row.direccion,
       maritalStatus: row.estado_civil,
@@ -89,7 +90,7 @@ export class UserRepository {
         SELECT 1 FROM detalle_servicios ds JOIN servicios s ON s.id_servicio = ds.servicio_id
         WHERE ds.usuario_id = u.id_usuario AND ds.liberado_en IS NULL AND s.estado IN (2, 3)
       ) THEN 1 ELSE 0 END AS estado_servicio`;
-      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, ${ocupacion}, u.telefono, u.email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.biometrico_codigo, u.biometrico_huella, u.biometrico_facial, u.fecha_crea, u.fecha_mod, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
+      const dataSql = `SELECT u.id_usuario, u.run, u.nick, u.nombre, u.apellido, u.foto, u.estado, ${ocupacion}, u.telefono, u.email, u.recovery_email, u.direccion, u.estado_civil, u.afp, u.sueldo, u.aporte, u.descuento, u.biometrico_codigo, u.biometrico_huella, u.biometrico_facial, u.fecha_crea, u.fecha_mod, r.nombre as rol_nombre, r.id_rol FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol ${loginJoin} ${where} ORDER BY u.fecha_crea DESC${params?.limit !== undefined ? ' LIMIT ? OFFSET ?' : ''}`;
 
       const countRes = await query<any[]>(countSql, sqlParams);
       const total = countRes[0]?.total || 0;
@@ -171,6 +172,7 @@ export class UserRepository {
         descuento: data.discount || 0,
         foto: fotoFilename,
         email: data.email,
+        recovery_email: data.recoveryEmail ?? null,
         password: data.password,
         force_password_change: data.force_password_change ?? 1,
         biometrico_codigo: data.biometrico_codigo ?? null,
@@ -208,6 +210,7 @@ export class UserRepository {
         descuento: data.discount,
         foto: fotoFilename ?? data.foto,
         email: data.email,
+        recovery_email: data.recoveryEmail,
         password: data.password,
         force_password_change: data.force_password_change,
         biometrico_codigo: data.biometrico_codigo,

@@ -4,7 +4,8 @@ const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   trx: vi.fn(),
   hash: vi.fn(),
-  whatsapp: vi.fn()
+  whatsapp: vi.fn(),
+  email: vi.fn()
 }));
 vi.mock('@/lib/database/db', () => ({ query: mocks.query, generateUUID: vi.fn() }));
 vi.mock('argon2', () => ({ hash: mocks.hash }));
@@ -28,7 +29,10 @@ vi.mock('@/lib/transaction/contract', () => ({
   enUnaUnidad: (fn: any) => fn({ ejecutar: (work: any) => work({}) })
 }));
 vi.mock('@/lib/transaction/infrastructure', () => ({ resolverTransaccion: () => mocks.trx }));
-vi.mock('@/modules/comunicaciones', () => ({ enviarWhatsApp: mocks.whatsapp }));
+vi.mock('@/modules/comunicaciones', () => ({
+  enviarWhatsApp: mocks.whatsapp,
+  enviarEmailRecuperacionContrasena: mocks.email
+}));
 
 import { resetPassword } from '@/modules/identidad/autenticacion/consultas';
 
@@ -38,10 +42,19 @@ describe('recuperaci�n de administradores por WhatsApp', () => {
     mocks.hash.mockResolvedValue('hash-seguro');
     mocks.trx.mockResolvedValue([]);
     mocks.whatsapp.mockResolvedValue(true);
+    mocks.email.mockResolvedValue(true);
   });
 
   it('env�a una clave aleatoria al tel�fono del perfil y obliga a cambiarla', async () => {
-    mocks.query.mockResolvedValue([{ id_usuario: 'u1', run: '12345678-9', telefono: '77712345' }]);
+    mocks.query.mockResolvedValue([
+      {
+        id_usuario: 'u1',
+        run: '12345678-9',
+        telefono: '77712345',
+        recovery_email: null,
+        nick: null
+      }
+    ]);
     const result = await resetPassword(' 12345678-9 ');
     expect(mocks.query.mock.calls[0][1]).toEqual(['12345678-9']);
     expect(mocks.query.mock.calls[0][0]).toContain("LOWER(r.nombre) = 'administrador'");
@@ -63,7 +76,9 @@ describe('recuperaci�n de administradores por WhatsApp', () => {
   it.each([null, '', 'abc'])(
     'no cambia credenciales sin un tel�fono v�lido: %s',
     async telefono => {
-      mocks.query.mockResolvedValue([{ id_usuario: 'u1', run: '12345678-9', telefono }]);
+      mocks.query.mockResolvedValue([
+        { id_usuario: 'u1', run: '12345678-9', telefono, recovery_email: null, nick: null }
+      ]);
       expect((await resetPassword('12345678-9')).success).toBe(true);
       expect(mocks.hash).not.toHaveBeenCalled();
       expect(mocks.trx).not.toHaveBeenCalled();
@@ -75,7 +90,9 @@ describe('recuperaci�n de administradores por WhatsApp', () => {
     // Modo whatsapp: la respuesta no cambia exista o no el administrador.
     mocks.query.mockResolvedValue([]);
     const noExiste = await resetPassword('12345678-9', 'whatsapp');
-    mocks.query.mockResolvedValue([{ id_usuario: 'u1', telefono: null }]);
+    mocks.query.mockResolvedValue([
+      { id_usuario: 'u1', telefono: null, recovery_email: null, nick: null }
+    ]);
     expect(await resetPassword('12345678-9', 'whatsapp')).toEqual(noExiste);
     expect(mocks.trx).not.toHaveBeenCalled();
   });
@@ -87,13 +104,30 @@ describe('recuperaci�n de administradores por WhatsApp', () => {
     const noExiste = await resetPassword('12345678-9');
 
     // RUT que existe y no es administrador: misma respuesta, sin filtrar nada.
-    mocks.trx.mockResolvedValue([{ id_usuario: 'u1', run: '12345678-9' }]);
+    // El mock debe incluir rol_nombre porque la consulta lo requiere.
+    mocks.trx.mockResolvedValue([
+      {
+        id_usuario: 'u1',
+        run: '12345678-9',
+        recovery_email: null,
+        nick: null,
+        rol_nombre: 'garzon'
+      }
+    ]);
     expect(await resetPassword('12345678-9')).toEqual(noExiste);
   });
 
   it('en modo auto el administrador recibe el mismo mensaje que los demas', async () => {
     // RUT de un administrador: se le manda la clave temporal por WhatsApp.
-    mocks.query.mockResolvedValue([{ id_usuario: 'u1', run: '12345678-9', telefono: '77712345' }]);
+    mocks.query.mockResolvedValue([
+      {
+        id_usuario: 'u1',
+        run: '12345678-9',
+        telefono: '77712345',
+        recovery_email: null,
+        nick: null
+      }
+    ]);
     const comoAdmin = await resetPassword('12345678-9');
     expect(mocks.whatsapp).toHaveBeenCalled();
 
@@ -107,14 +141,18 @@ describe('recuperaci�n de administradores por WhatsApp', () => {
   });
 
   it.each(['rechazo', 'error'])('aborta la unidad de cambios si falla WhatsApp: %s', async tipo => {
-    mocks.query.mockResolvedValue([{ id_usuario: 'u1', telefono: '+59177712345' }]);
+    mocks.query.mockResolvedValue([
+      { id_usuario: 'u1', telefono: '+59177712345', recovery_email: null, nick: null }
+    ]);
     if (tipo === 'error') mocks.whatsapp.mockRejectedValue(new Error('Twilio no disponible'));
     else mocks.whatsapp.mockResolvedValue(false);
     await expect(resetPassword('12345678-9')).rejects.toThrow('No se pudo enviar el WhatsApp');
   });
 
   it('genera una clave distinta en cada recuperaci�n', async () => {
-    mocks.query.mockResolvedValue([{ id_usuario: 'u1', telefono: '+59177712345' }]);
+    mocks.query.mockResolvedValue([
+      { id_usuario: 'u1', telefono: '+59177712345', recovery_email: null, nick: null }
+    ]);
     await resetPassword('12345678-9');
     await resetPassword('12345678-9');
     expect(mocks.hash.mock.calls[0][0]).not.toBe(mocks.hash.mock.calls[1][0]);

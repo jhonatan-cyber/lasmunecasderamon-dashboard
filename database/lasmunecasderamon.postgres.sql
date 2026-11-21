@@ -701,6 +701,7 @@ CREATE TABLE usuarios (
   sueldo integer NOT NULL,
   descuento integer NOT NULL DEFAULT 0,
   email varchar(255) DEFAULT NULL,
+  recovery_email varchar(255) DEFAULT NULL,
   password varchar(255) NOT NULL,
   rol_id varchar(36) DEFAULT NULL,
   foto varchar(255) NOT NULL DEFAULT 'default.png',

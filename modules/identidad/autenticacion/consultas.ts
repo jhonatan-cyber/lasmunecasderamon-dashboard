@@ -18,7 +18,7 @@ import logger from '@/lib/utils/logger';
 import { enUnaUnidad } from '@/lib/transaction/contract';
 import { resolverTransaccion } from '@/lib/transaction/infrastructure';
 import { randomBytes } from 'node:crypto';
-import { enviarWhatsApp } from '@/modules/comunicaciones';
+import { enviarWhatsApp, enviarEmailRecuperacionContrasena } from '@/modules/comunicaciones';
 import { normalizeWhatsAppPhone } from '@/lib/utils/whatsappPhone';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 
@@ -268,22 +268,94 @@ export async function logoutUser(userId: string, sesionId?: string) {
 }
 
 /**
+ * Roles que usan correo de recuperación como método principal.
+ *
+ * Barman, garzón, anfitriona y cajero reciben la clave temporal por email
+ * cuando tienen `recovery_email` configurado. Si no lo tienen, no se puede
+ * resetear la contraseña por este flujo (debe contactarse a un administrador).
+ */
+const ROLES_USAN_CORREO = new Set(['barman', 'garzon', 'anfitriona', 'cajero']);
+
+/**
  * Mensaje único del modo automático.
  *
  * La respuesta **no puede** revelar si el RUT consultado pertenece a un
  * administrador: con mensajes distintos, una llamada pública al endpoint
  * permitiría enumerar los RUT de los administradores. Por eso el modo
- * automático devuelve siempre este texto, tanto si el RUT es de un
- * administrador (recibe la clave por WhatsApp) como si no (su contraseña
- * vuelve a ser su RUT).
+ * automático devuelve siempre este texto.
  */
 const MENSAJE_RESET_AUTO =
-  'Si el RUT corresponde a una cuenta activa, restablecemos tu contraseña: te llega por WhatsApp si tenés teléfono registrado o será tu RUT.';
+  'Si el RUT corresponde a una cuenta activa, restablecemos tu contraseña: te llega por correo de recuperación o WhatsApp según tu rol y configuración.';
 
 /** Respuesta pública del reset: nunca dice si el RUT existe ni qué rol tiene. */
 export interface ResetPasswordResponse {
   success: boolean;
   message: string;
+}
+
+/**
+ * Actualiza la contraseña del usuario y cierra sesiones activas dentro de
+ * una transacción. Luego envía la clave temporal por los canales indicados.
+ */
+async function actualizarPasswordYEnviar(
+  userId: string,
+  passwordTemporal: string,
+  opciones: {
+    enviarEmail?: boolean;
+    emailDestino?: string;
+    enviarWhatsApp?: boolean;
+    telefono?: string;
+    nick?: string;
+  }
+): Promise<void> {
+  const hashedPassword = await argon2.hash(passwordTemporal);
+  await enUnaUnidad(unidad =>
+    unidad.ejecutar(async contexto => {
+      const trx = resolverTransaccion(contexto);
+      await trx(
+        'UPDATE usuarios SET password = ?, force_password_change = 1, session_version = session_version + 1, fecha_mod = ? WHERE id_usuario = ?',
+        [hashedPassword, getNowInBusinessTimezone(), userId]
+      );
+      await trx('DELETE FROM logins WHERE usuario_id = ?', [userId]);
+
+      // Enviar por email si se solicita
+      if (opciones.enviarEmail && opciones.emailDestino) {
+        try {
+          const enviado = await enviarEmailRecuperacionContrasena({
+            to: opciones.emailDestino,
+            passwordTemporal,
+            username: opciones.nick || undefined
+          });
+          if (!enviado) throw new Error('Envío rechazado');
+        } catch {
+          throw new BusinessError(
+            'No se pudo enviar el correo de recuperación. Intenta nuevamente más tarde.'
+          );
+        }
+      }
+
+      // Enviar por WhatsApp si se solicita
+      if (opciones.enviarWhatsApp && opciones.telefono) {
+        let telefono: string;
+        try {
+          telefono = normalizeWhatsAppPhone(opciones.telefono);
+        } catch {
+          return;
+        }
+        try {
+          const enviado = await enviarWhatsApp(
+            telefono,
+            `*Recuperación de contraseña - Las Muñecas de Ramón*\n\nTu clave temporal es:\n${passwordTemporal}\n\nIngresa al dashboard con tu usuario habitual. Deberás cambiar esta clave al iniciar sesión. No compartas esta clave con nadie.`
+          );
+          if (!enviado) throw new Error('Envío rechazado');
+        } catch {
+          throw new BusinessError(
+            'No se pudo enviar el WhatsApp de recuperación. Intenta nuevamente más tarde.'
+          );
+        }
+      }
+    })
+  );
 }
 
 export async function resetPassword(
@@ -315,13 +387,21 @@ export async function resetPassword(
       const respuesta = {
         success: true,
         message:
-          'Si el RUT corresponde a un usuario activo que no es administrador, su contraseña será su RUT registrado. Deberá cambiarla al iniciar sesión.'
+          'Si el RUT corresponde a un usuario activo, recibirá una clave temporal por correo de recuperación.'
       };
       await enUnaUnidad(unidad =>
         unidad.ejecutar(async contexto => {
           const trx = resolverTransaccion(contexto);
-          const users = await trx<Array<{ id_usuario: string; run: string }>>(
-            `SELECT u.id_usuario, u.run FROM usuarios u
+          const users = await trx<
+            Array<{
+              id_usuario: string;
+              run: string;
+              recovery_email: string | null;
+              nick: string | null;
+              rol_nombre: string;
+            }>
+          >(
+            `SELECT u.id_usuario, u.run, u.recovery_email, u.nick, r.nombre as rol_nombre FROM usuarios u
            INNER JOIN roles r ON r.id_rol = u.rol_id
            WHERE u.estado = 1 AND LOWER(r.nombre) NOT IN ('administrador', 'admin')
              AND upper(regexp_replace(u.run, '[.\\s-]', '', 'g')) = upper(regexp_replace(?, '[.\\s-]', '', 'g'))
@@ -331,6 +411,35 @@ export async function resetPassword(
           // No resolver cuentas ambiguas ni exponer si existe el RUT consultado.
           if (users.length !== 1) return;
           const user = users[0];
+
+          const rolLower = user.rol_nombre.toLowerCase();
+          const esRolCorreo = ROLES_USAN_CORREO.has(rolLower);
+
+          if (esRolCorreo) {
+            // Roles de staff: usan correo como método principal.
+            // Sin recovery_email no se puede resetear por este flujo.
+            if (!user.recovery_email) return;
+            const passwordTemporal = randomBytes(18).toString('base64url');
+            await actualizarPasswordYEnviar(user.id_usuario, passwordTemporal, {
+              enviarEmail: true,
+              emailDestino: user.recovery_email,
+              nick: user.nick || undefined
+            });
+            return;
+          }
+
+          // Otros roles no-admin: si tiene recovery_email, usa email; sino, contraseña = RUT.
+          if (user.recovery_email) {
+            const passwordTemporal = randomBytes(18).toString('base64url');
+            await actualizarPasswordYEnviar(user.id_usuario, passwordTemporal, {
+              enviarEmail: true,
+              emailDestino: user.recovery_email,
+              nick: user.nick || undefined
+            });
+            return;
+          }
+
+          // Sin recovery_email y no es rol de correo: contraseña = RUT (comportamiento anterior).
           const hashedPassword = await argon2.hash(user.run.trim());
           await trx(
             'UPDATE usuarios SET password = ?, force_password_change = 1, session_version = session_version + 1, fecha_mod = ? WHERE id_usuario = ?',
@@ -341,8 +450,18 @@ export async function resetPassword(
       );
       return respuesta;
     }
-    const users = await query<any[]>(
-      `SELECT u.id_usuario, u.run, u.telefono
+
+    // Modo WhatsApp (administradores): envían por email y WhatsApp cuando ambos están disponibles.
+    const users = await query<
+      Array<{
+        id_usuario: string;
+        run: string;
+        telefono: string | null;
+        recovery_email: string | null;
+        nick: string | null;
+      }>
+    >(
+      `SELECT u.id_usuario, u.run, u.telefono, u.recovery_email, u.nick
      FROM usuarios u
      INNER JOIN roles r ON r.id_rol = u.rol_id
      WHERE u.estado = 1
@@ -355,41 +474,35 @@ export async function resetPassword(
     const respuesta = {
       success: true,
       message:
-        'Si el RUN/CI corresponde a un administrador con teléfono registrado, recibirá una clave temporal por WhatsApp.'
+        'Si el RUN/CI corresponde a un administrador, recibirá una clave temporal por correo de recuperación y WhatsApp.'
     };
     if (users.length === 0) return respuesta;
     const user = users[0];
-    if (!user.telefono) return respuesta;
-    let telefono: string;
-    try {
-      telefono = normalizeWhatsAppPhone(String(user.telefono));
-    } catch {
-      return respuesta;
+
+    // Administradores: usan ambos métodos cuando están disponibles.
+    // Validar teléfono antes de proceder para no generar hash sin canal válido.
+    const tieneEmail = !!user.recovery_email;
+    let telefonoValido: string | undefined;
+    let tieneTelefono = false;
+    if (user.telefono) {
+      try {
+        telefonoValido = normalizeWhatsAppPhone(user.telefono);
+        tieneTelefono = true;
+      } catch {
+        // Teléfono inválido: no usar WhatsApp
+      }
     }
+
+    if (!tieneEmail && !tieneTelefono) return respuesta;
+
     const passwordTemporal = randomBytes(18).toString('base64url');
-    const hashedPassword = await argon2.hash(passwordTemporal);
-    await enUnaUnidad(unidad =>
-      unidad.ejecutar(async contexto => {
-        const trx = resolverTransaccion(contexto);
-        await trx(
-          'UPDATE usuarios SET password = ?, force_password_change = 1, session_version = session_version + 1, fecha_mod = ? WHERE id_usuario = ?',
-          [hashedPassword, getNowInBusinessTimezone(), user.id_usuario]
-        );
-        await trx('DELETE FROM logins WHERE usuario_id = ?', [user.id_usuario]);
-        // Si WhatsApp rechaza el envío, la unidad revierte contraseña y sesiones.
-        try {
-          const enviado = await enviarWhatsApp(
-            telefono,
-            `*Recuperación de contraseña - Las Muñecas de Ramón*\n\nTu clave temporal de administrador es:\n${passwordTemporal}\n\nIngresa al dashboard con tu usuario habitual. Deberás cambiar esta clave al iniciar sesión. No compartas esta clave con nadie.`
-          );
-          if (!enviado) throw new Error('Envío rechazado');
-        } catch {
-          throw new BusinessError(
-            'No se pudo enviar el WhatsApp de recuperación. Intenta nuevamente más tarde.'
-          );
-        }
-      })
-    );
+    await actualizarPasswordYEnviar(user.id_usuario, passwordTemporal, {
+      enviarEmail: tieneEmail,
+      emailDestino: user.recovery_email || undefined,
+      enviarWhatsApp: tieneTelefono,
+      telefono: telefonoValido,
+      nick: user.nick || undefined
+    });
 
     return respuesta;
   } catch (err) {
