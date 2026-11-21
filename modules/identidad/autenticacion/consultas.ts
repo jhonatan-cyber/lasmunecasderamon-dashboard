@@ -267,9 +267,28 @@ export async function logoutUser(userId: string, sesionId?: string) {
   }
 }
 
-export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' = 'whatsapp') {
+export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' | 'auto' = 'auto') {
   try {
     const normalizedRun = run.trim();
+
+    // Modo auto: detectar el rol del RUT y aplicar el método correcto
+    if (modo === 'auto') {
+      const adminUsers = await query<any[]>(
+        `SELECT u.id_usuario, u.run, u.telefono
+       FROM usuarios u
+       INNER JOIN roles r ON r.id_rol = u.rol_id
+       WHERE u.estado = 1
+       AND LOWER(r.nombre) = 'administrador'
+       AND upper(regexp_replace(u.run, '[.\\s-]', '', 'g')) = upper(regexp_replace(?, '[.\\s-]', '', 'g'))
+       LIMIT 1`,
+        [normalizedRun]
+      );
+      if (adminUsers.length > 0) {
+        return resetPassword(run, 'whatsapp');
+      }
+      return resetPassword(run, 'usuarios');
+    }
+
     if (modo === 'usuarios') {
       const respuesta = {
         success: true,

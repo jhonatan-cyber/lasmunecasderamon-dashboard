@@ -333,20 +333,28 @@ export async function getAttendanceByUser(
       return await query(sql, params);
     }
 
+    const params: any[] = [];
+    const fechaFilter = startDate && endDate ? ' AND DATE(A.fecha) BETWEEN ? AND ?' : '';
+    const fechaParams: any[] = startDate && endDate ? [startDate, endDate] : [];
     const sql = `
     SELECT
       U.id_usuario, U.nick, (CAST(U.nombre AS text) || CAST(' ' AS text) || CAST(U.apellido AS text)) AS nombre_completo,
-      COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) AS total_asistencias,
-      COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
-      COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.aporte, 0) AS aporte_total,
-      COALESCE((SELECT COUNT(DISTINCT TO_CHAR(A.fecha, 'IYYY-IW')) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND (EXTRACT(DOW FROM A.fecha)::integer + 1) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0) AS descuento_total,
-      (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.sueldo, 0)) -
-      (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario), 0) * COALESCE(U.aporte, 0)) -
-      (COALESCE((SELECT COUNT(DISTINCT TO_CHAR(A.fecha, 'IYYY-IW')) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND (EXTRACT(DOW FROM A.fecha)::integer + 1) IN (3,4,5,6,7,1)), 0) * COALESCE(U.descuento, 0)) AS total_final
+      COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario${fechaFilter}), 0) AS total_asistencias,
+      COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario${fechaFilter}), 0) * COALESCE(U.sueldo, 0) AS sueldo_total,
+      COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario${fechaFilter}), 0) * COALESCE(U.aporte, 0) AS aporte_total,
+      COALESCE((SELECT COUNT(DISTINCT TO_CHAR(A.fecha, 'IYYY-IW')) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND (EXTRACT(DOW FROM A.fecha)::integer + 1) IN (3,4,5,6,7,1)${fechaFilter}), 0) * COALESCE(U.descuento, 0) AS descuento_total,
+      (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario${fechaFilter}), 0) * COALESCE(U.sueldo, 0)) -
+      (COALESCE((SELECT COUNT(*) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario${fechaFilter}), 0) * COALESCE(U.aporte, 0)) -
+      (COALESCE((SELECT COUNT(DISTINCT TO_CHAR(A.fecha, 'IYYY-IW')) FROM asistencias A WHERE A.estado = 1 AND A.usuario_id = U.id_usuario AND (EXTRACT(DOW FROM A.fecha)::integer + 1) IN (3,4,5,6,7,1)${fechaFilter}), 0) * COALESCE(U.descuento, 0)) AS total_final
     FROM usuarios U
     WHERE U.id_usuario = ?
   `;
-    return await query(sql, [userId]);
+    // Cada ? en fechaFilter necesita sus propios parámetros. Hay 5 subconsultas con fechaFilter.
+    for (let i = 0; i < 5; i++) {
+      params.push(...fechaParams);
+    }
+    params.push(userId);
+    return await query(sql, params);
   } catch (err) {
     logger.error('[AttendanceQueries] Error en getAttendanceByUser:', { userId, err });
     throw new DatabaseError(`Error al obtener asistencias del usuario ${userId}`, err);

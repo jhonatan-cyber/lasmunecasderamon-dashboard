@@ -14,6 +14,8 @@ import { DatabaseError } from '@/lib/errors/errors';
 type AnticipoBalances = {
   montoAsistencia: number;
   montoComision: number;
+  montoComisionVenta: number;
+  montoComisionServicio: number;
   montoPropina: number;
   montoHorasExtras: number;
   montoGratificaciones: number;
@@ -45,6 +47,8 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
         (COALESCE(A.total_asistencias, 0) * U.aporte) as monto_aporte,
         (COALESCE(S.total_semanas, 0) * U.descuento) as monto_descuento_hab,
         (SELECT COALESCE(SUM(DC.comision), 0) FROM detalle_comisiones DC INNER JOIN comisiones C ON C.id_comision = DC.comision_id WHERE DC.usuario_id = U.id_usuario AND C.estado = 1 AND DC.estado = 1) as total_comisiones,
+        (SELECT COALESCE(SUM(DC.comision), 0) FROM detalle_comisiones DC INNER JOIN comisiones C ON C.id_comision = DC.comision_id WHERE DC.usuario_id = U.id_usuario AND C.estado = 1 AND DC.estado = 1 AND C.venta_id IS NOT NULL AND C.venta_id <> '' AND C.venta_id <> '0') as total_comisiones_venta,
+        (SELECT COALESCE(SUM(DC.comision), 0) FROM detalle_comisiones DC INNER JOIN comisiones C ON C.id_comision = DC.comision_id WHERE DC.usuario_id = U.id_usuario AND C.estado = 1 AND DC.estado = 1 AND C.servicio_id IS NOT NULL AND C.servicio_id <> '' AND C.servicio_id <> '0') as total_comisiones_servicio,
         (SELECT COALESCE(SUM(DP.monto), 0) FROM detalle_propinas DP INNER JOIN propinas P ON P.id_propina = DP.propina_id WHERE DP.usuario_id = U.id_usuario AND P.estado = 1 AND DP.estado = 1) as total_propinas,
         (SELECT COALESCE(SUM(monto), 0) FROM anticipos WHERE usuario_id = U.id_usuario AND estado = 1) as total_anticipos
         ${cachedTableChecks.hasGratificaciones ? ', (SELECT COALESCE(SUM(monto), 0) FROM gratificaciones WHERE usuario_id = U.id_usuario AND estado = 1) as total_gratificaciones' : ', 0 as total_gratificaciones'}
@@ -52,11 +56,11 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
       FROM usuarios U
       LEFT JOIN (
         SELECT usuario_id, COUNT(*) AS total_asistencias
-        FROM asistencias WHERE estado = 1 GROUP BY usuario_id
+        FROM asistencias WHERE estado = 1 AND fecha >= DATE_TRUNC('month', CURRENT_DATE)::date AND fecha < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')::date GROUP BY usuario_id
       ) A ON U.id_usuario = A.usuario_id
       LEFT JOIN (
         SELECT usuario_id, COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW')) AS total_semanas
-        FROM asistencias WHERE estado = 1 GROUP BY usuario_id
+        FROM asistencias WHERE estado = 1 AND fecha >= DATE_TRUNC('month', CURRENT_DATE)::date AND fecha < (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month')::date GROUP BY usuario_id
       ) S ON U.id_usuario = S.usuario_id
       WHERE U.id_usuario = ?
     `;
@@ -67,6 +71,8 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
       monto_aporte: 0,
       monto_descuento_hab: 0,
       total_comisiones: 0,
+      total_comisiones_venta: 0,
+      total_comisiones_servicio: 0,
       total_propinas: 0,
       total_anticipos: 0,
       total_gratificaciones: 0,
@@ -88,6 +94,8 @@ export async function getAnticipoBalances(usuarioId: string): Promise<AnticipoBa
     return {
       montoAsistencia: Number(data.monto_sueldo),
       montoComision: Number(data.total_comisiones),
+      montoComisionVenta: Number(data.total_comisiones_venta),
+      montoComisionServicio: Number(data.total_comisiones_servicio),
       montoPropina: Number(data.total_propinas),
       montoHorasExtras: Number(data.total_horas_extras),
       montoGratificaciones: Number(data.total_gratificaciones),

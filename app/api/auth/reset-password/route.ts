@@ -7,9 +7,6 @@ export const POST = withPublicRoute(async (request: Request) => {
   const body = await request.json();
   const validated = resetPasswordSchema.parse(body);
 
-  const result =
-    validated.modo === 'usuarios'
-      ? await AuthService.resetPassword(validated.run, 'usuarios')
-      : await AuthService.resetPassword(validated.run);
+  const result = await AuthService.resetPassword(validated.run, validated.modo);
   return NextResponse.json(result);
 });
