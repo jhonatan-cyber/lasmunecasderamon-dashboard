@@ -9,6 +9,9 @@ import { User as UserType } from '@/types/user';
 import { useRoles } from '@/hooks/staff';
 import { useNumberFormatter } from '@/hooks/shared';
 
+/** Roles que requieren correo de recuperación para poder resetear la contraseña. */
+export const STAFF_ROLES_USAN_CORREO = new Set(['barman', 'garzon', 'anfitriona', 'cajero']);
+
 const cleanRUT = (rut: string): string => {
   return rut.replace(/[^0-9kK]/gi, '').toUpperCase();
 };
@@ -28,6 +31,7 @@ export const userFormSchema = z.object({
   discount: z.number().min(0, 'El descuento no puede ser negativo'),
   housing_discount: z.boolean(),
   rol_id: z.string().min(1, 'El rol es requerido'),
+  recoveryEmail: z.string().email('Correo inválido').nullable().optional(),
   correo: z.string().optional(),
   password: z.string().optional(),
   foto: z.string().optional(),
@@ -107,6 +111,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
         contributions: user?.contributions || 0,
         discount: user?.discount || 0,
         rol_id: user?.rol_id ? user.rol_id.toString() : '',
+        recoveryEmail: user?.recoveryEmail ?? null,
         correo: '',
         password: '',
         foto: user?.foto || '',
@@ -177,6 +182,7 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
         contributions: user.contributions || 0,
         discount: user.discount || 0,
         rol_id: user.rol_id ? user.rol_id.toString() : '',
+        recoveryEmail: user.recoveryEmail ?? null,
         correo: '',
         password: '',
         foto: user.foto || '',
@@ -197,6 +203,20 @@ export function useUserForm({ user, onSubmit, isEditMode }: UseUserFormProps) {
   const handleFormSubmit = async (values: UserFormValues) => {
     try {
       setIsSubmitting(true);
+
+      // Validar que recoveryEmail esté presente para roles de staff.
+      const selectedRole = roles.find(r => r.id.toString() === values.rol_id);
+      if (selectedRole) {
+        const rolNombre = selectedRole.name.toLowerCase();
+        if (STAFF_ROLES_USAN_CORREO.has(rolNombre) && !values.recoveryEmail) {
+          form.setError('recoveryEmail', {
+            type: 'manual',
+            message: 'El correo de recuperación es obligatorio para este rol'
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       if (!values.name || !values.lastName) {
         form.setError('name', {

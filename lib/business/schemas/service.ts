@@ -41,7 +41,7 @@ export const ServiceSchema = z.object({
   comision_individual: z.number().optional().default(0)
 });
 
-export const ServiceCreateSchema = z.object({
+const ServiceCreateBaseSchema = z.object({
   cliente_id: z.string().nullable().optional(),
   habitacion_id: z.string().min(1, 'Habitación es requerida'),
   producto_incluido_presentacion_id: z.string().min(1).nullable().optional(),
@@ -64,7 +64,20 @@ export const ServiceCreateSchema = z.object({
   /** A quién se le descuenta saldo omitiendo el titular: [{ cliente_id, monto }]. */
   prepago_destinos: z
     .array(z.object({ cliente_id: z.string(), monto: z.number().min(0) }))
-    .optional()
+    .optional(),
+  /** Foto del baucher de la transferencia (data URL). */
+  baucher_foto: z.string().optional()
 });
+
+export const ServiceCreateSchema = ServiceCreateBaseSchema.refine(
+  data => data.metodo_pago !== 'transferencia' || Boolean(data.baucher_foto),
+  {
+    message: 'El pago con transferencia necesita la foto del baucher',
+    path: ['baucher_foto']
+  }
+);
+
+/** Schema parcial para actualizaciones parciales de servicio (sin refinements). */
+export const ServiceUpdateSchema = ServiceCreateBaseSchema.partial();
 
 export type ServiceType = z.infer<typeof ServiceSchema>;

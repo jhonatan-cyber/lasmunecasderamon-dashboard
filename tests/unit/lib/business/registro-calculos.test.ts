@@ -41,6 +41,7 @@ const servicio = (cambios = {}) =>
     iva: 1,
     tiempo: 30,
     usuarios: ['a', 'b', 'c'],
+    baucher_foto: 'data:image/png;base64,test',
     ...cambios
   });
 const validas = new Set(['a', 'b', 'c']);

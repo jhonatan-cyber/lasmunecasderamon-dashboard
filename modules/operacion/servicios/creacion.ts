@@ -12,7 +12,7 @@ import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract'
 import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
-import { ServiceCreateSchema } from '@/lib/business/schemas';
+import { ServiceCreateSchema, ServiceUpdateSchema } from '@/lib/business/schemas';
 import {
   validarReferenciaAdicional,
   validarServicioOriginal,
@@ -187,7 +187,8 @@ export async function crearServicioEnUnidad(
       es_temporal: v.es_temporal ? 1 : 0,
       servicio_original_id: v.servicio_original_id || null,
       fecha_crea: now,
-      pagos_mixtos: v.pagos_mixtos ? JSON.stringify(v.pagos_mixtos) : null
+      pagos_mixtos: v.pagos_mixtos ? JSON.stringify(v.pagos_mixtos) : null,
+      baucher_foto: v.baucher_foto || null
     },
     contexto
   );
@@ -267,7 +268,7 @@ export async function actualizarServicio(
   body: Partial<EntradaServicio>,
   contexto: ContextoOperacion
 ): Promise<void> {
-  const validated = ServiceCreateSchema.partial().parse(body);
+  const validated = ServiceUpdateSchema.parse(body);
   const previo = await leerImportesServicio(id, contexto);
   if (!previo) throw new NotFoundError('Servicio', id);
   const importes = ['precio_habitacion', 'precio_servicio', 'iva', 'sub_total', 'total'] as const;

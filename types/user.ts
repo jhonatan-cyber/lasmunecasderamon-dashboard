@@ -5,6 +5,7 @@ export interface User {
   name: string;
   lastName: string;
   email?: string;
+  recoveryEmail?: string | null;
   phone: string;
   address: string;
   maritalStatus: string;

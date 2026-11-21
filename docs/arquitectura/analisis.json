@@ -1,27 +1,18 @@
 {
   "resumen": {
-    "commit": "8d21904db7e886b786d5618b21b0c6474ba962c9",
-    "generado": "2026-11-18T02:23:03.562Z",
-    "archivos": 2305,
-    "rutas": 246,
-    "sqlFueraDeRepositorio": 65,
+    "commit": "d2f181c0f8ac76016b1ac85fa08a4d3f657094ba",
+    "generado": "2026-11-21T20:07:24.925Z",
+    "archivos": 2315,
+    "rutas": 247,
+    "sqlFueraDeRepositorio": 66,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 21,
-    "caches": 31,
+    "caches": 32,
     "rutasApiConSqlDirecto": 0,
     "rutasSinWrapper": 24
   },
   "rutas": [
-    {
-      "ruta": "/api/purchases/:id/codes",
-      "archivo": "app/api/purchases/[id]/codes/route.ts",
-      "metodos": [],
-      "nivel": "products.read",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -1436,6 +1427,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/purchases/:id/codes",
+      "archivo": "app/api/purchases/[id]/codes/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": false,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/purchases/catalog",
       "archivo": "app/api/purchases/catalog/route.ts",
       "metodos": [],
@@ -1952,7 +1952,7 @@
       "ruta": "/api/tickets/cover-solicitudes/:id/approve",
       "archivo": "app/api/tickets/cover-solicitudes/[id]/approve/route.ts",
       "metodos": [],
-      "nivel": "entradas.deliver",
+      "nivel": "entradas.authorize_cover",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -1961,7 +1961,7 @@
       "ruta": "/api/tickets/cover-solicitudes/:id/reject",
       "archivo": "app/api/tickets/cover-solicitudes/[id]/reject/route.ts",
       "metodos": [],
-      "nivel": "entradas.deliver",
+      "nivel": "entradas.authorize_cover",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -1970,7 +1970,7 @@
       "ruta": "/api/tickets/cover-solicitudes",
       "archivo": "app/api/tickets/cover-solicitudes/route.ts",
       "metodos": [],
-      "nivel": "entradas.deliver",
+      "nivel": "entradas.view",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -2160,6 +2160,15 @@
       "archivo": "app/api/users/profile/route.ts",
       "metodos": [],
       "nivel": "authenticated",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
+      "ruta": "/api/users/recovery-email-reminder",
+      "archivo": "app/api/users/recovery-email-reminder/route.ts",
+      "metodos": [],
+      "nivel": "users.write",
       "audit": true,
       "moduloDominio": null,
       "usaDriver": false
@@ -2472,6 +2481,12 @@
       "capa": "modules/aplicacion",
       "modulo": "identidad",
       "escribe": ["codigos"]
+    },
+    {
+      "archivo": "modules/identidad/usuarios/recoveryEmailNotificacion.ts",
+      "capa": "modules/aplicacion",
+      "modulo": "identidad",
+      "escribe": []
     },
     {
       "archivo": "modules/inventario/bar/configuracion.ts",
@@ -3148,6 +3163,11 @@
       "texto": "caché en memoria (new Map + cache)"
     },
     {
+      "archivo": "components/bar/SolicitudesCoversPanel.tsx",
+      "linea": 0,
+      "texto": "caché en memoria (new Map + cache)"
+    },
+    {
       "archivo": "components/meals/ColacionesTab.tsx",
       "linea": 0,
       "texto": "caché en memoria (new Map + cache)"
@@ -3230,44 +3250,44 @@
   ],
   "ciclos": [],
   "matriz": {
-    "app/api": {
-      "lib/api": 295,
-      "workflows": 27,
-      "lib/otros": 92,
-      "lib/identidad": 15,
-      "lib/business": 38,
-      "modules/aplicacion": 1,
-      "lib/database": 3,
-      "lib/integrations": 4
-    },
-    "components": {
-      "raiz": 93,
-      "lib/otros": 404,
-      "hooks": 152,
-      "lib/business": 59,
-      "lib/api": 3,
-      "modules/aplicacion": 9,
-      "app/ui": 1
-    },
     "app/ui": {
       "hooks": 65,
-      "lib/otros": 57,
+      "lib/otros": 58,
       "lib/api": 7,
       "components": 6,
       "modules/aplicacion": 3,
       "raiz": 14,
       "lib/business": 6
     },
+    "app/api": {
+      "lib/api": 298,
+      "workflows": 27,
+      "lib/otros": 92,
+      "lib/identidad": 16,
+      "lib/business": 40,
+      "modules/aplicacion": 1,
+      "lib/database": 3,
+      "lib/integrations": 4
+    },
+    "components": {
+      "hooks": 157,
+      "lib/otros": 409,
+      "raiz": 94,
+      "lib/business": 60,
+      "lib/api": 3,
+      "modules/aplicacion": 9,
+      "app/ui": 1
+    },
     "raiz": {
+      "hooks": 6,
       "lib/otros": 13,
-      "hooks": 4,
       "lib/api": 2,
       "lib/identidad": 2,
       "modules/aplicacion": 1
     },
     "hooks": {
       "raiz": 40,
-      "lib/otros": 110,
+      "lib/otros": 111,
       "lib/api": 8,
       "components": 20,
       "lib/business": 19,
@@ -3305,7 +3325,7 @@
     "lib/integrations": {},
     "modules/infraestructura": {
       "lib/database": 114,
-      "lib/otros": 169,
+      "lib/otros": 171,
       "lib/business": 76,
       "modules/aplicacion": 27,
       "lib/api": 9,
@@ -3314,8 +3334,8 @@
     },
     "modules/aplicacion": {
       "modules/infraestructura": 23,
-      "lib/otros": 105,
-      "lib/database": 48,
+      "lib/otros": 107,
+      "lib/database": 49,
       "lib/business": 47,
       "lib/api": 11,
       "lib/identidad": 3,
