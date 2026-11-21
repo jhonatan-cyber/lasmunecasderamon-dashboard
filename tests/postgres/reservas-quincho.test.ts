@@ -48,7 +48,7 @@ async function saldoDe(clienteId: string): Promise<number> {
 
 const reservaBase = (clienteId: string) => ({
   cliente_id: clienteId,
-  fecha_reserva: '2026-11-20',
+  fecha_reserva: '2099-11-20',
   cantidad_personas: 10,
   monto_por_persona: 5000,
   metodo_pago: 'efectivo' as const
@@ -69,7 +69,7 @@ it('la reserva acredita el total al prepago, mueve caja y abre la cuenta PREP', 
     // Total recalculado por el servidor: personas × monto por persona.
     expect(reserva.total).toBe(50000);
     expect(reserva.estado).toBe('activa');
-    expect(reserva.fecha_reserva).toBe('2026-11-20');
+    expect(reserva.fecha_reserva).toBe('2099-11-20');
 
     const [fila] = await query<Record<string, unknown>[]>(
       `SELECT cantidad_personas, monto_por_persona, total, estado, metodo_pago
