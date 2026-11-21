@@ -480,8 +480,18 @@ export async function resetPassword(
     const user = users[0];
 
     // Administradores: usan ambos métodos cuando están disponibles.
+    // Validar teléfono antes de proceder para no generar hash sin canal válido.
     const tieneEmail = !!user.recovery_email;
-    const tieneTelefono = !!user.telefono;
+    let telefonoValido: string | undefined;
+    let tieneTelefono = false;
+    if (user.telefono) {
+      try {
+        telefonoValido = normalizeWhatsAppPhone(user.telefono);
+        tieneTelefono = true;
+      } catch {
+        // Teléfono inválido: no usar WhatsApp
+      }
+    }
 
     if (!tieneEmail && !tieneTelefono) return respuesta;
 
@@ -490,7 +500,7 @@ export async function resetPassword(
       enviarEmail: tieneEmail,
       emailDestino: user.recovery_email || undefined,
       enviarWhatsApp: tieneTelefono,
-      telefono: user.telefono || undefined,
+      telefono: telefonoValido,
       nick: user.nick || undefined
     });
 
