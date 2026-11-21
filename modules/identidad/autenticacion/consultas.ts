@@ -267,7 +267,29 @@ export async function logoutUser(userId: string, sesionId?: string) {
   }
 }
 
-export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' | 'auto' = 'auto') {
+/**
+ * Mensaje único del modo automático.
+ *
+ * La respuesta **no puede** revelar si el RUT consultado pertenece a un
+ * administrador: con mensajes distintos, una llamada pública al endpoint
+ * permitiría enumerar los RUT de los administradores. Por eso el modo
+ * automático devuelve siempre este texto, tanto si el RUT es de un
+ * administrador (recibe la clave por WhatsApp) como si no (su contraseña
+ * vuelve a ser su RUT).
+ */
+const MENSAJE_RESET_AUTO =
+  'Si el RUT corresponde a una cuenta activa, restablecemos tu contraseña: te llega por WhatsApp si tenés teléfono registrado o será tu RUT.';
+
+/** Respuesta pública del reset: nunca dice si el RUT existe ni qué rol tiene. */
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function resetPassword(
+  run: string,
+  modo: 'whatsapp' | 'usuarios' | 'auto' = 'auto'
+): Promise<ResetPasswordResponse> {
   try {
     const normalizedRun = run.trim();
 
@@ -283,10 +305,10 @@ export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' |
        LIMIT 1`,
         [normalizedRun]
       );
-      if (adminUsers.length > 0) {
-        return resetPassword(run, 'whatsapp');
-      }
-      return resetPassword(run, 'usuarios');
+      const esAdministrador = adminUsers.length > 0;
+      const resultado = await resetPassword(run, esAdministrador ? 'whatsapp' : 'usuarios');
+      // El mensaje es el mismo en los dos casos: la respuesta no delata el rol.
+      return { ...resultado, message: MENSAJE_RESET_AUTO };
     }
 
     if (modo === 'usuarios') {

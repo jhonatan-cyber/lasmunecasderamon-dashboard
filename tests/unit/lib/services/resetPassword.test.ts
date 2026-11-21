@@ -17,7 +17,12 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getNowInBusinessTimezone: () => '2026-10-11'
 }));
 vi.mock('@/modules/auditoria', () => ({ SecurityAlertService: {} }));
-vi.mock('@/lib/utils/logger', () => ({ default: { error: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+vi.mock('@/lib/utils/logger', () => ({
+  default: { error: vi.fn() },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 vi.mock('@/modules/identidad/autenticacion/codigos', () => ({ regenerateAttendanceCode: vi.fn() }));
 vi.mock('@/lib/transaction/contract', () => ({
   enUnaUnidad: (fn: any) => fn({ ejecutar: (work: any) => work({}) })
@@ -67,11 +72,38 @@ describe('recuperaci�n de administradores por WhatsApp', () => {
   );
 
   it('no revela si el RUN corresponde a un administrador', async () => {
+    // Modo whatsapp: la respuesta no cambia exista o no el administrador.
     mocks.query.mockResolvedValue([]);
-    const noExiste = await resetPassword('12345678-9');
+    const noExiste = await resetPassword('12345678-9', 'whatsapp');
     mocks.query.mockResolvedValue([{ id_usuario: 'u1', telefono: null }]);
-    expect(await resetPassword('12345678-9')).toEqual(noExiste);
+    expect(await resetPassword('12345678-9', 'whatsapp')).toEqual(noExiste);
     expect(mocks.trx).not.toHaveBeenCalled();
+  });
+
+  it('en modo auto la respuesta es la misma exista o no el RUT', async () => {
+    // RUT que no existe: no es administrador.
+    mocks.query.mockResolvedValue([]);
+    mocks.trx.mockResolvedValue([]);
+    const noExiste = await resetPassword('12345678-9');
+
+    // RUT que existe y no es administrador: misma respuesta, sin filtrar nada.
+    mocks.trx.mockResolvedValue([{ id_usuario: 'u1', run: '12345678-9' }]);
+    expect(await resetPassword('12345678-9')).toEqual(noExiste);
+  });
+
+  it('en modo auto el administrador recibe el mismo mensaje que los demas', async () => {
+    // RUT de un administrador: se le manda la clave temporal por WhatsApp.
+    mocks.query.mockResolvedValue([{ id_usuario: 'u1', run: '12345678-9', telefono: '77712345' }]);
+    const comoAdmin = await resetPassword('12345678-9');
+    expect(mocks.whatsapp).toHaveBeenCalled();
+
+    // El mismo RUT como si no fuera administrador.
+    mocks.query.mockResolvedValue([]);
+    mocks.trx.mockResolvedValue([]);
+    const comoUsuario = await resetPassword('12345678-9');
+
+    // El mensaje no puede delatar el rol: solo la accion ejecutada cambia.
+    expect(comoAdmin.message).toBe(comoUsuario.message);
   });
 
   it.each(['rechazo', 'error'])('aborta la unidad de cambios si falla WhatsApp: %s', async tipo => {
