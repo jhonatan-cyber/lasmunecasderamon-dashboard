@@ -1,7 +1,6 @@
 import 'server-only';
 import { query } from '@/lib/database/db';
-import { NotificationService } from '@/modules/comunicaciones/notificaciones/servicio';
-import { sendPushByRole } from '@/modules/comunicaciones/push/servicio';
+import { NotificationService, sendPushByRole } from '@/modules/comunicaciones';
 import logger from '@/lib/utils/logger';
 
 /** Roles que requieren correo de recuperación para poder resetear la contraseña. */

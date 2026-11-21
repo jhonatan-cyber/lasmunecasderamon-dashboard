@@ -1,6 +1,6 @@
-﻿-- 124) Foto del baucher de servicios creados directamente con transferencia
+-- 124) Foto del baucher de servicios creados directamente con transferencia
 --
 -- Extiende el patrón de pedidos.baucher_foto, entradas_clientes.baucher_foto,
--- solicitudes_servicios.baucher_foto y entas.baucher_foto a la tabla servicios.
+-- solicitudes_servicios.baucher_foto y ventas.baucher_foto a la tabla servicios.
 
 ALTER TABLE servicios ADD COLUMN IF NOT EXISTS baucher_foto TEXT;
