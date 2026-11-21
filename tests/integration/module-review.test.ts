@@ -63,6 +63,7 @@ vi.mock('@/lib/database/db', async () => {
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: vi.fn() }));
 vi.mock('@/modules/comunicaciones', () => ({
   enviarWhatsApp: vi.fn().mockResolvedValue(true),
+  enviarEmailRecuperacionContrasena: vi.fn().mockResolvedValue(true),
   sendPushNotification: vi.fn().mockResolvedValue([]),
   sendPushByRole: vi.fn().mockResolvedValue([])
 }));
