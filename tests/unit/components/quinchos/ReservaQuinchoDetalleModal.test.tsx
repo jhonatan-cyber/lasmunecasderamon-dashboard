@@ -1,6 +1,6 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReservaQuinchoDetalleModal } from '@/components/quinchos/ReservaQuinchoDetalleModal';
 import type { ReservaQuincho } from '@/types/quincho';
 
@@ -24,8 +24,14 @@ const reserva: ReservaQuincho = {
   fecha_uso: null
 };
 
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-19T12:00:00.000Z'));
+});
+
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 const mount = (props: Partial<React.ComponentProps<typeof ReservaQuinchoDetalleModal>> = {}) => {
