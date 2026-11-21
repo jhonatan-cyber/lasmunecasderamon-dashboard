@@ -7,6 +7,7 @@ export const UserSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido'),
   lastName: z.string().min(1, 'Apellido es requerido'),
   email: z.string().nullable().optional(),
+  recoveryEmail: z.string().email('Correo inválido').nullable().optional(),
   phone: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   maritalStatus: z.string().nullable().optional(),
@@ -53,7 +54,8 @@ export const UserProfileUpdateSchema = UserUpdateSchema.pick({
   phone: true,
   address: true,
   maritalStatus: true,
-  foto: true
+  foto: true,
+  recoveryEmail: true
 });
 
 export type UserType = z.infer<typeof UserSchema>;

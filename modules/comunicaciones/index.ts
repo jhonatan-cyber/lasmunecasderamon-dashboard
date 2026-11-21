@@ -14,6 +14,12 @@ export {
 export type { DatosSolicitudCierreCaja, ResultadoEnvioAdministradores } from './whatsapp/adaptador';
 
 export {
+  enviarEmail,
+  enviarEmailRecuperacionContrasena,
+  clearResendCache
+} from './email/adaptador';
+
+export {
   resolverDestinosWhatsApp,
   numerosAdministradores,
   credencialesParaWebhook,

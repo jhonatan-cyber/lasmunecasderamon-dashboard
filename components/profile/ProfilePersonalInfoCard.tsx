@@ -216,6 +216,21 @@ export function ProfilePersonalInfoCard({
               </div>
 
               <div>
+                <Label htmlFor='recovery_email'>Correo de recuperación</Label>
+                <Input
+                  id='recovery_email'
+                  type='email'
+                  value={userData.recovery_email || ''}
+                  onChange={e => onUserDataChange({ ...userData, recovery_email: e.target.value })}
+                  disabled={!isEditing}
+                  placeholder='recuperacion@ejemplo.com'
+                />
+                <p className='mt-1 text-xs text-muted-foreground'>
+                  Correo usado para recuperar la contraseña. Opcional.
+                </p>
+              </div>
+
+              <div>
                 <Label htmlFor='rol_id'>Rol</Label>
                 <Select
                   value={userData.rol_id?.toString() || ''}
@@ -289,6 +304,21 @@ export function ProfilePersonalInfoCard({
                 />
                 <p className='mt-1 text-xs text-muted-foreground'>
                   Se actualiza automáticamente con el nickname
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor='recovery_email'>Correo de recuperación</Label>
+                <Input
+                  id='recovery_email'
+                  type='email'
+                  value={userData.recovery_email || ''}
+                  onChange={e => onUserDataChange({ ...userData, recovery_email: e.target.value })}
+                  disabled={!isEditing}
+                  placeholder='recuperacion@ejemplo.com'
+                />
+                <p className='mt-1 text-xs text-muted-foreground'>
+                  Correo usado para recuperar la contraseña. Opcional.
                 </p>
               </div>
 
