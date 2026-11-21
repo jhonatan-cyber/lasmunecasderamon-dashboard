@@ -15,7 +15,7 @@ export { useOvertimeForm } from './useOvertimeForm';
 export { useOvertimeTable } from './useOvertimeTable';
 export { default as usePayroll } from './usePayroll';
 export { default as usePayrollSummary } from './usePayrollSummary';
-export { userFormSchema, useUserForm } from './useUserForm';
+export { userFormSchema, useUserForm, STAFF_ROLES_USAN_CORREO } from './useUserForm';
 export { useRoleForm } from './useRoleForm';
 export { useRoles } from './useRoles';
 export { default as useTips, useTipsDetalle, useTipsResumen } from './useTips';

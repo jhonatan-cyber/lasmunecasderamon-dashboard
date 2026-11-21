@@ -41,30 +41,37 @@ export const ServiceSchema = z.object({
   comision_individual: z.number().optional().default(0)
 });
 
-export const ServiceCreateSchema = z.object({
-  cliente_id: z.string().nullable().optional(),
-  habitacion_id: z.string().min(1, 'Habitación es requerida'),
-  producto_incluido_presentacion_id: z.string().min(1).nullable().optional(),
-  precio_habitacion: z.number().min(0).optional().default(0),
-  precio_servicio: z.number().min(0),
-  iva: z.number().optional().default(0),
-  sub_total: z.number().min(0),
-  total: z.number().min(0),
-  tiempo: z.number().min(1, 'Tiempo es requerido'),
-  metodo_pago: z
-    .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
-    .optional()
-    .default('efectivo'),
-  usuarios: z.array(z.string()).min(1, 'Al menos una anfitriona es requerida'),
-  clientes: z.array(z.string()).optional().default([]),
-  es_temporal: z.union([z.number(), z.boolean()]).optional().default(0),
-  servicio_original_id: z.string().nullable().optional(),
-  device_date: z.string().optional(),
-  pagos_mixtos: z.any().optional(),
-  /** A quién se le descuenta saldo omitiendo el titular: [{ cliente_id, monto }]. */
-  prepago_destinos: z
-    .array(z.object({ cliente_id: z.string(), monto: z.number().min(0) }))
-    .optional()
-});
+export const ServiceCreateSchema = z
+  .object({
+    cliente_id: z.string().nullable().optional(),
+    habitacion_id: z.string().min(1, 'Habitación es requerida'),
+    producto_incluido_presentacion_id: z.string().min(1).nullable().optional(),
+    precio_habitacion: z.number().min(0).optional().default(0),
+    precio_servicio: z.number().min(0),
+    iva: z.number().optional().default(0),
+    sub_total: z.number().min(0),
+    total: z.number().min(0),
+    tiempo: z.number().min(1, 'Tiempo es requerido'),
+    metodo_pago: z
+      .enum(['efectivo', 'tarjeta', 'transferencia', 'prepago', 'mixto'])
+      .optional()
+      .default('efectivo'),
+    usuarios: z.array(z.string()).min(1, 'Al menos una anfitriona es requerida'),
+    clientes: z.array(z.string()).optional().default([]),
+    es_temporal: z.union([z.number(), z.boolean()]).optional().default(0),
+    servicio_original_id: z.string().nullable().optional(),
+    device_date: z.string().optional(),
+    pagos_mixtos: z.any().optional(),
+    /** A quién se le descuenta saldo omitiendo el titular: [{ cliente_id, monto }]. */
+    prepago_destinos: z
+      .array(z.object({ cliente_id: z.string(), monto: z.number().min(0) }))
+      .optional(),
+    /** Foto del baucher de la transferencia (data URL). */
+    baucher_foto: z.string().optional()
+  })
+  .refine(data => data.metodo_pago !== 'transferencia' || Boolean(data.baucher_foto), {
+    message: 'El pago con transferencia necesita la foto del baucher',
+    path: ['baucher_foto']
+  });
 
 export type ServiceType = z.infer<typeof ServiceSchema>;

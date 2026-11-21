@@ -32,7 +32,7 @@ import { ImageUploadField } from './ImageUploadField';
 import { NumberInputField } from './NumberInputField';
 import { MaritalStatusSelect, AfpInputField, HousingDiscountField } from './fields';
 import { RoleSelect } from '@/components/users/RoleSelect';
-import { useUserForm, type UserFormValues } from '@/hooks/staff';
+import { useUserForm, type UserFormValues, STAFF_ROLES_USAN_CORREO } from '@/hooks/staff';
 import { Label } from '@/components/ui/label';
 import { formatRut as formatRUT } from '@/lib/utils/rut';
 export type { UserFormValues };
@@ -76,6 +76,13 @@ export function UserFormModal({
   } = useUserForm({ user: user || undefined, onSubmit, isEditMode: isEditing });
 
   const [runFormatted, setRunFormatted] = useState(user?.run || '');
+
+  // ¿El rol seleccionado requiere correo de recuperación?
+  const watchedRoleId = form.watch('rol_id');
+  const selectedRole = roles.find(r => r.id.toString() === watchedRoleId);
+  const recoveryEmailRequired = selectedRole
+    ? STAFF_ROLES_USAN_CORREO.has(selectedRole.name.toLowerCase())
+    : false;
 
   // ── Alta en el lector al crear ──────────────────────────────────────────
   // Los equipos operativos (con IP y credenciales) se ofrecen en el formulario:
@@ -237,6 +244,33 @@ export function UserFormModal({
                   placeholder='Telefono'
                   icon={Phone}
                 />
+
+                {}
+                <div>
+                  <Label
+                    htmlFor='recoveryEmail'
+                    className='block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-200 mb-1'
+                  >
+                    Correo de recuperación
+                    {recoveryEmailRequired && (
+                      <span className='ml-1 text-red-500' title='Requerido para este rol'>
+                        *
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id='recoveryEmail'
+                    type='email'
+                    {...form.register('recoveryEmail')}
+                    placeholder='recuperacion@ejemplo.com'
+                    className='flex h-10 w-full rounded-full border border-input bg-gray-100 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:focus-visible:ring-gray-400'
+                  />
+                  <p className='mt-1 text-xs text-muted-foreground'>
+                    {recoveryEmailRequired
+                      ? 'Requerido: sin este correo no podrás recuperar la contraseña.'
+                      : 'Correo usado para recuperar la contraseña. Opcional.'}
+                  </p>
+                </div>
 
                 {}
                 <MaritalStatusSelect control={form.control as any} name='maritalStatus' />

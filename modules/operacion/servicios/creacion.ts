@@ -187,7 +187,8 @@ export async function crearServicioEnUnidad(
       es_temporal: v.es_temporal ? 1 : 0,
       servicio_original_id: v.servicio_original_id || null,
       fecha_crea: now,
-      pagos_mixtos: v.pagos_mixtos ? JSON.stringify(v.pagos_mixtos) : null
+      pagos_mixtos: v.pagos_mixtos ? JSON.stringify(v.pagos_mixtos) : null,
+      baucher_foto: v.baucher_foto || null
     },
     contexto
   );
