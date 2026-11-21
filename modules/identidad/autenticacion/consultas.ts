@@ -267,9 +267,50 @@ export async function logoutUser(userId: string, sesionId?: string) {
   }
 }
 
-export async function resetPassword(run: string, modo: 'whatsapp' | 'usuarios' = 'whatsapp') {
+/**
+ * Mensaje único del modo automático.
+ *
+ * La respuesta **no puede** revelar si el RUT consultado pertenece a un
+ * administrador: con mensajes distintos, una llamada pública al endpoint
+ * permitiría enumerar los RUT de los administradores. Por eso el modo
+ * automático devuelve siempre este texto, tanto si el RUT es de un
+ * administrador (recibe la clave por WhatsApp) como si no (su contraseña
+ * vuelve a ser su RUT).
+ */
+const MENSAJE_RESET_AUTO =
+  'Si el RUT corresponde a una cuenta activa, restablecemos tu contraseña: te llega por WhatsApp si tenés teléfono registrado o será tu RUT.';
+
+/** Respuesta pública del reset: nunca dice si el RUT existe ni qué rol tiene. */
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function resetPassword(
+  run: string,
+  modo: 'whatsapp' | 'usuarios' | 'auto' = 'auto'
+): Promise<ResetPasswordResponse> {
   try {
     const normalizedRun = run.trim();
+
+    // Modo auto: detectar el rol del RUT y aplicar el método correcto
+    if (modo === 'auto') {
+      const adminUsers = await query<any[]>(
+        `SELECT u.id_usuario, u.run, u.telefono
+       FROM usuarios u
+       INNER JOIN roles r ON r.id_rol = u.rol_id
+       WHERE u.estado = 1
+       AND LOWER(r.nombre) = 'administrador'
+       AND upper(regexp_replace(u.run, '[.\\s-]', '', 'g')) = upper(regexp_replace(?, '[.\\s-]', '', 'g'))
+       LIMIT 1`,
+        [normalizedRun]
+      );
+      const esAdministrador = adminUsers.length > 0;
+      const resultado = await resetPassword(run, esAdministrador ? 'whatsapp' : 'usuarios');
+      // El mensaje es el mismo en los dos casos: la respuesta no delata el rol.
+      return { ...resultado, message: MENSAJE_RESET_AUTO };
+    }
+
     if (modo === 'usuarios') {
       const respuesta = {
         success: true,
