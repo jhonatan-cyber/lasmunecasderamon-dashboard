@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS solicitudes_entrega_cortesias (
+CREATE TABLE IF NOT EXISTS solicitudes_entrega_covers (
   id UUID PRIMARY KEY,
   grupo_registro_id VARCHAR(36),
   cliente_nombre VARCHAR(255),
