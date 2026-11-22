@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- script de prueba que informa resultados al usuario */
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';

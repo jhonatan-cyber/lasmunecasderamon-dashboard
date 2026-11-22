@@ -92,6 +92,9 @@ tests/integration/backups/
 /pg-test.txt
 /tsc.out
 
+# Redis dump de desarrollo (se crea al correr tests de Redis)
+dump.rdb
+
 # Configuracion MCP del cliente con credenciales del dashboard (nunca commitear)
 /.agents/mcp.json
 

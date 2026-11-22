@@ -110,7 +110,6 @@ export const PUBLIC_PATHS: string[] = [
   // cookie ni sesión, y el handshake de ZKTeco repite cada pocos segundos.
   '/iclock',
   '/dahua',
-  '/swagger.json',
   '/notification.mp3',
   '/placeholder-logo.png',
   '/placeholder-logo.svg',

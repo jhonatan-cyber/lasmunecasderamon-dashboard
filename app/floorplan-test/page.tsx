@@ -397,11 +397,11 @@ const sampleConfig: FloorplanConfig = {
     directionalIntensity: 0.7
   },
   onElementClick: element => {
-    console.log('Elemento clickeado:', element);
+    console.warn('Elemento clickeado:', element);
   },
   onElementHover: element => {
     if (element) {
-      console.log('Elemento en hover:', element);
+      console.warn('Elemento en hover:', element);
     }
   }
 };

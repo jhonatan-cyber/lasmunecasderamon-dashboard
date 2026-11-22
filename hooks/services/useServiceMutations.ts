@@ -316,6 +316,7 @@ export function useServiceMutations({
     pricing,
     handleClose,
     onUpdate,
+    onTemporaryTimerComplete,
     startGlobalTemporaryTimer,
     anfitrionasDisponibles
   ]);

@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- script de prueba E2E que informa resultados al usuario */
 const { chromium } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');

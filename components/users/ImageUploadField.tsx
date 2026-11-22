@@ -418,6 +418,7 @@ function ImageUploadFieldComponent({
                 {/* Transform dinámico de pan+zoom: Tailwind no ofrece clase
                     para valores calculados en runtime; es el mismo recorte que
                     luego se exporta en canvas (encodeCrop). */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- transform dinámico de pan+zoom no soportado por next/image */}
                 <img
                   src={previewUrl}
                   alt=''

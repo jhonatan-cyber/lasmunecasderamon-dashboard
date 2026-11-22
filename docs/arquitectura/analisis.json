@@ -1,16 +1,16 @@
 {
   "resumen": {
-    "commit": "d2f181c0f8ac76016b1ac85fa08a4d3f657094ba",
-    "generado": "2026-11-21T20:07:24.925Z",
-    "archivos": 2315,
-    "rutas": 247,
+    "commit": "d9d59dcbec1c51f730eba352c64f8aba091cadb6",
+    "generado": "2026-11-22T22:45:37.333Z",
+    "archivos": 2307,
+    "rutas": 246,
     "sqlFueraDeRepositorio": 66,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 21,
     "caches": 32,
     "rutasApiConSqlDirecto": 0,
-    "rutasSinWrapper": 24
+    "rutasSinWrapper": 23
   },
   "rutas": [
     {
@@ -1859,15 +1859,6 @@
       "usaDriver": false
     },
     {
-      "ruta": "/api/swagger",
-      "archivo": "app/api/swagger/route.ts",
-      "metodos": ["GET"],
-      "nivel": "SIN_WRAPPER",
-      "audit": false,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
-    {
       "ruta": "/api/sync-operations",
       "archivo": "app/api/sync-operations/route.ts",
       "metodos": [],
@@ -3024,7 +3015,7 @@
     },
     {
       "archivo": "hooks/timers/useTimerSync.ts",
-      "linea": 98,
+      "linea": 99,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(onVisible, 120_000);"
     },
@@ -3251,8 +3242,8 @@
   "ciclos": [],
   "matriz": {
     "app/ui": {
-      "hooks": 65,
-      "lib/otros": 58,
+      "hooks": 64,
+      "lib/otros": 57,
       "lib/api": 7,
       "components": 6,
       "modules/aplicacion": 3,
@@ -3260,7 +3251,7 @@
       "lib/business": 6
     },
     "app/api": {
-      "lib/api": 298,
+      "lib/api": 299,
       "workflows": 27,
       "lib/otros": 92,
       "lib/identidad": 16,
@@ -3275,8 +3266,7 @@
       "raiz": 94,
       "lib/business": 60,
       "lib/api": 3,
-      "modules/aplicacion": 9,
-      "app/ui": 1
+      "modules/aplicacion": 9
     },
     "raiz": {
       "hooks": 6,

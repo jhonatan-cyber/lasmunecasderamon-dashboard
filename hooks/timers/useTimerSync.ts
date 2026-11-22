@@ -66,11 +66,12 @@ export function useTimerSync({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- inicialización única: syncTimers y setIsInitialized son estables
   }, []);
 
   useEffect(() => {
     if (isInitialized) saveTimersToStorage(activeTimers.value.map(t => t.toPlainObject()));
-  }, [activeTimers.value, isInitialized]);
+  }, [isInitialized]);
 
   const sseUrl =
     typeof window !== 'undefined' && !['/', '/login'].includes(window.location.pathname)
