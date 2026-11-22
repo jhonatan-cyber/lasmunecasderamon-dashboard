@@ -25,7 +25,7 @@ export async function register() {
       setTimeout(() => {
         void arrancarRecepcionBiometrica()
           .then(() => {
-            console.log(
+            console.warn(
               recepcionActiva()
                 ? '[instrumentation] Recepción biométrica encendida (poller + listeners + IP watch)'
                 : '[instrumentation] Recepción biométrica pausada por configuración'

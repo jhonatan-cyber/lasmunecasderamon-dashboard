@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- script de prueba E2E que informa resultados al usuario */
 const { chromium } = require('@playwright/test');
 const fs = require('node:fs');
 const root = process.env.BROWSER_QA_OUTPUT || 'D:/DEV/lasmunecasderamon/_tmp/browser-review';

@@ -52,11 +52,6 @@ export const BARRILES = {
     ],
     funciones: []
   },
-  'api-docs': {
-    cargar: () => import('@/hooks/api-docs/index'),
-    valores: ['useSwaggerWarnings'],
-    funciones: []
-  },
   attendance: {
     cargar: () => import('@/hooks/attendance/index'),
     valores: ['useAttendanceDetail', 'useBiometricPreview'],
@@ -278,7 +273,6 @@ export const TRAMOS = {
   cuentas: ['accounts'],
   ventas: ['cash-register', 'clients', 'orders', 'private-rooms', 'products', 'sales'],
   operacion: [
-    'api-docs',
     'attendance',
     'auth',
     'calendar',

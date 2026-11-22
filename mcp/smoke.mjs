@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- script de prueba que informa resultados al usuario */
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 

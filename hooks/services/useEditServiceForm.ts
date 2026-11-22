@@ -69,7 +69,15 @@ export function useEditServiceForm({
         });
       }
     }
-  }, [servicio?.id_servicio, servicio?.id, open]);
+  }, [
+    servicio?.id_servicio,
+    servicio?.id,
+    open,
+    initFormForServicio,
+    fetchAnfitrionasParaEdicion,
+    handleUsuariosChange,
+    servicio
+  ]);
 
   return {
     formData,

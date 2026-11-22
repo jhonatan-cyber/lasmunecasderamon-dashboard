@@ -61,7 +61,8 @@ export function NewPresentacionRow({
               />
             ) : (
               <div className='w-9 h-9 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 flex items-center justify-center shrink-0'>
-                <Image className='w-4 h-4 text-gray-400' />
+                {/* eslint-disable-next-line jsx-a11y/alt-text -- icono decorativo de placeholder */}
+                <Image className='w-4 h-4 text-gray-400' aria-hidden='true' />
               </div>
             )}
             <div className='flex-1 min-w-0'>

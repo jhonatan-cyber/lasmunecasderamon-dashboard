@@ -86,8 +86,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   const pathname = usePathname();
 
   const isPublic =
-    isPublicRoute(pathname || '/') ||
-    ['/', '/login', '/api-docs', '/attendance-qr'].includes(pathname || '/');
+    isPublicRoute(pathname || '/') || ['/', '/login', '/attendance-qr'].includes(pathname || '/');
 
   if (isPublic) {
     return <>{children}</>;

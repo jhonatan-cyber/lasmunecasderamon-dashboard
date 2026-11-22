@@ -121,7 +121,7 @@ export function useNotifications() {
 
       appEventBus.emit('openOrderModal', { orderId: data.id, codigo: data.codigo });
     },
-    [user, pathname]
+    [user]
   );
 
   const showServiceNotification = useCallback(
@@ -172,7 +172,7 @@ export function useNotifications() {
 
       appEventBus.emit('openServiceRequestModal', { solicitud: data });
     },
-    [user, pathname]
+    [user]
   );
 
   const sseUrl =

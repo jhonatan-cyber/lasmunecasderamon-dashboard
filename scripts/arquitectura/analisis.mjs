@@ -169,7 +169,7 @@ const MODULO_POR_RUTA = [
   [/^app\/api\/(clients)/, 'clientes'],
   [/^app\/api\/(notifications|audit-logs|error-logs)/, 'comunicaciones'],
   [/^app\/api\/(calendar|events)/, 'agenda'],
-  [/^app\/api\/(settings|monitoring|swagger|api-docs|reports|test-auth|clients)/, 'infraestructura']
+  [/^app\/api\/(settings|monitoring|reports|test-auth|clients)/, 'infraestructura']
 ];
 
 function moduloDe(rel) {

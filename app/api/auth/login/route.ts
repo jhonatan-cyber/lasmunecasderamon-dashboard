@@ -3,7 +3,15 @@ import { iniciarSesion } from '@/workflows/autenticacion';
 import { generateRefreshToken } from '@/lib/auth/auth';
 import { cookies } from 'next/headers';
 import { ApiResponse } from '@/lib/api/api-response';
+import { withRateLimit, rateLimiters } from '@/lib/api/rateLimit';
+
 export const POST = async (request: Request) => {
+  // Rate limiting estricto para prevenir fuerza bruta: 10 req/min por IP.
+  const rateLimitResult = withRateLimit(request, rateLimiters.auth);
+  if (rateLimitResult?.response) {
+    return rateLimitResult.response;
+  }
+
   try {
     const body = await request.json();
     const forwarded = request.headers.get('x-forwarded-for');
