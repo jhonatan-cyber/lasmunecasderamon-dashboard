@@ -28,7 +28,8 @@ function database(
       return [
         { id: values[0], nombre: '750 ml', ml_botella: 750, ml_shot: 50, ml_shot_anfitriona: 25 }
       ];
-    if (sql.includes('ORDER BY id FOR UPDATE'))
+    if (sql.includes('ORDER BY id FOR UPDATE')) {
+      const hasSoda = values.includes('soda');
       return values.map(id => ({
         id,
         nombre: '750 ml',
@@ -39,8 +40,11 @@ function database(
           ? [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true, cover_habilitado: true }]
           : mixerMl
             ? [{ tipo: 'shot', precio: 10000, ml_acompanamiento_anfitriona: mixerMl }]
-            : [{ tipo: 'botella', precio: 45000, comision: 5000 }]
+            : hasSoda
+              ? [{ tipo: 'botella', precio: 45000, comision: 5000, acompanamiento: { unidades: 2 } }]
+              : [{ tipo: 'botella', precio: 45000, comision: 5000 }, { tipo: 'shot', precio: 3000, comision: 0 }]
       }));
+    }
     return [];
   }) as unknown as TransactionQuery;
 }
