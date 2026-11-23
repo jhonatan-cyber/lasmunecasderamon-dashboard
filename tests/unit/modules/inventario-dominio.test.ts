@@ -912,7 +912,7 @@ describe('descuento del bar al registrar una venta', () => {
             estado: 1
           }
         ];
-      if (sql.includes('GROUP BY presentacion_id'))
+      if (sql.includes('GROUP BY') && sql.includes('presentacion_id'))
         return [{ presentacion_id: 'sprite', stock_bar: 2, ml_abierta: 0 }];
       if (sql.includes('FROM inventario_unidades'))
         return [
@@ -988,7 +988,7 @@ describe('descuento del bar al registrar una venta', () => {
             estado: 1
           }
         ];
-      if (sql.includes('GROUP BY presentacion_id'))
+      if (sql.includes('GROUP BY') && sql.includes('presentacion_id'))
         return [{ presentacion_id: 'sprite', stock_bar: 6, ml_abierta: 0 }];
       if (sql.includes('FROM inventario_unidades'))
         return Array.from({ length: 6 }, (_, i) => ({ id: `${id}-${i}`, ml_restante: null }));
