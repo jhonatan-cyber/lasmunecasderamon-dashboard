@@ -42,8 +42,8 @@ async function obtenerStockBar(
   if (presentacionIds.length === 0) return new Map();
   const rows = await trx<StockAcompanamiento[]>(
     `SELECT presentacion_id,
-            COUNT(*) FILTER (WHERE estado = 'activa' AND (COALESCE(ml_restante, 0) > 0 OR abierta_por_shots IS NOT TRUE)) AS stock_bar,
-            COALESCE(SUM(CASE WHEN estado = 'activa' AND COALESCE(ml_restante, 0) > 0 THEN ml_restante ELSE 0 END), 0) AS ml_abierta
+            COUNT(*) FILTER (WHERE estado = 'almacen' AND (COALESCE(ml_restante, 0) > 0 OR abierta_por_shots IS NOT TRUE)) AS stock_bar,
+            COALESCE(SUM(CASE WHEN estado = 'almacen' AND COALESCE(ml_restante, 0) > 0 THEN ml_restante ELSE 0 END), 0) AS ml_abierta
        FROM inventario_unidades
       WHERE presentacion_id IN (${presentacionIds.map(() => '?').join(',')})
         AND ubicacion = 'bar'
