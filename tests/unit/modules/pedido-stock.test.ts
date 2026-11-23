@@ -33,11 +33,13 @@ function database(
         id,
         nombre: '750 ml',
         ml_botella: 750,
+        producto_id: 'prod',
+        estado: 1,
         opciones_venta: id === 'soda'
           ? [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true, cover_habilitado: true }]
           : mixerMl
             ? [{ tipo: 'shot', precio: 10000, ml_acompanamiento_anfitriona: mixerMl }]
-            : undefined
+            : [{ tipo: 'botella', precio: 45000, comision: 5000, acompanamiento: { unidades: 2 } }]
       }));
     return [];
   }) as unknown as TransactionQuery;
@@ -98,7 +100,7 @@ describe('Stock al enviar pedido, sin consumir ni reservar', () => {
           }
         ]
       )
-    ).rejects.toThrow('bebida abierta');
+    ).rejects.toThrow('acompañamiento');
   });
   it('un pedido valido ejecuta solo lecturas, conservando cantidades y ml', async () => {
     const trx = database({
