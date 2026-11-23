@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 
 import { matchesProductSearch } from '@/lib/utils/productSearch';
+import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
@@ -19,7 +20,7 @@ import { precioUnitarioAcompanamiento } from '@/lib/sales/recargoAcompanamiento'
 import type { SaleProductItem, SaleProductMixer } from './saleProductItems';
 import { SaleProductPhoto } from './SaleProductPhoto';
 
-function MixerChoice({ choice }: { choice: any }) {
+function MixerChoice({ choice, hidePrice }: { choice: any; hidePrice?: boolean }) {
   const name = `${choice.producto_nombre} · ${choice.nombre}`;
   const precio = precioUnitarioAcompanamiento(choice);
   return (
@@ -40,7 +41,8 @@ function MixerChoice({ choice }: { choice: any }) {
           Stock: {Number(choice.stock_bar) || 0} unidades
           {Number(choice.ml_abierta) > 0
             ? ` · ${Number(choice.ml_abierta)} ml abiertos`
-            : ''} · {precio > 0 ? formatCurrencyNoDecimals(precio) : 'sin precio'}
+            : ''}
+          {!hidePrice ? ` · ${precio > 0 ? formatCurrencyNoDecimals(precio) : 'sin precio'}` : ''}
         </span>
       </span>
     </span>
@@ -81,6 +83,7 @@ function MixerSelect({
   showLabel?: boolean;
 }) {
   const [search, setSearch] = useState('');
+  const hidePrice = esCortoAnfitriona(mixer.value);
   const selectedChoice = mixer.choices.find(
     choice => String(choice.id) === mixer.selected?.presentacion_id
   );
@@ -110,7 +113,7 @@ function MixerSelect({
           className='h-14 min-h-14 w-full py-2 [&>span]:line-clamp-none'
         >
           <SelectValue placeholder='Seleccionar bebida'>
-            {selectedChoice ? <MixerChoice choice={selectedChoice} /> : undefined}
+            {selectedChoice ? <MixerChoice choice={selectedChoice} hidePrice={hidePrice} /> : undefined}
           </SelectValue>
         </SelectTrigger>
         <SelectContent position='popper' className='w-[var(--radix-select-trigger-width)] min-w-56'>
@@ -136,7 +139,7 @@ function MixerSelect({
                 value={String(choice.id)}
                 textValue={`${choice.producto_nombre} ${choice.nombre}`}
               >
-                <MixerChoice choice={choice} />
+                <MixerChoice choice={choice} hidePrice={hidePrice} />
               </SelectItem>
             ))}
             {!choices.length && (
@@ -164,6 +167,7 @@ function MixerDistribute({
   showLabel: boolean;
 }) {
   const [search, setSearch] = useState('');
+  const hidePrice = esCortoAnfitriona(mixer.value);
   const sabores: AcompanamientoBotellaItem[] = Array.isArray(mixer.selected) ? mixer.selected : [];
   const unidadesPorBotella = Number(mixer.unidades ?? 0);
   const asignado = sabores.reduce((sum, sabor) => sum + (Number(sabor.unidades) || 0), 0);
@@ -253,7 +257,7 @@ function MixerDistribute({
                 value={String(choice.id)}
                 textValue={`${choice.producto_nombre} ${choice.nombre}`}
               >
-                <MixerChoice choice={choice} />
+                <MixerChoice choice={choice} hidePrice={hidePrice} />
               </SelectItem>
             ))}
             {!choices.length && (

@@ -1,7 +1,7 @@
 {
   "resumen": {
-    "commit": "d9d59dcbec1c51f730eba352c64f8aba091cadb6",
-    "generado": "2026-11-22T22:45:37.333Z",
+    "commit": "a7aed434102e6953923d692f5a8fbf51529910b1",
+    "generado": "2026-11-23T02:52:39.979Z",
     "archivos": 2307,
     "rutas": 246,
     "sqlFueraDeRepositorio": 66,
@@ -3262,7 +3262,7 @@
     },
     "components": {
       "hooks": 157,
-      "lib/otros": 409,
+      "lib/otros": 410,
       "raiz": 94,
       "lib/business": 60,
       "lib/api": 3,
@@ -3316,7 +3316,7 @@
     "modules/infraestructura": {
       "lib/database": 114,
       "lib/otros": 171,
-      "lib/business": 76,
+      "lib/business": 75,
       "modules/aplicacion": 27,
       "lib/api": 9,
       "lib/identidad": 2,

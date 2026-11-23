@@ -140,7 +140,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   });
 
   const admiteAnfitriona = (opcion: SaleFormatQuantityOption) =>
-    permiteAnfitrionaConComision(opcion.value, opcion.comision);
+    permiteAnfitrionaConComision(opcion.value, opcion.comision, esCortoAnfitriona(opcion.value));
   const pideAnfitriona = opcionesTipo.some(
     opcion => opcion.cantidad > 0 && admiteAnfitriona(opcion)
   );
@@ -148,29 +148,33 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   const hostessFormats = opcionesTipo
     .filter(option => option.cantidad > 0 && admiteAnfitriona(option))
     .flatMap(option =>
-      Array.from({ length: esBotella(option.value) ? 1 : option.cantidad }, (_, unitIndex) => {
-        const key = esBotella(option.value)
-          ? id
-          : `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
+      // Para cortos: un format por unidad. Para botellas con anfitriona (no champagne):
+      // un format por unidad para permitir multi-select. Para champagne: un solo format.
+      Array.from({ length: esBotella(option.value) && !isChampagne ? option.cantidad : (esBotella(option.value) ? 1 : option.cantidad) }, (_, unitIndex) => {
+        const key = esBotella(option.value) && !isChampagne
+          ? `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`
+          : esBotella(option.value)
+            ? id
+            : `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
         return {
           unitIndex,
           value: option.value,
           label: option.label,
-          cantidad: esBotella(option.value) ? option.cantidad : 1,
+          cantidad: esBotella(option.value) && isChampagne ? option.cantidad : (esBotella(option.value) ? 1 : 1),
           comision: option.comision,
           selected:
             esBotella(option.value) && isChampagne
               ? ctx.champagneHostessSelections[id] || []
               : (ctx.otherProductHostessSelections[key] || []).slice(
                   0,
-                  esBotella(option.value) ? undefined : 1
+                  esBotella(option.value) && isChampagne ? undefined : 1
                 ),
           onChange: (ids: string[]) =>
             esBotella(option.value) && isChampagne
               ? ctx.onChampagneHostessChange(id, ids)
               : ctx.onOtherProductHostessChange(
                   key,
-                  esBotella(option.value) ? ids : ids.slice(0, 1)
+                  esBotella(option.value) && isChampagne ? ids : ids.slice(0, 1)
                 )
         };
       })
@@ -216,10 +220,17 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           );
           if (!bottle && esCortoAnfitriona(opcion.value)) {
             if (bottleOption?.corto_anfitriona_habilitado === false) return false;
-          } else if (!bottle && bottleOption?.cover_habilitado !== true) {
-            return false;
+            if (bottleOption?.colacion_habilitada !== true) return false;
+          } else if (!bottle) {
+            if (bottleOption?.cover_habilitado !== true) return false;
+            const productoEstado = b.producto_estado === undefined ? 1 : Number(b.producto_estado);
+            if (productoEstado !== 1) return false;
           }
-          if (bottle) return Number(b.stock_bar) >= Math.max(1, quantity);
+          if (bottle) {
+            const productoEstado = b.producto_estado === undefined ? 1 : Number(b.producto_estado);
+            if (productoEstado !== 1) return false;
+            return Number(b.stock_bar) >= Math.max(1, quantity);
+          }
           if ('unidades' in consumption)
             return (
               Number(b.stock_bar) > 0 && Number(b.stock_bar) >= consumption.unidades * quantity

@@ -56,6 +56,16 @@ export function SaleProductFormatRows({
         const displayLabel = esBotella(option.value)
           ? `${option.value === 'botella_sin_anfitriona' ? 'Botella sin anfitriona' : 'Botella'}${units > 0 ? ` · ${units} ${units === 1 ? 'unidad' : 'unidades'} de bebida` : ''}`
           : `${option.label.replace(/ · \$[\d.,]+/g, '')}${!shortHasMixer ? '' : esCortoAnfitriona(option.value) ? (drinkMl > 0 ? ` y ${drinkMl} ml de bebida` : '') : ' y 1 unidad de bebida'}`;
+
+        // Detectar si esta opción tiene múltiples unidades con anfitriona
+        // (cortos o botellas con anfitriona)
+        const optionHostessFormats = item.hostessFormats?.filter(
+          h => h.value === option.value
+        );
+        const multiHostess =
+          optionHostessFormats &&
+          optionHostessFormats.length > 1;
+
         return (
           <div
             key={option.value}
@@ -164,7 +174,10 @@ export function SaleProductFormatRows({
                         )}
                       </div>
                     )}
-                    {hasHostessColumn && (
+                    {/* Cuando hay múltiples unidades con anfitriona, renderizar el hostess
+                        solo en la primera unidad para que use HostessMultiSelect unificado.
+                        Las unidades restantes no muestran columna de anfitriona. */}
+                    {hasHostessColumn && !multiHostess && (
                       <div className='min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden'>
                         {unitHostess ? (
                           <SaleProductHostess
@@ -176,6 +189,18 @@ export function SaleProductFormatRows({
                             {option.comision > 0 ? 'Selecciona una cantidad' : 'Sin comisión'}
                           </p>
                         )}
+                      </div>
+                    )}
+                    {/* Múltiples unidades con anfitriona: un solo HostessMultiSelect en la primera unidad */}
+                    {hasHostessColumn && multiHostess && unitIndex === 0 && (
+                      <div className='min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden'>
+                        <SaleProductHostess
+                          item={{
+                            ...item,
+                            opcionesTipo: [option],
+                          }}
+                          availableHostesses={availableHostesses}
+                        />
                       </div>
                     )}
                   </Fragment>

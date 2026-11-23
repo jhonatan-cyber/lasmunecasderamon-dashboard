@@ -28,6 +28,31 @@ export interface PresentacionVentaBloqueada {
 
 export const productoDesactivado = (estado: number | null | undefined) => estado === 0;
 
+interface StockAcompanamiento {
+  presentacion_id: string;
+  stock_bar: number;
+  ml_abierta: number;
+}
+
+/** Consulta el stock disponible en el bar para las presentaciones indicadas. */
+async function obtenerStockBar(
+  trx: TransactionQuery,
+  presentacionIds: string[]
+): Promise<Map<string, StockAcompanamiento>> {
+  if (presentacionIds.length === 0) return new Map();
+  const rows = await trx<StockAcompanamiento[]>(
+    `SELECT presentacion_id,
+            COUNT(*) FILTER (WHERE estado = 'activa' AND (COALESCE(ml_restante, 0) > 0 OR abierta_por_shots IS NOT TRUE)) AS stock_bar,
+            COALESCE(SUM(CASE WHEN estado = 'activa' AND COALESCE(ml_restante, 0) > 0 THEN ml_restante ELSE 0 END), 0) AS ml_abierta
+       FROM inventario_unidades
+      WHERE presentacion_id IN (${presentacionIds.map(() => '?').join(',')})
+        AND ubicacion = 'bar'
+      GROUP BY presentacion_id`,
+    presentacionIds
+  );
+  return new Map(rows.map(r => [r.presentacion_id, r]));
+}
+
 export async function bloquearYValidarConfiguracionVenta(
   trx: TransactionQuery,
   detalles: ConsumoInventarioDetalle[]
@@ -36,15 +61,30 @@ export async function bloquearYValidarConfiguracionVenta(
     ...new Set(detalles.map(d => d.presentacion_id).filter((id): id is string => Boolean(id)))
   ];
   if (!ids.length) return new Map();
+
+  // Recopilar IDs de acompañamientos para validarlos también
+  const acompanamientoIds: string[] = [];
+  for (const d of detalles) {
+    if (d.acompanamiento_corto?.presentacion_id)
+      acompanamientoIds.push(d.acompanamiento_corto.presentacion_id);
+    const sabores = normalizarAcompanamientoBotella(d.acompanamiento_botella);
+    for (const s of sabores) acompanamientoIds.push(s.presentacion_id);
+  }
+
+  const allIds = [...new Set([...ids, ...acompanamientoIds])];
   const rows = await trx<PresentacionVentaBloqueada[]>(
     `SELECT id, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella,
             fecha_vencimiento,
             (SELECT pr.estado FROM productos pr WHERE pr.id_producto = inventario_presentaciones.producto_id) AS estado
        FROM inventario_presentaciones
-      WHERE id IN (${ids.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
-    ids
+      WHERE id IN (${allIds.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
+    allIds
   );
   const configs = new Map(rows.map(row => [row.id, parseOpcionesVenta(row.opciones_venta)]));
+
+  // Consultar stock en el bar para validar acompañamientos
+  const stockBar = await obtenerStockBar(trx, acompanamientoIds);
+
   for (const detalle of detalles) {
     if (!detalle.presentacion_id) continue;
     const saboresBotella = normalizarAcompanamientoBotella(detalle.acompanamiento_botella);
@@ -58,6 +98,83 @@ export async function bloquearYValidarConfiguracionVenta(
       if (presentacion && productoDesactivado(presentacion.estado))
         throw new BusinessError('La bebida seleccionada no está disponible');
     }
+
+    // Validar reglas de acompañamiento según tipo de venta
+    if (detalle.tipo_venta === 'shot' && detalle.acompanamiento_corto) {
+      const mixerId = detalle.acompanamiento_corto.presentacion_id;
+      const mixerRow = rows.find(row => row.id === mixerId);
+      const mixerOptions = mixerRow ? parseOpcionesVenta(mixerRow.opciones_venta) : undefined;
+      const mixerBottleOption = mixerOptions?.find(o => o.tipo === 'botella');
+
+      if (detalle.shot_anfitriona) {
+        // Corto con anfitriona: el acompañamiento debe tener colacion_habilitada
+        if (mixerBottleOption?.colacion_habilitada !== true)
+          throw new BusinessError(
+            'La bebida seleccionada como acompañamiento no está habilitada para corto con anfitriona'
+          );
+      } else {
+        // Corto cliente: el acompañamiento debe tener cover_habilitado y producto activo
+        if (mixerBottleOption?.cover_habilitado !== true)
+          throw new BusinessError(
+            'La bebida seleccionada como acompañamiento no está habilitada para corto al cliente'
+          );
+        if (mixerRow && productoDesactivado(mixerRow.estado))
+          throw new BusinessError(
+            'La bebida seleccionada como acompañamiento no está disponible'
+          );
+      }
+    }
+
+    // Validar acompañamiento de botella: producto debe estar activo
+    if (detalle.tipo_venta !== 'shot' && saboresBotella.length > 0) {
+      for (const sabor of saboresBotella) {
+        const saborRow = rows.find(row => row.id === sabor.presentacion_id);
+        if (saborRow && productoDesactivado(saborRow.estado))
+          throw new BusinessError(
+            'La bebida seleccionada como acompañamiento de botella no está disponible'
+          );
+      }
+    }
+
+    // Validar stock del acompañamiento
+    const cantidad = Number(detalle.cantidad ?? 1);
+
+    if (detalle.tipo_venta === 'shot' && detalle.acompanamiento_corto) {
+      const mixerId = detalle.acompanamiento_corto.presentacion_id;
+      const stock = stockBar.get(mixerId);
+      if (!stock || stock.stock_bar < 1)
+        throw new BusinessError(
+          'No hay stock disponible para la bebida de acompañamiento seleccionada'
+        );
+
+      if (detalle.shot_anfitriona) {
+        // Corto anfitriona: necesita ml_abierta suficiente
+        const mlPorCorto = detalle.acompanamiento_corto.ml_por_corto ?? 0;
+        if (mlPorCorto > 0 && stock.ml_abierta < mlPorCorto * cantidad)
+          throw new BusinessError(
+            'No hay suficiente bebida abierta para el acompañamiento del corto con anfitriona'
+          );
+      } else {
+        // Corto cliente: necesita unidades completas
+        const unidades = detalle.acompanamiento_corto.unidades ?? 1;
+        if (stock.stock_bar < unidades * cantidad)
+          throw new BusinessError(
+            'No hay suficientes unidades de acompañamiento para el corto al cliente'
+          );
+      }
+    }
+
+    if (detalle.tipo_venta !== 'shot' && saboresBotella.length > 0) {
+      for (const sabor of saboresBotella) {
+        const stock = stockBar.get(sabor.presentacion_id);
+        const unidadesRequeridas = (sabor.unidades ?? 0) * cantidad;
+        if (!stock || stock.stock_bar < unidadesRequeridas)
+          throw new BusinessError(
+            `No hay stock suficiente para la bebida de acompañamiento de botella seleccionada`
+          );
+      }
+    }
+
     const options = configs.get(detalle.presentacion_id) ?? [];
     if (detalle.tipo_venta === 'shot' && detalle.acompanamiento_corto) {
       const mixer = detalle.acompanamiento_corto;
