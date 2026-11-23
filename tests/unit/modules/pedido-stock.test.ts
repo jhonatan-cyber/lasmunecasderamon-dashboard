@@ -9,8 +9,8 @@ function database(
     if (!sql.trim().startsWith('SELECT')) throw new Error('El pedido no debe modificar inventario');
     if (sql.includes('FROM configuraciones')) return [];
     // obtenerStockBar usa GROUP BY presentacion_id para acompañamientos (JOIN inventario_presentaciones)
-    if (sql.includes('GROUP BY presentacion_id')) {
-      return values.map(pId => {
+    if (sql.includes('GROUP BY') && sql.includes('presentacion_id')) {
+      return (values || []).map(pId => {
         const units = stock[pId] || [];
         const stockBar = units.filter(u => u.ml_restante == null || (u.ml_restante ?? 0) > 0).length;
         // ml_abierta: suma ml_restante > 0 + ml_botella para botellas completas (null)
@@ -39,7 +39,7 @@ function database(
           ? [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true, cover_habilitado: true }]
           : mixerMl
             ? [{ tipo: 'shot', precio: 10000, ml_acompanamiento_anfitriona: mixerMl }]
-            : [{ tipo: 'botella', precio: 45000, comision: 5000, acompanamiento: { unidades: 2 } }]
+            : [{ tipo: 'botella', precio: 45000, comision: 5000 }]
       }));
     return [];
   }) as unknown as TransactionQuery;
