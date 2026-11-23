@@ -8,12 +8,16 @@ function database(
   return vi.fn(async (sql: string, values: string[] = []) => {
     if (!sql.trim().startsWith('SELECT')) throw new Error('El pedido no debe modificar inventario');
     if (sql.includes('FROM configuraciones')) return [];
-    // obtenerStockBar usa GROUP BY presentacion_id para acompañamientos
+    // obtenerStockBar usa GROUP BY presentacion_id para acompañamientos (JOIN inventario_presentaciones)
     if (sql.includes('GROUP BY presentacion_id')) {
       return values.map(pId => {
         const units = stock[pId] || [];
         const stockBar = units.filter(u => u.ml_restante == null || (u.ml_restante ?? 0) > 0).length;
-        const mlAbierta = units.reduce((s, u) => s + (u.ml_restante ?? 0), 0);
+        // ml_abierta: suma ml_restante > 0 + ml_botella para botellas completas (null)
+        const mlAbierta = units.reduce((s, u) => {
+          if (u.ml_restante == null) return s + 750; // ml_botella default
+          return s + (u.ml_restante > 0 ? u.ml_restante : 0);
+        }, 0);
         return { presentacion_id: pId, stock_bar: stockBar, ml_abierta: mlAbierta };
       });
     }

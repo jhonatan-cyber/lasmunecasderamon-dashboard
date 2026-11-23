@@ -36,11 +36,11 @@ function trx(
 ) {
   return vi.fn(async (sql: string, values?: string[]) => {
     if (sql.includes('GROUP BY presentacion_id')) {
-      // obtenerStockBar para acompañamientos
+      // obtenerStockBar para acompañamientos (JOIN inventario_presentaciones)
       if (Array.isArray(values)) {
         return values.map(pId => ({
           presentacion_id: pId,
-          stock_bar: 1,
+          stock_bar: 2,
           ml_abierta: 750
         }));
       }

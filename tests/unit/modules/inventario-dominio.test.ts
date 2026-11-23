@@ -946,6 +946,27 @@ describe('descuento del bar al registrar una venta', () => {
   it('descuenta bebidas completos por cada botella vendida', async () => {
     const trx = vi.fn(async (sql: string, args?: any[]) => {
       const id = args?.[0];
+      if (sql.includes('ORDER BY id FOR UPDATE'))
+        return [
+          {
+            ...presentacion,
+            id: 'pres-1',
+            opciones_venta: [
+              { tipo: 'botella', precio: 45000, comision: 5000, acompanamiento: { unidades: 3 } }
+            ],
+            estado: 1
+          },
+          {
+            id: 'sprite',
+            producto_id: 'prod-sprite',
+            nombre: 'Sprite',
+            precio_venta: 1000,
+            comision: 0,
+            ml_botella: null,
+            opciones_venta: [{ tipo: 'botella' }],
+            estado: 1
+          }
+        ];
       if (sql.includes('FROM inventario_presentaciones'))
         return [
           {
