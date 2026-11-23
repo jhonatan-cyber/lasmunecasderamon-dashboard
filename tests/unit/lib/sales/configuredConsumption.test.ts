@@ -147,7 +147,7 @@ describe('server configured consumption', () => {
         {
           id: 'sprite',
           estado: 1,
-          opciones_venta: [{ tipo: 'botella', cover_habilitado: true }]
+          opciones_venta: [{ tipo: 'botella', colacion_habilitada: false, cover_habilitado: true }]
         }
       ];
     }) as unknown as TransactionQuery;
@@ -186,7 +186,7 @@ describe('server configured consumption', () => {
         {
           id: 'sprite',
           estado: 1,
-          opciones_venta: [{ tipo: 'botella', colacion_habilitada: true }]
+          opciones_venta: [{ tipo: 'botella', colacion_habilitada: true, cover_habilitado: false }]
         }
       ];
     }) as unknown as TransactionQuery;

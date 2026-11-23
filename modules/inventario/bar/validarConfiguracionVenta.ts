@@ -108,13 +108,15 @@ export async function bloquearYValidarConfiguracionVenta(
 
       if (detalle.shot_anfitriona) {
         // Corto con anfitriona: el acompañamiento debe tener colacion_habilitada
-        if (mixerBottleOption?.colacion_habilitada !== true)
+        // Si no hay opciones configuradas, permitir (compatibilidad legacy)
+        if (mixerBottleOption && mixerBottleOption.colacion_habilitada === false)
           throw new BusinessError(
             'La bebida seleccionada como acompañamiento no está habilitada para corto con anfitriona'
           );
       } else {
         // Corto cliente: el acompañamiento debe tener cover_habilitado y producto activo
-        if (mixerBottleOption?.cover_habilitado !== true)
+        // Si no hay opciones configuradas, permitir (compatibilidad legacy)
+        if (mixerBottleOption && mixerBottleOption.cover_habilitado === false)
           throw new BusinessError(
             'La bebida seleccionada como acompañamiento no está habilitada para corto al cliente'
           );

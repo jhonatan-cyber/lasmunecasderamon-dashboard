@@ -220,9 +220,11 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           );
           if (!bottle && esCortoAnfitriona(opcion.value)) {
             if (bottleOption?.corto_anfitriona_habilitado === false) return false;
-            if (bottleOption?.colacion_habilitada !== true) return false;
+            // Si colacion_habilitada no está definido, permitir (compatibilidad legacy)
+            if (bottleOption && bottleOption.colacion_habilitada === false) return false;
           } else if (!bottle) {
-            if (bottleOption?.cover_habilitado !== true) return false;
+            // Si cover_habilitado no está definido, permitir (compatibilidad legacy)
+            if (bottleOption && bottleOption.cover_habilitado === false) return false;
             const productoEstado = b.producto_estado === undefined ? 1 : Number(b.producto_estado);
             if (productoEstado !== 1) return false;
           }
