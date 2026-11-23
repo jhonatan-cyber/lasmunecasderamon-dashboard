@@ -34,22 +34,35 @@ function trx(
     tiers?: Array<{ producto_id: string; anfitrionas: number; precio: number; comision: number }>;
   } = {}
 ) {
-  return vi.fn(async (sql: string) => {
+  return vi.fn(async (sql: string, values?: string[]) => {
+    if (sql.includes('GROUP BY presentacion_id')) {
+      // obtenerStockBar para acompañamientos
+      if (Array.isArray(values)) {
+        return values.map(pId => ({
+          presentacion_id: pId,
+          stock_bar: 1,
+          ml_abierta: 750
+        }));
+      }
+      return [];
+    }
     if (sql.includes('FROM inventario_unidades')) return [{ id: 'unit', ml_restante: null }];
     // La lectura individual de una presentación (`WHERE p.id = ?`) y la
     // validación por lote (`ORDER BY id FOR UPDATE`) se distinguen por su forma.
     if (sql.includes('WHERE p.id = ?'))
       return [{ id: 'pres', producto_id: 'prod', nombre: '750 ml', ml_botella: 750 }];
     if (sql.includes('ORDER BY id FOR UPDATE'))
-      return [
-        {
-          id: 'pres',
+      return (Array.isArray(values) ? values : ['pres'])
+        .filter(id => id === 'pres' || id === 'soda')
+        .map(id => ({
+          id,
           producto_id: 'prod',
           precio_venta: 60000,
           comision: 0,
-          opciones_venta: config.opciones ?? options
-        }
-      ];
+          opciones_venta: id === 'soda'
+            ? [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true, cover_habilitado: true }]
+            : config.opciones ?? options
+        }));
     if (sql.includes('FROM producto_champagne_tiers')) return config.tiers ?? [];
     if (sql.includes('FROM productos'))
       return [
