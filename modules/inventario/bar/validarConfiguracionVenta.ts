@@ -41,13 +41,14 @@ async function obtenerStockBar(
 ): Promise<Map<string, StockAcompanamiento>> {
   if (presentacionIds.length === 0) return new Map();
   const rows = await trx<StockAcompanamiento[]>(
-    `SELECT presentacion_id,
-            COUNT(*) FILTER (WHERE estado = 'almacen' AND (COALESCE(ml_restante, 0) > 0 OR abierta_por_shots IS NOT TRUE)) AS stock_bar,
-            COALESCE(SUM(CASE WHEN estado = 'almacen' AND COALESCE(ml_restante, 0) > 0 THEN ml_restante ELSE 0 END), 0) AS ml_abierta
-       FROM inventario_unidades
-      WHERE presentacion_id IN (${presentacionIds.map(() => '?').join(',')})
-        AND ubicacion = 'bar'
-      GROUP BY presentacion_id`,
+    `SELECT IU.presentacion_id,
+            COUNT(*) FILTER (WHERE IU.estado = 'almacen' AND (COALESCE(IU.ml_restante, 0) > 0 OR IU.abierta_por_shots IS NOT TRUE)) AS stock_bar,
+            COALESCE(SUM(CASE WHEN IU.estado = 'almacen' AND COALESCE(IU.ml_restante, 0) > 0 THEN IU.ml_restante WHEN IU.estado = 'almacen' AND IU.ml_restante IS NULL THEN IP.ml_botella ELSE 0 END), 0) AS ml_abierta
+       FROM inventario_unidades IU
+       JOIN inventario_presentaciones IP ON IP.id = IU.presentacion_id
+      WHERE IU.presentacion_id IN (${presentacionIds.map(() => '?').join(',')})
+        AND IU.ubicacion = 'bar'
+      GROUP BY IU.presentacion_id`,
     presentacionIds
   );
   return new Map(rows.map(r => [r.presentacion_id, r]));
