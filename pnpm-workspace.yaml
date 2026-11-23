@@ -1,21 +1,21 @@
 packages:
   - .
   - mcp
-ignoredBuiltDependencies:
-  - '@scarf/scarf'
-  - '@tree-sitter-grammars/tree-sitter-yaml'
-  - argon2
-  - core-js
-  - core-js-pure
-  - esbuild
-  - sharp
-  - tree-sitter
-  - tree-sitter-json
-  - unrs-resolver
-onlyBuiltDependencies:
-  - ffmpeg-static
-  - koffi
-  - onnxruntime-node
+nodeLinker: hoisted
+allowBuilds:
+  '@scarf/scarf': false
+  '@tree-sitter-grammars/tree-sitter-yaml': false
+  argon2: false
+  core-js: false
+  core-js-pure: false
+  esbuild: false
+  ffmpeg-static: true
+  koffi: true
+  onnxruntime-node: true
+  sharp: false
+  tree-sitter: false
+  tree-sitter-json: false
+  unrs-resolver: false
 overrides:
   axios: 1.20.0
   baseline-browser-mapping: 2.11.0
