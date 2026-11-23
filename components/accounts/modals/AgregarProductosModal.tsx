@@ -243,6 +243,8 @@ export default function AgregarProductosModal({
 
         toast.success('Productos agregados exitosamente');
         limpiarCarrito();
+        setChampagneHostessSelections({});
+        setOtherProductHostessSelections({});
         onProductosAgregados?.();
         onOpenChange(false);
       } else {
@@ -272,6 +274,8 @@ export default function AgregarProductosModal({
 
   const handleClose = useCallback(() => {
     limpiarCarrito();
+    setChampagneHostessSelections({});
+    setOtherProductHostessSelections({});
     setModalOpen(false);
     setHabitacionId('');
     setTiempo('60');

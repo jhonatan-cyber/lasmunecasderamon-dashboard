@@ -8,6 +8,19 @@ function database(
   return vi.fn(async (sql: string, values: string[] = []) => {
     if (!sql.trim().startsWith('SELECT')) throw new Error('El pedido no debe modificar inventario');
     if (sql.includes('FROM configuraciones')) return [];
+    // obtenerStockBar usa GROUP BY presentacion_id para acompañamientos (JOIN inventario_presentaciones)
+    if (sql.includes('GROUP BY') && sql.includes('presentacion_id')) {
+      return (values || []).map(pId => {
+        const units = stock[pId] || [];
+        const stockBar = units.filter(u => u.ml_restante == null || (u.ml_restante ?? 0) > 0).length;
+        // ml_abierta: suma ml_restante > 0 + ml_botella para botellas completas (null)
+        const mlAbierta = units.reduce((s, u) => {
+          if (u.ml_restante == null) return s + 750; // ml_botella default
+          return s + (u.ml_restante > 0 ? u.ml_restante : 0);
+        }, 0);
+        return { presentacion_id: pId, stock_bar: stockBar, ml_abierta: mlAbierta };
+      });
+    }
     if (sql.includes('FROM inventario_unidades')) return stock[values[0]] || [];
     // La lectura individual (`WHERE p.id = ?`) y la validación por lote
     // (`ORDER BY id FOR UPDATE`) se distinguen por su forma.
@@ -15,15 +28,23 @@ function database(
       return [
         { id: values[0], nombre: '750 ml', ml_botella: 750, ml_shot: 50, ml_shot_anfitriona: 25 }
       ];
-    if (sql.includes('ORDER BY id FOR UPDATE'))
+    if (sql.includes('ORDER BY id FOR UPDATE')) {
+      const hasSoda = values.includes('soda');
       return values.map(id => ({
         id,
         nombre: '750 ml',
         ml_botella: 750,
-        opciones_venta: mixerMl
-          ? [{ tipo: 'shot', precio: 10000, ml_acompanamiento_anfitriona: mixerMl }]
-          : undefined
+        producto_id: 'prod',
+        estado: 1,
+        opciones_venta: id === 'soda'
+          ? [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true, cover_habilitado: true }]
+          : mixerMl
+            ? [{ tipo: 'shot', precio: 10000, ml_acompanamiento_anfitriona: mixerMl }]
+            : hasSoda
+              ? [{ tipo: 'botella', precio: 45000, comision: 5000, acompanamiento: { unidades: 2 } }]
+              : [{ tipo: 'botella', precio: 45000, comision: 5000 }, { tipo: 'shot', precio: 3000, comision: 0 }]
       }));
+    }
     return [];
   }) as unknown as TransactionQuery;
 }
@@ -67,7 +88,7 @@ describe('Stock al enviar pedido, sin consumir ni reservar', () => {
       validarStockPedido(database({ licor: [{ id: 'a', ml_restante: null }] }), [
         { ...bottle, acompanamiento_botella: { presentacion_id: 'soda', unidades: 2 } }
       ])
-    ).rejects.toThrow('botellas');
+    ).rejects.toThrow('acompañamiento');
     await expect(
       validarStockPedido(
         database(
@@ -83,7 +104,7 @@ describe('Stock al enviar pedido, sin consumir ni reservar', () => {
           }
         ]
       )
-    ).rejects.toThrow('stock');
+    ).rejects.toThrow('acompañamiento');
   });
   it('un pedido valido ejecuta solo lecturas, conservando cantidades y ml', async () => {
     const trx = database({

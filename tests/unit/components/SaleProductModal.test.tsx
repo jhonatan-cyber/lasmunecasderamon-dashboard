@@ -384,7 +384,8 @@ it('excluye del corto anfitriona bebidas que no están habilitadas para ese uso'
                 precio: 2000,
                 comision: 0,
                 cover_habilitado: true,
-                corto_anfitriona_habilitado: true
+                corto_anfitriona_habilitado: true,
+                colacion_habilitada: true
               }
             ]
           }
@@ -445,6 +446,7 @@ it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async ()
             producto_nombre: 'Con cover',
             nombre: '350 ml',
             stock_bar: 20,
+            producto_estado: 1,
             opciones_venta: [{ tipo: 'botella', cover_habilitado: true }]
           }
         ]

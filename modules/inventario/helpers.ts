@@ -183,7 +183,8 @@ export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow =
         ? null
         : Number(row.max_anfitrionas),
     producto_precio: Number(row.producto_precio ?? 0),
-    producto_comision: Number(row.producto_comision ?? 0)
+    producto_comision: Number(row.producto_comision ?? 0),
+    producto_estado: row.producto_estado !== undefined ? Number(row.producto_estado) : undefined
   };
 };
 

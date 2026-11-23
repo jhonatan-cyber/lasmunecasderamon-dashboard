@@ -24,6 +24,39 @@ export function SaleProductHostess({
   availableHostesses: any[];
 }) {
   if (item.hostessFormats?.length) {
+    // Cuando hay múltiples unidades del mismo tipo con anfitriona (cortos o botellas),
+    // usar un solo HostessMultiSelect unificado. Si los formats tienen valores diferentes
+    // (distintos precios), mantener selects individuales.
+    const formats = item.hostessFormats;
+    const mismoValor = formats.length > 1 &&
+      formats.every(f => f.value === formats[0].value);
+    if (mismoValor) {
+      const limiteTotal = formats.length;
+      // Combinar todas las selecciones de todos los formats
+      const todasSeleccionadas = formats.flatMap(f => f.selected);
+      return (
+        <div className='space-y-1'>
+          <div className='text-xs text-gray-500'>
+            {Math.min(todasSeleccionadas.length, limiteTotal)} de {limiteTotal} seleccionadas · Una
+            anfitriona por unidad
+          </div>
+          <HostessMultiSelect
+            anfitrionas={availableHostesses}
+            value={todasSeleccionadas.slice(0, limiteTotal)}
+            onChange={(ids) => {
+              // Distribuir las anfitrionas seleccionadas a cada format
+              formats.forEach((format, index) => {
+                const hostessForThisUnit = ids[index] ? [ids[index]] : [];
+                format.onChange(hostessForThisUnit);
+              });
+            }}
+            searchValue={item.hostessSearch}
+            onSearchChange={item.onHostessSearchChange}
+            maxSelection={limiteTotal}
+          />
+        </div>
+      );
+    }
     return (
       <div className='space-y-5'>
         {item.hostessFormats.map(format => (

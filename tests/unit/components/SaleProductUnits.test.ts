@@ -24,8 +24,8 @@ it.each([0, 2000])(
         'ron:shot_anfitriona:unit:1': { presentacion_id: 'sprite', ml_por_corto: 150 }
       },
       bar: [
-        { id: 'coca', stock_bar: 2 },
-        { id: 'sprite', stock_bar: 2 }
+        { id: 'coca', stock_bar: 2, opciones_venta: JSON.stringify([{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]) },
+        { id: 'sprite', stock_bar: 2, opciones_venta: JSON.stringify([{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]) }
       ],
       onSaleTypeChange: vi.fn(),
       onCantidadChange: vi.fn(),

@@ -1,6 +1,5 @@
 import { query, withTransaction } from '@/lib/database/db';
-import { getAcompanamientoMaxMl, getBarMlConfig, getTopeSimple } from '../bar/configuracion';
-import { resolveBotellaMl } from '@/lib/business/shotMl';
+import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
 import { mapPresentacion } from '../helpers';
 import { ESTADO_UNIDAD_ACTIVA, ESTADO_UNIDAD_VENDIDA } from '../estados';
 import type { MlServidoPorProductoHoy, ShotsSummary } from '../contracts';
@@ -49,8 +48,7 @@ export async function listarStockBar(
     botellas_por_devolver: NonNullable<PresentacionRow['botellas_por_devolver']>;
   })[]
 > {
-  const { mermaShotsMl, botellaMl } = await getBarMlConfig();
-  const maxAcompanamientoMl = soloAcompanamientos ? await getAcompanamientoMaxMl() : 0;
+  const { mermaShotsMl } = await getBarMlConfig();
   let rows = await query<any[]>(
     `SELECT p.*,
       (SELECT COUNT(*) FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'almacen') AS stock,
@@ -65,25 +63,21 @@ export async function listarStockBar(
         SELECT u.codigo_barras AS codigo FROM inventario_unidades u WHERE u.presentacion_id = p.id AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar' AND COALESCE(u.ml_restante, 0) = 0 AND u.abierta_por_shots IS NOT TRUE
       ) codigos WHERE codigo IS NOT NULL AND codigo <> '') AS codigos_unidades_bar,
       pr.nombre AS producto_nombre, pr.codigo AS producto_codigo, pr.foto AS producto_foto,
-      pr.precio AS producto_precio, pr.comision AS producto_comision, pr.ml_shot,
+      pr.precio AS producto_precio, pr.estado AS producto_estado, pr.comision AS producto_comision, pr.ml_shot,
       pr.ml_shot_anfitriona,
+      p.opciones_venta,
       c.nombre AS categoria_nombre
      FROM inventario_presentaciones p
      INNER JOIN productos pr ON pr.id_producto = p.producto_id
      LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
      WHERE 1 = 1
      ${productoId ? 'AND p.producto_id = ?' : ''}
-     ${soloAcompanamientos ? "AND c.system_key = 'bebidas_analcoholicas' AND c.estado = 1 AND pr.estado = 1" : ''}
+     ${soloAcompanamientos ? "AND c.system_key = 'bebidas_analcoholicas' AND c.estado = 1" : ''}
      ORDER BY CASE WHEN p.bar_display_order = 0 THEN 1 ELSE 0 END,
               p.bar_display_order ASC, pr.nombre ASC, p.fecha_crea ASC, p.id ASC`,
     productoId ? [mermaShotsMl, productoId] : [mermaShotsMl]
   );
 
-  if (soloAcompanamientos) {
-    rows = rows.filter(
-      row => resolveBotellaMl(row.ml_botella, row.nombre, botellaMl) <= maxAcompanamientoMl
-    );
-  }
   const maxMap = await obtenerMaxAnfitrionasPorProducto([
     ...new Set(rows.map(r => String(r.producto_id)).filter(Boolean))
   ]);

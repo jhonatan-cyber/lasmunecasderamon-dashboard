@@ -47,7 +47,8 @@ export const presentacionesDePrueba = {
           {
             tipo: 'botella',
             cover_habilitado: true,
-            corto_anfitriona_habilitado: true
+            corto_anfitriona_habilitado: true,
+            colacion_habilitada: true
           }
         ]
       },
@@ -60,7 +61,8 @@ export const presentacionesDePrueba = {
           {
             tipo: 'botella',
             cover_habilitado: true,
-            corto_anfitriona_habilitado: true
+            corto_anfitriona_habilitado: true,
+            colacion_habilitada: true
           }
         ]
       },
@@ -69,7 +71,15 @@ export const presentacionesDePrueba = {
         producto_nombre: 'Sin stock',
         nombre: '350 ml',
         stock_bar: 0,
-        ml_abierta: 1000
+        ml_abierta: 1000,
+        opciones_venta: [
+          {
+            tipo: 'botella',
+            cover_habilitado: true,
+            corto_anfitriona_habilitado: true,
+            colacion_habilitada: true
+          }
+        ]
       },
       { id: 'negativo', producto_nombre: 'Stock negativo', nombre: '350 ml', stock_bar: -1 }
     ]

@@ -74,9 +74,12 @@ export function BottleMixerSelection({
               <option value=''>Seleccionar bebida del bar</option>
               {bar
                 .filter(
-                  item =>
-                    String(item.id) !== String(p.presentacion_id || p.id) &&
-                    Number(item.stock_bar) >= Number(p.cantidad) * Number(bottleMixerUnits(p))
+                  item => {
+                    if (String(item.id) === String(p.presentacion_id || p.id)) return false;
+                    const productoEstado = item.producto_estado === undefined ? 1 : Number(item.producto_estado);
+                    if (productoEstado !== 1) return false;
+                    return Number(item.stock_bar) >= Number(p.cantidad) * Number(bottleMixerUnits(p));
+                  }
                 )
                 .map(item => (
                   <option key={item.id} value={item.id}>

@@ -422,10 +422,7 @@ it('consume la soda incluida por ml, reutiliza la botella y revierte la venta si
     expect(Number(movimientos[0].ml)).toBe(200);
     expect(Number(movimientos[0].total)).toBe(6000);
     expect(Number(movimientos[0].precio_venta)).toBe(0);
-    await expect(vender('PGMIX-FAIL', 3)).rejects.toMatchObject({
-      code: 'INSUFFICIENT_BAR_STOCK',
-      details: expect.objectContaining({ presentacion_id: soda.presentacionId, ml_requeridos: 300 })
-    });
+    await expect(vender('PGMIX-FAIL', 3)).rejects.toThrow('acompañamiento');
     expect(Number((await unidadesDe(licor.presentacionId))[0].ml_restante)).toBe(600);
     expect(Number((await unidadesDe(soda.presentacionId))[0].ml_restante)).toBe(200);
     expect(

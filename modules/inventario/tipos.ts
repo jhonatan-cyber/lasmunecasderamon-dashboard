@@ -73,6 +73,8 @@ export interface PresentacionRow {
   /** Base del producto (tabla productos), último fallback de visualización. */
   producto_precio?: number;
   producto_comision?: number;
+  /** Estado del producto (tabla productos): 1 = activo/a la venta, 0 = inactivo. */
+  producto_estado?: number;
 }
 
 export interface UnidadRow {

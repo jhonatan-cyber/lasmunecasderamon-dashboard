@@ -103,19 +103,24 @@ export function ShotMixerSelection({
                   </option>
                   {bar
                     .filter(
-                      b =>
-                        b.id !== (p.presentacion_id || p.id) &&
-                        (p.shot_anfitriona
-                          ? parseSavedOptions(b.opciones_venta)?.find(
-                              option => option.tipo === 'botella'
-                            )?.corto_anfitriona_habilitado !== false
-                          : parseSavedOptions(b.opciones_venta)?.find(
-                              option => option.tipo === 'botella'
-                            )?.cover_habilitado === true) &&
-                        ('ml_por_corto' in shortMixerConsumption(p) ||
-                          Number(b.stock_bar) >= Number(p.cantidad)) &&
-                        (b.id === p.acompanamiento_corto?.presentacion_id ||
-                          matchesProductSearch(b, search))
+                      b => {
+                        if (b.id === (p.presentacion_id || p.id)) return false;
+                        const bottleOption = parseSavedOptions(b.opciones_venta)?.find(
+                          option => option.tipo === 'botella'
+                        );
+                        if (p.shot_anfitriona) {
+                          if (bottleOption?.corto_anfitriona_habilitado === false) return false;
+                          if (bottleOption?.colacion_habilitada !== true) return false;
+                        } else {
+                          if (bottleOption?.cover_habilitado !== true) return false;
+                          const productoEstado = b.producto_estado === undefined ? 1 : Number(b.producto_estado);
+                          if (productoEstado !== 1) return false;
+                        }
+                        if (!('ml_por_corto' in shortMixerConsumption(p)) &&
+                          Number(b.stock_bar) < Number(p.cantidad)) return false;
+                        return b.id === p.acompanamiento_corto?.presentacion_id ||
+                          matchesProductSearch(b, search);
+                      }
                     )
                     .map(b => (
                       <option key={b.id} value={b.id}>

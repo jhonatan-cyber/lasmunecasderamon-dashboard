@@ -26,7 +26,8 @@ it('selecciona el sabor disponible y actualiza las unidades al cambiar la cantid
               {
                 tipo: 'botella',
                 cover_habilitado: true,
-                corto_anfitriona_habilitado: true
+                corto_anfitriona_habilitado: true,
+                colacion_habilitada: true
               }
             ]
           },
@@ -35,7 +36,7 @@ it('selecciona el sabor disponible y actualiza las unidades al cambiar la cantid
             producto_nombre: 'Cola',
             nombre: '500 ml',
             stock_bar: 0,
-            opciones_venta: [{ tipo: 'botella', cover_habilitado: true }]
+            opciones_venta: [{ tipo: 'botella', cover_habilitado: true, colacion_habilitada: true }]
           }
         ]
       })
@@ -84,14 +85,14 @@ it('descuenta los ml configurados al elegir Coca-Cola o Sprite para cortos de an
             producto_nombre: 'Coca-Cola',
             nombre: '350 ml',
             stock_bar: 3,
-            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true }]
+            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]
           },
           {
             id: 'sprite',
             producto_nombre: 'Sprite',
             nombre: '350 ml',
             stock_bar: 3,
-            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true }]
+            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]
           }
         ]
       })

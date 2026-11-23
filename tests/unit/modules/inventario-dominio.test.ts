@@ -479,10 +479,10 @@ describe('acompañamientos limitados por volumen', () => {
       return [];
     });
 
-  it('deja solo las presentaciones cuyo volumen no supera el máximo (500 ml por defecto)', async () => {
+  it('devuelve todas las presentaciones de bebidas analcohólicas sin filtrar por volumen', async () => {
     mockPresentaciones();
     const rows = await listarStockBar(undefined, true);
-    expect(rows.map(r => r.id)).toEqual(['pres-500', 'pres-350']);
+    expect(rows.map(r => r.id)).toEqual(['pres-500', 'pres-1000', 'pres-350']);
   });
 
   it('sin el flag de acompañamientos conserva todo el catálogo', async () => {
@@ -898,7 +898,22 @@ describe('descuento del bar al registrar una venta', () => {
     const trx = vi.fn(async (sql: string, args?: any[]) => {
       const id = args?.[0];
       if (sql.includes('FROM configuraciones')) return [];
-      if (sql.includes('FROM inventario_presentaciones')) return [{ ...presentacion, id }];
+      if (sql.includes('FROM inventario_presentaciones'))
+        return [
+          { ...presentacion, id, opciones_venta: [{ tipo: 'shot', precio: 5000, comision: 0 }] },
+          {
+            id: 'sprite',
+            producto_id: 'prod-sprite',
+            nombre: 'Sprite',
+            precio_venta: 1000,
+            comision: 0,
+            ml_botella: null,
+            opciones_venta: [{ tipo: 'botella', cover_habilitado: true }],
+            estado: 1
+          }
+        ];
+      if (sql.includes('GROUP BY') && sql.includes('presentacion_id'))
+        return [{ presentacion_id: 'sprite', stock_bar: 2, ml_abierta: 0 }];
       if (sql.includes('FROM inventario_unidades'))
         return [
           { id: `${id}-1`, ml_restante: id === 'sprite' ? null : 750 },
@@ -931,7 +946,50 @@ describe('descuento del bar al registrar una venta', () => {
   it('descuenta bebidas completos por cada botella vendida', async () => {
     const trx = vi.fn(async (sql: string, args?: any[]) => {
       const id = args?.[0];
-      if (sql.includes('FROM inventario_presentaciones')) return [{ ...presentacion, id }];
+      if (sql.includes('ORDER BY id FOR UPDATE'))
+        return [
+          {
+            ...presentacion,
+            id: 'pres-1',
+            opciones_venta: [
+              { tipo: 'botella', precio: 45000, comision: 5000, acompanamiento: { unidades: 3 } }
+            ],
+            estado: 1
+          },
+          {
+            id: 'sprite',
+            producto_id: 'prod-sprite',
+            nombre: 'Sprite',
+            precio_venta: 1000,
+            comision: 0,
+            ml_botella: null,
+            opciones_venta: [{ tipo: 'botella' }],
+            estado: 1
+          }
+        ];
+      if (sql.includes('FROM inventario_presentaciones'))
+        return [
+          {
+            ...presentacion,
+            id,
+            opciones_venta: [
+              { tipo: 'botella', precio: 45000, comision: 5000, acompanamiento: { unidades: 3 } }
+            ],
+            estado: 1
+          },
+          {
+            id: 'sprite',
+            producto_id: 'prod-sprite',
+            nombre: 'Sprite',
+            precio_venta: 1000,
+            comision: 0,
+            ml_botella: null,
+            opciones_venta: [{ tipo: 'botella' }],
+            estado: 1
+          }
+        ];
+      if (sql.includes('GROUP BY') && sql.includes('presentacion_id'))
+        return [{ presentacion_id: 'sprite', stock_bar: 6, ml_abierta: 0 }];
       if (sql.includes('FROM inventario_unidades'))
         return Array.from({ length: 6 }, (_, i) => ({ id: `${id}-${i}`, ml_restante: null }));
       return [];
