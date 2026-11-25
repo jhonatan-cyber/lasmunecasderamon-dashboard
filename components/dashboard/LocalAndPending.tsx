@@ -21,6 +21,7 @@ import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/utils';
 import { DashboardEmpty, DashboardError } from '@/components/dashboard/DashboardFeedback';
+import { formatRelativeTimestamp } from '@/components/dashboard/formatRelativeTimestamp';
 
 type ChipVariant = 'default' | 'success' | 'warning' | 'critical';
 
@@ -92,7 +93,9 @@ function PendingRow({ item }: { item: DashboardPendingItem }) {
           </span>
           <div className='flex items-center gap-1 opacity-40'>
             <Clock className='h-2.5 w-2.5' />
-            <span className='text-[9px] font-black uppercase'>Hace poco</span>
+            <span className='text-[9px] font-black uppercase'>
+              {formatRelativeTimestamp(item.createdAt)}
+            </span>
           </div>
         </div>
         <div className='flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-500 group-hover:text-white transition-all'>
@@ -184,6 +187,17 @@ export default function LocalAndPending() {
           <StatusChip key={item.label} {...item} />
         ))}
       </div>
+
+      {composite?.generatedAt && Number.isFinite(Date.parse(composite.generatedAt)) && (
+        <p className='text-[10px] font-medium text-slate-500' role='status'>
+          Datos generados:{' '}
+          {new Intl.DateTimeFormat('es-CL', {
+            dateStyle: 'short',
+            timeStyle: 'short'
+          }).format(new Date(composite.generatedAt))}
+          {composite.fromCache ? ' · desde caché' : ''}
+        </p>
+      )}
 
       {pendingItems.length > 0 ? (
         <div className='flex flex-col gap-2'>

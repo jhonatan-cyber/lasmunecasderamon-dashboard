@@ -12,7 +12,7 @@ export async function invalidateDashboardCache(): Promise<void> {
 
 // Keys del caché para cada endpoint
 export const DASHBOARD_CACHE_KEYS = {
-  COMPOSITE: 'dashboard:composite',
+  COMPOSITE: 'dashboard:composite:v2',
   INSIGHTS: 'dashboard:insights',
   ALERTS: 'dashboard:alerts',
   PENDING_ITEMS: 'dashboard:pending-items',
