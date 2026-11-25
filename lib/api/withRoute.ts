@@ -1,7 +1,7 @@
 import { ZodError } from 'zod';
 import { runRegistration } from './registration';
 import { NextResponse } from 'next/server';
-import { getAuth } from '@/lib/auth/auth-app';
+import { getAuth, getAuthWithTimings } from '@/lib/auth/auth-app';
 import { AuthenticatedUser, UserPermissions, isAdministrator } from '@/lib/middleware/auth';
 import { ErrorLogService } from '@/modules/auditoria';
 import { AuditService } from '@/modules/auditoria';
@@ -12,6 +12,7 @@ import { sendNotificationToAll } from './sseService';
 import logger, { setRequestId, getRequestId, clearRequestId } from '@/lib/utils/logger';
 import { withRateLimit, rateLimiters } from './rateLimit';
 import { sanitizeBody, scanForSQLInjection } from './sanitize';
+import { addServerTimingMetric } from './server-timing';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -146,6 +147,14 @@ export function withRoute<M extends PermissionModule>(
       : null;
 
   return async (request: Request, context: { params: any }): Promise<Response> => {
+    const profileStages =
+      process.env.NODE_ENV !== 'production' && request.headers.get('x-lmr-profile') === '1';
+    let authDurationMs = 0;
+    let handlerDurationMs = 0;
+    let normalizeDurationMs = 0;
+    let authTimings: Awaited<ReturnType<typeof getAuthWithTimings>>['timings'] | undefined;
+    let authDatabaseProfile: ReturnType<typeof instantaneaPerfil> | undefined;
+
     // ─── Request ID: trazabilidad en todos los logs ───────────────────
     // Reutiliza el ID si el cliente lo envía (ej: desde el app), o genera uno.
     const incomingRequestId = request.headers.get('x-request-id');
@@ -231,13 +240,21 @@ export function withRoute<M extends PermissionModule>(
         }
       }
 
+      // Separa el SQL de autenticación del handler; el perfil global del proceso
+      // solo permite atribuirlo correctamente en solicitudes secuenciales.
+      const pedirPerfil = perfilActivo() && new URL(request.url).searchParams.get('perfil') === '1';
+      if (pedirPerfil) reiniciarPerfil();
+
       // Auth check
+      const authStartedAt = profileStages ? performance.now() : 0;
       if (config.auth) {
-        const authUser = await getAuth();
+        const authResult = profileStages ? await getAuthWithTimings() : undefined;
+        const authUser = authResult?.user ?? (profileStages ? null : await getAuth());
         if (!authUser) {
           return ApiResponse.unauthorized();
         }
         user = authUser;
+        authTimings = authResult?.timings;
 
         // Rutas exclusivas del administrador (diagnostico y mantenimiento)
         if (config.access === 'administrator' && !isAdministrator(user)) {
@@ -250,6 +267,11 @@ export function withRoute<M extends PermissionModule>(
             return ApiResponse.forbidden('Permisos insuficientes');
           }
         }
+      }
+      if (profileStages) authDurationMs = performance.now() - authStartedAt;
+      if (pedirPerfil) {
+        authDatabaseProfile = instantaneaPerfil();
+        reiniciarPerfil();
       }
 
       // Audit logging for mutating methods
@@ -312,18 +334,15 @@ export function withRoute<M extends PermissionModule>(
         ? { ...context, params, user: user! }
         : { ...context, params };
 
-      // `?perfil=1` reinicia la cuenta antes de ejecutar el handler, así que la cabecera
-      // `x-lmr-consultas` que vuelve describe exactamente esta petición (y no el
-      // acumulado del proceso). Sin `perfil=1` devuelve los acumulados, que es lo que
-      // permite sacar deltas entre dos llamadas consecutivas.
-      const pedirPerfil = perfilActivo() && new URL(request.url).searchParams.get('perfil') === '1';
-      if (pedirPerfil) reiniciarPerfil();
-
       const invoke = (nextRequest: Request) => (handler as any)(nextRequest, handlerContext);
+      const handlerStartedAt = profileStages ? performance.now() : 0;
       const response = user
         ? await runRegistration(request, String(user.id), invoke)
         : await invoke(request);
+      if (profileStages) handlerDurationMs = performance.now() - handlerStartedAt;
+      const normalizeStartedAt = profileStages ? performance.now() : 0;
       const normalizada = await normalizeJsonResponseDates(response);
+      if (profileStages) normalizeDurationMs = performance.now() - normalizeStartedAt;
       if (
         normalizada.ok &&
         ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
@@ -360,6 +379,20 @@ export function withRoute<M extends PermissionModule>(
       // está disponible en esta instancia. En producción no se toca la respuesta.
       if (perfilActivo()) {
         normalizada.headers.set('x-lmr-consultas', JSON.stringify(instantaneaPerfil(pedirPerfil)));
+      }
+      if (pedirPerfil && authDatabaseProfile) {
+        normalizada.headers.set('x-lmr-auth-consultas', JSON.stringify(authDatabaseProfile));
+      }
+      if (profileStages) {
+        addServerTimingMetric(normalizada, request, 'auth', authDurationMs);
+        if (authTimings) {
+          addServerTimingMetric(normalizada, request, 'auth-token', authTimings.token);
+          addServerTimingMetric(normalizada, request, 'auth-jwt', authTimings.jwt);
+          addServerTimingMetric(normalizada, request, 'auth-session', authTimings.session);
+          addServerTimingMetric(normalizada, request, 'auth-permissions', authTimings.permissions);
+        }
+        addServerTimingMetric(normalizada, request, 'handler', handlerDurationMs);
+        addServerTimingMetric(normalizada, request, 'normalize', normalizeDurationMs);
       }
       // Request ID en la respuesta para trazabilidad del cliente
       normalizada.headers.set('x-request-id', requestId);

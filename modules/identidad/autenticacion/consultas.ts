@@ -28,7 +28,7 @@ const ADMIN_PERMS: UserPermissions = {
   sales: { read: true, write: true, delete: true, anulate: true },
   products: { read: true, write: true, delete: true },
   clients: { read: true, write: true, delete: true },
-  finances: { read: true, write: true, delete: true },
+  finances: { read: true, write: true, delete: true, view_details: true },
   reports: { read: true, export: true },
   settings: { read: true, write: true },
   orders: { read: true, write: true, delete: true, process: true },

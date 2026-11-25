@@ -6,6 +6,8 @@
  * y red. La auditoría de rendimiento necesitaba el desglose, así que aquí se lleva la cuenta
  * de cada `pool.query()` agrupada por su huella (el SQL con los valores concretos
  * substituidos por `?`), con cuántas veces se ejecutó y cuánto tardó en total.
+ * El tiempo es de extremo a extremo en el cliente e incluye espera del pool y
+ * red; no equivale al tiempo de ejecución interno de PostgreSQL.
  *
  * Se lee desde la respuesta de cualquier endpoint con la cabecera `x-lmr-consultas`
  * (`?perfil=1` añade el detalle por SQL). En producción no se registra nada: el único costo
@@ -19,7 +21,7 @@ export interface MuestraConsulta {
   sql: string;
   /** Cuántas veces se ejecutó desde el último `reiniciarPerfil()`. */
   n: number;
-  /** Milisegundos acumulados dentro de PostgreSQL. */
+  /** Milisegundos acumulados de ida y vuelta de la consulta desde la aplicación. */
   ms: number;
   /** La ejecución más lenta. */
   maxMs: number;
@@ -28,7 +30,7 @@ export interface MuestraConsulta {
 export interface ResumenConsultas {
   /** Total de consultas. */
   n: number;
-  /** Milisegundos acumulados dentro de PostgreSQL, sin el establecimiento de conexión. */
+  /** Milisegundos acumulados de ida y vuelta desde la aplicación. */
   ms: number;
   /**
    * Milisegundos que se tardó en abrir conexiones nuevas contra el servidor.

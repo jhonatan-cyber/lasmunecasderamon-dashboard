@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "c8a82915a798443f527ceecbd93b53a0f88254b6",
-    "generado": "2026-11-23T11:38:02.325Z",
-    "archivos": 2307,
+    "commit": "82397cc64c4d01926edd1cd06e3a34a8f8da6b58",
+    "generado": "2026-11-25T01:44:40.281Z",
+    "archivos": 2320,
     "rutas": 246,
     "sqlFueraDeRepositorio": 66,
     "tablasConEscritoresMultiples": 0,
@@ -566,7 +566,7 @@
       "ruta": "/api/cash-register/bar-sales",
       "archivo": "app/api/cash-register/bar-sales/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "finances.view_details",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -575,7 +575,7 @@
       "ruta": "/api/cash-register/champagne-sales",
       "archivo": "app/api/cash-register/champagne-sales/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "finances.view_details",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -584,7 +584,7 @@
       "ruta": "/api/cash-register/hostess-drinks",
       "archivo": "app/api/cash-register/hostess-drinks/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "finances.view_details",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -593,7 +593,7 @@
       "ruta": "/api/cash-register/sales-by-product",
       "archivo": "app/api/cash-register/sales-by-product/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "finances.view_details",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -602,7 +602,7 @@
       "ruta": "/api/cash-register/stats",
       "archivo": "app/api/cash-register/stats/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "finances.read",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -1835,7 +1835,7 @@
       "ruta": "/api/stats/logged-users",
       "archivo": "app/api/stats/logged-users/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "users.read",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -1844,7 +1844,7 @@
       "ruta": "/api/stats/sales-by-month",
       "archivo": "app/api/stats/sales-by-month/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "sales.read",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -1853,7 +1853,7 @@
       "ruta": "/api/stats/sales-by-week",
       "archivo": "app/api/stats/sales-by-week/route.ts",
       "metodos": [],
-      "nivel": "publico",
+      "nivel": "sales.read",
       "audit": false,
       "moduloDominio": null,
       "usaDriver": false
@@ -2979,7 +2979,7 @@
     },
     {
       "archivo": "components/meals/ColacionesTab.tsx",
-      "linea": 311,
+      "linea": 309,
       "tipo": "setInterval",
       "texto": "const id = setInterval(() => setAhora(Date.now()), 15_000);"
     },
@@ -3241,6 +3241,20 @@
   ],
   "ciclos": [],
   "matriz": {
+    "lib/api": {
+      "lib/otros": 8,
+      "lib/identidad": 4,
+      "modules/aplicacion": 1,
+      "lib/business": 2,
+      "lib/database": 2
+    },
+    "raiz": {
+      "hooks": 6,
+      "lib/otros": 13,
+      "lib/api": 2,
+      "lib/identidad": 2,
+      "modules/aplicacion": 1
+    },
     "app/ui": {
       "hooks": 64,
       "lib/otros": 57,
@@ -3251,7 +3265,7 @@
       "lib/business": 6
     },
     "app/api": {
-      "lib/api": 299,
+      "lib/api": 305,
       "workflows": 27,
       "lib/otros": 92,
       "lib/identidad": 16,
@@ -3261,19 +3275,12 @@
       "lib/integrations": 4
     },
     "components": {
-      "hooks": 157,
-      "lib/otros": 410,
+      "hooks": 158,
+      "lib/otros": 411,
       "raiz": 94,
       "lib/business": 60,
       "lib/api": 3,
       "modules/aplicacion": 9
-    },
-    "raiz": {
-      "hooks": 6,
-      "lib/otros": 13,
-      "lib/api": 2,
-      "lib/identidad": 2,
-      "modules/aplicacion": 1
     },
     "hooks": {
       "raiz": 40,
@@ -3282,13 +3289,6 @@
       "components": 20,
       "lib/business": 19,
       "modules/aplicacion": 2
-    },
-    "lib/api": {
-      "lib/otros": 8,
-      "lib/identidad": 4,
-      "modules/aplicacion": 1,
-      "lib/business": 2,
-      "lib/database": 2
     },
     "lib/identidad": {
       "lib/otros": 5

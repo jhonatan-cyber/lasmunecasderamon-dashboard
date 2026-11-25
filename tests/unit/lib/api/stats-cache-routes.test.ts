@@ -20,7 +20,9 @@ vi.mock('next/server', () => ({
 
 vi.mock('@/lib/api/date-response', () => ({ normalizeJsonResponseDates: (r: any) => r }));
 
-vi.mock('@/lib/auth/auth-app', () => ({ getAuth: vi.fn() }));
+vi.mock('@/lib/auth/auth-app', () => ({
+  getAuth: vi.fn().mockResolvedValue({ id: 'admin-1', role: 'administrador', permissions: {} })
+}));
 
 vi.mock('@/modules/auditoria/registro/servicio', () => ({
   AuditService: { log: vi.fn().mockResolvedValue(undefined) }
@@ -38,7 +40,13 @@ vi.mock('@/lib/utils/logger', () => {
     warn: vi.fn(),
     debug: vi.fn()
   };
-  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
+  return {
+    logger: mocks,
+    default: mocks,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
+  };
 });
 
 vi.mock('@/modules/reportes/dashboard/servicio', () => ({ StatsService: stats }));

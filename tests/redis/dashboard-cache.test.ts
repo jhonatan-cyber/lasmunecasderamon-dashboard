@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import Redis from 'ioredis';
 import { RedisDashboardCache } from '@/lib/cache/redisDashboardCache';
 
-vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+vi.mock('@/lib/utils/logger', () => ({
+  logger: { warn: vi.fn() },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 let direct: Redis;
 let prefix: string;
 let first: RedisDashboardCache;
@@ -73,7 +78,8 @@ it('does not repopulate the current generation with a query started before inval
   await inFlight;
   expect(await second.getOrFetch('stats', async () => 'new')).toEqual({
     data: 'new',
-    fromCache: false
+    fromCache: false,
+    cacheMs: expect.any(Number)
   });
 });
 
@@ -93,19 +99,22 @@ it('bypasses unavailable Redis and clears old data when the connection recovers'
   const evalSpy = vi.spyOn(client, 'eval').mockRejectedValueOnce(new Error('connection lost'));
   expect(await first.getOrFetch('stats', async () => 'new')).toEqual({
     data: 'new',
-    fromCache: false
+    fromCache: false,
+    cacheMs: expect.any(Number)
   });
   await first.invalidate();
   expect(await first.getOrFetch('stats', async () => 'newer')).toEqual({
     data: 'newer',
-    fromCache: false
+    fromCache: false,
+    cacheMs: expect.any(Number)
   });
   evalSpy.mockRestore();
   const now = Date.now();
   vi.spyOn(Date, 'now').mockReturnValue(now + 5001);
   expect(await first.getOrFetch('stats', async () => 'latest')).toEqual({
     data: 'latest',
-    fromCache: false
+    fromCache: false,
+    cacheMs: expect.any(Number)
   });
   expect((await second.getOrFetch('stats', async () => 'should not fetch')).data).toBe('latest');
 });
