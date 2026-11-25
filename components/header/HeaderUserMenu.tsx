@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { User, ChevronDown, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,9 +19,11 @@ import { showSuccessToast, showErrorToast } from '@/lib/utils/toastUtils';
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserImage } from '@/contexts/UserImageContext';
+import { clearPersistedQueries, stopQueryPersistence } from '@/lib/utils/queryPersistence';
 
 export function HeaderUserMenu() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, loading: userLoading } = useCurrentUser();
   const { imageVersion } = useUserImage();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -38,6 +41,11 @@ export function HeaderUserMenu() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || data?.success !== true) throw new Error('Logout failed');
+
+      stopQueryPersistence(queryClient);
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      if (user) await clearPersistedQueries(user.id);
 
       localStorage.removeItem('userRole');
       localStorage.removeItem('auth_role_hint');

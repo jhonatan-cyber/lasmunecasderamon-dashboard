@@ -173,7 +173,7 @@ export function SettingsChampagneTiers({
       ) : loadError ? (
         <ErrorState message='No se pudo cargar la tabla. Volvé a seleccionar el producto para reintentar.' />
       ) : (
-        <div className='overflow-x-auto rounded-2xl border border-purple-200 dark:border-purple-900/40 bg-white dark:bg-neutral-950'>
+        <div className='overflow-x-auto'>
           <Table className='w-full'>
             <TableHeader className='bg-purple-50 dark:bg-purple-900/20'>
               <TableRow>

@@ -8,7 +8,7 @@ const mockPerms: UserPermissions = {
   sales: { read: true, write: true, delete: false, anulate: false },
   products: { read: true, write: false, delete: false },
   clients: { read: true, write: false, delete: false },
-  finances: { read: false, write: false, delete: false },
+  finances: { read: false, write: false, delete: false, view_details: false },
   reports: { read: false, export: false },
   settings: { read: false, write: false },
   orders: { read: true, write: false, delete: false, process: false },

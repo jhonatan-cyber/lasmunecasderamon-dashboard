@@ -117,40 +117,40 @@ export default function PayrollTable({
           <p className='font-bold text-sm'>{formatCurrencyNoDecimals(r.total)}</p>
         </div>
       </div>
-      <div className='grid grid-cols-2 gap-2 text-xs'>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+      <div className='grid grid-cols-2 gap-x-4 gap-y-1 text-xs'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Sueldos</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.sueldos)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Desc. AFP</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.aportes)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Com. Ventas</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.ventas)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Servicios</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.servicios)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Propinas</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.propinas)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Desc. Hab.</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.descuentos)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Hs. Extras</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.total_monto_horas)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2'>
+        <div className='flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Gratif.</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.gratificaciones)}</span>
         </div>
-        <div className='flex justify-between bg-gray-50 dark:bg-slate-900/20 rounded-lg px-3 py-2 col-span-2'>
+        <div className='col-span-2 flex justify-between gap-2 border-b border-gray-100 py-2 dark:border-gray-800'>
           <span className='text-gray-500 dark:text-gray-400'>Anticipos</span>
           <span className='font-medium'>{formatCurrencyNoDecimals(r.anticipos)}</span>
         </div>

@@ -211,7 +211,7 @@ export default function MiniSalesChart() {
 
   if (!mounted || (loading && !monthData && !weekData))
     return (
-      <div className='h-[500px] flex items-center justify-center bg-slate-50/50 dark:bg-slate-900/10 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-800'>
+      <div className='flex h-[280px] items-center justify-center rounded-[3rem] border border-dashed border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/10 sm:h-[360px] xl:h-[420px]'>
         <div className='flex flex-col items-center gap-6'>
           <div className='relative'>
             <div className='h-16 w-16 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin' />
@@ -374,7 +374,7 @@ export default function MiniSalesChart() {
         </div>
       </div>
 
-      <div className='relative h-[320px] w-full bg-white/40 dark:bg-slate-900/20 backdrop-blur-xs rounded-2xl p-3 border border-slate-200/60 dark:border-slate-800/60 shadow-inner overflow-hidden sm:h-[450px] sm:rounded-[3rem] sm:p-8'>
+      <div className='relative h-[280px] w-full overflow-hidden rounded-2xl border border-slate-200/60 bg-white/40 p-3 shadow-inner backdrop-blur-xs dark:border-slate-800/60 dark:bg-slate-900/20 sm:h-[360px] sm:rounded-[3rem] sm:p-8 xl:h-[420px]'>
         <div className='absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-emerald-500/20 to-transparent' />
 
         <ResponsiveContainer width='100%' height='100%'>

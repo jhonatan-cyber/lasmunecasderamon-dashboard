@@ -46,6 +46,8 @@ export interface UserPermissions {
     read: boolean;
     write: boolean;
     delete: boolean;
+    /** Permiso específico `cash_register.view_details`; no se concede con `view`. */
+    view_details: boolean;
   };
   reports: {
     read: boolean;
@@ -200,7 +202,7 @@ export function createEmptyPermissions(): UserPermissions {
       register_colacion: false
     },
     clients: { read: false, write: false, delete: false },
-    finances: { read: false, write: false, delete: false },
+    finances: { read: false, write: false, delete: false, view_details: false },
     reports: { read: false, export: false },
     settings: { read: false, write: false },
     orders: { read: false, write: false, delete: false, process: false },

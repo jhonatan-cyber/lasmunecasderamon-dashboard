@@ -187,19 +187,19 @@ function getCategoryStyle(categoria: string) {
   return fallback;
 }
 
-interface SettingsCategoryCardProps {
+interface SettingsCategoryOptionProps {
   categoria: string;
   productoCount: number;
   isSelected?: boolean;
   onClick: () => void;
 }
 
-export function SettingsCategoryCard({
+export function SettingsCategoryOption({
   categoria,
   productoCount,
   isSelected = false,
   onClick
-}: SettingsCategoryCardProps) {
+}: SettingsCategoryOptionProps) {
   const style = getCategoryStyle(categoria);
   const Icon = style.icon;
 
@@ -209,32 +209,29 @@ export function SettingsCategoryCard({
       type='button'
       onClick={onClick}
       className={cn(
-        'group flex flex-col items-center gap-3 rounded-2xl border p-5 transition-all duration-200',
-        style.bg,
-        style.bgHover,
-        style.darkBg,
-        style.darkBgHover,
-        'border-neutral-200 dark:border-neutral-800',
-        isSelected
-          ? cn('ring-2', style.ring, style.darkRing)
-          : 'hover:ring-2 hover:ring-neutral-300 dark:hover:ring-neutral-600'
+        'group flex min-w-0 items-center gap-3 border-b border-neutral-200 py-3 text-left transition dark:border-neutral-800',
+        isSelected ? 'font-semibold' : 'font-medium'
       )}
     >
       <div
         className={cn(
-          'flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110',
-          'bg-white/80 dark:bg-neutral-900/80',
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105',
+          style.bg,
+          style.bgHover,
+          style.darkBg,
+          style.darkBgHover,
+          isSelected && cn('ring-2', style.ring, style.darkRing),
           style.text,
           style.darkText
         )}
       >
         <Icon className='h-6 w-6' aria-hidden='true' />
       </div>
-      <div className='text-center'>
-        <p className='text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate max-w-[140px]'>
+      <div className='min-w-0 flex-1'>
+        <p className='truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100'>
           {categoria}
         </p>
-        <p className='text-xs text-neutral-500 dark:text-neutral-400 mt-0.5'>
+        <p className='mt-0.5 text-xs text-neutral-500 dark:text-neutral-400'>
           {productoCount} {productoCount === 1 ? 'producto' : 'productos'}
         </p>
       </div>

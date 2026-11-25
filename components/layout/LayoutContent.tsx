@@ -17,6 +17,7 @@ import { useEffect } from 'react';
 import { ThresholdSync } from '@/components/providers/ThresholdSync';
 
 interface LayoutUser {
+  id?: number;
   role?: string;
 }
 
@@ -37,9 +38,9 @@ function MainLayout({ children, user }: { children: React.ReactNode; user: Layou
   // Predictive prefetch: when route changes, warm up cache for adjacent routes
   useEffect(() => {
     if (pathname) {
-      prefetchAdjacentRoutes(pathname);
+      prefetchAdjacentRoutes(pathname, { userId: user?.id });
     }
-  }, [pathname]);
+  }, [pathname, user?.id]);
 
   const isAdminOrCajero =
     user?.role?.toLowerCase() === 'administrador' || user?.role?.toLowerCase() === 'cajero';

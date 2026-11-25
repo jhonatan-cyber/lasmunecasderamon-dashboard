@@ -132,7 +132,7 @@ function ConfirmarAnulacionCuentaContent() {
           </CardHeader>
 
           <CardContent className='space-y-6'>
-            <div className='bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl'>
+            <div className='border-t border-border pt-4'>
               <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>
                 Detalles de la Cuenta
               </h4>
@@ -172,7 +172,7 @@ function ConfirmarAnulacionCuentaContent() {
               </div>
             </div>
 
-            <div className='bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-xl'>
+            <div className='border-t border-border pt-4'>
               <h3 className='font-semibold text-yellow-900 dark:text-yellow-300 mb-2'>Motivo</h3>
               <p className='text-sm text-yellow-800 dark:text-yellow-200'>
                 {solicitud.motivo || 'No especificado'}

@@ -151,8 +151,8 @@ export function ProfileSecurityCard({
         <Separator className='my-4' />
         <div>
           <h4 className='text-sm font-medium mb-3'>Actividad Reciente</h4>
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between p-2 border rounded-lg'>
+          <div className='divide-y divide-border'>
+            <div className='flex items-center justify-between py-3'>
               <div>
                 <p className='text-sm font-medium'>Inicio de sesión</p>
                 <p className='text-xs text-muted-foreground'>{getLoginTimeLabel()}</p>
@@ -160,7 +160,7 @@ export function ProfileSecurityCard({
               <span className='text-xs text-green-600'>Exitoso</span>
             </div>
 
-            <div className='flex items-center justify-between p-2 border rounded-lg'>
+            <div className='flex items-center justify-between py-3'>
               <div>
                 <p className='text-sm font-medium'>Actualización de perfil</p>
                 <p className='text-xs text-muted-foreground'>
@@ -170,7 +170,7 @@ export function ProfileSecurityCard({
               <span className='text-xs text-blue-600'>Completado</span>
             </div>
 
-            <div className='flex items-center justify-between p-2 border rounded-lg'>
+            <div className='flex items-center justify-between py-3'>
               <div>
                 <p className='text-sm font-medium'>Cambio de contraseña</p>
                 <p className='text-xs text-muted-foreground'>

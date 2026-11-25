@@ -1,14 +1,18 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { setupQueryPersistence, restoreFromCache } from '@/lib/utils/queryPersistence';
+import { useEffect, useRef, useState } from 'react';
+import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
+import { clearPersistedQueries, setupQueryPersistence } from '@/lib/utils/queryPersistence';
 
 interface QueryProviderProps {
   children: React.ReactNode;
 }
 
 export function QueryProvider({ children }: QueryProviderProps) {
+  const { user } = useCurrentUser();
+  const userId = user?.id ?? null;
+  const activeUserIdRef = useRef<number | null>(null);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -58,14 +62,22 @@ export function QueryProvider({ children }: QueryProviderProps) {
       })
   );
 
-  // Set up IndexedDB persistence on mount
+  // Keep the in-memory and persisted caches isolated to the authenticated user.
   useEffect(() => {
-    setupQueryPersistence(queryClient);
+    const previousUserId = activeUserIdRef.current;
+    if (previousUserId !== userId) {
+      activeUserIdRef.current = userId;
+      queryClient.clear();
 
-    return () => {
-      (queryClient as any).__queryPersistenceCleanup?.();
-    };
-  }, [queryClient]);
+      if (previousUserId !== null) {
+        void clearPersistedQueries(previousUserId);
+      }
+    }
+
+    if (userId === null) return;
+
+    return setupQueryPersistence(queryClient, userId);
+  }, [queryClient, userId]);
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

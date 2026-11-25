@@ -81,10 +81,16 @@ export class RedisDashboardCache {
   ): Promise<{
     data: T;
     fromCache: boolean;
+    cacheMs: number;
   }> {
+    let cacheMs = 0;
+    let startedAt = performance.now();
     const client = await this.connection();
+    cacheMs += performance.now() - startedAt;
     let generation: string | undefined;
+    let cachedValue: string | null = null;
     if (client) {
+      startedAt = performance.now();
       try {
         const result = (await client.eval(
           READ,
@@ -95,15 +101,25 @@ export class RedisDashboardCache {
           key
         )) as [string, string | null];
         generation = result[0];
-        if (result[1] !== null) return { data: JSON.parse(result[1]) as T, fromCache: true };
+        cachedValue = result[1];
       } catch {
         this.fail(client);
+      } finally {
+        cacheMs += performance.now() - startedAt;
       }
+    }
+
+    if (cachedValue !== null) {
+      startedAt = performance.now();
+      const data = JSON.parse(cachedValue) as T;
+      cacheMs += performance.now() - startedAt;
+      return { data, fromCache: true, cacheMs };
     }
 
     // Never retain a local fallback: workers could miss invalidations during an outage.
     const data = await fetch();
     if (client?.status === 'ready' && generation && ttlMs > 0) {
+      startedAt = performance.now();
       try {
         await client.eval(
           WRITE,
@@ -117,9 +133,11 @@ export class RedisDashboardCache {
         );
       } catch {
         this.fail(client);
+      } finally {
+        cacheMs += performance.now() - startedAt;
       }
     }
-    return { data, fromCache: false };
+    return { data, fromCache: false, cacheMs };
   }
 
   async invalidate(): Promise<void> {

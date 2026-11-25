@@ -86,6 +86,8 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
       { module: 'clients', action: 'view' },
       { module: 'clients', action: 'view_details' },
       { module: 'products', action: 'return_container' },
+      { module: 'cash_register', action: 'view' },
+      { module: 'cash_register', action: 'view_details' },
       { module: 'cash_register', action: 'withdraw' },
       { module: 'cashregister', action: 'open' },
       { module: 'sales', action: 'delete' }
@@ -95,9 +97,20 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
 
     expect(perms.clients.read).toBe(true);
     expect(perms.products.return_container).toBe(true);
+    expect(perms.finances.read).toBe(true);
     expect(perms.finances.write).toBe(true);
+    expect(perms.finances.view_details).toBe(true);
     expect(perms.sales.delete).toBe(true);
     expect(perms.products.write).toBe(false);
+  });
+
+  it('cash_register.view no concede permiso de ver detalles', async () => {
+    stubQueries('rol-1', [{ module: 'cash_register', action: 'view' }]);
+
+    const perms = await getUserPermissionsFromDB('user-7');
+
+    expect(perms.finances.read).toBe(true);
+    expect(perms.finances.view_details).toBe(false);
   });
 
   it('las acciones de estado del catálogo conceden write del módulo', async () => {

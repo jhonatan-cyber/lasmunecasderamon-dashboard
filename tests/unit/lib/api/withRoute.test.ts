@@ -153,6 +153,41 @@ describe('withRoute middleware', () => {
       expect(handler).toHaveBeenCalled();
     });
 
+    it('cash_register.view no concede acceso a los detalles de caja', async () => {
+      mockAuthUser = {
+        id: 'user-1',
+        role: 'cajero',
+        permissions: { finances: { read: true, write: false, delete: false, view_details: false } }
+      };
+      const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
+      const wrapped = withRoute(
+        { auth: true, module: 'finances', action: 'view_details' },
+        handler
+      );
+
+      await wrapped(new Request('http://localhost/api/cash-register/bar-sales'), { params: {} });
+
+      expect(ApiResponse.forbidden).toHaveBeenCalledWith('Permisos insuficientes');
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('permite ver detalles de caja cuando el rol tiene view_details', async () => {
+      mockAuthUser = {
+        id: 'user-1',
+        role: 'cajero',
+        permissions: { finances: { read: true, write: false, delete: false, view_details: true } }
+      };
+      const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
+      const wrapped = withRoute(
+        { auth: true, module: 'finances', action: 'view_details' },
+        handler
+      );
+
+      await wrapped(new Request('http://localhost/api/cash-register/bar-sales'), { params: {} });
+
+      expect(handler).toHaveBeenCalled();
+    });
+
     it('allows administrador role for any permission', async () => {
       mockAuthUser = {
         id: 'admin-1',

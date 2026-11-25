@@ -247,12 +247,9 @@ export function ContainerReturnsPanel() {
             <h2 className='text-sm font-black uppercase tracking-wide text-blue-900 dark:text-blue-200'>
               Comparación del lote escaneado
             </h2>
-            <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2'>
+            <div className='divide-y divide-gray-200 dark:divide-gray-700'>
               {comparacion.map((item, index) => (
-                <div
-                  key={`${item.codigo}-${index}`}
-                  className='rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-900/60 p-3 flex gap-2'
-                >
+                <div key={`${item.codigo}-${index}`} className='flex gap-2 py-3 first:pt-0'>
                   <PackageCheck
                     className={`w-5 h-5 shrink-0 ${item.ok ? 'text-green-600' : 'text-red-500'}`}
                   />

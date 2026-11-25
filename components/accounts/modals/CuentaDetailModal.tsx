@@ -110,8 +110,8 @@ export default function CuentaDetailModal({
               <span className='ml-2 text-black'>Cargando detalles...</span>
             </div>
           ) : cuenta ? (
-            <div className='space-y-8 rounded-xl'>
-              <div className='grid grid-cols-1 gap-6 border-b pb-6 rounded-xl md:grid-cols-2 md:gap-12'>
+            <div className='space-y-8'>
+              <div className='grid grid-cols-1 gap-6 border-b pb-6 md:grid-cols-2 md:gap-12'>
                 <div className='space-y-2 text-sm text-gray-700'>
                   <div>
                     <span className='font-medium'>
@@ -167,8 +167,8 @@ export default function CuentaDetailModal({
                 <h3 className='text-sm font-semibold text-gray-700 dark:text-slate-200'>
                   Resumen financiero
                 </h3>
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                  <div className='rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
+                <div className='grid grid-cols-1 divide-y divide-slate-200 md:grid-cols-3 md:divide-y-0 md:divide-x dark:divide-slate-800'>
+                  <div className='py-3 first:pt-0 md:px-3 md:first:pt-3'>
                     <p className='text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400'>
                       Total original
                     </p>
@@ -177,7 +177,7 @@ export default function CuentaDetailModal({
                     </p>
                   </div>
 
-                  <div className='rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/50 dark:bg-rose-950/40'>
+                  <div className='py-3 md:px-3'>
                     <p className='text-xs uppercase tracking-wide text-rose-500 dark:text-rose-400'>
                       Total anulado aprobado
                     </p>
@@ -194,7 +194,7 @@ export default function CuentaDetailModal({
                     )}
                   </div>
 
-                  <div className='rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/40'>
+                  <div className='py-3 md:px-3'>
                     <p className='text-xs uppercase tracking-wide text-emerald-600 dark:text-emerald-400'>
                       Total actual a cobrar
                     </p>
@@ -215,11 +215,11 @@ export default function CuentaDetailModal({
                 </div>
 
                 {historialHabitaciones.length > 0 ? (
-                  <div className='space-y-3'>
+                  <div className='divide-y divide-slate-200 dark:divide-slate-800'>
                     {historialHabitaciones.map((item, index) => (
                       <div
                         key={`${item.roomId}-${item.startedAt}-${index}`}
-                        className='rounded-2xl border bg-white p-4 shadow-xs'
+                        className='py-4 first:pt-0'
                       >
                         <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
                           {getClosedReasonLabel(item.closedReason) && (
@@ -254,8 +254,8 @@ export default function CuentaDetailModal({
                             )}
                           </div>
 
-                          <div className='grid grid-cols-1 sm:grid-cols-3 gap-2 md:min-w-[320px]'>
-                            <div className='rounded-xl bg-slate-50 px-3 py-2'>
+                          <div className='grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-3 sm:divide-y-0 sm:divide-x md:min-w-[320px] dark:divide-slate-800'>
+                            <div className='py-2 sm:px-2'>
                               <p className='text-[11px] uppercase tracking-wide text-slate-500'>
                                 Asignado
                               </p>
@@ -263,7 +263,7 @@ export default function CuentaDetailModal({
                                 {formatMinutesLabel(item.assignedMinutes)}
                               </p>
                             </div>
-                            <div className='rounded-xl bg-amber-50 px-3 py-2'>
+                            <div className='py-2 sm:px-2'>
                               <p className='text-[11px] uppercase tracking-wide text-amber-600'>
                                 Consumido
                               </p>
@@ -271,7 +271,7 @@ export default function CuentaDetailModal({
                                 {formatMinutesLabel(item.consumedMinutes)}
                               </p>
                             </div>
-                            <div className='rounded-xl bg-emerald-50 px-3 py-2'>
+                            <div className='py-2 sm:px-2'>
                               <p className='text-[11px] uppercase tracking-wide text-emerald-600'>
                                 Restante
                               </p>
@@ -306,9 +306,9 @@ export default function CuentaDetailModal({
                     </span>
                   </div>
 
-                  <div className='space-y-3'>
+                  <div className='divide-y divide-slate-200 dark:divide-slate-800'>
                     {solicitudesAnulacion.map(solicitud => (
-                      <div key={solicitud.id} className='rounded-2xl border bg-white p-4 shadow-xs'>
+                      <div key={solicitud.id} className='py-4 first:pt-0'>
                         <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
                           <div className='space-y-1'>
                             <div className='flex items-center gap-2'>
@@ -342,7 +342,7 @@ export default function CuentaDetailModal({
                         </div>
 
                         {solicitud.motivo && (
-                          <div className='mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700'>
+                          <div className='mt-3 border-t border-slate-200 pt-3 text-sm text-slate-700'>
                             {solicitud.motivo}
                           </div>
                         )}
@@ -372,7 +372,7 @@ export default function CuentaDetailModal({
                   />
 
                   {comisionPorAnfitriona.length > 0 && (
-                    <div className='bg-slate-50 dark:bg-slate-800 rounded-lg p-4'>
+                    <div className='border-t border-slate-200 pt-4 dark:border-slate-800'>
                       <h4 className='text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3'>
                         Repartición de Comisiones
                       </h4>

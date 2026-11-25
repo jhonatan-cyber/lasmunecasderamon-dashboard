@@ -290,7 +290,7 @@ export function SettingsAttendanceTab() {
                 />
               </div>
             </div>
-            <section className='flex min-w-0 flex-col justify-center gap-4 rounded-xl bg-muted/40 p-4 text-card-foreground'>
+            <section className='flex min-w-0 flex-col justify-center gap-4 border-t border-border pt-4 text-card-foreground xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6'>
               <div className='flex flex-wrap items-baseline justify-between gap-2'>
                 <h3 className='text-sm font-semibold'>Ventana actual</h3>
                 <span

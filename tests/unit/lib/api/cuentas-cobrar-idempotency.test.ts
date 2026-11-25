@@ -28,7 +28,7 @@ vi.mock('@/lib/auth/auth-app', () => ({
     id: 'u-admin',
     username: 'admin',
     role: 'Administrador',
-    permissions: { finances: { write: true } },
+    permissions: { finances: { write: true, view_details: false } },
     iat: 0,
     exp: 0
   })
@@ -50,7 +50,13 @@ vi.mock('@/lib/utils/logger', () => {
     warn: vi.fn(),
     debug: vi.fn()
   };
-  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
+  return {
+    logger: mocks,
+    default: mocks,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
+  };
 });
 
 /** Tabla `sync_operations` en memoria, con la misma semántica del repositorio real. */

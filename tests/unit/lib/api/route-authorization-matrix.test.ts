@@ -153,14 +153,6 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/bar/movements': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar/shots': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/bar': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/cash-register/stats': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/cash-register/bar-sales': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/cash-register/champagne-sales':
-    'convención legacy: lectura operativa, sesión por middleware',
-  '/api/cash-register/sales-by-product':
-    'convención legacy: lectura operativa, sesión por middleware',
-  '/api/cash-register/hostess-drinks':
-    'convención legacy: lectura operativa, sesión por middleware',
   '/api/calendar/data': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/calendar': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/cashregister/[id]': 'convención legacy: lectura operativa, sesión por middleware',
@@ -205,9 +197,6 @@ const SESSION_WRAPPED_POLICY: Record<string, string> = {
   '/api/services': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/service-requests/pending-count': 'convención legacy: sesión por middleware',
   '/api/service-requests': 'convención legacy: sesión por middleware',
-  '/api/stats/logged-users': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/stats/sales-by-month': 'convención legacy: lectura operativa, sesión por middleware',
-  '/api/stats/sales-by-week': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/tips/[id]': 'convención legacy: lectura operativa, sesión por middleware',
   '/api/users/[id]/permissions': 'convención legacy: lectura operativa, sesión por middleware'
 };

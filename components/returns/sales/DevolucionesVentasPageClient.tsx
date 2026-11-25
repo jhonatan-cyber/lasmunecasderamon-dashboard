@@ -165,11 +165,11 @@ export function DevolucionesVentasPageClient() {
                 No hay solicitudes de anulación pendientes
               </div>
             ) : (
-              <div className='space-y-3'>
+              <div className='divide-y divide-neutral-200 dark:divide-neutral-800'>
                 {solicitudes.map(sol => (
                   <div
                     key={sol.id}
-                    className='flex flex-col items-start justify-between gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-slate-900/40 sm:flex-row sm:items-center'
+                    className='flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center'
                   >
                     <div className='flex-1'>
                       <div className='font-bold text-lg'>Venta #{sol.codigo}</div>

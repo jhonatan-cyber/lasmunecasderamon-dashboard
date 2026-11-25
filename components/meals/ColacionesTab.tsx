@@ -125,7 +125,7 @@ function mlColacion(drink: Drink): number {
 export const MINUTOS_AVISO_ACTUALIZACION = 2;
 
 /**
- * Antigüedad del último catálogo recibido: etiqueta breve para la card
+ * Antigüedad del último catálogo recibido: etiqueta breve para la opción
  * ("hace un momento") y aviso cuando el dato lleva varios minutos sin
  * refrescarse.
  */
@@ -142,7 +142,7 @@ export function antiguedadActualizacion(
   };
 }
 
-function ColacionProductCard({
+function ColacionProductOption({
   drink,
   selected,
   actualizadoEn,
@@ -171,14 +171,12 @@ function ColacionProductCard({
       aria-pressed={selected}
       onClick={() => onSelect(drink.presentacion_id)}
       className={cn(
-        'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-background text-left font-normal whitespace-normal transition',
+        'flex w-full min-w-0 items-center gap-3 py-3 text-left font-normal whitespace-normal transition',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        selected
-          ? 'border-primary ring-2 ring-primary/25'
-          : 'hover:border-primary/40 hover:bg-muted/30'
+        selected ? 'font-semibold text-primary' : 'hover:text-foreground'
       )}
     >
-      <span className='relative block h-24 w-full bg-muted/40'>
+      <span className='relative block size-14 shrink-0 overflow-hidden rounded-lg bg-muted/40'>
         <ProductPhoto
           src={productImageUrl(drink.foto)}
           alt={nombre}
@@ -195,7 +193,7 @@ function ColacionProductCard({
           <Check className='size-3.5' />
         </span>
       </span>
-      <span className='flex flex-1 flex-col gap-1 border-t p-3'>
+      <span className='flex min-w-0 flex-1 flex-col items-start gap-1 py-1'>
         <span className='line-clamp-2 text-sm font-semibold leading-snug'>
           {drink.producto_nombre}
         </span>
@@ -598,11 +596,7 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
               </div>
               {errorUsuarios ? <p className='text-sm text-destructive'>{errorUsuarios}</p> : null}
               {esRolBar && (
-                <div
-                  role='group'
-                  aria-label='Ml del producto seleccionado'
-                  className='rounded-2xl border bg-muted/20 p-3'
-                >
+                <div role='group' aria-label='Ml del producto seleccionado' className='space-y-2'>
                   <p className='text-xs font-semibold tracking-wide text-muted-foreground uppercase'>
                     Ml del producto seleccionado
                   </p>
@@ -674,10 +668,10 @@ export function ColacionesTab({ searchTerm = '' }: { searchTerm?: string }) {
                   <div
                     role='group'
                     aria-label={etiquetaProductos}
-                    className='grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4'
+                    className='divide-y divide-border'
                   >
                     {disponibles.map(drink => (
-                      <ColacionProductCard
+                      <ColacionProductOption
                         key={drink.presentacion_id}
                         drink={drink}
                         selected={drink.presentacion_id === presentacionId}

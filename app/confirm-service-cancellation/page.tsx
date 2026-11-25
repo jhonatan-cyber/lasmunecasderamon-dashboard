@@ -187,7 +187,7 @@ function ConfirmarAnulacionServicioContent() {
 
           <CardContent className='space-y-6'>
             {}
-            <div className='bg-blue-50 p-4 rounded-lg'>
+            <div className='border-t border-border pt-4'>
               <h4 className='font-semibold text-blue-900 mb-3'>Detalles del Servicio</h4>
               <div className='space-y-4'>
                 <div className='grid grid-cols-2 gap-4'>
@@ -226,7 +226,7 @@ function ConfirmarAnulacionServicioContent() {
 
                 <div>
                   <Label className='text-sm font-medium text-gray-600'>Motivo de Anulación</Label>
-                  <p className='text-lg bg-gray-50 p-3 rounded-lg'>{solicitud.motivo}</p>
+                  <p className='border-t border-border pt-2 text-lg'>{solicitud.motivo}</p>
                 </div>
 
                 <div className='grid grid-cols-2 gap-4'>
@@ -270,7 +270,7 @@ function ConfirmarAnulacionServicioContent() {
             </div>
 
             {}
-            <div className='bg-blue-50 p-4 rounded-xl'>
+            <div className='border-t border-border pt-4'>
               <p className='text-sm text-blue-800 text-center'>
                 <strong>ℹ️ Información:</strong> Después de procesar la anulación, esta ventana se
                 cerrará automáticamente.

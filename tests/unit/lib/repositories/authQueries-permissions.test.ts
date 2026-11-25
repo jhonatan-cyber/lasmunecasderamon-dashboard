@@ -11,7 +11,13 @@ const logger = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/database/db', () => ({ query: db.query, generateUUID: () => 'uuid' }));
-vi.mock('@/lib/utils/logger', () => ({ logger, default: logger , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+vi.mock('@/lib/utils/logger', () => ({
+  logger,
+  default: logger,
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 vi.mock('argon2', () => ({ hash: vi.fn(), verify: vi.fn(), argon2id: 2 }));
 vi.mock('@/lib/auth/auth', () => ({ generateToken: vi.fn(), registrarLogin: vi.fn() }));
 
@@ -71,6 +77,7 @@ describe('AuthQueries.getUserPermissions · mapeo', () => {
     db.query.mockResolvedValue([
       { module: 'clients', action: 'view' },
       { module: 'cash_register', action: 'close' },
+      { module: 'cash_register', action: 'view_details' },
       { module: 'roles', action: 'view' }
     ]);
 
@@ -80,6 +87,7 @@ describe('AuthQueries.getUserPermissions · mapeo', () => {
     // `cash_register` vive como `finances` en la matriz (traducción compartida con
     // lib/middleware/auth; antes cada copia tenía su propia lista de alias).
     expect(perms.finances.write).toBe(true);
+    expect(perms.finances.view_details).toBe(true);
     // `roles` es módulo de la matriz: es lo que verifican los handlers de /api/roles
     // (antes se descartaba y esos handlers tenían que pedir users.*).
     expect(perms.roles.read).toBe(true);

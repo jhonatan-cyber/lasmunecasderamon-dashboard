@@ -429,7 +429,7 @@ export function SettingsWhatsAppTab() {
         </div>
       ) : (
         <div className='space-y-4'>
-          <div className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+          <div className='space-y-1.5 border-b border-neutral-200 pb-4 dark:border-neutral-800'>
             <Label
               htmlFor='whatsapp-config-owner'
               className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
@@ -459,7 +459,7 @@ export function SettingsWhatsAppTab() {
                 {camposAdmin.map(campo => {
                   const id = `${campo.campo}-${adminSeleccionado.usuarioId}`;
                   return (
-                    <div key={id} className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+                    <div key={id} className='space-y-1.5'>
                       <Label
                         htmlFor={id}
                         className='text-sm font-bold text-neutral-700 dark:text-neutral-300'
@@ -492,7 +492,7 @@ export function SettingsWhatsAppTab() {
           ) : (
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               {campos.map(campo => (
-                <div key={campo.id} className='p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded-xl'>
+                <div key={campo.id} className='space-y-1.5'>
                   <Label
                     htmlFor={campo.id}
                     className='text-sm font-bold text-neutral-700 dark:text-neutral-300'

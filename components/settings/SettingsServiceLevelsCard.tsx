@@ -297,7 +297,7 @@ export function SettingsServiceLevelsCard() {
         {reglas.map(({ id, title, icon: Icon, value, onChange, tone }) => (
           <div
             key={id}
-            className='flex min-w-0 flex-col rounded-xl border border-neutral-200/70 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-950/40'
+            className='flex min-w-0 flex-col gap-3 border-b border-neutral-200/70 pb-3 dark:border-neutral-800'
           >
             <div className='flex items-center gap-2'>
               <span
@@ -351,7 +351,7 @@ export function SettingsServiceLevelsCard() {
             {rolesActivos.map(rol => (
               <div
                 key={rol.id}
-                className='flex min-w-0 items-center gap-3 rounded-lg bg-neutral-50/70 px-3 py-2 dark:bg-neutral-800/40'
+                className='flex min-w-0 items-center gap-3 border-b border-neutral-200/70 py-2 last:border-b-0 dark:border-neutral-800'
               >
                 <span className='text-sm font-medium text-neutral-700 dark:text-neutral-300 flex-1 truncate'>
                   {rol.nombre}

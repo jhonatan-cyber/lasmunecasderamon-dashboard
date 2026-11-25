@@ -37,13 +37,10 @@ it('permite limpiar en producción y conserva todas las excepciones designadas',
   );
 });
 
-it('vacía catálogo, compras, configuración y respaldos, preservando solamente identidad y migraciones', async () => {
+it('vacía datos operativos, conserva catálogos y reinicia el saldo de clientes', async () => {
   const business = [
     'configuraciones',
     'backups',
-    'habitaciones',
-    'productos',
-    'categorias',
     'codigos',
     'inventario_presentaciones',
     'inventario_unidades',
@@ -54,7 +51,16 @@ it('vacía catálogo, compras, configuración y respaldos, preservando solamente
     'tabla_nueva'
   ];
   expect([...DATABASE_CLEAN_PROTECTED_TABLES].sort()).toEqual(
-    ['usuarios', 'roles', 'role_permissions', 'permissions'].sort()
+    [
+      'usuarios',
+      'roles',
+      'role_permissions',
+      'permissions',
+      'categorias',
+      'productos',
+      'habitaciones',
+      'clientes'
+    ].sort()
   );
   mocks.trx.mockResolvedValueOnce(
     [...DATABASE_CLEAN_PROTECTED_TABLES, ...DATABASE_MIGRATION_TABLES, ...business].map(
@@ -69,6 +75,7 @@ it('vacía catálogo, compras, configuración y respaldos, preservando solamente
   for (const table of business) expect(sql).toContain(`"${table}"`);
   for (const table of result.skippedTables) expect(sql).not.toContain(`"${table}"`);
   expect(sql).toMatch(/RESTART IDENTITY RESTRICT$/);
+  expect(mocks.trx).toHaveBeenCalledWith('UPDATE clientes SET saldo = 0');
 });
 
 it('propaga errores de relaciones para que la transacción revierta todo', async () => {

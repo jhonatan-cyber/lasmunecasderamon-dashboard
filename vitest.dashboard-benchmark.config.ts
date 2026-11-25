@@ -4,7 +4,10 @@ import path from 'node:path';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['tests/benchmarks/dashboard.test.ts'],
+    include: [
+      'tests/benchmarks/dashboard.test.ts',
+      'tests/benchmarks/user-dashboard-summary.test.ts'
+    ],
     testTimeout: 60000
   },
   resolve: {

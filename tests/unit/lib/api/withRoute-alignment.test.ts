@@ -127,6 +127,35 @@ function coveringGate(route: string): { prefix: string; module: string; action: 
   return entry ? { prefix: entry, ...API_ROUTE_PERMISSIONS[entry] } : null;
 }
 
+const DASHBOARD_DATA_ACCESS_MATRIX = [
+  { route: '/api/dashboard/composite', module: 'dashboard', action: 'read' },
+  { route: '/api/stats/dashboard-summary', module: 'dashboard', action: 'read' },
+  { route: '/api/stats/logged-users', module: 'users', action: 'read' },
+  { route: '/api/stats/sales-by-month', module: 'sales', action: 'read' },
+  { route: '/api/stats/sales-by-week', module: 'sales', action: 'read' },
+  { route: '/api/cash-register/stats', module: 'cash_register', action: 'read' },
+  {
+    route: '/api/cash-register/bar-sales',
+    module: 'cash_register',
+    action: 'view_details'
+  },
+  {
+    route: '/api/cash-register/champagne-sales',
+    module: 'cash_register',
+    action: 'view_details'
+  },
+  {
+    route: '/api/cash-register/hostess-drinks',
+    module: 'cash_register',
+    action: 'view_details'
+  },
+  {
+    route: '/api/cash-register/sales-by-product',
+    module: 'cash_register',
+    action: 'view_details'
+  }
+] as const;
+
 describe('traducción catálogo ↔ matriz (única copia)', () => {
   it('es la inversa una de la otra para cada acción del catálogo', () => {
     // Las acciones que el catálogo declara y la matriz sabe expresar.
@@ -165,6 +194,25 @@ describe('traducción catálogo ↔ matriz (única copia)', () => {
     // El catálogo es todo en inglés; si reaparecieran, la traducción los escondería.
     for (const legacy of ['eliminar', 'editar', 'crear', 'listar_ventas', 'ver_detalles']) {
       expect(toMatrixAction(legacy), legacy).toBe(legacy);
+    }
+  });
+});
+
+describe('permisos de los datos del dashboard', () => {
+  it('cada conjunto de datos exige su permiso de módulo en el handler', () => {
+    for (const expected of DASHBOARD_DATA_ACCESS_MATRIX) {
+      const matchingHandlers = handlers.filter(
+        handler => handler.route === expected.route && handler.method === 'GET'
+      );
+
+      expect(matchingHandlers, `${expected.route} debe tener un GET`).toHaveLength(1);
+      expect(matchingHandlers[0], `${expected.route} debe validar permiso de módulo`).toMatchObject(
+        {
+          kind: 'permission',
+          module: expected.module,
+          action: expected.action
+        }
+      );
     }
   });
 });

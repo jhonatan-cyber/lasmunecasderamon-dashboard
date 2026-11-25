@@ -39,4 +39,13 @@ describe('diagnóstico de la proyección', () => {
     expect(screen.getByText('Sin caja abierta')).toBeInTheDocument();
     expect(screen.getByText(/Abre una caja/)).toBeInTheDocument();
   });
+
+  it('muestra un estado de error cuando falla la carga del composite', () => {
+    harness.result = { error: new Error('Respuesta inválida'), isLoading: false };
+    render(<ForecastInsights />);
+
+    expect(
+      screen.getByText('No se pudieron cargar las proyecciones del dashboard.')
+    ).toBeInTheDocument();
+  });
 });

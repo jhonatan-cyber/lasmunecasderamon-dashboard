@@ -32,7 +32,10 @@ vi.mock('@/lib/auth/auth-app', () => ({
     username: 'pepe',
     role: 'cajero',
     // withRoute exige la matriz, no el rol: sales.write / finances.write son el gate real.
-    permissions: { sales: { write: true }, finances: { write: true } },
+    permissions: {
+      sales: { write: true },
+      finances: { write: true, view_details: false }
+    },
     iat: 0,
     exp: 0
   })
@@ -54,7 +57,13 @@ vi.mock('@/lib/utils/logger', () => {
     warn: vi.fn(),
     debug: vi.fn()
   };
-  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
+  return {
+    logger: mocks,
+    default: mocks,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
+  };
 });
 
 /** Tabla `sync_operations` en memoria, con la misma semántica del repositorio real. */
