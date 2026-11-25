@@ -1,12 +1,17 @@
-import { insertarMarcaSiFalta } from '../marcas/marcaUnicaRepositorio';
-import { generateUUID, query } from '@/lib/database/db';
+import { insertarMarcaSiFaltaEnBaseDeDatos } from '../marcas/marcaUnicaRepositorio';
+import { generateUUID } from '@/lib/database/db';
 import { marcarPresenciaLocal } from '@/modules/identidad';
-import { BaseRepository } from '@/lib/database/base-repository';
 import { getAttendanceConfigHours } from '@/modules/asistencia/marcas/repositorio';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
 import { avisarResultadoEnEquipo } from '@/modules/asistencia/biometrico/avisosAudio';
 import type { BiometricEvent, BiometricResultado } from '@/modules/asistencia/biometrico/types';
+import {
+  buscarAsistenciaBiometricaDelDia,
+  buscarUsuarioBiometricoPorCodigo,
+  buscarUsuarioBiometricoPorId,
+  insertarEventoBiometrico
+} from './repositorio';
 
 export interface BiometricOutcome {
   resultado: BiometricResultado;
@@ -42,9 +47,9 @@ export async function procesarEventoBiometrico(
   const minutoActual =
     Number(fechaHora.substring(11, 13)) * 60 + Number(fechaHora.substring(14, 16));
 
-  const yaMarcada = await query<{ id_asistencia: string }[]>(
-    'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-    [usuario.id_usuario, fecha]
+  const yaMarcada = await buscarAsistenciaBiometricaDelDia<{ id_asistencia: string }>(
+    usuario.id_usuario,
+    fecha
   );
   if (yaMarcada.length > 0) {
     await marcarEnLocal(usuario.id_usuario);
@@ -66,7 +71,7 @@ export async function procesarEventoBiometrico(
     return { resultado: 'fuera_ventana' };
   }
 
-  await insertarMarcaSiFalta(query, {
+  await insertarMarcaSiFaltaEnBaseDeDatos({
     id_asistencia: generateUUID(),
     usuario_id: usuario.id_usuario,
     fecha,
@@ -125,10 +130,7 @@ export async function atribuirAsistenciaIdentificada(
     return 'fuera_de_alcance';
   }
 
-  const filas = await query<UsuarioBiometrico[]>(
-    'SELECT id_usuario, nombre, apellido, estado FROM usuarios WHERE id_usuario = ?',
-    [usuarioId]
-  );
+  const filas = await buscarUsuarioBiometricoPorId<UsuarioBiometrico>(usuarioId);
   const usuario = filas[0];
   if (!usuario || Number(usuario.estado) !== 1) return 'ignorado';
 
@@ -137,9 +139,9 @@ export async function atribuirAsistenciaIdentificada(
   const minutoActual =
     Number(fechaHora.substring(11, 13)) * 60 + Number(fechaHora.substring(14, 16));
 
-  const yaMarcada = await query<{ id_asistencia: string }[]>(
-    'SELECT id_asistencia FROM asistencias WHERE usuario_id = ? AND fecha = ?',
-    [usuario.id_usuario, fecha]
+  const yaMarcada = await buscarAsistenciaBiometricaDelDia<{ id_asistencia: string }>(
+    usuario.id_usuario,
+    fecha
   );
   if (yaMarcada.length > 0) {
     await marcarEnLocal(usuario.id_usuario);
@@ -158,7 +160,7 @@ export async function atribuirAsistenciaIdentificada(
   )
     return 'fuera_ventana';
 
-  await insertarMarcaSiFalta(query, {
+  await insertarMarcaSiFaltaEnBaseDeDatos({
     id_asistencia: generateUUID(),
     usuario_id: usuario.id_usuario,
     fecha,
@@ -187,12 +189,7 @@ async function resolverUsuario(codigo: string): Promise<UsuarioBiometrico | null
   if (/^0\d+$/.test(limpio)) candidatos.push(String(parseInt(limpio, 10)));
 
   for (const candidato of candidatos) {
-    const rows = await query<UsuarioBiometrico[]>(
-      `SELECT id_usuario, nombre, apellido, estado FROM usuarios
-        WHERE biometrico_codigo IS NOT NULL AND TRIM(biometrico_codigo) <> ''
-          AND LOWER(TRIM(biometrico_codigo)) = LOWER(?)`,
-      [candidato]
-    );
+    const rows = await buscarUsuarioBiometricoPorCodigo<UsuarioBiometrico>(candidato);
     if (rows.length > 0) return rows[0];
   }
   return null;
@@ -209,7 +206,7 @@ async function registrarEvento(
   usuarioId: string | null
 ) {
   try {
-    await BaseRepository.insert(query, 'biometric_events', {
+    await insertarEventoBiometrico({
       id: generateUUID(),
       device_id: device.id,
       serial: device.serial,

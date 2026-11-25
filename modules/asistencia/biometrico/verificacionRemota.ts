@@ -1,9 +1,9 @@
-import { query } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
 import { credencialesDeFila } from './deviceClient';
 import { identificarImagen } from './identificacionFacial';
 import { ErrorFacial } from './faceSdk';
 import { abrirPuerta } from './puertaClient';
+import { obtenerCodigoBiometricoUsuario, obtenerEquipoParaVerificacion } from './repositorio';
 
 export type ResultadoVerificacionRemota =
   | { decision: 'abierto'; usuarioId: string; similitud: number }
@@ -23,11 +23,7 @@ export interface SolicitudVerificacionRemota {
 }
 
 async function codigoDeUsuario(usuarioId: string): Promise<string | null> {
-  const filas = await query<{ codigo: string | null }[]>(
-    `SELECT biometrico_codigo AS codigo FROM usuarios
-      WHERE id_usuario = ? AND biometrico_codigo IS NOT NULL AND TRIM(biometrico_codigo) <> ''`,
-    [usuarioId]
-  );
+  const filas = await obtenerCodigoBiometricoUsuario<{ codigo: string | null }>(usuarioId);
   return filas[0]?.codigo?.trim() || null;
 }
 
@@ -41,18 +37,12 @@ export async function evaluarVerificacionRemota(
     return { decision: 'sin_imagen' };
   }
 
-  const filas = await query<
-    {
-      verificacion_remota: number;
-      ip: string | null;
-      usuario_equipo: string | null;
-      clave_cifrada: string | null;
-    }[]
-  >(
-    `SELECT verificacion_remota, ip, usuario_equipo, clave_cifrada
-       FROM biometric_devices WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const filas = await obtenerEquipoParaVerificacion<{
+    verificacion_remota: number;
+    ip: string | null;
+    usuario_equipo: string | null;
+    clave_cifrada: string | null;
+  }>(dispositivoId);
   const fila = filas[0];
   if (!fila || Number(fila.verificacion_remota) !== 1) {
     return { decision: 'deshabilitado' };

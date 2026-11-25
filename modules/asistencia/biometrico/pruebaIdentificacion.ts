@@ -1,10 +1,10 @@
-import { query } from '@/lib/database/db';
 import {
   ErrorFacial,
   extraerVectorFacial,
   similitudCoseno,
   umbralCoincidenciaFacial
 } from './faceSdk';
+import { listarPlantillasPruebaIdentificacion } from './repositorio';
 
 /**
  * Identificación 1:N para la prueba física: toma una foto (la que ve la cámara
@@ -79,15 +79,7 @@ export async function identificarPersonaEnPlantillas(
     };
   }
 
-  const filas = await query<FilaPlantilla[]>(
-    `SELECT DISTINCT ON (p.usuario_id)
-            p.id, p.datos, p.fecha_captura,
-            u.id_usuario, u.nombre, u.apellido, u.run, u.biometrico_codigo
-       FROM biometric_plantillas p
-       JOIN usuarios u ON u.id_usuario = p.usuario_id
-      WHERE p.tipo = 'cara' AND u.estado = 1 AND u.biometrico_facial = 1
-      ORDER BY p.usuario_id, p.fecha_captura DESC NULLS LAST`
-  );
+  const filas = await listarPlantillasPruebaIdentificacion<FilaPlantilla>();
 
   if (filas.length === 0) {
     return {

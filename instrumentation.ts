@@ -28,7 +28,7 @@ export async function register() {
             console.warn(
               recepcionActiva()
                 ? '[instrumentation] Recepción biométrica encendida (poller + listeners + IP watch)'
-                : '[instrumentation] Recepción biométrica pausada por configuración'
+                : '[instrumentation] Recepción biométrica inactiva en esta instancia (configuración o lock distribuido)'
             );
           })
           .catch(error => {

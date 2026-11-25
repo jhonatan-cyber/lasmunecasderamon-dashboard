@@ -1,7 +1,12 @@
-import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { conectadosEnVivo, listenersActivos } from '@/modules/asistencia/biometrico/eventListener';
 import { estaCorriendo } from '@/modules/asistencia/biometrico/recordPoller';
+import {
+  listarAsistenciasBiometricasHoy,
+  listarDesfasesRecientes,
+  listarEstadoLectores,
+  obtenerVentanaAsistencia
+} from './repositorio';
 export interface DesfaseReloj {
   segundos: number;
   muestras: number;
@@ -31,45 +36,26 @@ export async function obtenerEstadoBiometrico(): Promise<EstadoBiometrico> {
   const hoy = getNowInBusinessTimezone().substring(0, 10);
 
   const [asistenciasRows, ventanaRows, lectoresRows, desfaseRows] = await Promise.all([
-    query<{ nombre_completo: string; hora: string; record_id: string | null }[]>(
-      `SELECT (TRIM(CAST(U.nombre AS text)) || ' ' || TRIM(CAST(U.apellido AS text))) AS nombre_completo,
-              A.hora,
-              A.biometric_record_id AS record_id
-         FROM asistencias A
-         INNER JOIN usuarios U ON U.id_usuario = A.usuario_id
-        WHERE A.origen = 'biometrico' AND A.fecha = ? AND A.estado = 1
-        ORDER BY A.hora DESC`,
-      [hoy]
-    ),
-    query<{ clave: string; valor: string }[]>(
-      `SELECT clave, valor FROM configuraciones
-        WHERE clave IN ('asistencia_hora_inicio', 'asistencia_minuto_inicio', 'asistencia_hora_fin', 'asistencia_minuto_fin')`
-    ),
-    query<
-      {
-        id: string;
-        nombre: string;
-        marca: string;
-        serial: string;
-        ip: string | null;
-        recoger_registros: number;
-        ultimo_uso: string | null;
-      }[]
-    >(
-      `SELECT id, nombre, marca, serial, ip, recoger_registros, ultimo_uso
-         FROM biometric_devices
-        WHERE revocado_en IS NULL
-        ORDER BY fecha_crea DESC`
-    ),
-    query<{ serial: string; desfase_promedio: number | string; muestras: number | string }[]>(
-      `SELECT serial,
-              AVG(EXTRACT(EPOCH FROM (fecha_recepcion - fecha_dispositivo))) AS desfase_promedio,
-              COUNT(*) AS muestras
-         FROM biometric_events
-        WHERE fecha_dispositivo IS NOT NULL
-          AND fecha_recepcion > CURRENT_TIMESTAMP - interval '24 hours'
-        GROUP BY serial`
-    )
+    listarAsistenciasBiometricasHoy<{
+      nombre_completo: string;
+      hora: string;
+      record_id: string | null;
+    }>(hoy),
+    obtenerVentanaAsistencia<{ clave: string; valor: string }>(),
+    listarEstadoLectores<{
+      id: string;
+      nombre: string;
+      marca: string;
+      serial: string;
+      ip: string | null;
+      recoger_registros: number;
+      ultimo_uso: string | null;
+    }>(),
+    listarDesfasesRecientes<{
+      serial: string;
+      desfase_promedio: number | string;
+      muestras: number | string;
+    }>()
   ]);
 
   let inicio = 21;

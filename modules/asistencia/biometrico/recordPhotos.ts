@@ -1,10 +1,14 @@
-import { query } from '@/lib/database/db';
 import { libreriaNet, type LibreriaNet } from './audioSdk';
 import { direccionDe } from './netSdk';
 import { credencialesDeFila, type CredencialesEquipo } from './deviceClient';
 import { encolarIdentificacionDeRecord } from './identificacionFacial';
 import { encolarPendiente } from './comun';
 import logger from '@/lib/utils/logger';
+import {
+  actualizarFotoRecord,
+  listarFotosPendientes,
+  obtenerCredencialesDispositivo
+} from './repositorio';
 
 const ESPERA_MS = 8_000;
 const MAX_ACTIVOS = 2;
@@ -132,13 +136,11 @@ let activos = 0;
 
 async function descargarYGuardar(pendiente: Pendiente): Promise<void> {
   try {
-    const filas = await query<
-      { ip: string | null; usuario_equipo: string | null; clave_cifrada: string | null }[]
-    >(
-      `SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices
-        WHERE id = ? AND revocado_en IS NULL`,
-      [pendiente.dispositivoId]
-    );
+    const filas = await obtenerCredencialesDispositivo<{
+      ip: string | null;
+      usuario_equipo: string | null;
+      clave_cifrada: string | null;
+    }>(pendiente.dispositivoId);
     const credenciales = filas[0] ? credencialesDeFila(filas[0]) : null;
     if (!credenciales) {
       registrarFallo(pendiente, 'sin credenciales del equipo');
@@ -151,10 +153,7 @@ async function descargarYGuardar(pendiente: Pendiente): Promise<void> {
       return;
     }
 
-    await query('UPDATE biometric_device_records SET foto = ? WHERE id = ?', [
-      foto,
-      pendiente.recordId
-    ]);
+    await actualizarFotoRecord(pendiente.recordId, foto);
     intentos.delete(pendiente.recordId);
     encolarIdentificacionDeRecord({
       recordId: pendiente.recordId,
@@ -202,15 +201,11 @@ export function encolarFotoDeRecord(pendiente: Pendiente): void {
 }
 
 export async function recuperarFotosPendientes(limite = 3): Promise<number> {
-  const pendientes = await query<{ id: string; dispositivo_id: string; foto_url: string }[]>(
-    `SELECT id, dispositivo_id, foto_url
-       FROM biometric_device_records
-      WHERE foto IS NULL AND foto_url IS NOT NULL
-        AND fecha_dispositivo > CURRENT_TIMESTAMP - interval '3 days'
-      ORDER BY fecha_dispositivo DESC
-      LIMIT ?`,
-    [limite]
-  );
+  const pendientes = await listarFotosPendientes<{
+    id: string;
+    dispositivo_id: string;
+    foto_url: string;
+  }>(limite);
   for (const fila of pendientes) {
     if (!fila.id || !fila.foto_url) continue;
     encolarFotoDeRecord({

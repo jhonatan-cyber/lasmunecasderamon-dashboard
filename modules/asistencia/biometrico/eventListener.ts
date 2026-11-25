@@ -1,5 +1,4 @@
-import { query, generateUUID } from '@/lib/database/db';
-import { BaseRepository } from '@/lib/database/base-repository';
+import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import {
@@ -18,6 +17,13 @@ import { crearLecturaPorAviso } from './eventRecordWakeup';
 import { pollEquipo } from './recordPoller';
 import { recepcionAutomaticaHabilitada } from './recepcionConfig';
 import { metodoBiometricoDesdeCodigo as metodoDesdeEvento } from './comun';
+import {
+  buscarRegistroListener,
+  equipoListenerActivo,
+  insertarRegistroDispositivo,
+  listarEquiposListenerActivos,
+  obtenerEquipoListener
+} from './repositorio';
 
 function esSalida(tipo: string | null): boolean {
   return (tipo || '').trim().toLowerCase() === 'exit';
@@ -52,11 +58,11 @@ async function equipoCargado(dispositivoId: string): Promise<{
   serial: string;
   recoger_registros: number;
 } | null> {
-  const rows = await query<{ id: string; serial: string; recoger_registros: number }[]>(
-    `SELECT id, serial, recoger_registros FROM biometric_devices
-      WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const rows = await equipoListenerActivo<{
+    id: string;
+    serial: string;
+    recoger_registros: number;
+  }>(dispositivoId);
   return rows[0] ?? null;
 }
 
@@ -67,28 +73,24 @@ async function marcarVisto(
   fechaHora: string,
   metodo: BiometricMetodo
 ): Promise<boolean> {
-  const yaVistos = await query<{ id: string }[]>(
-    `SELECT id FROM biometric_device_records
-      WHERE serial = ? AND codigo_persona = ? AND fecha_dispositivo = ? AND metodo = ? LIMIT 1`,
-    [serial, evento.userId, fechaHora, metodo]
-  );
+  const yaVistos = await buscarRegistroListener<{ id: string }>({
+    serial,
+    codigo: evento.userId,
+    fecha: fechaHora,
+    metodo
+  });
   if (yaVistos.length > 0) return false;
-  try {
-    await BaseRepository.insert(query, 'biometric_device_records', {
-      id: generateUUID(),
-      dispositivo_id: dispositivoId,
-      serial,
-      rec_no: evento.createTime,
-      codigo_persona: evento.userId.substring(0, 64),
-      fecha_dispositivo: fechaHora,
-      metodo,
-      status: evento.status ?? null
-    });
-    return true;
-  } catch (error: any) {
-    if (error?.code === '23505') return false;
-    throw error;
-  }
+  const inserted = await insertarRegistroDispositivo({
+    id: generateUUID(),
+    dispositivo_id: dispositivoId,
+    serial,
+    rec_no: evento.createTime,
+    codigo_persona: evento.userId.substring(0, 64),
+    fecha_dispositivo: fechaHora,
+    metodo,
+    status: evento.status ?? null
+  });
+  return inserted !== null;
 }
 
 async function manejarEvento(
@@ -163,21 +165,15 @@ async function mantenerListener(dispositivoId: string, serial: string, abort: Ab
       listeners.delete(dispositivoId);
       return;
     }
-    const filas = await query<
-      {
-        id: string;
-        serial: string;
-        ip: string | null;
-        usuario_equipo: string | null;
-        clave_cifrada: string | null;
-        recoger_registros: number;
-        historico_limpiado_en: Date | string | null;
-      }[]
-    >(
-      `SELECT id, serial, ip, usuario_equipo, clave_cifrada, recoger_registros, historico_limpiado_en
-         FROM biometric_devices WHERE id = ? AND revocado_en IS NULL`,
-      [dispositivoId]
-    );
+    const filas = await obtenerEquipoListener<{
+      id: string;
+      serial: string;
+      ip: string | null;
+      usuario_equipo: string | null;
+      clave_cifrada: string | null;
+      recoger_registros: number;
+      historico_limpiado_en: Date | string | null;
+    }>(dispositivoId);
     const fila = filas[0];
     const credenciales: CredencialesEquipo | null = fila ? credencialesDeFila(fila) : null;
     if (!credenciales) {
@@ -296,11 +292,7 @@ export function apagarListener(dispositivoId: string): void {
 }
 
 export async function encenderTodos(): Promise<void> {
-  const equipos = await query<{ id: string }[]>(
-    `SELECT id FROM biometric_devices
-      WHERE revocado_en IS NULL AND recoger_registros = 1
-        AND ip IS NOT NULL AND usuario_equipo IS NOT NULL AND clave_cifrada IS NOT NULL`
-  );
+  const equipos = await listarEquiposListenerActivos<{ id: string }>();
   for (const equipo of equipos) {
     await encenderListener(equipo.id);
   }

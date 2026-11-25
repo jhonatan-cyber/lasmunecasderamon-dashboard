@@ -1,8 +1,6 @@
-import { query, generateUUID } from '@/lib/database/db';
 import { enUnaUnidad } from '@/lib/transaction/contract';
 import { guardarPlantilla } from './plantillasRepositorio';
 import { activarModalidadFacial, guardarFotoPerfil } from '@/modules/identidad';
-import { BaseRepository } from '@/lib/database/base-repository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
 import {
@@ -40,6 +38,19 @@ import {
   umbralCoincidenciaFacial,
   type MotivoFalloFacial
 } from '@/modules/asistencia/biometrico/faceSdk';
+import {
+  actualizarCredencialesEquipo,
+  listarEquiposParaEnrolamiento,
+  listarPlantillasPendientesSincronizacion,
+  listarPlantillasDelUsuario,
+  marcarPlantillasNoSincronizadas,
+  obtenerCodigoPersonaBiometrico,
+  obtenerEquipoEnrolamiento,
+  obtenerFotoPerfilUsuario,
+  obtenerPrimerEquipoConIp,
+  obtenerPlantillaCaraUsuario,
+  obtenerPlantillaFacialMaestra
+} from './repositorio';
 
 export interface EquipoEnrolable {
   id: string;
@@ -69,11 +80,7 @@ export interface ResultadoSincronizacion {
 }
 
 async function obtenerEquipo(dispositivoId: string): Promise<EquipoEnrolable | null> {
-  const rows = await query<EquipoEnrolable[]>(
-    `SELECT id, nombre, marca, serial, ip, usuario_equipo, clave_cifrada, mac
-       FROM biometric_devices WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const rows = await obtenerEquipoEnrolamiento<EquipoEnrolable>(dispositivoId);
   return rows[0] ?? null;
 }
 
@@ -101,13 +108,7 @@ export interface PruebaConexion {
 }
 
 async function obtenerEquipoActivo(): Promise<EquipoEnrolable | null> {
-  const filas = await query<EquipoEnrolable[]>(
-    `SELECT id, nombre, marca, serial, ip, usuario_equipo, clave_cifrada, mac
-       FROM biometric_devices
-      WHERE revocado_en IS NULL AND ip IS NOT NULL
-      ORDER BY fecha_crea ASC
-      LIMIT 1`
-  );
+  const filas = await obtenerPrimerEquipoConIp<EquipoEnrolable>();
   return filas[0] ?? null;
 }
 
@@ -256,12 +257,12 @@ async function guardarIpYCredenciales(
   usuario: string,
   clave: string
 ): Promise<void> {
-  await query(
-    `UPDATE biometric_devices
-        SET ip = ?, usuario_equipo = ?, clave_cifrada = ?
-      WHERE id = ?`,
-    [ip, usuario, cifrarSecreto(clave), dispositivoId]
-  );
+  await actualizarCredencialesEquipo({
+    dispositivoId,
+    ip,
+    usuario,
+    claveCifrada: cifrarSecreto(clave)
+  });
 }
 
 export interface DatosPersona {
@@ -359,10 +360,7 @@ export async function usarFotoDelLectorComoPerfil(
   fotoBase64: string
 ): Promise<string | null> {
   try {
-    const filas = await query<{ foto: string | null }[]>(
-      'SELECT foto FROM usuarios WHERE id_usuario = ?',
-      [usuarioId]
-    );
+    const filas = await obtenerFotoPerfilUsuario<{ foto: string | null }>(usuarioId);
     const actual = (filas[0]?.foto || '').trim();
     if (actual && actual !== 'default.png') return null;
 
@@ -519,25 +517,15 @@ async function leerPlantillasParaAlta(
   usuarioId: string,
   dispositivoId: string
 ): Promise<{ tipo: string; datos: string }[]> {
-  const propias = await query<{ tipo: string; datos: string }[]>(
-    `SELECT tipo, datos FROM biometric_plantillas
-      WHERE usuario_id = ? AND dispositivo_id = ?`,
-    [usuarioId, dispositivoId]
+  const propias = await listarPlantillasDelUsuario<{ tipo: string; datos: string }>(
+    usuarioId,
+    dispositivoId
   );
   if (propias.some(plantilla => plantilla.tipo === 'cara')) return propias;
 
-  const maestra = await query<{ tipo: string; datos: string }[]>(
-    `SELECT 'cara' AS tipo, datos FROM biometric_plantillas
-      WHERE usuario_id = ? AND tipo = 'cara'
-      ORDER BY fecha_captura DESC NULLS LAST
-      LIMIT 1`,
-    [usuarioId]
-  );
+  const maestra = await obtenerPlantillaFacialMaestra<{ tipo: string; datos: string }>(usuarioId);
   if (maestra.length > 0) return [...propias, ...maestra];
-  const ficha = await query<{ foto: string | null }[]>(
-    'SELECT foto FROM usuarios WHERE id_usuario = ?',
-    [usuarioId]
-  );
+  const ficha = await obtenerFotoPerfilUsuario<{ foto: string | null }>(usuarioId);
   const foto = (ficha[0]?.foto || '').trim();
   if (!foto) return propias;
   const datos = await imagenGuardadaABase64Jpeg(foto).catch(() => null);
@@ -670,17 +658,12 @@ export async function resincronizarPendientesEnEquipo(
   const equipo = await obtenerEquipo(dispositivoId);
   if (!equipo) throw new DeviceConnectionError('Equipo no encontrado o revocado');
   const credenciales = credencialesDe(equipo);
-  const pendientes = await query<
-    { usuario_id: string; nombre: string | null; apellido: string | null; estado: number | null }[]
-  >(
-    `SELECT DISTINCT ON (bp.usuario_id)
-           bp.usuario_id, u.nombre, u.apellido, u.estado
-       FROM biometric_plantillas bp
-       LEFT JOIN usuarios u ON u.id_usuario = bp.usuario_id
-      WHERE bp.dispositivo_id = ? AND bp.sincronizada = 0
-      ORDER BY bp.usuario_id, bp.fecha_captura ASC`,
-    [dispositivoId]
-  );
+  const pendientes = await listarPlantillasPendientesSincronizacion<{
+    usuario_id: string;
+    nombre: string | null;
+    apellido: string | null;
+    estado: number | null;
+  }>(dispositivoId);
 
   const resumen: ResumenResincronizacion = {
     restauradas: [],
@@ -732,9 +715,8 @@ export async function resincronizarPendientesEnEquipo(
 }
 
 async function codigoDePersona(usuarioId: string): Promise<string> {
-  const filas = await query<{ biometrico_codigo: string | null }[]>(
-    'SELECT biometrico_codigo FROM usuarios WHERE id_usuario = ?',
-    [usuarioId]
+  const filas = await obtenerCodigoPersonaBiometrico<{ biometrico_codigo: string | null }>(
+    usuarioId
   );
   return String(filas[0]?.biometrico_codigo || '').trim();
 }
@@ -759,11 +741,7 @@ export interface PresenciaEnEquipo {
 }
 
 export async function estadoEnEquipos(persona: DatosPersona): Promise<PresenciaEnEquipo[]> {
-  const equipos = await query<EquipoEnrolable[]>(
-    `SELECT id, nombre, marca, serial, ip, usuario_equipo, clave_cifrada, mac
-       FROM biometric_devices WHERE revocado_en IS NULL ORDER BY fecha_crea ASC`,
-    []
-  );
+  const equipos = await listarEquiposParaEnrolamiento<EquipoEnrolable>();
 
   const resultados: PresenciaEnEquipo[] = [];
   for (const equipo of equipos) {
@@ -818,12 +796,7 @@ export async function quitarDelEquipo(dispositivoId: string, persona: DatosPerso
     });
   }
   await eliminarUsuarioDelEquipo(credenciales, persona.codigo);
-  await query(
-    `UPDATE biometric_plantillas
-        SET sincronizada = 0, fecha_sincronizacion = NULL
-      WHERE usuario_id = ? AND dispositivo_id = ?`,
-    [persona.usuarioId, dispositivoId]
-  );
+  await marcarPlantillasNoSincronizadas(persona.usuarioId, dispositivoId);
 }
 
 function esNoSoportado(error: unknown): boolean {
@@ -860,13 +833,7 @@ export async function verificarCoincidenciaFacial(
   if (!equipo) throw new DeviceConnectionError('Equipo no encontrado o revocado');
   const credenciales = credencialesDe(equipo);
 
-  const filas = await query<{ datos: string }[]>(
-    `SELECT datos FROM biometric_plantillas
-      WHERE usuario_id = ? AND tipo = 'cara'
-      ORDER BY fecha_captura DESC NULLS LAST
-      LIMIT 1`,
-    [persona.usuarioId]
-  );
+  const filas = await obtenerPlantillaCaraUsuario<{ datos: string }>(persona.usuarioId);
   const plantilla = filas[0]?.datos?.trim();
   if (!plantilla) {
     return {
@@ -930,13 +897,7 @@ export async function verificarCoincidenciaConFoto(
   capturaBase64: string,
   dispositivoId?: string
 ): Promise<ResultadoVerificacionFacial> {
-  const filas = await query<{ datos: string }[]>(
-    `SELECT datos FROM biometric_plantillas
-      WHERE usuario_id = ? AND tipo = 'cara'
-      ORDER BY fecha_captura DESC NULLS LAST
-      LIMIT 1`,
-    [persona.usuarioId]
-  );
+  const filas = await obtenerPlantillaCaraUsuario<{ datos: string }>(persona.usuarioId);
   const plantilla = filas[0]?.datos?.trim();
   if (!plantilla) {
     return {

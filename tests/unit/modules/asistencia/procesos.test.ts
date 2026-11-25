@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /**
  * Ciclo de vida de la recepción biométrica (Fase 3, riesgo R4).
@@ -19,6 +19,16 @@ const arranque = vi.hoisted(() => ({
   arrancarVigilanteIp: vi.fn(),
   detenerVigilanteIp: vi.fn()
 }));
+const persistencia = vi.hoisted(() => ({
+  connect: vi.fn(),
+  cliente: {
+    query: vi.fn(),
+    release: vi.fn(),
+    on: vi.fn(),
+    removeListener: vi.fn()
+  }
+}));
+const configRecepcion = vi.hoisted(() => ({ habilitada: vi.fn(async () => true) }));
 
 vi.mock('@/modules/asistencia/biometrico/recordPoller', () => ({
   arrancarPoller: arranque.arrancarPoller,
@@ -35,7 +45,10 @@ vi.mock('@/modules/asistencia/biometrico/ipWatcher', () => ({
 }));
 // El interruptor compartido lee configuraciones de la base: en tests se fija encendido.
 vi.mock('@/modules/asistencia/biometrico/recepcionConfig', () => ({
-  recepcionAutomaticaHabilitada: vi.fn(async () => true)
+  recepcionAutomaticaHabilitada: configRecepcion.habilitada
+}));
+vi.mock('@/lib/database/db', () => ({
+  default: { pool: { connect: persistencia.connect } }
 }));
 
 import {
@@ -48,12 +61,23 @@ const estadoGlobal = globalThis as Record<string, unknown>;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  persistencia.connect.mockResolvedValue(persistencia.cliente);
+  persistencia.cliente.query.mockResolvedValue({ rows: [{ adquirido: true }] });
+  configRecepcion.habilitada.mockResolvedValue(true);
   arranque.encenderTodos.mockResolvedValue(undefined);
   arranque.listenersActivos.mockReturnValue([]);
   // El módulo capturó este objeto la primera vez que se evaluó: hay que
   // apagarlo, no borrarlo, para partir de limpio en cada test.
   const estado = estadoGlobal.__asistenciaRecepcion as { arrancada: boolean } | undefined;
-  if (estado) estado.arrancada = false;
+  if (estado) {
+    estado.arrancada = false;
+    Object.assign(estado, { arrancando: false, lockClient: null, lockErrorHandler: null });
+  }
+});
+
+afterEach(async () => {
+  await detenerRecepcionBiometrica();
+  vi.restoreAllMocks();
 });
 
 describe('arrancarRecepcionBiometrica', () => {
@@ -64,6 +88,46 @@ describe('arrancarRecepcionBiometrica', () => {
     expect(arranque.encenderTodos).toHaveBeenCalledTimes(1);
     expect(arranque.arrancarVigilanteIp).toHaveBeenCalledTimes(1);
     expect(recepcionActiva()).toBe(true);
+  });
+
+  it('adquiere el lock de PostgreSQL antes de encender los lectores', async () => {
+    await arrancarRecepcionBiometrica();
+
+    expect(persistencia.connect).toHaveBeenCalledTimes(1);
+    expect(persistencia.cliente.query).toHaveBeenCalledWith(
+      expect.stringContaining('pg_try_advisory_lock'),
+      expect.any(Array)
+    );
+    expect(arranque.encenderTodos).toHaveBeenCalledTimes(1);
+  });
+
+  it('no enciende lectores si otra instancia conserva el lock', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    persistencia.cliente.query.mockResolvedValueOnce({ rows: [{ adquirido: false }] });
+
+    await arrancarRecepcionBiometrica();
+
+    expect(arranque.arrancarPoller).not.toHaveBeenCalled();
+    expect(arranque.encenderTodos).not.toHaveBeenCalled();
+    expect(persistencia.cliente.release).toHaveBeenCalledTimes(1);
+    expect(recepcionActiva()).toBe(false);
+  });
+
+  it('cancela el arranque en curso cuando se apaga la recepción', async () => {
+    let resolver: ((enabled: boolean) => void) | undefined;
+    configRecepcion.habilitada.mockImplementationOnce(
+      () => new Promise(resolve => (resolver = resolve))
+    );
+    const arranqueEnCurso = arrancarRecepcionBiometrica();
+    await Promise.resolve();
+
+    await detenerRecepcionBiometrica();
+    resolver?.(true);
+    await arranqueEnCurso;
+
+    expect(persistencia.connect).not.toHaveBeenCalled();
+    expect(arranque.encenderTodos).not.toHaveBeenCalled();
+    expect(recepcionActiva()).toBe(false);
   });
 
   it('es idempotente: arrancar dos veces no duplica procesos', async () => {
@@ -80,8 +144,9 @@ describe('arrancarRecepcionBiometrica', () => {
 
     // Así se ve una recarga: el módulo vuelve a evaluarse y su estado local se
     // pierde; el guard global es lo que evita el doble setInterval de R4.
-    expect((globalThis as Record<string, unknown>).__asistenciaRecepcion).toEqual({
-      arrancada: true
+    expect((globalThis as Record<string, unknown>).__asistenciaRecepcion).toMatchObject({
+      arrancada: true,
+      lockClient: persistencia.cliente
     });
 
     vi.resetModules();
@@ -109,18 +174,23 @@ describe('detenerRecepcionBiometrica', () => {
     arranque.listenersActivos.mockReturnValue(['eq-1', 'eq-2']);
     await arrancarRecepcionBiometrica();
 
-    detenerRecepcionBiometrica();
+    await detenerRecepcionBiometrica();
 
     expect(arranque.apagarListener).toHaveBeenCalledWith('eq-1');
     expect(arranque.apagarListener).toHaveBeenCalledWith('eq-2');
     expect(arranque.detenerPoller).toHaveBeenCalledTimes(1);
     expect(arranque.detenerVigilanteIp).toHaveBeenCalledTimes(1);
+    expect(persistencia.cliente.query).toHaveBeenLastCalledWith(
+      expect.stringContaining('pg_advisory_unlock'),
+      expect.any(Array)
+    );
+    expect(persistencia.cliente.release).toHaveBeenCalledTimes(1);
     expect(recepcionActiva()).toBe(false);
   });
 
-  it('es idempotente y no hace nada si la recepción no está encendida', () => {
-    detenerRecepcionBiometrica();
-    detenerRecepcionBiometrica();
+  it('es idempotente y no hace nada si la recepción no está encendida', async () => {
+    await detenerRecepcionBiometrica();
+    await detenerRecepcionBiometrica();
 
     expect(arranque.detenerPoller).not.toHaveBeenCalled();
     expect(arranque.detenerVigilanteIp).not.toHaveBeenCalled();
