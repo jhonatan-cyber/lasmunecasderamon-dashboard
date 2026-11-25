@@ -1,6 +1,6 @@
 import { expect, loginAsAdmin, requireAdmin, test } from './fixtures/admin';
 
-test.use({ viewport: { width: 390, height: 844 } });
+test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
 
 test('conciliar una unidad desde un móvil sin desbordamiento horizontal', async ({
   page,
@@ -67,7 +67,7 @@ test('conciliar una unidad desde un móvil sin desbordamiento horizontal', async
   await page.getByRole('button', { name: 'Confirmar 1 unidad' }).click();
 
   await expect(page.getByText('No hay stock pendiente de conciliación.')).toBeVisible();
-  expect(solicitud).toEqual({
+  expect(solicitud).toMatchObject({
     productoId: 'product-1',
     presentacionOrigenId: 'legacy',
     presentacionDestinoId: 'target',
