@@ -1,7 +1,7 @@
 # Plan de integración — Arquitectura limpia
 
-> **Estado**: propuesto · **Creado**: 2026-10-27 · **Última revisión**:
-> 2026-10-27 **Alcance**: `lasmunecasderamon-dashboard` (monolito modular
+> **Estado**: seguimiento activo · **Creado**: 2026-10-27 · **Última revisión**:
+> 2026-11-25 **Alcance**: `lasmunecasderamon-dashboard` (monolito modular
 > Next.js + PostgreSQL) **Documento de seguimiento**: marcá `[x]` solo con la
 > evidencia del criterio de aceptación observada. Una tarea sin evidencia queda
 > `[ ]` con la nota al lado.
@@ -14,30 +14,37 @@ tiene puertos, ni inversión de dependencias, ni núcleo de dominio.
 
 Evidencia de lo que **sí** está (no tocar, es el activo):
 
-| Hecho                                                             | Valor                           | Cómo se comprueba                                |
-| ----------------------------------------------------------------- | ------------------------------- | ------------------------------------------------ |
-| Módulos con API pública (`index.ts`) y contratos (`contracts.ts`) | 21 dominios                     | `modules/*/index.ts`                             |
-| Rutas HTTP con SQL directo                                        | **0**                           | `docs/arquitectura/FASE0_DIAGNOSTICO.md` §1      |
-| Tablas con más de un escritor                                     | **0**                           | ídem §2                                          |
-| Ciclos entre dominios                                             | **0**                           | ídem §3                                          |
-| Gate de dependencias                                              | **0 hallazgos / 0 excepciones** | `node scripts/arquitectura/limites.mjs --listar` |
-| Adaptador HTTP único (auth, permisos, auditoría, validación)      | `lib/api/withRoute.ts`          | 210 de 230 `route.ts`                            |
+| Hecho                                                             | Valor                           | Cómo se comprueba                           |
+| ----------------------------------------------------------------- | ------------------------------- | ------------------------------------------- |
+| Módulos con API pública (`index.ts`) y contratos (`contracts.ts`) | 21 dominios                     | `modules/*/index.ts`                        |
+| Rutas HTTP con SQL directo                                        | **0**                           | `docs/arquitectura/FASE0_DIAGNOSTICO.md` §1 |
+| Tablas con más de un escritor                                     | **0**                           | ídem §2                                     |
+| Ciclos entre dominios                                             | **0**                           | ídem §3                                     |
+| Gate de dependencias                                              | **4 hallazgos / 4 excepciones** | `pnpm arquitectura:limites`                 |
+| Adaptador HTTP único (auth, permisos, auditoría, validación)      | `lib/api/withRoute.ts`          | 224 de 247 `route.ts`                       |
 
 Evidencia de lo que **falta** (la deuda que este plan paga):
 
-| Deuda                                              | Hoy                                       | Meta                                              |
-| -------------------------------------------------- | ----------------------------------------- | ------------------------------------------------- |
-| Puertos de repositorio (`interface *Repository`)   | **0**                                     | ≥ 1 por módulo tocado                             |
-| Inyección de dependencias (constructor/parámetro)  | **0**                                     | en cada caso de uso con puerto                    |
-| Archivos con SQL fuera de repositorios             | **60**                                    | 0 en `modules/` y `lib/` (scripts/seed excluidos) |
-| `servicio.ts` que escriben SQL                     | **4** (13 sentencias)                     | 0                                                 |
-| `route.ts` que importan `@/lib/database`           | **3**                                     | 0                                                 |
-| `route.ts` que importan `@/lib/business`           | **36** (13 ya son `schemas/`)             | solo `schemas/`                                   |
-| `any` en `app/api`                                 | **74**                                    | 0                                                 |
-| Núcleo de dominio (entidades/reglas puras)         | **inexistente**                           | `dominio.ts` por flujo con reglas                 |
-| `servicio.ts` pasamanos (solo delegan al repo)     | mayoría (2.2 KB prom. vs 8.3 KB del repo) | con reglas propias o eliminados                   |
-| Tests que mockean módulos en vez de inyectar fakes | **296 de 420 archivos**                   | fakes por puerto                                  |
-| Rutas sin `withRoute`                              | **20**                                    | clasificadas y documentadas                       |
+| Deuda                                              | Último conteo disponible                      | Meta                                              |
+| -------------------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
+| Puertos de repositorio (`interface *Repository`)   | 0 (2026-10-27; recontar)                      | ≥ 1 por módulo tocado                             |
+| Inyección de dependencias (constructor/parámetro)  | 0 (2026-10-27; recontar)                      | en cada caso de uso con puerto                    |
+| Archivos con SQL fuera de repositorios             | 0 (2026-11-25; deuda anterior: 66)            | 0 en `modules/` y `lib/` (scripts/seed excluidos) |
+| `servicio.ts` que escriben SQL                     | 0 (2026-11-25; deuda anterior: 5)             | 0                                                 |
+| `route.ts` que importan `@/lib/database`           | 3 (2026-11-25)                                | 0                                                 |
+| `route.ts` que importan `@/lib/business`           | 36 (2026-10-27; recontar; 13 eran `schemas/`) | solo `schemas/`                                   |
+| `any` explícitos en `app/api`                      | 144 (2026-11-25, ESLint)                      | 0                                                 |
+| Núcleo de dominio (entidades/reglas puras)         | inexistente (2026-10-27; recontar)            | `dominio.ts` por flujo con reglas                 |
+| `servicio.ts` pasamanos (solo delegan al repo)     | mayoría (baseline 2026-10-27)                 | con reglas propias o eliminados                   |
+| Tests que mockean módulos en vez de inyectar fakes | 296 (2026-10-27; recontar)                    | fakes por puerto                                  |
+| Rutas sin `withRoute`                              | 23 (2026-11-25)                               | clasificadas y documentadas                       |
+
+**Re-medición 2026-11-25** (`pnpm arquitectura`): 2.348 archivos, 247 rutas, 0
+archivos con SQL fuera de repositorios, 0 rutas con SQL directo, 21 procesos
+periódicos, 32 puntos de caché y 23 rutas sin `withRoute`. La deuda de SQL bajó
+de 66 archivos (41 en módulos de aplicación) a cero. Los valores restantes de
+esta tabla —incluidos `any` en `app/api` y tests que mockean módulos— son el
+baseline manual del 2026-10-27 y no deben leerse como conteos actuales.
 
 **Corrección de una lectura previa**: `lib/services/` y `lib/repositories/` ya
 no existen. El stack legado está migrado; lo que queda son `lib/business`
@@ -91,60 +98,62 @@ deuda vuelva a crecer mientras se paga. Cada fase deja el build verde.
 
 ### Fase 0 — Trinquete y saneamiento del gate (empezar acá)
 
-Medir ya no alcanza: hoy el gate no mira el SQL ni el acceso a la base desde las
-rutas, así que la deuda central no está protegida.
+Medir ya no alcanza: los servicios no deben sumar escrituras SQL y el
+presupuesto de `any` debe permanecer estable; ambos límites ya forman parte del
+gate de CI.
 
-- [ ] **0.1** Agregar regla `sql-solo-infraestructura` a
-      `scripts/arquitectura/limites.mjs`, reusando `escriturasDe()` de
-      `scripts/arquitectura/propiedad.mjs`. Falla si un archivo fuera de
-      `repositorio|consultas|registro|infraestructura|lib/database|scripts|seed`
-      contiene escritura SQL. **DoD**: `--listar` muestra los 36 archivos
-      actuales como excepciones y el control sigue en verde.
-- [ ] **0.2** Agregar regla `rutas-sin-base-directa`: `app/api/**` no importa
-      `@/lib/database/*`. **DoD**: 3 excepciones registradas
-      (`monitoring/slow-queries`, `settings/database-clean`, `sync-operations`).
-- [ ] **0.3** Agregar regla `servicio-sin-sql`: ningún `modules/**/servicio.ts`
-      escribe SQL. **DoD**: 4 excepciones registradas con motivo y condición de
-      salida.
+- [x] **0.1** Agregar regla `sql-solo-infraestructura` a
+      `scripts/arquitectura/limites.mjs`. Falla si una lectura o escritura SQL
+      ejecutable queda fuera de
+      `repositorio|consultas|registro|infraestructura|     lib/database|scripts|seed`.
+      **DoD**: 0 archivos reportados; una regresión en un servicio rompe el
+      gate.
+- [x] **0.2** Regla `api-no-importa-infraestructura`: `app/api/**` no importa
+      `lib/database` ni repositorios heredados. **DoD**: las 3 excepciones
+      actuales están registradas con motivo y condición de eliminación; el gate
+      se ejecuta en cada CI.
+- [x] **0.3** Regla `servicio-sin-sql`: ningún `modules/**/servicio.ts` escribe
+      SQL. **DoD**: no hay excepciones heredadas y una escritura nueva rompe el
+      gate.
 - [ ] **0.4** Borrar de `MODULO_POR_RUTA` las entradas muertas:
       `lib/services/*`, `lib/repositories/*` (líneas 70-113) y todo el bloque
       `app/api/*` (116-132, es inalcanzable porque `moduloDe()` retorna `null`
       para `app/` en la línea 137). **DoD**: el grafo de ciclos y el conteo de
       hallazgos no cambian.
-- [ ] **0.5** Regla de ESLint `no-explicit-any` en `app/api/**` como `warn` con
-      `--max-warnings` fijado al valor actual (74), para que no crezca. **DoD**:
-      `pnpm lint:full` verde y un `any` nuevo rompe CI.
+- [x] **0.5** Regla de ESLint `no-explicit-any` en `app/api/**` como `warn` con
+      `--max-warnings 144`, el conteo real inicial. **DoD**:
+      `pnpm lint:api-types` pasa en CI y un `any` nuevo rompe el presupuesto.
 
 **Riesgo de la fase**: agregar una regla sin baseline deja CI rojo en todo el
 repo. El baseline se carga en el mismo PR que la regla.
 
 ### Fase A — Cerrar las fugas de persistencia (deuda barata, alto retorno)
 
-12 archivos, mecánico, sin cambio de comportamiento.
+13 archivos, mecánico, sin cambio de comportamiento.
 
-- [ ] **A1** Mover a `repositorio.ts` las 13 sentencias SQL de
-      `modules/caja/retiros/servicio.ts` (l.60),
-      `modules/comunicaciones/push/servicio.ts` (l.56, 156),
-      `modules/inventario/limpieza/servicio.ts` (l.70, 90, 95, 125, 139, 146) y
-      `modules/inventario/reposicion/servicio.ts` (l.30, 41, 49, 55). **DoD**:
-      los 4 servicios quedan sin SQL; tests existentes verdes; regla 0.3 sin
-      excepciones.
+- [x] **A1** Mover las escrituras SQL de los cinco servicios detectados a sus
+      repositorios: `modules/caja/retiros/servicio.ts`,
+      `modules/comunicaciones/push/servicio.ts`,
+      `modules/inventario/compras/servicio.ts`,
+      `modules/inventario/limpieza/servicio.ts` y
+      `modules/inventario/reposicion/servicio.ts`. **DoD**: los cinco servicios
+      quedan sin escrituras; tests existentes verdes; regla 0.3 sin excepciones.
 - [ ] **A2** Sacar el acceso a base de
       `app/api/monitoring/slow-queries/route.ts`,
       `app/api/settings/database-clean/route.ts` y
       `app/api/sync-operations/route.ts` hacia `lib/database/maintenance.ts` o
       `modules/auditoria`. **DoD**: regla 0.2 sin excepciones.
-- [ ] **A3** Mover el SQL de `lib/business/containerAlerts.ts`, `shotAlerts.ts`,
+- [x] **A3** Mover el SQL de `lib/business/containerAlerts.ts`, `shotAlerts.ts`,
       `twilioConfig.ts` y `whatsappConfig.ts` a los módulos dueños
-      (`inventario`, `comunicaciones`). **DoD**: `lib/business` solo con reglas
-      puras y esquemas; regla 0.1 reduce el conteo en 4.
-- [ ] **A4** Mover el SQL de `lib/middleware/auth.ts` al repositorio de
+      (`inventario`, `identidad`, `configuracion`). **DoD**: estos casos de uso
+      no importan el driver ni contienen consultas SQL.
+- [x] **A4** Mover el SQL de `lib/middleware/auth.ts` al repositorio de
       `identidad`. **DoD**: la regla `negocio-sin-framework` sigue verde y el
       middleware no consulta tablas.
 - [ ] **A5** Reducir los 36 imports de `@/lib/business` en `route.ts` a solo
       `lib/business/schemas/**` (13 ya lo son; quedan 23 por mover). **DoD**:
       ningún `route.ts` importa helpers de negocio.
-- [ ] **A6** Eliminar los 74 `any` de `app/api` (empezar por los
+- [ ] **A6** Eliminar los 144 `any` de `app/api` (empezar por los
       `{ params: any; user: any }` de `app/api/sales/route.ts:33`; el tipo
       correcto ya existe en `lib/api/withRoute.ts`). **DoD**:
       `grep -c ': any' app/api` = 0 y `pnpm typecheck` verde.
@@ -204,17 +213,19 @@ un commit chico.
 - [ ] **D2** Extraer las 6 tablas (`biometric_devices`, `biometric_plantillas`,
       `biometric_device_records`, `biometric_events`, `asistencia_desafios`,
       `kiosk_devices`) a repositorios por tabla.
-- [ ] **D3** Formalizar el ciclo de vida de los 3 procesos periódicos
+- [x] **D3** Formalizar el ciclo de vida de los 3 procesos periódicos
       (`ipWatcher`, `recordPoller`, `setInterval` de `notifications/kiosk`) con
-      arranque/parada explícitos, como pide el §5 del diagnóstico. **DoD**: no
-      queda `setInterval` sin función de limpieza.
+      arranque/parada explícitos. El lector biométrico usa un advisory lock de
+      PostgreSQL para elegir una sola instancia y reintentar el liderazgo; el
+      canal SSE del kiosko limpia su intervalo al cerrar la conexión. Verificado
+      con `tests/unit/modules/asistencia/procesos.test.ts`.
 
 **Por qué al final**: es la zona con hardware real detrás. Un refactor acá se
 prueba contra el dispositivo, no contra un test. No la mezcles con A/B/C.
 
 ### Fase E — Contratos HTTP y errores
 
-- [ ] **E1** Clasificar las 20 rutas sin `withRoute` (`/api/auth/login`,
+- [ ] **E1** Clasificar las 23 rutas sin `withRoute` (`/api/auth/login`,
       `/api/whatsapp/webhook`, `/api/csp-violation`, SSE, imágenes, swagger…).
       Envolver las que correspondan; documentar las excepciones legítimas con un
       comentario que explique por qué.
@@ -244,18 +255,19 @@ prueba contra el dispositivo, no contra un test. No la mezcles con A/B/C.
 Actualizá la columna **Actual** al cerrar cada fase. El comando es la fuente de
 verdad: si el número no sale del comando, no cuenta.
 
-| Métrica                                             | Baseline 2026-10-27 | Actual | Meta                        | Comando                                                       |
-| --------------------------------------------------- | ------------------- | ------ | --------------------------- | ------------------------------------------------------------- |
-| Archivos con SQL fuera de repositorios              | 60                  | —      | 0 (`modules/`,`lib/`)       | `pnpm arquitectura` → §1                                      |
-| `servicio.ts` con escrituras SQL                    | 4                   | —      | 0                           | `grep -l "INSERT INTO\|UPDATE .* SET" modules/**/servicio.ts` |
-| `route.ts` importando `@/lib/database`              | 3                   | —      | 0                           | grep sobre `app/api/**`                                       |
-| `route.ts` importando `@/lib/business` (no schemas) | 36 (13 son schemas) | —      | 0                           | ídem                                                          |
-| `any` en `app/api`                                  | 74                  | —      | 0                           | grep `: any`                                                  |
-| Puertos declarados en `modules/`                    | 0                   | —      | ≥ 1 por módulo migrado      | `grep -r "interface .*Port\|interface .*Repository" modules/` |
-| `dominio.ts` puros (sin imports de infra)           | 0                   | —      | 3 (ventas, cuentas, nómina) | `pnpm arquitectura:limites`                                   |
-| `vi.mock('@/modules/*')` en tests                   | 296                 | —      | ≤ 50                        | grep en `tests/unit`                                          |
-| Hallazgos del gate                                  | 0                   | —      | 0                           | `node scripts/arquitectura/limites.mjs`                       |
-| Excepciones registradas                             | 0                   | —      | máx. 12 y decreciente       | `node scripts/arquitectura/limites.mjs --listar`              |
+| Métrica                                             | Baseline 2026-10-27 | Actual 2026-11-25 | Meta                        | Comando                                                       |
+| --------------------------------------------------- | ------------------- | ----------------- | --------------------------- | ------------------------------------------------------------- |
+| Archivos con SQL fuera de repositorios              | 60                  | 0                 | 0 (`modules/`,`lib/`)       | `pnpm arquitectura` → §1                                      |
+| `servicio.ts` con escrituras SQL                    | 4                   | 0                 | 0                           | `pnpm arquitectura:limites`                                   |
+| `route.ts` importando `@/lib/database`              | 3                   | 3                 | 0                           | grep sobre `app/api/**`                                       |
+| `route.ts` importando `@/lib/business` (no schemas) | 36 (13 son schemas) | no recontado      | 0                           | ídem                                                          |
+| `any` explícitos en `app/api`                       | 74                  | 144               | 0                           | `pnpm lint:api-types`                                         |
+| Rutas sin `withRoute`                               | 20                  | 23                | clasificadas/documentadas   | `pnpm arquitectura` → resumen                                 |
+| Puertos declarados en `modules/`                    | 0                   | no recontado      | ≥ 1 por módulo migrado      | `grep -r "interface .*Port\|interface .*Repository" modules/` |
+| `dominio.ts` puros (sin imports de infra)           | 0                   | no recontado      | 3 (ventas, cuentas, nómina) | `pnpm arquitectura:limites`                                   |
+| `vi.mock('@/modules/*')` en tests                   | 296                 | no recontado      | ≤ 50                        | grep en `tests/unit`                                          |
+| Hallazgos del gate                                  | 0                   | 4                 | 0 nuevas                    | `pnpm arquitectura:limites`                                   |
+| Excepciones registradas                             | 0                   | 4                 | máx. 12 y decreciente       | `pnpm arquitectura:excepciones`                               |
 
 **Cómo medir sin mentirte**: en PowerShell usá `Select-String -LiteralPath`
 cuando el path pueda contener `[id]` o `[filename]`. Con `-Path`, esos corchetes
@@ -266,8 +278,10 @@ dio 181 imports y 66 `any` cuando los reales son 233 y 74.
 
 1. `pnpm arquitectura` reporta 0 archivos con SQL fuera de repositorios en
    `modules/` y `lib/` (scripts y seeds excluidos).
-2. `pnpm arquitectura:limites` falla si alguien agrega un `servicio.ts` con SQL,
-   una ruta que importa la base o un `any` nuevo en `app/api`.
+2. `pnpm arquitectura:limites` falla si se agrega SQL ejecutable fuera de
+   infraestructura o una ruta importa persistencia fuera del baseline. El
+   presupuesto de `any` está protegido por CI, aunque reducirlo a cero sigue
+   pendiente.
 3. Los tres `dominio.ts` corren sus reglas en tests sin base de datos, y las
    rutas que las usan no las reimplementan.
 4. `modules/reportes/dashboard` y `modules/ventas/registro` demuestran el patrón
@@ -275,9 +289,13 @@ dio 181 imports y 66 `any` cuando los reales son 233 y 74.
 
 ## 5. Registro de avance
 
-| Fecha      | Fase | Tarea       | Evidencia    | Nota                   |
-| ---------- | ---- | ----------- | ------------ | ---------------------- |
-| 2026-10-27 | —    | Plan creado | Este archivo | Baseline medido a mano |
+| Fecha      | Fase | Tarea                                | Evidencia                                                     | Nota                                                         |
+| ---------- | ---- | ------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| 2026-10-27 | —    | Plan creado                          | Este archivo                                                  | Baseline inicial medido a mano                               |
+| 2026-11-25 | 0    | Re-medición y regla de frontera API  | `FASE0_DIAGNOSTICO.md`, `pnpm arquitectura:limites`, CI       | 0.2 completa; 3 excepciones explícitas                       |
+| 2026-11-25 | D    | Ciclo de vida y liderazgo biométrico | `procesos.test.ts` (8 pruebas), advisory lock de PostgreSQL   | Código validado; lector físico no disponible en este entorno |
+| 2026-11-25 | F    | Conciliación de stock y flujo móvil  | pruebas unitarias, PostgreSQL (rollback), `playwright --list` | E2E real requiere servidor y fixture PostgreSQL local        |
+| 2026-11-25 | A    | Cierre de la deuda SQL               | `pnpm arquitectura` (66 → 0), gate de límites y pruebas       | A1, A3 y A4 completas; A2 conserva 3 excepciones API         |
 
 ## 6. Riesgos y trampas
 

@@ -13,6 +13,7 @@ import { snapshotDatabase, restoreDatabase } from '@/lib/database/maintenance';
 import { SaleService } from '@/workflows/ventas';
 import { CuentaRepository } from '@/modules/operacion/cuentas/registro';
 import { BusinessError } from '@/lib/errors/errors';
+import { ESTADO_UNIDAD_ACTIVA } from '@/modules/inventario/estados';
 
 afterAll(async () => {
   await db.pool.end();
@@ -56,12 +57,45 @@ const crearCuenta = async (createdBy: string, codigo: string) => {
   return id;
 };
 
-const ventaBody = (productoId: string, total = 12000) => ({
+const crearProductoVendible = async () => {
+  const productoId = crypto.randomUUID();
+  const presentacionId = crypto.randomUUID();
+  const unidadId = crypto.randomUUID();
+  const codigo = `PGCV${productoId.slice(0, 8)}`;
+  await query(
+    `INSERT INTO productos (id_producto, codigo, nombre, precio, comision, fecha_crea)
+     VALUES (?, ?, ?, 12000, 0, now())`,
+    [productoId, codigo, 'Producto caja validation']
+  );
+  await query(
+    `INSERT INTO inventario_presentaciones
+       (id, producto_id, nombre, precio_venta, comision, ml_botella)
+     VALUES (?, ?, '750 ml', 12000, 0, 750)`,
+    [presentacionId, productoId]
+  );
+  await query(
+    `INSERT INTO inventario_unidades
+       (id, producto_id, presentacion_id, codigo, ubicacion, estado, fecha_crea)
+     VALUES (?, ?, ?, ?, 'bar', ?, now())`,
+    [unidadId, productoId, presentacionId, `${codigo}U`, ESTADO_UNIDAD_ACTIVA]
+  );
+  return { productoId, presentacionId };
+};
+
+const ventaBody = (productoId: string, presentacionId: string, total = 12000) => ({
   codigo: 'PGCAJAV',
   total,
   sub_total: total,
   metodo_pago: 'efectivo' as const,
-  detalles: [{ producto_id: productoId, precio: total, cantidad: 1, sub_total: total }],
+  detalles: [
+    {
+      producto_id: productoId,
+      presentacion_id: presentacionId,
+      precio: total,
+      cantidad: 1,
+      sub_total: total
+    }
+  ],
   usuarios: []
 });
 
@@ -70,18 +104,11 @@ it('POST /sales rechaza con NO_CAJA_ABIERTA y no registra la venta sin caja', as
   try {
     await cerrarCajas();
     const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
-    const [product] = await query(
-      `SELECT p.id_producto
-         FROM productos p
-         LEFT JOIN categorias c ON c.id_categoria = p.categoria_id
-        WHERE LOWER(COALESCE(c.nombre, '')) NOT LIKE '%champ%'
-          AND LOWER(COALESCE(c.nombre, '')) NOT LIKE '%shamp%'
-        LIMIT 1`
-    );
+    const product = await crearProductoVendible();
     const [ventasAntes] = await query('SELECT COUNT(*) AS n FROM ventas');
 
     await expect(
-      SaleService.createSale(ventaBody(product.id_producto), user.id_usuario)
+      SaleService.createSale(ventaBody(product.productoId, product.presentacionId), user.id_usuario)
     ).rejects.toMatchObject({ code: 'NO_CAJA_ABIERTA' });
 
     const [ventasDespues] = await query('SELECT COUNT(*) AS n FROM ventas');
@@ -97,16 +124,12 @@ it('POST /sales con caja abierta registra la venta y postula el saldo a la caja'
     await cerrarCajas();
     const idCaja = await abrirCaja();
     const [user] = await query('SELECT id_usuario FROM usuarios LIMIT 1');
-    const [product] = await query(
-      `SELECT p.id_producto
-         FROM productos p
-         LEFT JOIN categorias c ON c.id_categoria = p.categoria_id
-        WHERE LOWER(COALESCE(c.nombre, '')) NOT LIKE '%champ%'
-          AND LOWER(COALESCE(c.nombre, '')) NOT LIKE '%shamp%'
-        LIMIT 1`
-    );
+    const product = await crearProductoVendible();
 
-    const sale = await SaleService.createSale(ventaBody(product.id_producto), user.id_usuario);
+    const sale = await SaleService.createSale(
+      ventaBody(product.productoId, product.presentacionId),
+      user.id_usuario
+    );
     const [stored] = await query('SELECT caja_id, total FROM ventas WHERE id_venta = ?', [sale.id]);
     expect(stored.caja_id).toBe(idCaja);
     const [balance] = await query('SELECT venta FROM cajas WHERE id_caja = ?', [idCaja]);

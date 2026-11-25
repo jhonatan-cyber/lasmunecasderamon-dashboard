@@ -40,7 +40,13 @@ vi.mock('@/modules/asistencia/biometrico/deviceClient', async importOriginal => 
 
 vi.mock('@/lib/utils/logger', () => {
   const mocks = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
-  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
+  return {
+    logger: mocks,
+    default: mocks,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
+  };
 });
 
 import {
@@ -133,7 +139,7 @@ function instalarConsultas(esc: Escenario) {
       if (params.length && params[0] !== DISPOSITIVO) return [];
       return [{ ip: '192.168.0.5', usuario_equipo: 'admin', clave_cifrada: 'a.b.c' }];
     }
-    if (s.includes('SELECT id_usuario FROM usuarios')) {
+    if (s.includes('biometrico_codigo IS NOT NULL')) {
       return esc.reclamado ? [{ id_usuario: esc.reclamado }] : [];
     }
     if (
@@ -451,9 +457,10 @@ describe('cola y barrido', () => {
     await recuperarIdentificacionesPendientes(3);
 
     const barrido = db.queryMock.mock.calls
-      .map(c => String(c[0]))
-      .find(s => s.includes('FROM biometric_device_records'));
-    expect(barrido).toContain("id NOT IN ('a1b2c3d4-0000-4000-8000-000000000001')");
+      .map(call => ({ sql: String(call[0]), params: call[1] }))
+      .find(call => call.sql.includes('FROM biometric_device_records'));
+    expect(barrido?.sql).toContain('id NOT IN (?)');
+    expect(barrido?.params).toContain('a1b2c3d4-0000-4000-8000-000000000001');
   });
 
   it('encolar es idempotente (mismo record en vuelo no entra dos veces)', async () => {

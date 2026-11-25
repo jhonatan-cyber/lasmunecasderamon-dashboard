@@ -67,3 +67,15 @@ export function leerSolicitudAnulacionEntrada(
 ) {
   return repositorio.leerSolicitudAnulacionEntrada(...args);
 }
+
+export function obtenerEntradaPendienteParaAnular(
+  ...args: Parameters<typeof repositorio.obtenerEntradaPendienteParaAnular>
+) {
+  return repositorio.obtenerEntradaPendienteParaAnular(...args);
+}
+
+export function marcarEntradaComoAnulada(
+  ...args: Parameters<typeof repositorio.marcarEntradaComoAnulada>
+) {
+  return repositorio.marcarEntradaComoAnulada(...args);
+}

@@ -26,6 +26,19 @@ export async function obtenerValorConfiguracion(clave: string): Promise<string |
   return rows[0]?.valor ?? null;
 }
 
+/** Valores existentes para un conjunto acotado de claves, sin exponer el resto del catálogo. */
+export async function obtenerValoresConfiguracion(
+  claves: readonly string[]
+): Promise<Record<string, string>> {
+  if (claves.length === 0) return {};
+  const placeholders = claves.map(() => '?').join(', ');
+  const rows = await query<Array<{ clave: string; valor: string | null }>>(
+    `SELECT clave, valor FROM configuraciones WHERE clave IN (${placeholders})`,
+    [...claves]
+  );
+  return Object.fromEntries(rows.map(({ clave, valor }) => [clave, valor ?? '']));
+}
+
 /**
  * Guarda el valor de una clave: la inserta si no existe y la actualiza si existe.
  *

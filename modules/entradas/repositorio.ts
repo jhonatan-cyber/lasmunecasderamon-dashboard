@@ -32,6 +32,30 @@ export interface SolicitudAnulacionEntrada {
   fecha_procesamiento: string | null;
 }
 
+export function obtenerEntradaPendienteParaAnular(
+  entradaId: string,
+  contexto: ContextoOperacion
+): Promise<Array<{ id: string; cover_estado: string; monto_entrada: number }>> {
+  return resolverTransaccion(contexto)(
+    `SELECT id, cover_estado, monto_entrada
+       FROM entradas_clientes WHERE id = ? FOR UPDATE`,
+    [entradaId]
+  );
+}
+
+export async function marcarEntradaComoAnulada(
+  data: { entradaId: string; procesadoPor: string; fecha: string },
+  contexto: ContextoOperacion
+): Promise<void> {
+  await resolverTransaccion(contexto)(
+    `UPDATE entradas_clientes
+        SET cover_estado = 'anulada', cover_entregada_por = ?, cover_entregada_at = ?,
+            anulacion_origen = 'manual'
+      WHERE id = ?`,
+    [data.procesadoPor, data.fecha, data.entradaId]
+  );
+}
+
 /** Verifica si ya existe una solicitud pendiente para esta entrada. */
 export async function existeSolicitudAnulacionEntrada(entradaId: string): Promise<boolean> {
   const rows = await query<{ id: string }[]>(

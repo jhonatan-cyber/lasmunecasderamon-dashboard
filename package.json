@@ -14,6 +14,7 @@
     "postinstall": "node -e \"if (process.env.SKIP_SW_GENERATE) process.exit(0); require('child_process').execSync('node scripts/generate-sw.js --dev', { stdio: 'inherit' })\"",
     "lint": "eslint app/layout.tsx app/page.tsx components/layout/LayoutContent.tsx components/providers/ProtectedAppProviders.tsx lib/api/site.ts --ignore-pattern .next --ignore-pattern node_modules && node scripts/check-ui-components.cjs",
     "lint:full": "eslint .",
+    "lint:api-types": "eslint app/api --rule \"@typescript-eslint/no-explicit-any: warn\" --max-warnings 144",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "typecheck:strict": "tsc --noEmit -p tsconfig.typecheck.json --strict",
     "start": "cross-env TZ=UTC next start --hostname 0.0.0.0",

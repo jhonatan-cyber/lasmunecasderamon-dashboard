@@ -1,4 +1,3 @@
-import { query } from '@/lib/database/db';
 import {
   credencialesDeFila,
   leerMacsDelEquipo,
@@ -13,6 +12,12 @@ import {
 } from '@/modules/asistencia/biometrico/discovery';
 import { apagarListener, encenderListener } from '@/modules/asistencia/biometrico/eventListener';
 import logger from '@/lib/utils/logger';
+import {
+  actualizarMacDispositivo,
+  actualizarIpDispositivo,
+  obtenerEquipoParaDescubrir,
+  obtenerMacDispositivo
+} from './repositorio';
 interface FilaEquipo {
   id: string;
   nombre: string;
@@ -25,11 +30,7 @@ interface FilaEquipo {
 }
 
 async function cargarEquipo(dispositivoId: string): Promise<FilaEquipo | null> {
-  const rows = await query<FilaEquipo[]>(
-    `SELECT id, nombre, serial, ip, usuario_equipo, clave_cifrada, mac, recoger_registros
-       FROM biometric_devices WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const rows = await obtenerEquipoParaDescubrir<FilaEquipo>(dispositivoId);
   return rows?.[0] ?? null;
 }
 
@@ -49,17 +50,11 @@ export async function capturarMacs(credenciales: CredencialesEquipo): Promise<st
 export async function guardarMac(dispositivoId: string, macs: string[]): Promise<boolean> {
   const llegadas = macsDe(macs.join(','));
   if (llegadas.length === 0) return false;
-  const actual = await query<{ mac: string | null }[]>(
-    'SELECT mac FROM biometric_devices WHERE id = ?',
-    [dispositivoId]
-  );
+  const actual = await obtenerMacDispositivo(dispositivoId);
   const previas = macsDe(actual?.[0]?.mac ?? null);
   const unicas = [...new Set([...previas, ...llegadas])];
   if (unicas.length === previas.length) return false;
-  await query('UPDATE biometric_devices SET mac = ? WHERE id = ?', [
-    unicas.join(','),
-    dispositivoId
-  ]);
+  await actualizarMacDispositivo(dispositivoId, unicas.join(','));
   return true;
 }
 
@@ -174,7 +169,7 @@ export async function descubrirIpDispositivo(
     };
   }
 
-  await query('UPDATE biometric_devices SET ip = ? WHERE id = ?', [hallado.ip, dispositivoId]);
+  await actualizarIpDispositivo(dispositivoId, hallado.ip);
   logger.info('[biometric-discovery] IP del equipo actualizada', {
     dispositivoId,
     serial: fila.serial,

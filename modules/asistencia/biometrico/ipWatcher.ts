@@ -1,4 +1,3 @@
-import { query } from '@/lib/database/db';
 import {
   credencialesDeFila,
   verificarConexion
@@ -11,6 +10,7 @@ import {
 } from '@/modules/asistencia/biometrico/ipDiscovery';
 import logger from '@/lib/utils/logger';
 import { recepcionAutomaticaHabilitada } from './recepcionConfig';
+import { listarEquiposParaVigilanciaIp } from './repositorio';
 
 const INTERVALO_DEFECTO_MS = 5 * 60_000;
 
@@ -37,16 +37,13 @@ export function intervaloVigilanciaIp(): number {
 }
 
 export async function vigilarUnaVez(): Promise<void> {
-  const equipos = await query<
-    { id: string; serial: string; ip: string; usuario_equipo: string; clave_cifrada: string }[]
-  >(
-    `SELECT id, serial, ip, usuario_equipo, clave_cifrada
-       FROM biometric_devices
-      WHERE revocado_en IS NULL
-        AND ip IS NOT NULL
-        AND usuario_equipo IS NOT NULL
-        AND clave_cifrada IS NOT NULL`
-  );
+  const equipos = await listarEquiposParaVigilanciaIp<{
+    id: string;
+    serial: string;
+    ip: string;
+    usuario_equipo: string;
+    clave_cifrada: string;
+  }>();
 
   for (const equipo of equipos) {
     try {

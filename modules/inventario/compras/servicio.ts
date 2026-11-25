@@ -11,7 +11,6 @@
  * códigos que devuelve la propia respuesta, y el stock se lee bajo demanda.
  */
 import { withTransaction } from '@/lib/database/db';
-import { BaseRepository } from '@/lib/database/base-repository';
 import { ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { resolverVencimiento } from '@/lib/business/vencimiento';
 import { z } from 'zod';
@@ -19,7 +18,13 @@ import type { PurchaseCreate, PurchaseGeneratedCode } from '@/types/purchase';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
 import { listarPresentacionesPorProductos } from '../presentaciones/repositorio';
 import type { PresentacionRow } from '../tipos';
-import { crearCompra, listarCompras, listarCodigosDeCompra, type CompraRow } from './repositorio';
+import {
+  actualizarPrecioCompraPresentacion,
+  crearCompra,
+  listarCompras,
+  listarCodigosDeCompra,
+  type CompraRow
+} from './repositorio';
 import { productosPorIds } from '../productos/repositorio';
 
 const DetalleSchema = z.object({
@@ -184,9 +189,7 @@ export async function registrarCompra(
         });
       }
       // Último costo conocido por presentación (misma transacción).
-      await BaseRepository.update(trx, 'inventario_presentaciones', 'id', d.presentacion_id, {
-        precio_compra: d.precio_compra
-      });
+      await actualizarPrecioCompraPresentacion(trx, d.presentacion_id, d.precio_compra);
     }
     // Un sync de stock por producto distinto (no por línea de detalle).
     for (const pid of productoIds) {

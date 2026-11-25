@@ -221,8 +221,8 @@ export function withRoute<M extends PermissionModule>(
           request = new Request(sanitizedUrl, request);
         }
 
-        // Sanitización avanzada del body JSON: null bytes, XSS en claves,
-        // y detección de patrones de inyección SQL (solo alerta, no bloquea).
+        // Normalización limitada del body JSON y monitoreo heurístico SQL.
+        // La detección solo alerta; los esquemas y SQL parametrizado son los controles.
         if (contentType.includes('application/json')) {
           try {
             const bodyPreview = await request.clone().json();

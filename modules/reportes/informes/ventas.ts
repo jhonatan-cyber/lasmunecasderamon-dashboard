@@ -1,4 +1,8 @@
-import { query } from '@/lib/database/db';
+import {
+  listarShotsVentasInforme,
+  listarVentasDiariasInforme,
+  obtenerResumenVentasInforme
+} from './repositorio';
 
 type SalesPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
 
@@ -71,57 +75,12 @@ export async function getSalesReport(
   const range = buildDateRange('v.fecha_crea', period, startDate, endDate);
 
   const [summaryRows, dailyRows, shotRows] = await Promise.all([
-    query<any[]>(
-      `
-      SELECT
-        COALESCE(SUM(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) AS "totalVentas",
-        COALESCE(SUM(v.cargo_tarjeta), 0) AS "cargoTarjeta",
-        COUNT(*) AS "cantidadVentas",
-        COALESCE(AVG(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) AS "promedioVenta",
-        COALESCE(SUM(v.propina), 0) AS "totalPropinas",
-        COALESCE(SUM(CASE WHEN LOWER(v.metodo_pago) = 'efectivo' THEN v.total ELSE 0 END), 0) AS efectivo,
-        COALESCE(SUM(CASE WHEN LOWER(v.metodo_pago) = 'tarjeta' THEN v.total ELSE 0 END), 0) AS tarjeta,
-        COALESCE(SUM(CASE WHEN LOWER(v.metodo_pago) = 'transferencia' THEN v.total ELSE 0 END), 0) AS transferencia
-      FROM ventas v
-      WHERE v.estado IN (1, 2)
-        AND ${range.clause}
-    `,
-      range.params
-    ),
-    query<any[]>(
-      `
-      SELECT
-        DATE(v.fecha_crea) AS fecha,
-        COALESCE(SUM(v.total - COALESCE(v.cargo_tarjeta, 0)), 0) AS ventas,
-        COALESCE(SUM(v.cargo_tarjeta), 0) AS "cargoTarjeta",
-        COUNT(*) AS cantidad,
-        COALESCE(SUM(v.propina), 0) AS propinas
-      FROM ventas v
-      WHERE v.estado IN (1, 2)
-        AND ${range.clause}
-      GROUP BY DATE(v.fecha_crea)
-      ORDER BY DATE(v.fecha_crea) ASC
-    `,
-      range.params
-    ),
+    obtenerResumenVentasInforme(range),
+    listarVentasDiariasInforme(range),
     // Shots separados por a quién se le cobró: el precio de anfitriona es distinto
     // (Bar → Transferencia → "Precio shot anfitriona") y hasta la migración 039 esta
     // elección se descartaba. Los detalles que no son shots no entran al agregado.
-    query<any[]>(
-      `
-      SELECT
-        COALESCE(SUM(CASE WHEN NOT dv.shot_anfitriona THEN dv.sub_total ELSE 0 END), 0) AS "montoCliente",
-        COALESCE(SUM(CASE WHEN NOT dv.shot_anfitriona THEN dv.cantidad ELSE 0 END), 0) AS "cantidadCliente",
-        COALESCE(SUM(CASE WHEN dv.shot_anfitriona THEN dv.sub_total ELSE 0 END), 0) AS "montoAnfitriona",
-        COALESCE(SUM(CASE WHEN dv.shot_anfitriona THEN dv.cantidad ELSE 0 END), 0) AS "cantidadAnfitriona"
-      FROM detalle_ventas dv
-      INNER JOIN ventas v ON v.id_venta = dv.venta_id
-      WHERE v.estado IN (1, 2)
-        AND dv.tipo_venta = 'shot'
-        AND ${range.clause}
-    `,
-      range.params
-    )
+    listarShotsVentasInforme(range)
   ]);
 
   const summary = summaryRows[0] || {};

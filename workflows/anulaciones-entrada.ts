@@ -10,8 +10,7 @@ import 'server-only';
  * A diferencia de las ventas, las entradas no tienen stock, comisiones ni
  * propinas: solo se ajusta el estado de la entrada y el movimiento de caja.
  */
-import { enUnaUnidad, type ContextoOperacion } from '@/lib/transaction/contract';
-import { resolverTransaccion } from '@/lib/transaction/infrastructure';
+import { enUnaUnidad } from '@/lib/transaction/contract';
 import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { NotFoundError, ValidationError } from '@/lib/errors/errors';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
@@ -19,9 +18,11 @@ import {
   crearSolicitudAnulacionEntrada,
   actualizarSolicitudAnulacionEntrada,
   leerSolicitudAnulacionEntrada,
+  obtenerEntradaPendienteParaAnular,
+  marcarEntradaComoAnulada,
   type MetodoDevolucion
 } from '@/modules/entradas';
-import { registrarMovimientoCobro, type MovimientoCobro } from '@/modules/caja';
+import { obtenerCajaActiva, registrarMovimientoCobro, type MovimientoCobro } from '@/modules/caja';
 
 type Tarea = () => void | Promise<void>;
 
@@ -88,30 +89,20 @@ export async function procesarAnulacionEntrada(
       }
 
       // Aprobar: marcar la entrada como anulada
-      const trx = resolverTransaccion(contexto);
-      const filas = await trx<
-        Array<{ id: string; cover_estado: string; monto_entrada: number }>
-      >(
-        `SELECT id, cover_estado, monto_entrada
-         FROM entradas_clientes WHERE id = ? FOR UPDATE`,
-        [solicitud.entrada_id]
-      );
+      const filas = await obtenerEntradaPendienteParaAnular(solicitud.entrada_id, contexto);
       const entrada = filas[0];
       if (!entrada) throw new NotFoundError('Entrada', solicitud.entrada_id);
       if (entrada.cover_estado !== 'pendiente')
         throw new ValidationError('Esta entrada ya fue entregada o anulada');
 
-      await trx(
-        `UPDATE entradas_clientes
-          SET cover_estado = 'anulada', cover_entregada_por = ?, cover_entregada_at = ?,
-              anulacion_origen = 'manual'
-         WHERE id = ?`,
-        [procesadoPor, getNowInBusinessTimezone(), entrada.id]
+      await marcarEntradaComoAnulada(
+        { entradaId: entrada.id, procesadoPor, fecha: getNowInBusinessTimezone() },
+        contexto
       );
 
       // Registrar la devolución en caja si hay método de devolución
       if (metodoDevolucion && solicitud.monto > 0) {
-        const cajaId = await obtenerCajaActivaId(contexto);
+        const cajaId = await obtenerCajaActiva(contexto);
         if (cajaId) {
           const movimiento: MovimientoCobro = {};
           movimiento[metodoDevolucion] = -solicitud.monto;
@@ -125,11 +116,4 @@ export async function procesarAnulacionEntrada(
 
   await ejecutarEfectosConfirmados(tareas);
   return resultado!;
-}
-
-async function obtenerCajaActivaId(contexto: ContextoOperacion): Promise<string | null> {
-  const rows = await resolverTransaccion(contexto)<Array<{ id_caja: string }>>(
-    `SELECT id_caja FROM cajas WHERE estado = 'abierta' LIMIT 1`
-  );
-  return rows[0]?.id_caja ?? null;
 }

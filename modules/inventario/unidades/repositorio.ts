@@ -76,6 +76,26 @@ export async function contarUnidades(
   return Number(rows[0]?.total ?? 0);
 }
 
+export async function listarUnidadesActivasEnAlmacen(): Promise<
+  Array<{
+    presentacion_id: string;
+    codigo: string | null;
+    codigo_barras: string | null;
+    fecha_unidad: string | null;
+    fecha_presentacion: string | null;
+  }>
+> {
+  return query(
+    `SELECT u.presentacion_id, u.codigo, u.codigo_barras,
+            u.fecha_vencimiento AS fecha_unidad,
+            p.fecha_vencimiento AS fecha_presentacion
+       FROM inventario_unidades u
+       JOIN inventario_presentaciones p ON p.id = u.presentacion_id
+      WHERE u.estado = '${ESTADO_UNIDAD_ACTIVA}'
+        AND u.ubicacion = 'almacen'`
+  );
+}
+
 export async function cambiarEstadoUnidades(
   trx: TransactionQuery,
   unidadIds: string[],

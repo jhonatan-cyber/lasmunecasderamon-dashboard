@@ -158,7 +158,7 @@ function ConfirmarAnulacionEntradaContent() {
             </div>
           </CardContent>
         </Card>
-        <Toaster />
+        <Toaster position="top-right" />
       </div>
     );
   }
@@ -181,7 +181,7 @@ function ConfirmarAnulacionEntradaContent() {
             </div>
           </CardContent>
         </Card>
-        <Toaster />
+        <Toaster position="top-right" />
       </div>
     );
   }
@@ -265,7 +265,7 @@ function ConfirmarAnulacionEntradaContent() {
           </div>
         </CardContent>
       </Card>
-      <Toaster />
+      <Toaster position="top-right" />
     </div>
   );
 }

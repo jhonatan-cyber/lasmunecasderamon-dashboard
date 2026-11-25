@@ -5,7 +5,8 @@ import {
   sanitizeMaxLength,
   sanitizeBody,
   detectSQLInjection,
-  scanForSQLInjection
+  scanForSQLInjection,
+  sanitizeRequest
 } from '@/lib/api/sanitize';
 
 describe('sanitizeNullBytes', () => {
@@ -111,5 +112,20 @@ describe('scanForSQLInjection', () => {
     const obj = { name: 'Juan', age: 30 };
     const result = scanForSQLInjection(obj);
     expect(result).toHaveLength(0);
+  });
+});
+
+describe('sanitizeRequest', () => {
+  it('devuelve una advertencia de monitoreo sin bloquear ni alterar texto SQL-like', async () => {
+    const request = new Request('http://localhost/api/test', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ descripcion: 'DROP TABLE productos' })
+    });
+
+    const result = await sanitizeRequest(request);
+
+    expect(result?.warnings).toHaveLength(1);
+    expect(result?.body).toEqual({ descripcion: 'DROP TABLE productos' });
   });
 });

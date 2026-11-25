@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const db = vi.hoisted(() => ({ query: vi.fn() }));
+const identidad = vi.hoisted(() => ({ listarPermisosDeUsuario: vi.fn() }));
 const cache = vi.hoisted(() => ({ read: vi.fn(), set: vi.fn() }));
 
-vi.mock('@/lib/database/db', () => ({ query: db.query }));
+vi.mock('@/modules/identidad', () => identidad);
 vi.mock('@/lib/auth/permissions-cache', () => ({ PermissionsCache: cache }));
 
 import {
@@ -21,27 +21,20 @@ const concedidos = (perms: UserPermissions): string[] =>
       .map(([flag]) => `${modulo}.${flag}`)
   );
 
-/** Simula las dos consultas del resolver: rol del usuario y sus permisos. */
-const stubQueries = (
-  rolId: string | null | 'sin-usuario',
-  permisos: Array<{ module: string; action: string }>
-) => {
-  db.query.mockImplementation(async (sql: string) => {
-    if (/FROM usuarios/.test(sql))
-      return rolId && rolId !== 'sin-usuario' ? [{ rol_id: rolId }] : [];
-    if (/FROM permissions/.test(sql)) return permisos;
-    throw new Error(`consulta inesperada: ${sql}`);
-  });
+/** Simula los permisos ya resueltos por la API pública de Identidad. */
+const stubPermisos = (permisos: Array<{ module: string; action: string }>) => {
+  identidad.listarPermisosDeUsuario.mockResolvedValue(permisos);
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   cache.read.mockResolvedValue(null);
+  identidad.listarPermisosDeUsuario.mockResolvedValue([]);
 });
 
 describe('getUserPermissionsFromDB · cerrado por defecto', () => {
   it('un rol sin filas asignadas no concede nada', async () => {
-    stubQueries('rol-vacio', []);
+    stubPermisos([]);
 
     const perms = await getUserPermissionsFromDB('user-1');
 
@@ -54,16 +47,16 @@ describe('getUserPermissionsFromDB · cerrado por defecto', () => {
   });
 
   it('un usuario sin rol no concede nada y no consulta permisos', async () => {
-    stubQueries(null, []);
+    stubPermisos([]);
 
     const perms = await getUserPermissionsFromDB('user-2');
 
     expect(concedidos(perms)).toEqual([]);
-    expect(db.query).toHaveBeenCalledTimes(1);
+    expect(identidad.listarPermisosDeUsuario).toHaveBeenCalledWith('user-2');
   });
 
   it('un usuario inexistente no concede nada', async () => {
-    stubQueries('sin-usuario', []);
+    stubPermisos([]);
 
     const perms = await getUserPermissionsFromDB('user-3');
 
@@ -71,7 +64,7 @@ describe('getUserPermissionsFromDB · cerrado por defecto', () => {
   });
 
   it('un error de base devuelve vacío y no lo cachea', async () => {
-    db.query.mockRejectedValue(new Error('db down'));
+    identidad.listarPermisosDeUsuario.mockRejectedValue(new Error('db down'));
 
     const perms = await getUserPermissionsFromDB('user-4');
 
@@ -82,7 +75,7 @@ describe('getUserPermissionsFromDB · cerrado por defecto', () => {
 
 describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
   it('traduce modulo+accion a los flags que usan las rutas', async () => {
-    stubQueries('rol-1', [
+    stubPermisos([
       { module: 'clients', action: 'view' },
       { module: 'clients', action: 'view_details' },
       { module: 'products', action: 'return_container' },
@@ -105,7 +98,7 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
   });
 
   it('cash_register.view no concede permiso de ver detalles', async () => {
-    stubQueries('rol-1', [{ module: 'cash_register', action: 'view' }]);
+    stubPermisos([{ module: 'cash_register', action: 'view' }]);
 
     const perms = await getUserPermissionsFromDB('user-7');
 
@@ -116,7 +109,7 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
   it('las acciones de estado del catálogo conceden write del módulo', async () => {
     // Pares de la migración 036: la matriz no distingue "ocupar" de "editar", pero
     // las rutas que ejecutan esas operaciones exigen write del módulo.
-    stubQueries('rol-1', [
+    stubPermisos([
       { module: 'rooms', action: 'occupy' },
       { module: 'products', action: 'deactivate' },
       { module: 'categories', action: 'activate' },
@@ -136,7 +129,7 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
   });
 
   it('create concede write pero NO el flag edit; edit colapsa a write igual', async () => {
-    stubQueries('rol-1', [
+    stubPermisos([
       { module: 'gratificaciones', action: 'create' },
       { module: 'sales', action: 'edit' }
     ]);
@@ -153,7 +146,7 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
   });
 
   it('el par gratificaciones.edit concede su flag homónimo (habilita el PUT)', async () => {
-    stubQueries('rol-1', [{ module: 'gratificaciones', action: 'edit' }]);
+    stubPermisos([{ module: 'gratificaciones', action: 'edit' }]);
 
     const perms = await getUserPermissionsFromDB('user-11');
 
@@ -162,7 +155,7 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
   });
 
   it('materializa roles y descarta lo que la matriz no sabe expresar', async () => {
-    stubQueries('rol-1', [
+    stubPermisos([
       // `roles` es módulo de la matriz desde que los handlers de /api/roles dejaron de
       // pedir users.*: roles.view concede roles.read.
       { module: 'roles', action: 'view' },
@@ -181,7 +174,7 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
   });
 
   it('cachea la matriz resuelta', async () => {
-    stubQueries('rol-1', [{ module: 'dashboard', action: 'view' }]);
+    stubPermisos([{ module: 'dashboard', action: 'view' }]);
 
     const perms = await getUserPermissionsFromDB('user-7');
 
@@ -196,7 +189,7 @@ describe('getUserPermissionsFromDB · mapeo del catálogo', () => {
     const perms = await getUserPermissionsFromDB('user-8');
 
     expect(perms).toBe(cached);
-    expect(db.query).not.toHaveBeenCalled();
+    expect(identidad.listarPermisosDeUsuario).not.toHaveBeenCalled();
   });
 });
 

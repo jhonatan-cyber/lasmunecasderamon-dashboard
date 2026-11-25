@@ -1,4 +1,5 @@
 import type { TransactionQuery } from '@/lib/database/db';
+import { query } from '@/lib/database/db';
 
 export async function insertarMarcaSiFalta(
   trx: TransactionQuery,
@@ -19,4 +20,10 @@ export async function insertarMarcaSiFalta(
     keys.map(key => datos[key])
   );
   return rows.length > 0;
+}
+
+export function insertarMarcaSiFaltaEnBaseDeDatos(
+  datos: Parameters<typeof insertarMarcaSiFalta>[1]
+) {
+  return insertarMarcaSiFalta(query, datos);
 }

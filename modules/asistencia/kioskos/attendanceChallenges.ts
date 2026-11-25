@@ -1,6 +1,14 @@
 import crypto from 'crypto';
-import { generateUUID, query } from '@/lib/database/db';
+import { generateUUID } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
+import {
+  buscarDesafioPorHash,
+  canjearDesafio,
+  contarDesafiosVigentes,
+  eliminarDesafio,
+  reemplazarDesafioUsuario,
+  type DesafioAsistenciaRow
+} from './repositorio';
 
 /**
  * Desafío de asistencia: la prueba de presencia que verifica el servidor.
@@ -45,25 +53,17 @@ export async function issueChallenge(
   usuarioId: string,
   issuer: ChallengeIssuer
 ): Promise<IssuedChallenge> {
-  // Un desafío vigente por persona (y de paso se limpia lo vencido).
-  await query('DELETE FROM asistencia_desafios WHERE usuario_id = ?', [usuarioId]);
-
   const token = buildChallengeToken();
   const expiraEn = new Date(Date.now() + CHALLENGE_TTL_SECONDS * 1000).toISOString();
 
-  await query(
-    `INSERT INTO asistencia_desafios
-       (id_desafio, usuario_id, token_hash, emitido_por, emisor_usuario_id, expira_en)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      generateUUID(),
-      usuarioId,
-      hashChallengeToken(token),
-      issuerLabel(issuer),
-      issuer.kind === 'user' ? issuer.userId : null,
-      expiraEn
-    ]
-  );
+  await reemplazarDesafioUsuario({
+    id: generateUUID(),
+    usuarioId,
+    tokenHash: hashChallengeToken(token),
+    emitidoPor: issuerLabel(issuer),
+    emisorUsuarioId: issuer.kind === 'user' ? issuer.userId : null,
+    expiraEn
+  });
 
   return { token, expiraEn, ttlSegundos: CHALLENGE_TTL_SECONDS };
 }
@@ -80,14 +80,6 @@ export const CHALLENGE_FAILURE_MESSAGES: Record<ChallengeFailure, string> = {
 export type RedemptionResult =
   { ok: true; usuarioId: string } | { ok: false; motivo: ChallengeFailure };
 
-interface ChallengeRow {
-  id_desafio: string;
-  usuario_id: string;
-  emisor_usuario_id: string | null;
-  expira_en: Date | string;
-  usado_en: Date | string | null;
-}
-
 /**
  * Canjea un desafío. El canje en sí es una sola sentencia atómica: si dos peticiones
  * llegan con el mismo token, solo una toca la fila (la otra ve `usado_en` no nulo).
@@ -96,29 +88,14 @@ export async function redeemChallenge(
   token: string,
   currentUserId: string
 ): Promise<RedemptionResult> {
-  const rows = await query<ChallengeRow[]>(
-    `UPDATE asistencia_desafios
-        SET usado_en = now()
-      WHERE token_hash = ?
-        AND usado_en IS NULL
-        AND expira_en > now()
-        AND (usuario_id = ? OR emisor_usuario_id = ?)
-      RETURNING usuario_id`,
-    [hashChallengeToken(token), currentUserId, currentUserId]
-  );
+  const rows = await canjearDesafio(hashChallengeToken(token), currentUserId);
 
   if (rows.length > 0) {
     return { ok: true, usuarioId: String(rows[0].usuario_id) };
   }
 
   // No se canjeó: se explica por qué, para poder decirle algo útil a la persona.
-  const existentes = await query<ChallengeRow[]>(
-    `SELECT id_desafio, usuario_id, emisor_usuario_id, expira_en, usado_en
-       FROM asistencia_desafios
-      WHERE token_hash = ?
-      LIMIT 1`,
-    [hashChallengeToken(token)]
-  );
+  const existentes: DesafioAsistenciaRow[] = await buscarDesafioPorHash(hashChallengeToken(token));
 
   if (existentes.length === 0) return { ok: false, motivo: 'no_existe' };
 
@@ -127,7 +104,7 @@ export async function redeemChallenge(
 
   const vencido = new Date(desafio.expira_en).getTime() <= Date.now();
   if (vencido) {
-    await query('DELETE FROM asistencia_desafios WHERE id_desafio = ?', [desafio.id_desafio]);
+    await eliminarDesafio(desafio.id_desafio);
     return { ok: false, motivo: 'vencido' };
   }
 
@@ -140,10 +117,5 @@ export async function redeemChallenge(
 
 /** Desafíos vigentes sin canjear de una persona (diagnóstico y pruebas). */
 export async function countActiveChallenges(usuarioId: string): Promise<number> {
-  const rows = await query<{ n: string }[]>(
-    `SELECT count(*) AS n FROM asistencia_desafios
-      WHERE usuario_id = ? AND usado_en IS NULL AND expira_en > now()`,
-    [usuarioId]
-  );
-  return Number(rows[0]?.n ?? 0);
+  return contarDesafiosVigentes(usuarioId);
 }

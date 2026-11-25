@@ -20,6 +20,23 @@ export interface ConsumoInventarioDetalle {
   botella_anfitriona?: boolean | null;
 }
 
+export interface StockReconciliationPresentation {
+  id: string;
+  nombre: string;
+  stockBodega: number;
+  pendiente: boolean;
+}
+
+export interface StockReconciliationProduct {
+  productoId: string;
+  productoNombre: string;
+  productoCodigo: string | null;
+  stockProducto: number;
+  stockUnidades: number;
+  discrepanciaStock: boolean;
+  presentaciones: StockReconciliationPresentation[];
+}
+
 /** Precio unitario de catálogo y comisión total de la línea, sin subtotales ni créditos. */
 export interface DetallePrecioInventario extends ConsumoInventarioDetalle {
   producto_id: string;

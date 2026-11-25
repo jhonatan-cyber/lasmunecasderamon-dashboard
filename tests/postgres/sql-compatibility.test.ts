@@ -52,7 +52,11 @@ it('PostgreSQL can plan every complete static SQL statement in repositories and 
     for (const { sql, line } of statements) {
       if (/\b(FROM|WHERE)\s*$/.test(sql.trim())) continue;
       try {
-        const prepared = prepareQuery(sql, Array((sql.match(/\?/g) || []).length).fill(null));
+        const nativeParameterCount = Array.from(sql.matchAll(/\$(\d+)/g), match =>
+          Number(match[1])
+        ).reduce((count, index) => Math.max(count, index), 0);
+        const parameterCount = nativeParameterCount || (sql.match(/\?/g) || []).length;
+        const prepared = prepareQuery(sql, Array(parameterCount).fill(null));
         await db.pool.query(`EXPLAIN ${prepared.text}`, prepared.values);
         checked++;
       } catch (error) {

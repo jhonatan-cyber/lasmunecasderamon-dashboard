@@ -79,6 +79,7 @@ describe('el mapa vive en un solo módulo', () => {
       '/users',
       '/clients',
       '/products',
+      '/products/reconciliation',
       '/categories',
       '/orders',
       '/sales',
@@ -111,6 +112,10 @@ describe('pares del mapa', () => {
     expect(ROUTE_PERMISSIONS['/payroll/calendar']).toEqual({ module: 'payroll', action: 'view' });
     expect(ROUTE_PERMISSIONS['/cash-register']).toEqual({
       module: 'cash_register',
+      action: 'view'
+    });
+    expect(ROUTE_PERMISSIONS['/products/reconciliation']).toEqual({
+      module: 'products',
       action: 'view'
     });
     // `payroll_details` no existe como módulo: si reaparece, la página es inaccesible.

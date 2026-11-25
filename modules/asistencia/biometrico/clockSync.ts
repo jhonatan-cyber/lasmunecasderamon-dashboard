@@ -1,8 +1,8 @@
-import { query } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import logger from '@/lib/utils/logger';
 import { libreriaNet, type LibreriaNet } from './audioSdk';
 import { credencialesDeFila, type CredencialesEquipo } from './deviceClient';
+import { obtenerCredencialesDispositivo } from './repositorio';
 
 const UMBRAL_SEGUNDOS = 300;
 
@@ -155,10 +155,7 @@ export async function quizasSincronizarReloj(
 
   cooldowns.set(dispositivoId, Date.now());
   try {
-    const filas = await query<FilaReloj[]>(
-      'SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices WHERE id = ? AND revocado_en IS NULL',
-      [dispositivoId]
-    );
+    const filas = await obtenerCredencialesDispositivo<FilaReloj>(dispositivoId);
     const credenciales = filas[0] ? credencialesDeFila(filas[0]) : null;
     if (!credenciales) {
       logger.warn('[biometric-clock] Equipo sin credenciales para sincronizar el reloj', {

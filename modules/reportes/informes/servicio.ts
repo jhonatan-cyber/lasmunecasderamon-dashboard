@@ -1,15 +1,9 @@
-import { ReportRepository } from './repositorio';
+import { getCashRegisterReport } from './caja';
+import { getCommissionsReport } from './comisiones';
+import { getSalesReport } from './ventas';
 
 export class ReportService {
-  static getSalesReport(...args: Parameters<typeof ReportRepository.getSalesReport>) {
-    return ReportRepository.getSalesReport(...args);
-  }
-
-  static getCommissionsReport(...args: Parameters<typeof ReportRepository.getCommissionsReport>) {
-    return ReportRepository.getCommissionsReport(...args);
-  }
-
-  static getCashRegisterReport(...args: Parameters<typeof ReportRepository.getCashRegisterReport>) {
-    return ReportRepository.getCashRegisterReport(...args);
-  }
+  static getSalesReport = getSalesReport;
+  static getCommissionsReport = getCommissionsReport;
+  static getCashRegisterReport = getCashRegisterReport;
 }

@@ -268,7 +268,7 @@ function TransfersContent() {
     const map = new Map<string, BarStockItem[]>();
     for (const item of items) {
       // Solo se puede transferir lo que hay en bodega.
-      if (item.stock <= 0) continue;
+      if (Number(item.stock_bodega ?? 0) <= 0) continue;
       const key = categoryKey(item);
       const list = map.get(key);
       if (list) list.push(item);

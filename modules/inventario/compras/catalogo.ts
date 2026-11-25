@@ -1,11 +1,10 @@
 import { ProductService } from '../productos/fachada';
-import { query } from '@/lib/database/db';
+import { listarUnidadesActivasEnAlmacen } from '../unidades/repositorio';
 import {
   estadoVencimiento,
   fechaVencimientoUnidad,
   hoyDelNegocio
 } from '@/lib/business/vencimiento';
-import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 
 export interface UnidadesPresentacionResumen {
   vencidas: { cantidad: number; codigos: string[] };
@@ -20,16 +19,7 @@ export async function listar() {
     productos.map(producto => String(producto.id ?? '')).filter(Boolean)
   );
   const hoy = hoyDelNegocio();
-  const unidades = await query<any[]>(
-    `SELECT u.presentacion_id, u.codigo, u.codigo_barras,
-            u.fecha_vencimiento AS fecha_unidad,
-            p.fecha_vencimiento AS fecha_presentacion
-       FROM inventario_unidades u
-       JOIN inventario_presentaciones p ON p.id = u.presentacion_id
-      WHERE u.estado = '${ESTADO_UNIDAD_ACTIVA}'
-        AND u.ubicacion = 'almacen'`,
-    []
-  );
+  const unidades = await listarUnidadesActivasEnAlmacen();
   const resumenPorPresentacion = new Map<string, UnidadesPresentacionResumen>();
 
   for (const unidad of unidades) {

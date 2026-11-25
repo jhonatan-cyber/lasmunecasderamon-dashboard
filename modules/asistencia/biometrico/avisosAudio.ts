@@ -1,4 +1,3 @@
-import { query } from '@/lib/database/db';
 import {
   credencialesDeFila,
   type CredencialesEquipo
@@ -11,6 +10,7 @@ import {
   type ResultadoAudio
 } from '@/modules/asistencia/biometrico/audioService';
 import logger from '@/lib/utils/logger';
+import { obtenerCredencialesDispositivo } from './repositorio';
 
 const colas = new Map<string, Promise<void>>();
 
@@ -51,17 +51,11 @@ function enCola(equipoId: string, tarea: () => Promise<void>): Promise<void> {
 }
 
 async function credencialesDelEquipo(dispositivoId: string): Promise<CredencialesEquipo | null> {
-  const filas = await query<
-    {
-      ip: string | null;
-      usuario_equipo: string | null;
-      clave_cifrada: string | null;
-    }[]
-  >(
-    `SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices
-      WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const filas = await obtenerCredencialesDispositivo<{
+    ip: string | null;
+    usuario_equipo: string | null;
+    clave_cifrada: string | null;
+  }>(dispositivoId);
   return filas[0] ? credencialesDeFila(filas[0]) : null;
 }
 

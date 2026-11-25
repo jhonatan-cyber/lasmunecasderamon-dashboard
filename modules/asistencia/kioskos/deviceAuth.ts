@@ -1,7 +1,16 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
-import { query, withTransaction } from '@/lib/database/db';
+import { withTransaction } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
+import {
+  actualizarDispositivoKiosko,
+  buscarDispositivoKiosko,
+  crearDispositivoKiosko,
+  dispositivoKioskoActivo,
+  listarDispositivosKiosko,
+  renovarDispositivoKiosko,
+  revocarDispositivoKiosko
+} from './repositorio';
 
 export const KIOSK_COOKIE = 'kiosk_token';
 export const KIOSK_SESSION_MAX_AGE = 30 * 24 * 60 * 60;
@@ -15,25 +24,16 @@ export async function provisionDevice(nombre: string, userId: string, previousTo
   const token = `kiosk_${crypto.randomBytes(32).toString('hex')}`;
   await withTransaction(async trx => {
     if (validToken(previousToken)) {
-      await trx(
-        'UPDATE kiosk_devices SET revocado_en = CURRENT_TIMESTAMP WHERE token_hash = ? AND revocado_en IS NULL',
-        [digest(previousToken)]
-      );
+      await actualizarDispositivoKiosko(trx, digest(previousToken));
     }
-    await trx(
-      'INSERT INTO kiosk_devices (id, nombre, token_hash, creado_por) VALUES (?, ?, ?, ?)',
-      [id, nombre, digest(token), userId]
-    );
+    await crearDispositivoKiosko(trx, { id, nombre, tokenHash: digest(token), userId });
   });
   return { id, token };
 }
 
 export async function verifyDeviceToken(token: string | undefined): Promise<string | null> {
   if (!validToken(token)) return null;
-  const rows = await query<{ id: string }[]>(
-    'SELECT id FROM kiosk_devices WHERE token_hash = ? AND revocado_en IS NULL AND expira_en > CURRENT_TIMESTAMP',
-    [digest(token)]
-  );
+  const rows = await buscarDispositivoKiosko(digest(token));
   return rows[0]?.id ?? null;
 }
 
@@ -44,43 +44,20 @@ export async function getKioskDevice(): Promise<string | null> {
 /** Atomic renewal: expired and revoked credentials cannot extend themselves. */
 export async function renewDevice(token: string | undefined): Promise<string | null> {
   if (!validToken(token)) return null;
-  const rows = await query<{ id: string }[]>(
-    `UPDATE kiosk_devices SET ultimo_uso = CURRENT_TIMESTAMP, expira_en = CURRENT_TIMESTAMP + interval '30 days'
-     WHERE token_hash = ? AND revocado_en IS NULL AND expira_en > CURRENT_TIMESTAMP RETURNING id`,
-    [digest(token)]
-  );
+  const rows = await renovarDispositivoKiosko(digest(token));
   return rows[0]?.id ?? null;
 }
 
 export async function isDeviceActive(id: string): Promise<boolean> {
-  const rows = await query<{ id: string }[]>(
-    'SELECT id FROM kiosk_devices WHERE id = ? AND revocado_en IS NULL AND expira_en > CURRENT_TIMESTAMP',
-    [id]
-  );
-  return rows.length > 0;
+  return dispositivoKioskoActivo(id);
 }
 
 export async function revokeDevice(id: string) {
-  await query(
-    'UPDATE kiosk_devices SET revocado_en = CURRENT_TIMESTAMP WHERE id = ? AND revocado_en IS NULL',
-    [id]
-  );
+  await revocarDispositivoKiosko(id);
 }
 
 export async function listDevices() {
-  return query<
-    {
-      id: string;
-      nombre: string;
-      fecha_crea: string;
-      ultimo_uso: string;
-      expira_en: string;
-      revocado_en: string | null;
-      activo: boolean;
-    }[]
-  >(
-    'SELECT id, nombre, fecha_crea, ultimo_uso, expira_en, revocado_en, (revocado_en IS NULL AND expira_en > CURRENT_TIMESTAMP) AS activo FROM kiosk_devices ORDER BY fecha_crea DESC'
-  );
+  return listarDispositivosKiosko();
 }
 
 export function kioskCookieOptions(maxAge: number) {

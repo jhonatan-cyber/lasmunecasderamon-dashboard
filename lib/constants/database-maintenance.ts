@@ -6,6 +6,7 @@ export const DATABASE_CLEAN_PROTECTED_TABLES = [
   'permissions',
   'categorias',
   'productos',
+  'inventario_presentaciones',
   'habitaciones',
   'clientes'
 ] as const;

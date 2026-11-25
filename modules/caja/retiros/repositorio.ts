@@ -4,6 +4,30 @@ import { BaseRepository } from '@/lib/database/base-repository';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 
 export class WithdrawalRepository {
+  static async getOpenCajaId(trx: TransactionQuery): Promise<string | null> {
+    const rows = await trx<Array<{ id_caja: string }>>(
+      'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
+    );
+    return rows[0]?.id_caja ?? null;
+  }
+
+  static async getOpenCajaForUpdate(
+    trx: TransactionQuery,
+    cajaId: string
+  ): Promise<Array<{ monto_apertura: number | string | null; efectivo: number | string | null }>> {
+    return trx(
+      'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? AND estado = 1 FOR UPDATE',
+      [cajaId]
+    );
+  }
+
+  static async subtractCajaCash(trx: TransactionQuery, cajaId: string, monto: number) {
+    await trx('UPDATE cajas SET efectivo = efectivo - ? WHERE id_caja = ? AND estado = 1', [
+      monto,
+      cajaId
+    ]);
+  }
+
   static async getByCajaId(caja_id: string): Promise<RetiroCajaType[]> {
     const results = await query<any[]>(
       `

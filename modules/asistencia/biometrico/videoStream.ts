@@ -1,16 +1,16 @@
 import { spawn } from 'node:child_process';
 import ffmpegPath from 'ffmpeg-static';
-import { query } from '@/lib/database/db';
 import { descifrarSecreto } from './credencialesCrypto';
+import { obtenerCredencialesDispositivo } from './repositorio';
 
 const viewers = new Map<string, number>();
 
 export async function openVideoStream(deviceId: string, signal: AbortSignal): Promise<Response> {
-  const [device] = await query<{ ip: string; usuario_equipo: string; clave_cifrada: string }[]>(
-    `SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices
-     WHERE id = ? AND revocado_en IS NULL`,
-    [deviceId]
-  );
+  const [device] = await obtenerCredencialesDispositivo<{
+    ip: string;
+    usuario_equipo: string;
+    clave_cifrada: string;
+  }>(deviceId);
   if (!device?.ip || !device.usuario_equipo || !device.clave_cifrada) {
     return Response.json({ message: 'El lector no tiene conexión configurada.' }, { status: 404 });
   }

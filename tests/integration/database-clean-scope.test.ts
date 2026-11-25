@@ -20,10 +20,12 @@ it('vacía datos y nuevas tablas, conserva identidad y revierte relaciones prote
       CREATE TABLE usuarios (id integer PRIMARY KEY, role_id integer REFERENCES roles(id));
       CREATE TABLE permissions (id integer PRIMARY KEY);
       CREATE TABLE role_permissions (role_id integer REFERENCES roles(id), permission_id integer REFERENCES permissions(id));
+      CREATE TABLE categorias (id integer PRIMARY KEY);
       CREATE TABLE _postgres_migrations (id integer PRIMARY KEY);
       CREATE TABLE productos (id integer PRIMARY KEY);
       CREATE TABLE compras (id integer PRIMARY KEY);
-      CREATE TABLE inventario_unidades (id integer PRIMARY KEY, producto_id integer REFERENCES productos(id), compra_id integer REFERENCES compras(id));
+      CREATE TABLE inventario_presentaciones (id integer PRIMARY KEY, producto_id integer REFERENCES productos(id));
+      CREATE TABLE inventario_unidades (id integer PRIMARY KEY, producto_id integer REFERENCES productos(id), presentacion_id integer REFERENCES inventario_presentaciones(id), compra_id integer REFERENCES compras(id));
       CREATE TABLE ventas (id integer PRIMARY KEY, usuario_id integer REFERENCES usuarios(id));
       CREATE TABLE configuraciones (id integer PRIMARY KEY);
       CREATE TABLE backups (id integer PRIMARY KEY);
@@ -32,10 +34,12 @@ it('vacía datos y nuevas tablas, conserva identidad y revierte relaciones prote
       INSERT INTO usuarios VALUES (1,1);
       INSERT INTO permissions VALUES (1);
       INSERT INTO role_permissions VALUES (1,1);
+      INSERT INTO categorias VALUES (1);
       INSERT INTO _postgres_migrations VALUES (75);
       INSERT INTO productos VALUES (1);
       INSERT INTO compras VALUES (1);
-      INSERT INTO inventario_unidades VALUES (1,1,1);
+      INSERT INTO inventario_presentaciones VALUES (1,1);
+      INSERT INTO inventario_unidades VALUES (1,1,1,1);
       INSERT INTO ventas VALUES (1,1);
       INSERT INTO configuraciones VALUES (1);
       INSERT INTO backups VALUES (1);
@@ -60,7 +64,6 @@ it('vacía datos y nuevas tablas, conserva identidad y revierte relaciones prote
     }
     expect(result.deletedTables.sort()).toEqual(
       [
-        'productos',
         'compras',
         'inventario_unidades',
         'ventas',
@@ -72,13 +75,11 @@ it('vacía datos y nuevas tablas, conserva identidad y revierte relaciones prote
     for (const table of result.deletedTables) {
       expect((await client.query(`SELECT count(*)::int AS n FROM ${q(table)}`)).rows[0].n).toBe(0);
     }
-    await client.query('INSERT INTO productos VALUES (2)');
-    await client.query(
-      'ALTER TABLE usuarios ADD COLUMN producto_id integer REFERENCES productos(id)'
-    );
-    await client.query('UPDATE usuarios SET producto_id=2');
+    await client.query('INSERT INTO compras VALUES (2)');
+    await client.query('ALTER TABLE usuarios ADD COLUMN compra_id integer REFERENCES compras(id)');
+    await client.query('UPDATE usuarios SET compra_id=2');
     await expect(cleanDatabase()).rejects.toMatchObject({ code: '0A000' });
-    expect((await client.query('SELECT id FROM productos')).rows).toEqual([{ id: 2 }]);
+    expect((await client.query('SELECT id FROM compras')).rows).toEqual([{ id: 2 }]);
     expect((await client.query('SELECT id FROM usuarios')).rows).toEqual([{ id: 1 }]);
   } finally {
     await client.query('RESET search_path');

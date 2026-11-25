@@ -13,46 +13,17 @@ import {
   MENSAJE_CHAMPAGNE_SIN_CONFIGURAR
 } from '@/lib/business/champagne';
 import { preciosCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
-export interface PresentacionVentaBloqueada {
-  id: string;
-  producto_id: string;
-  nombre: string;
-  precio_venta: number;
-  comision: number;
-  ml_botella: number | null;
-  opciones_venta: unknown;
-  estado: number | null;
-
-  fecha_vencimiento: string | null;
-}
+import {
+  bloquearPresentacionesVenta,
+  listarProductosPreciosVenta,
+  listarTramosPrecioVenta,
+  obtenerStockBarParaAcompanamiento,
+  type PresentacionVentaBloqueada
+} from './validacionRepositorio';
 
 export const productoDesactivado = (estado: number | null | undefined) => estado === 0;
 
-interface StockAcompanamiento {
-  presentacion_id: string;
-  stock_bar: number;
-  ml_abierta: number;
-}
-
-/** Consulta el stock disponible en el bar para las presentaciones indicadas. */
-async function obtenerStockBar(
-  trx: TransactionQuery,
-  presentacionIds: string[]
-): Promise<Map<string, StockAcompanamiento>> {
-  if (presentacionIds.length === 0) return new Map();
-  const rows = await trx<StockAcompanamiento[]>(
-    `SELECT IU.presentacion_id,
-            COUNT(*) FILTER (WHERE IU.estado = 'almacen' AND (COALESCE(IU.ml_restante, 0) > 0 OR IU.abierta_por_shots IS NOT TRUE)) AS stock_bar,
-            COALESCE(SUM(CASE WHEN IU.estado = 'almacen' AND COALESCE(IU.ml_restante, 0) > 0 THEN IU.ml_restante WHEN IU.estado = 'almacen' AND IU.ml_restante IS NULL THEN IP.ml_botella ELSE 0 END), 0) AS ml_abierta
-       FROM inventario_unidades IU
-       JOIN inventario_presentaciones IP ON IP.id = IU.presentacion_id
-      WHERE IU.presentacion_id IN (${presentacionIds.map(() => '?').join(',')})
-        AND IU.ubicacion = 'bar'
-      GROUP BY IU.presentacion_id`,
-    presentacionIds
-  );
-  return new Map(rows.map(r => [r.presentacion_id, r]));
-}
+export type { PresentacionVentaBloqueada } from './validacionRepositorio';
 
 export async function bloquearYValidarConfiguracionVenta(
   trx: TransactionQuery,
@@ -73,18 +44,11 @@ export async function bloquearYValidarConfiguracionVenta(
   }
 
   const allIds = [...new Set([...ids, ...acompanamientoIds])];
-  const rows = await trx<PresentacionVentaBloqueada[]>(
-    `SELECT id, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella,
-            fecha_vencimiento,
-            (SELECT pr.estado FROM productos pr WHERE pr.id_producto = inventario_presentaciones.producto_id) AS estado
-       FROM inventario_presentaciones
-      WHERE id IN (${allIds.map(() => '?').join(',')}) ORDER BY id FOR UPDATE`,
-    allIds
-  );
+  const rows = await bloquearPresentacionesVenta(trx, allIds);
   const configs = new Map(rows.map(row => [row.id, parseOpcionesVenta(row.opciones_venta)]));
 
   // Consultar stock en el bar para validar acompañamientos
-  const stockBar = await obtenerStockBar(trx, acompanamientoIds);
+  const stockBar = await obtenerStockBarParaAcompanamiento(trx, acompanamientoIds);
 
   for (const detalle of detalles) {
     if (!detalle.presentacion_id) continue;
@@ -122,9 +86,7 @@ export async function bloquearYValidarConfiguracionVenta(
             'La bebida seleccionada como acompañamiento no está habilitada para corto al cliente'
           );
         if (mixerRow && productoDesactivado(mixerRow.estado))
-          throw new BusinessError(
-            'La bebida seleccionada como acompañamiento no está disponible'
-          );
+          throw new BusinessError('La bebida seleccionada como acompañamiento no está disponible');
       }
     }
 
@@ -229,23 +191,6 @@ export async function bloquearYValidarConfiguracionVenta(
   return new Map(rows.map(row => [row.id, row]));
 }
 
-interface ProductoPrecio {
-  id_producto: string;
-  precio: number;
-  comision: number;
-  max_anfitrionas: number | null;
-  estado: number;
-  tiene_presentaciones: boolean;
-  categoria: string | null;
-}
-
-interface TramoPrecio {
-  producto_id: string;
-  anfitrionas: number;
-  precio: number;
-  comision: number;
-}
-
 export interface OpcionesPreciosVenta {
   /** Los pedidos exigen asignación de anfitrionas; las ventas directas no. */
   exigirAnfitrionas?: boolean;
@@ -263,19 +208,8 @@ export async function validarPreciosConfigurados(
   if (!detalles.length) return [];
   const presentations = await bloquearYValidarConfiguracionVenta(trx, detalles);
   const ids = [...new Set(detalles.map(d => d.producto_id))];
-  const products = await trx<ProductoPrecio[]>(
-    `SELECT P.id_producto, P.precio, P.comision, P.max_anfitrionas, P.estado,
-            EXISTS (SELECT 1 FROM inventario_presentaciones IP WHERE IP.producto_id = P.id_producto) AS tiene_presentaciones,
-            C.nombre AS categoria
-       FROM productos P LEFT JOIN categorias C ON C.id_categoria = P.categoria_id
-      WHERE P.id_producto IN (${ids.map(() => '?').join(',')})`,
-    ids
-  );
-  const tiers = await trx<TramoPrecio[]>(
-    `SELECT producto_id, anfitrionas, precio, comision FROM producto_champagne_tiers
-      WHERE producto_id IN (${ids.map(() => '?').join(',')})`,
-    ids
-  );
+  const products = await listarProductosPreciosVenta(trx, ids);
+  const tiers = await listarTramosPrecioVenta(trx, ids);
   const drinkHosts = new Set<string>();
   const champagneHosts = new Set<string>();
   return detalles.map(d => {

@@ -24,10 +24,8 @@ import {
   applyAutoRoomToDetails,
   hasSpecialHostessProducts
 } from '@/lib/business/orderRoomAssignment';
-import {
-  buildOrderNotificationData,
-  buildOrderDeletionNotificationData
-} from '@/lib/notifications/orderNotificationUtils';
+import { buildOrderNotificationData } from './notificacionesRepositorio';
+import { buildOrderDeletionNotificationData } from '@/lib/notifications/orderNotificationUtils';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
 import { buildOrderPushBody } from '@/lib/notifications/notificationMessages';

@@ -63,6 +63,78 @@ describe('control de límites entre módulos', () => {
     rmSync(join(raiz, 'components', 'Relativo.tsx'));
   });
 
+  it('detecta un import directo del driver desde una ruta API', () => {
+    mkdirSync(join(raiz, 'app', 'api', 'productos'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'app', 'api', 'productos', 'route.ts'),
+      "import { query } from '@/lib/database/db';\nexport const GET = query;\n"
+    );
+
+    const hallazgos = listar(raiz).hallazgos.filter(
+      (h: any) => h.regla === 'api-no-importa-infraestructura'
+    );
+    expect(hallazgos.some((h: any) => h.desde === 'app/api/productos/route.ts')).toBe(true);
+    expect(correr(raiz).codigo).toBe(1);
+    rmSync(join(raiz, 'app', 'api', 'productos'), { recursive: true, force: true });
+  });
+
+  it('permite la entrada pública ligera de autorización de Identidad', () => {
+    mkdirSync(join(raiz, 'app', 'api', 'autorizacion'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'app', 'api', 'autorizacion', 'route.ts'),
+      "import { verificarPermisoUsuario } from '@/modules/identidad/authorization';\nexport const GET = verificarPermisoUsuario;\n"
+    );
+
+    try {
+      const hallazgos = listar(raiz).hallazgos.filter(
+        (h: any) => h.regla === 'modulo-solo-api-publica'
+      );
+      expect(hallazgos.some((h: any) => h.desde === 'app/api/autorizacion/route.ts')).toBe(false);
+    } finally {
+      rmSync(join(raiz, 'app', 'api', 'autorizacion'), { recursive: true, force: true });
+    }
+  });
+
+  it('detecta una escritura SQL nueva dentro de un servicio de módulo', () => {
+    mkdirSync(join(raiz, 'modules', 'prueba'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'modules', 'prueba', 'servicio.ts'),
+      "import { withTransaction } from '@/lib/database/db';\nexport const guardar = () => withTransaction(trx => trx('UPDATE ejemplo SET valor = 1'));\n"
+    );
+
+    const hallazgos = listar(raiz).hallazgos.filter((h: any) => h.regla === 'servicio-sin-sql');
+    expect(hallazgos.some((h: any) => h.desde === 'modules/prueba/servicio.ts')).toBe(true);
+    expect(correr(raiz).codigo).toBe(1);
+    rmSync(join(raiz, 'modules', 'prueba'), { recursive: true, force: true });
+  });
+
+  it('detecta lecturas SQL fuera de repositorios y permite SQL dentro del repositorio', () => {
+    mkdirSync(join(raiz, 'modules', 'prueba'), { recursive: true });
+    writeFileSync(
+      join(raiz, 'modules', 'prueba', 'servicio.ts'),
+      "import { query } from '@/lib/database/db';\nexport const listar = () => query('SELECT id FROM productos');\n"
+    );
+    writeFileSync(
+      join(raiz, 'modules', 'prueba', 'repositorio.ts'),
+      "import { query } from '@/lib/database/db';\nexport const listar = () => query('SELECT id FROM productos');\n"
+    );
+    writeFileSync(
+      join(raiz, 'modules', 'prueba', 'registro.ts'),
+      "import { query } from '@/lib/database/db';\nexport const buscar = () => query('SELECT id FROM productos');\n"
+    );
+
+    try {
+      const hallazgos = listar(raiz).hallazgos.filter(
+        (h: any) => h.regla === 'sql-solo-infraestructura'
+      );
+      expect(hallazgos).toHaveLength(1);
+      expect(hallazgos[0].desde).toBe('modules/prueba/servicio.ts');
+      expect(correr(raiz).codigo).toBe(1);
+    } finally {
+      rmSync(join(raiz, 'modules', 'prueba'), { recursive: true, force: true });
+    }
+  });
+
   it('falla con código 1 cuando aparece una dependencia prohibida sin excepción', () => {
     writeFileSync(
       join(raiz, 'components', 'Malo.tsx'),

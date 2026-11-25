@@ -1,4 +1,4 @@
-import { query } from '@/lib/database/db';
+import { listarCajasInforme } from './repositorio';
 
 type SalesPeriod = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
 
@@ -55,45 +55,7 @@ export async function getCashRegisterReport(
 ) {
   const range = buildDateRange('c.fecha_apertura', period, startDate, endDate);
 
-  const cajas = await query<any[]>(
-    `
-    SELECT
-      c.id_caja,
-      c.fecha_apertura,
-      c.fecha_cierre,
-      c.monto_apertura,
-      c.monto_cierre,
-      c.estado,
-      c.venta,
-      c.servicio,
-      c.efectivo,
-      c.tarjeta,
-      c.transferencia,
-      c.propina,
-      c.comision,
-      c.iva,
-      c.devolucion AS devoluciones,
-      CASE
-        WHEN EXTRACT(HOUR FROM c.fecha_apertura) BETWEEN 6 AND 17 THEN 'Dia'
-        ELSE 'Noche'
-      END AS turno,
-      COALESCE(
-        c.monto_cierre - (
-          COALESCE(c.monto_apertura, 0) +
-          COALESCE(c.efectivo, 0) +
-          COALESCE(c.tarjeta, 0) +
-          COALESCE(c.transferencia, 0) -
-          COALESCE(c.devolucion, 0)
-        ),
-        0
-      ) AS diferencia
-    FROM cajas c
-    WHERE c.estado IN (0, 1)
-      AND ${range.clause}
-    ORDER BY c.fecha_apertura DESC
-  `,
-    range.params
-  );
+  const cajas = await listarCajasInforme(range);
 
   const summary = cajas.reduce(
     (acc, caja) => {

@@ -18,8 +18,8 @@ import {
  * catálogo, ningún rol puede satisfacerlo: el control queda invisible para todos los
  * no-administradores y el administrador no tiene forma de concederlo desde el panel
  * de Roles. Pasó con 30 pares (nombres en español como `productos.eliminar`, o
- * acciones que nunca se modelaron como `rooms.occupy`), con el módulo inexistente
- * `payroll_details` en la tabla de rutas, y con `products.write` en un guard.
+ * acciones que nunca se modelaron como `rooms.occupy`), y con el módulo inexistente
+ * `payroll_details` en la tabla de rutas.
  *
  * Este test lee el catálogo de sus fuentes reales (el dump de esquema y las
  * migraciones), recorre la UI y las tablas de rutas, y falla si algo pide un par que

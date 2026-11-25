@@ -72,6 +72,12 @@ export async function obtenerValorConfiguracion(clave: string): Promise<string |
   return repositorio.obtenerValorConfiguracion(clave);
 }
 
+export async function obtenerValoresConfiguracion(
+  claves: readonly string[]
+): Promise<Record<string, string>> {
+  return repositorio.obtenerValoresConfiguracion(claves);
+}
+
 /**
  * Guarda una clave ya validada por el registro. Devuelve el mensaje de error si el
  * valor no cumple la regla, para que la ruta lo muestre tal cual.

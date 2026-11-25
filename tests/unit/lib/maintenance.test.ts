@@ -42,7 +42,6 @@ it('vacía datos operativos, conserva catálogos y reinicia el saldo de clientes
     'configuraciones',
     'backups',
     'codigos',
-    'inventario_presentaciones',
     'inventario_unidades',
     'inventario_movimientos',
     'compras',
@@ -58,6 +57,7 @@ it('vacía datos operativos, conserva catálogos y reinicia el saldo de clientes
       'permissions',
       'categorias',
       'productos',
+      'inventario_presentaciones',
       'habitaciones',
       'clientes'
     ].sort()

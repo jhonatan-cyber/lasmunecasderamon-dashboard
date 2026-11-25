@@ -148,40 +148,8 @@ async function localCheckUserPermission(
   action: string
 ): Promise<boolean> {
   try {
-    const { query } = await import('@/lib/database/db');
-
-    const userResult = await query<any[]>(
-      'SELECT u.rol_id, r.nombre as rol_nombre FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol WHERE u.id_usuario = ?',
-      [String(userId)]
-    );
-
-    if (!userResult || userResult.length === 0) {
-      return false;
-    }
-
-    const roleName = userResult[0].rol_nombre?.toLowerCase() || '';
-
-    if (roleName === 'administrador') {
-      return true;
-    }
-
-    const roleId = userResult[0].rol_id;
-    if (!roleId) {
-      return false;
-    }
-
-    const perms = await query<any[]>(
-      `SELECT 1 FROM permissions p
-       INNER JOIN role_permissions rp ON p.id = rp.permission_id
-       WHERE rp.role_id = ?
-         AND p.module = ?
-         AND p.action = ?
-         AND p.deleted_at IS NULL
-       LIMIT 1`,
-      [String(roleId), module, action]
-    );
-
-    return perms.length > 0;
+    const { verificarPermisoUsuario } = await import('@/modules/identidad/authorization');
+    return await verificarPermisoUsuario(String(userId), module, action);
   } catch {
     return false;
   }

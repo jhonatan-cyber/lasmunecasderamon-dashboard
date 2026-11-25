@@ -1,5 +1,4 @@
-import { query, generateUUID } from '@/lib/database/db';
-import { BaseRepository } from '@/lib/database/base-repository';
+import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { procesarEventoBiometrico } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import {
@@ -17,6 +16,15 @@ import logger from '@/lib/utils/logger';
 import { quizasSincronizarReloj } from '@/modules/asistencia/biometrico/clockSync';
 import { recepcionAutomaticaHabilitada } from '@/modules/asistencia/biometrico/recepcionConfig';
 import { metodoBiometricoDesdeCodigo as metodoDesdeRecords } from './comun';
+import {
+  buscarRegistroPorContenido,
+  buscarRegistroPorNumero,
+  listarEquiposPoller,
+  obtenerEquipoParaPoller,
+  obtenerEquipoVigente,
+  obtenerMaximoRegistroDispositivo,
+  insertarRegistroDispositivo
+} from './repositorio';
 export interface RecordDelEquipo {
   recNo: number;
   createTime: number;
@@ -57,18 +65,12 @@ async function equipoHabilitado(dispositivoId: string): Promise<{
   recoger_registros: number;
   historico_limpiado_en: Date | string | null;
 } | null> {
-  const rows = await query<
-    {
-      id: string;
-      serial: string;
-      recoger_registros: number;
-      historico_limpiado_en: Date | string | null;
-    }[]
-  >(
-    `SELECT id, serial, recoger_registros, historico_limpiado_en FROM biometric_devices
-      WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const rows = await obtenerEquipoParaPoller<{
+    id: string;
+    serial: string;
+    recoger_registros: number;
+    historico_limpiado_en: Date | string | null;
+  }>(dispositivoId);
   return rows[0] ?? null;
 }
 
@@ -83,12 +85,7 @@ export interface EquipoParaPoller {
 }
 
 export async function equiposParaPoller(): Promise<EquipoParaPoller[]> {
-  return query<EquipoParaPoller[]>(
-    `SELECT id, nombre, serial, ip, usuario_equipo, clave_cifrada, recoger_registros
-       FROM biometric_devices
-      WHERE revocado_en IS NULL AND recoger_registros = 1
-        AND ip IS NOT NULL AND usuario_equipo IS NOT NULL AND clave_cifrada IS NOT NULL`
-  );
+  return listarEquiposPoller<EquipoParaPoller>();
 }
 
 async function marcarProcesado(
@@ -98,24 +95,17 @@ async function marcarProcesado(
   dispositivoId: string,
   metodo: BiometricMetodo
 ): Promise<string | null> {
-  const id = generateUUID();
-  try {
-    await BaseRepository.insert(query, 'biometric_device_records', {
-      id,
-      dispositivo_id: dispositivoId,
-      serial,
-      rec_no: record.recNo,
-      codigo_persona: record.userId.substring(0, 64),
-      fecha_dispositivo: fechaHora,
-      metodo,
-      status: record.status ?? null,
-      foto_url: record.url
-    });
-    return id;
-  } catch (error: any) {
-    if (error?.code === '23505') return null;
-    throw error;
-  }
+  return insertarRegistroDispositivo({
+    id: generateUUID(),
+    dispositivo_id: dispositivoId,
+    serial,
+    rec_no: record.recNo,
+    codigo_persona: record.userId.substring(0, 64),
+    fecha_dispositivo: fechaHora,
+    metodo,
+    status: record.status ?? null,
+    foto_url: record.url
+  });
 }
 
 const lecturasEnCurso = new Map<string, Promise<ResumenPoll>>();
@@ -157,25 +147,18 @@ async function leerEquipo(
   if (!equipo) throw new Error(`Equipo ${dispositivoId} no encontrado, revocado o inhabilitado`);
   resumen.serial = equipo.serial;
 
-  const filas = await query<
-    {
-      id: string;
-      serial: string;
-      ip: string | null;
-      usuario_equipo: string | null;
-      clave_cifrada: string | null;
-    }[]
-  >('SELECT id, serial, ip, usuario_equipo, clave_cifrada FROM biometric_devices WHERE id = ?', [
-    dispositivoId
-  ]);
+  const filas = await obtenerEquipoVigente<{
+    id: string;
+    serial: string;
+    ip: string | null;
+    usuario_equipo: string | null;
+    clave_cifrada: string | null;
+  }>(dispositivoId);
   const fila = filas[0];
   const credenciales: CredencialesEquipo | null = fila ? credencialesDeFila(fila) : null;
   if (!credenciales) throw new Error(`Equipo ${dispositivoId} sin IP/credenciales`);
 
-  const maximo = await query<{ max: number | null }[]>(
-    'SELECT MAX(rec_no) AS max FROM biometric_device_records WHERE serial = ?',
-    [equipo.serial]
-  );
+  const maximo = await obtenerMaximoRegistroDispositivo<{ max: number | null }>(equipo.serial);
   const desde = Number(maximo[0]?.max ?? 0);
 
   const records = await leerRegistrosAcceso(credenciales, {
@@ -204,16 +187,14 @@ async function leerEquipo(
 
     const fechaHora = epochAHoraNegocio(record.createTime);
     const metodo = metodoDesdeRecords(record.metodo);
-    const yaPorRecNo = await query<{ id: string }[]>(
-      'SELECT id FROM biometric_device_records WHERE serial = ? AND rec_no = ? LIMIT 1',
-      [equipo.serial, record.recNo]
-    );
+    const yaPorRecNo = await buscarRegistroPorNumero<{ id: string }>(equipo.serial, record.recNo);
     if (yaPorRecNo.length > 0) continue;
-    const yaPorContenido = await query<{ id: string }[]>(
-      `SELECT id FROM biometric_device_records
-        WHERE serial = ? AND codigo_persona = ? AND fecha_dispositivo = ? AND metodo = ? LIMIT 1`,
-      [equipo.serial, record.userId, fechaHora, metodo]
-    );
+    const yaPorContenido = await buscarRegistroPorContenido<{ id: string }>({
+      serial: equipo.serial,
+      codigo: record.userId,
+      fecha: fechaHora,
+      metodo
+    });
     if (yaPorContenido.length > 0) continue;
 
     const recordId = await marcarProcesado(equipo.serial, record, fechaHora, dispositivoId, metodo);

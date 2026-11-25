@@ -1,4 +1,3 @@
-import { query } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
 import { atribuirAsistenciaIdentificada } from '@/modules/asistencia/biometrico/processBiometricEvent';
 import { credencialesDeFila, type CredencialesEquipo } from './deviceClient';
@@ -9,6 +8,18 @@ import {
   similitudCoseno,
   umbralCoincidenciaFacial
 } from './faceSdk';
+import {
+  actualizarResultadoIdentificacion,
+  actualizarVectorPlantilla,
+  buscarUsuarioBiometricoPorCodigo,
+  listarCandidatosFaciales,
+  listarIdentificacionesPendientes,
+  obtenerPrimerEquipoConIp,
+  marcarVectorPlantillaRevisado,
+  obtenerCredencialesDispositivo,
+  obtenerUltimasPlantillasFaciales,
+  obtenerRecordParaIdentificar
+} from './repositorio';
 
 const MAX_ACTIVOS = 1;
 const MAX_INTENTOS = 3;
@@ -52,14 +63,7 @@ interface FilaPlantilla {
 }
 
 async function ultimasPlantillas(): Promise<FilaPlantilla[]> {
-  return query<FilaPlantilla[]>(
-    `SELECT DISTINCT ON (usuario_id)
-            id, usuario_id, dispositivo_id, datos, vector, vector_actualizado_en, fecha_captura
-       FROM biometric_plantillas
-      WHERE tipo = 'cara'
-        AND usuario_id IN (SELECT id_usuario FROM usuarios WHERE estado = 1 AND biometrico_facial = 1)
-      ORDER BY usuario_id, fecha_captura DESC NULLS LAST`
-  );
+  return obtenerUltimasPlantillasFaciales<FilaPlantilla>();
 }
 
 function vectorDesactualizado(fila: FilaPlantilla): boolean {
@@ -74,22 +78,23 @@ const FALLOS_DETERMINISTAS_PLANTILLA: readonly string[] = [
 ];
 
 async function credencialesParaExtraer(dispositivoId: string): Promise<CredencialesEquipo | null> {
-  const propias = await query<
-    { ip: string | null; usuario_equipo: string | null; clave_cifrada: string | null }[]
-  >(
-    `SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices
-      WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const propias = await obtenerCredencialesDispositivo<{
+    ip: string | null;
+    usuario_equipo: string | null;
+    clave_cifrada: string | null;
+  }>(dispositivoId);
   if (propias[0]) return credencialesDeFila(propias[0]);
 
-  const alguna = await query<
-    { ip: string | null; usuario_equipo: string | null; clave_cifrada: string | null }[]
-  >(
-    `SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices
-      WHERE revocado_en IS NULL AND ip IS NOT NULL
-      LIMIT 1`
-  );
+  const alguna = await obtenerPrimerEquipoConIp<{
+    id: string;
+    nombre: string;
+    marca: string;
+    serial: string;
+    ip: string;
+    usuario_equipo: string;
+    clave_cifrada: string;
+    mac: string | null;
+  }>();
   return alguna[0] ? credencialesDeFila(alguna[0]) : null;
 }
 
@@ -103,21 +108,12 @@ export async function actualizarVectoresPlantillas(): Promise<number> {
       const credenciales = await credencialesParaExtraer(fila.dispositivo_id);
 
       const vector = await extraerVectorFacial(credenciales, bufferDesdeBase64(fila.datos));
-      await query(
-        `UPDATE biometric_plantillas
-            SET vector = ?, vector_actualizado_en = CURRENT_TIMESTAMP
-          WHERE id = ?`,
-        [serializarVector(vector), fila.id]
-      );
+      await actualizarVectorPlantilla(fila.id, serializarVector(vector));
       listas += 1;
     } catch (error) {
       const motivo = error instanceof ErrorFacial ? error.motivo : 'error';
       if (error instanceof ErrorFacial && FALLOS_DETERMINISTAS_PLANTILLA.includes(motivo)) {
-        await query(
-          `UPDATE biometric_plantillas SET vector_actualizado_en = CURRENT_TIMESTAMP
-            WHERE id = ?`,
-          [fila.id]
-        );
+        await marcarVectorPlantillaRevisado(fila.id);
         logger.warn('[biometric-ident] La foto de referencia no sirve para extraer el vector', {
           usuarioId: fila.usuario_id,
           motivo
@@ -140,13 +136,7 @@ interface Candidato {
 }
 
 async function candidatos(): Promise<Candidato[]> {
-  const filas = await query<{ usuario_id: string; vector: Buffer }[]>(
-    `SELECT DISTINCT ON (usuario_id) usuario_id, vector
-       FROM biometric_plantillas
-      WHERE tipo = 'cara' AND vector IS NOT NULL
-        AND usuario_id IN (SELECT id_usuario FROM usuarios WHERE estado = 1 AND biometrico_facial = 1)
-      ORDER BY usuario_id, fecha_captura DESC NULLS LAST`
-  );
+  const filas = await listarCandidatosFaciales<{ usuario_id: string; vector: Buffer }>();
   return filas
     .filter(fila => fila.vector && fila.vector.length >= 4)
     .map(fila => ({ usuarioId: fila.usuario_id, vector: deserializarVector(fila.vector) }));
@@ -158,12 +148,7 @@ async function usuarioReclamado(codigo: string | null): Promise<string | null> {
   const candidatos = [limpio];
   if (/^0\d+$/.test(limpio)) candidatos.push(String(parseInt(limpio, 10)));
   for (const candidato of candidatos) {
-    const rows = await query<{ id_usuario: string }[]>(
-      `SELECT id_usuario FROM usuarios
-        WHERE biometrico_codigo IS NOT NULL AND TRIM(biometrico_codigo) <> ''
-          AND LOWER(TRIM(biometrico_codigo)) = LOWER(?)`,
-      [candidato]
-    );
+    const rows = await buscarUsuarioBiometricoPorCodigo<{ id_usuario: string }>(candidato);
     if (rows.length > 0) return rows[0].id_usuario;
   }
   return null;
@@ -175,30 +160,19 @@ async function guardarResultado(
   usuarioId: string | null,
   similitud: number | null
 ): Promise<void> {
-  await query(
-    `UPDATE biometric_device_records
-        SET identificado_usuario_id = ?, identificacion_similitud = ?, identificacion_estado = ?
-      WHERE id = ?`,
-    [usuarioId, similitud, estado, recordId]
-  );
+  await actualizarResultadoIdentificacion(recordId, estado, usuarioId, similitud);
 }
 
 export async function identificarRecord(
   recordId: string,
   dispositivoId: string
 ): Promise<EstadoIdentificacion> {
-  const filas = await query<
-    {
-      foto: Buffer | null;
-      codigo_persona: string | null;
-      rec_no: unknown;
-      fecha_dispositivo: Date | null;
-    }[]
-  >(
-    `SELECT foto, codigo_persona, rec_no, fecha_dispositivo
-       FROM biometric_device_records WHERE id = ?`,
-    [recordId]
-  );
+  const filas = await obtenerRecordParaIdentificar<{
+    foto: Buffer | null;
+    codigo_persona: string | null;
+    rec_no: unknown;
+    fecha_dispositivo: Date | null;
+  }>(recordId);
   const record = filas[0];
   if (!record) return 'sin_foto';
   if (!record.foto || record.foto.length === 0) {
@@ -217,12 +191,11 @@ export async function identificarRecord(
     return 'sin_plantillas';
   }
 
-  const credencialesFilas = await query<
-    { ip: string | null; usuario_equipo: string | null; clave_cifrada: string | null }[]
-  >(
-    `SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const credencialesFilas = await obtenerCredencialesDispositivo<{
+    ip: string | null;
+    usuario_equipo: string | null;
+    clave_cifrada: string | null;
+  }>(dispositivoId);
   const credenciales = credencialesFilas[0] ? credencialesDeFila(credencialesFilas[0]) : null;
 
   let captura: Float32Array;
@@ -321,12 +294,11 @@ export async function identificarImagen(
   const candidatosLista = await candidatos();
   if (!candidatosLista.length) return null;
 
-  const credencialesFilas = await query<
-    { ip: string | null; usuario_equipo: string | null; clave_cifrada: string | null }[]
-  >(
-    `SELECT ip, usuario_equipo, clave_cifrada FROM biometric_devices WHERE id = ? AND revocado_en IS NULL`,
-    [dispositivoId]
-  );
+  const credencialesFilas = await obtenerCredencialesDispositivo<{
+    ip: string | null;
+    usuario_equipo: string | null;
+    clave_cifrada: string | null;
+  }>(dispositivoId);
   const credenciales = credencialesFilas[0] ? credencialesDeFila(credencialesFilas[0]) : null;
 
   const captura = await extraerVectorFacial(credenciales, foto);
@@ -412,18 +384,10 @@ export async function recuperarIdentificacionesPendientes(
     .filter(([, n]) => n >= MAX_INTENTOS)
     .map(([id]) => id)
     .filter(id => /^[0-9a-f-]{36}$/i.test(id));
-  const excluidos = agotados.length ? ` AND id NOT IN ('${agotados.join("','")}')` : '';
-
-  const pendientes = await query<{ id: string; dispositivo_id: string }[]>(
-    `SELECT id, dispositivo_id
-       FROM biometric_device_records
-      WHERE foto IS NOT NULL
-        AND (identificacion_estado IS NULL OR identificacion_estado = 'error')
-        AND fecha_dispositivo > CURRENT_TIMESTAMP - interval '${VENTANA_DIAS} days'${excluidos}
-      ORDER BY fecha_dispositivo DESC
-      LIMIT ?`,
-    [limite]
-  );
+  const pendientes = await listarIdentificacionesPendientes<{
+    id: string;
+    dispositivo_id: string;
+  }>({ limite, ventanaDias: VENTANA_DIAS, excluirIds: agotados });
   for (const fila of pendientes) {
     if (!fila.id) continue;
     encolarIdentificacionDeRecord({ recordId: fila.id, dispositivoId: fila.dispositivo_id });

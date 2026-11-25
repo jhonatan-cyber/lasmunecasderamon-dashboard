@@ -117,6 +117,7 @@ export interface BarStockItem {
   comision: number;
   foto: string | null;
   stock: number;
+  stock_bodega?: number;
   stock_bar?: number;
   /** Botellas agotadas por shots que siguen en el bar pendientes de devolución. */
   botellas_vacias_shots?: number;
