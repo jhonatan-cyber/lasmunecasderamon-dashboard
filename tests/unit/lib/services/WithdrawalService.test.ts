@@ -4,6 +4,9 @@ import { ValidationError, BusinessError } from '@/lib/errors/errors';
 
 vi.mock('@/modules/caja/retiros/repositorio', () => ({
   WithdrawalRepository: {
+    getOpenCajaId: vi.fn(),
+    getOpenCajaForUpdate: vi.fn(),
+    subtractCajaCash: vi.fn(),
     getByCajaId: vi.fn(),
     create: vi.fn()
   }
@@ -18,6 +21,8 @@ import { withTransaction } from '@/lib/database/db';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(WithdrawalRepository.getOpenCajaId).mockResolvedValue(null);
+  vi.mocked(WithdrawalRepository.getOpenCajaForUpdate).mockResolvedValue([]);
 });
 
 describe('WithdrawalService.getByCajaId', () => {
@@ -65,9 +70,12 @@ describe('WithdrawalService.addRetiro', () => {
 
   it('usa la caja del parámetro si se proporciona', async () => {
     vi.mocked(WithdrawalRepository.create).mockResolvedValue('ret-1' as any);
+    vi.mocked(WithdrawalRepository.getOpenCajaForUpdate).mockResolvedValue([
+      { monto_apertura: 100000, efectivo: 0 }
+    ]);
 
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
-      const trx = vi.fn().mockResolvedValue([{ monto_apertura: 100000, efectivo: 0 }]);
+      const trx = vi.fn();
       return fn(trx);
     });
 
@@ -76,27 +84,32 @@ describe('WithdrawalService.addRetiro', () => {
     expect(result).toMatchObject({ id_retiro: 'ret-1', caja_id: 'caja-1' });
   });
 
-  it('actualiza el balance de la caja con un UPDATE directo (monto negativo)', async () => {
+  it('delega la actualización del efectivo al repositorio de caja', async () => {
     vi.mocked(WithdrawalRepository.create).mockResolvedValue('ret-1' as any);
+    vi.mocked(WithdrawalRepository.getOpenCajaForUpdate).mockResolvedValue([
+      { monto_apertura: 100000, efectivo: 0 }
+    ]);
 
-    let capturedTrx: any;
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
-      capturedTrx = vi.fn().mockResolvedValue([{ monto_apertura: 100000, efectivo: 0 }]);
-      return fn(capturedTrx);
+      return fn(vi.fn());
     });
 
-    await WithdrawalService.addRetiro(validRetiro as any);
+    const result = await WithdrawalService.addRetiro(validRetiro as any);
 
-    expect(capturedTrx).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE cajas SET efectivo = efectivo - ?'),
-      expect.arrayContaining([50000, 'caja-1'])
+    expect(WithdrawalRepository.subtractCajaCash).toHaveBeenCalledWith(
+      expect.any(Function),
+      'caja-1',
+      50000
     );
+    expect(result).toMatchObject({ caja_id: 'caja-1' });
   });
 
   it('bloquea retiros mayores al efectivo disponible', async () => {
+    vi.mocked(WithdrawalRepository.getOpenCajaForUpdate).mockResolvedValue([
+      { monto_apertura: 10000, efectivo: 5000 }
+    ]);
     vi.mocked(withTransaction).mockImplementationOnce(async (fn: any) => {
-      const trx = vi.fn().mockResolvedValue([{ monto_apertura: 10000, efectivo: 5000 }]);
-      return fn(trx);
+      return fn(vi.fn());
     });
 
     await expect(
