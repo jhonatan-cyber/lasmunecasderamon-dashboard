@@ -1,13 +1,24 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import path from 'node:path';
-const mocks = vi.hoisted(() => ({ query: vi.fn(), unlink: vi.fn(), captureException: vi.fn() }));
-vi.mock('@/lib/database/db', () => ({ query: mocks.query }));
+const mocks = vi.hoisted(() => ({
+  fotoEnUso: vi.fn(),
+  unlink: vi.fn(),
+  captureException: vi.fn()
+}));
+vi.mock('@/modules/inventario/productos/repositorio', () => ({
+  productoFotoEnUso: mocks.fotoEnUso
+}));
 vi.mock('node:fs/promises', () => ({ default: { unlink: mocks.unlink } }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: mocks.captureException } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+vi.mock('@/lib/utils/logger', () => ({
+  default: { captureException: mocks.captureException },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 import { eliminarFotosProductosSinUso } from '@/modules/inventario/productos/eliminarFotos';
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.query.mockResolvedValue([]);
+  mocks.fotoEnUso.mockResolvedValue(false);
   mocks.unlink.mockResolvedValue(undefined);
 });
 it('elimina una sola vez cada foto local sin referencias', async () => {
@@ -17,7 +28,7 @@ it('elimina una sola vez cada foto local sin referencias', async () => {
   );
 });
 it('protege fotos compartidas, predeterminadas y rutas fuera del directorio', async () => {
-  mocks.query.mockResolvedValue([{ exists: 1 }]);
+  mocks.fotoEnUso.mockResolvedValue(true);
   await eliminarFotosProductosSinUso([
     'compartida.webp',
     'default.png',
@@ -26,7 +37,7 @@ it('protege fotos compartidas, predeterminadas y rutas fuera del directorio', as
     'https://site/foto.webp'
   ]);
   expect(mocks.unlink).not.toHaveBeenCalled();
-  expect(mocks.query).toHaveBeenCalledTimes(1);
+  expect(mocks.fotoEnUso).toHaveBeenCalledTimes(1);
 });
 it('tolera fotos inexistentes y comunica fallos reales de permisos', async () => {
   mocks.unlink.mockRejectedValueOnce({ code: 'ENOENT' }).mockRejectedValueOnce({ code: 'EACCES' });

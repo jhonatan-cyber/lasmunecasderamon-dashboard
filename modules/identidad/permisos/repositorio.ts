@@ -28,6 +28,35 @@ export async function listarPermisosDeRol(rolId: string): Promise<Permiso[]> {
   );
 }
 
+/** Comprobación exacta para middleware de autorización que no puede depender de la UI. */
+export async function verificarPermisoUsuario(
+  usuarioId: string,
+  modulo: string,
+  accion: string
+): Promise<boolean> {
+  const usuarios = await query<
+    Array<{ rol_id: string | number | null; rol_nombre: string | null }>
+  >(
+    `SELECT u.rol_id, r.nombre AS rol_nombre
+       FROM usuarios u LEFT JOIN roles r ON u.rol_id = r.id_rol
+      WHERE u.id_usuario = ?`,
+    [usuarioId]
+  );
+  const usuario = usuarios[0];
+  if (!usuario) return false;
+  if (usuario.rol_nombre?.toLowerCase() === 'administrador') return true;
+  if (!usuario.rol_id) return false;
+
+  const permisos = await query<Array<{ existe: number }>>(
+    `SELECT 1 AS existe FROM permissions p
+       INNER JOIN role_permissions rp ON p.id = rp.permission_id
+      WHERE rp.role_id = ? AND p.module = ? AND p.action = ? AND p.deleted_at IS NULL
+      LIMIT 1`,
+    [String(usuario.rol_id), modulo, accion]
+  );
+  return permisos.length > 0;
+}
+
 /** Todos los permisos vivos, marcando cuáles tiene el rol. */
 export async function listarPermisosConAsignacion(rolId: string): Promise<PermisoDeRol[]> {
   return await query<PermisoDeRol[]>(

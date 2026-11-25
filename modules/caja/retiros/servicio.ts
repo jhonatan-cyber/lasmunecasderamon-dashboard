@@ -1,5 +1,4 @@
 import { WithdrawalRepository } from '@/modules/caja/retiros/repositorio';
-import { CashRegisterRepository } from '@/modules/caja/turnos/repositorio';
 import { RetiroCajaSchema, type RetiroCajaType } from '@/lib/business/schemas/withdrawal';
 import { withTransaction } from '@/lib/database/db';
 import { ValidationError, BusinessError } from '@/lib/errors/errors';
@@ -16,12 +15,7 @@ export class WithdrawalService {
     return await withTransaction(async trx => {
       let cajaId = validated.caja_id || validated.id_caja;
 
-      if (!cajaId) {
-        const rows = await trx<any[]>(
-          'SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1'
-        );
-        cajaId = rows[0]?.id_caja || null;
-      }
+      if (!cajaId) cajaId = (await WithdrawalRepository.getOpenCajaId(trx)) ?? undefined;
 
       if (!cajaId)
         throw new BusinessError(
@@ -29,10 +23,7 @@ export class WithdrawalService {
           'NO_CAJA_ABIERTA'
         );
 
-      const cajaRows = await trx<any[]>(
-        'SELECT monto_apertura, efectivo FROM cajas WHERE id_caja = ? AND estado = 1 FOR UPDATE',
-        [cajaId]
-      );
+      const cajaRows = await WithdrawalRepository.getOpenCajaForUpdate(trx, cajaId);
 
       if (!cajaRows.length) {
         throw new BusinessError('La caja indicada no esta abierta', 'CAJA_NO_DISPONIBLE');
@@ -57,10 +48,7 @@ export class WithdrawalService {
         trx
       );
 
-      await trx('UPDATE cajas SET efectivo = efectivo - ? WHERE id_caja = ? AND estado = 1', [
-        validated.monto,
-        cajaId
-      ]);
+      await WithdrawalRepository.subtractCajaCash(trx, cajaId, validated.monto);
 
       return { id_retiro: idRetiro, caja_id: cajaId };
     });

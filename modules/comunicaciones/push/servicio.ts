@@ -1,6 +1,11 @@
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
-import { query } from '@/lib/database/db';
 import logger from '@/lib/utils/logger';
+import {
+  eliminarTokenPush,
+  listarTokensConPermiso,
+  listarTokensDeRol,
+  listarTokensDeUsuarios
+} from './repositorio';
 
 const expo = new Expo();
 
@@ -14,10 +19,6 @@ const ANDROID_CHANNEL_ID = 'alertas';
 
 type PushData = Record<string, unknown>;
 
-type PushUserRow = {
-  push_token: string | null;
-};
-
 export async function sendPushNotification(
   userIds: string | string[],
   title: string,
@@ -28,10 +29,7 @@ export async function sendPushNotification(
   if (!ids.length) return;
 
   try {
-    const users = (await query(
-      `SELECT DISTINCT token AS push_token FROM push_tokens WHERE usuario_id IN (${ids.map(() => '?').join(',')}) AND token IS NOT NULL`,
-      ids
-    )) as PushUserRow[];
+    const users = await listarTokensDeUsuarios(ids);
 
     if (!users || users.length === 0) return;
 
@@ -63,7 +61,7 @@ export async function sendPushNotification(
         for (const [index, ticket] of ticketChunk.entries()) {
           if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
             const invalidToken = chunk[index].to;
-            await query('DELETE FROM push_tokens WHERE token = ?', [invalidToken]);
+            if (typeof invalidToken === 'string') await eliminarTokenPush(invalidToken);
           }
         }
       } catch (error) {
@@ -87,20 +85,7 @@ export async function sendPushByPermission(
   try {
     // Quien ve el control en la UI es quien recibe el aviso: portadores del par
     // módulo/acción del catálogo + administrador (pasa todo, como en `hasPermission`).
-    const users = (await query(
-      `SELECT DISTINCT p.token AS push_token
-             FROM push_tokens p INNER JOIN usuarios u ON u.id_usuario = p.usuario_id
-             INNER JOIN roles r ON u.rol_id = r.id_rol
-            WHERE p.token IS NOT NULL
-              AND (LOWER(r.nombre) = 'administrador'
-                   OR EXISTS (
-                     SELECT 1 FROM role_permissions rp
-                      INNER JOIN permissions perm ON perm.id = rp.permission_id
-                      WHERE rp.role_id = r.id_rol
-                        AND perm.module = ? AND perm.action = ? AND perm.deleted_at IS NULL
-                   ))`,
-      [module, action]
-    )) as PushUserRow[];
+    const users = await listarTokensConPermiso(module, action);
 
     if (!users || users.length === 0) return;
 
@@ -136,13 +121,7 @@ export async function sendPushByPermission(
 
 export async function sendPushByRole(role: string, title: string, body: string, data?: PushData) {
   try {
-    const users = (await query(
-      `SELECT DISTINCT p.token AS push_token 
-             FROM push_tokens p INNER JOIN usuarios u ON u.id_usuario = p.usuario_id 
-             INNER JOIN roles r ON u.rol_id = r.id_rol 
-             WHERE LOWER(r.nombre) = LOWER(?) AND p.token IS NOT NULL`,
-      [role]
-    )) as PushUserRow[];
+    const users = await listarTokensDeRol(role);
 
     if (!users || users.length === 0) return;
 
@@ -167,7 +146,7 @@ export async function sendPushByRole(role: string, title: string, body: string, 
         for (const [index, ticket] of ticketChunk.entries()) {
           if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
             const invalidToken = chunk[index].to;
-            await query('DELETE FROM push_tokens WHERE token = ?', [invalidToken]);
+            if (typeof invalidToken === 'string') await eliminarTokenPush(invalidToken);
           }
         }
       } catch (err) {

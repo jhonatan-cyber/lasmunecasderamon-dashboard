@@ -1,7 +1,7 @@
-import { query } from '@/lib/database/db';
 import { NotificationService } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
+import { listarUsuariosActivosPorRoles } from '@/modules/identidad/authorization';
 import logger from '@/lib/utils/logger';
 import type { ShotAlert } from '@/modules/inventario/contracts';
 
@@ -17,14 +17,6 @@ function mensajeDe(alertas: ShotAlert[]): string {
     .join(' · ');
 }
 
-const DESTINATARIOS_BARMAN = `SELECT u.id_usuario FROM usuarios u
-   INNER JOIN roles r ON r.id_rol = u.rol_id
-   WHERE LOWER(r.nombre) = 'barman' AND u.estado = 1`;
-
-const DESTINATARIOS_ADMIN = `SELECT u.id_usuario FROM usuarios u
-   INNER JOIN roles r ON r.id_rol = u.rol_id
-   WHERE LOWER(r.nombre) = 'administrador' AND u.estado = 1`;
-
 /**
  * Avisa a quienes sirven el bar cuando una botella abierta bajó del umbral de shots
  * restantes configurado en Configuraciones → Bar.
@@ -37,8 +29,9 @@ export async function notifyBarShotAlerts(alertas?: ShotAlert[] | null): Promise
   if (!alertas || alertas.length === 0) return;
   try {
     const mensaje = mensajeDe(alertas);
-    const barmans = await query<any[]>(DESTINATARIOS_BARMAN);
-    const destinatarios = barmans.length > 0 ? barmans : await query<any[]>(DESTINATARIOS_ADMIN);
+    const barmans = await listarUsuariosActivosPorRoles(['barman']);
+    const destinatarios =
+      barmans.length > 0 ? barmans : await listarUsuariosActivosPorRoles(['administrador']);
     const rol = barmans.length > 0 ? 'barman' : 'administrador';
 
     for (const destinatario of destinatarios) {

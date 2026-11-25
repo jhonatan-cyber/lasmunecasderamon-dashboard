@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const consulta = vi.hoisted(() => vi.fn());
+const listarUsuariosPorRoles = vi.hoisted(() => vi.fn());
 const emitir = vi.hoisted(() => vi.fn());
 const crearNotificacion = vi.hoisted(() => vi.fn());
 const push = vi.hoisted(() => vi.fn());
 const capturar = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/database/db', () => ({ query: consulta }));
+vi.mock('@/modules/identidad/authorization', () => ({
+  listarUsuariosActivosPorRoles: listarUsuariosPorRoles
+}));
 vi.mock('@/lib/api/sseService', () => ({ sendNotificationToAll: emitir }));
 vi.mock('@/modules/comunicaciones/notificaciones/servicio', () => ({
   NotificationService: { create: crearNotificacion }
@@ -19,7 +23,12 @@ vi.mock('@/lib/business/timezoneService', () => ({
   getSystemTimezone: () => 'America/Santiago',
   getNowInBusinessTimezone: () => '2026-09-25 12:00:00'
 }));
-vi.mock('@/lib/utils/logger', () => ({ default: { captureException: capturar } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+vi.mock('@/lib/utils/logger', () => ({
+  default: { captureException: capturar },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 
 import {
   checkWarehouseContainerAlerts,
@@ -37,6 +46,7 @@ let vencidos = 0;
 describe('alerta de envases entregados sin recibir', () => {
   beforeEach(() => {
     consulta.mockReset();
+    listarUsuariosPorRoles.mockReset().mockResolvedValue([{ id_usuario: 'u-almacen' }]);
     emitir.mockReset();
     crearNotificacion.mockReset();
     push.mockReset();
@@ -46,7 +56,7 @@ describe('alerta de envases entregados sin recibir', () => {
 
     consulta.mockImplementation(async (sql: string) => {
       if (sql.includes('COUNT(*)')) return [{ pendientes, vencidos }];
-      return [{ id_usuario: 'u-almacen' }];
+      return [{ pendientes, vencidos }];
     });
     pendientes = 0;
     vencidos = 0;
@@ -172,7 +182,10 @@ describe('alerta de envases entregados sin recibir', () => {
   });
 
   it('notifica a administración y caja con el resultado de cada código del lote', async () => {
-    consulta.mockResolvedValue([{ id_usuario: 'admin-1' }, { id_usuario: 'cajero-1' }]);
+    listarUsuariosPorRoles.mockResolvedValue([
+      { id_usuario: 'admin-1' },
+      { id_usuario: 'cajero-1' }
+    ]);
     const resultados = [
       {
         ok: true,
@@ -190,6 +203,7 @@ describe('alerta de envases entregados sin recibir', () => {
     await notifyContainerReturnBatch(resultados, 'barman-1');
 
     expect(crearNotificacion).toHaveBeenCalledTimes(2);
+    expect(listarUsuariosPorRoles).toHaveBeenCalledWith(['administrador', 'cajero']);
     const notificacion = crearNotificacion.mock.calls[0][0];
     expect(notificacion).toMatchObject({
       usuario_id: 'admin-1',

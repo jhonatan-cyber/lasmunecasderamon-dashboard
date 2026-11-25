@@ -232,32 +232,19 @@ export async function getUserPermissionsFromDB(userId: string): Promise<UserPerm
   const userPerms = createEmptyPermissions();
 
   try {
-    const { query } = await import('@/lib/database/db');
+    const { listarPermisosDeUsuario } = await import('@/modules/identidad');
+    const permissions = await listarPermisosDeUsuario(userId);
 
-    const userResult = (await query(`SELECT rol_id FROM usuarios WHERE id_usuario = ?`, [
-      userId
-    ])) as Array<{ rol_id: string | number | null }>;
+    permissions.forEach(perm => {
+      const moduleName = toMatrixModule(perm.module) as keyof UserPermissions;
+      const modulePerms = userPerms[moduleName];
+      if (!modulePerms) return;
 
-    const roleId = userResult?.[0]?.rol_id;
-
-    // Sin usuario o sin rol no hay nada que conceder.
-    if (roleId) {
-      const permissions = (await query(
-        `SELECT p.module, p.action FROM permissions p INNER JOIN role_permissions rp ON p.id = rp.permission_id WHERE rp.role_id = ? AND p.deleted_at IS NULL`,
-        [String(roleId)]
-      )) as Array<{ module: string; action: string }>;
-
-      permissions?.forEach(perm => {
-        const moduleName = toMatrixModule(perm.module) as keyof UserPermissions;
-        const modulePerms = userPerms[moduleName];
-        if (!modulePerms) return;
-
-        // La regla de flags (traducido + homónimo) vive en matrixFlagsFor.
-        for (const flag of matrixFlagsFor(modulePerms as Record<string, boolean>, perm.action)) {
-          (modulePerms as any)[flag] = true;
-        }
-      });
-    }
+      // La regla de flags (traducido + homónimo) vive en matrixFlagsFor.
+      for (const flag of matrixFlagsFor(modulePerms as Record<string, boolean>, perm.action)) {
+        (modulePerms as any)[flag] = true;
+      }
+    });
   } catch {
     // Error de BD: permisos vacíos y sin cachear, para que el próximo request
     // vuelva a resolverlos en lugar de fijar una denegación por error.

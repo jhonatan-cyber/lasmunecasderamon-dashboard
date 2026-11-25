@@ -1,7 +1,7 @@
-import { query } from '@/lib/database/db';
 import { NotificationService } from '@/modules/comunicaciones';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
+import { listarUsuariosActivosPorRoles } from '@/modules/identidad/authorization';
 import { HORAS_ENVASE_SIN_CONFIRMAR, obtenerResumenEnvases } from '@/modules/inventario';
 import type { ResumenEnvases } from '@/modules/inventario/contracts';
 import logger from '@/lib/utils/logger';
@@ -15,19 +15,6 @@ export const CONTAINER_RETURN_PENDING_TIPO = 'container_return_pending';
 // se reexportan para no cambiar la API que consumen rutas y pruebas.
 export { HORAS_ENVASE_SIN_CONFIRMAR };
 export type { ResumenEnvases };
-
-/**
- * Quien recibe envases: los roles con el permiso de confirmación (migración 033)
- * más el administrador, que siempre puede confirmar.
- */
-const DESTINATARIOS_ALMACEN = `SELECT u.id_usuario FROM usuarios u
-   INNER JOIN roles r ON r.id_rol = u.rol_id
-   WHERE LOWER(r.nombre) IN ('almacen', 'almacén', 'almacenero', 'inventario', 'administrador')
-     AND u.estado = 1`;
-
-const DESTINATARIOS_APROBACION = `SELECT u.id_usuario FROM usuarios u
-   INNER JOIN roles r ON r.id_rol = u.rol_id
-   WHERE LOWER(r.nombre) IN ('administrador', 'cajero') AND u.estado = 1`;
 
 /** Persiste y anuncia a administración y caja la comparación completa del lote. */
 export async function notifyContainerReturnBatch(
@@ -70,7 +57,7 @@ export async function notifyContainerReturnBatch(
         presentacion: resultado.unidad?.presentacion_nombre ?? null
       }))
     };
-    const destinatarios = await query<Array<{ id_usuario: string }>>(DESTINATARIOS_APROBACION);
+    const destinatarios = await listarUsuariosActivosPorRoles(['administrador', 'cajero']);
     for (const destinatario of destinatarios) {
       await NotificationService.create({
         usuario_id: destinatario.id_usuario,
@@ -114,7 +101,13 @@ function mensajeDe(resumen: ResumenEnvases): string {
 }
 
 async function notificarAlmacen(resumen: ResumenEnvases, mensaje: string): Promise<void> {
-  const destinatarios = await query<Array<{ id_usuario: string }>>(DESTINATARIOS_ALMACEN);
+  const destinatarios = await listarUsuariosActivosPorRoles([
+    'almacen',
+    'almacén',
+    'almacenero',
+    'inventario',
+    'administrador'
+  ]);
   for (const destinatario of destinatarios) {
     await NotificationService.create({
       usuario_id: destinatario.id_usuario,

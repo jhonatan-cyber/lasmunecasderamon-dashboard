@@ -13,7 +13,9 @@ export {
   postearPendientesDeCaja,
   registrarEntrada,
   actualizarSolicitudAnulacionEntrada,
-  leerSolicitudAnulacionEntrada
+  leerSolicitudAnulacionEntrada,
+  obtenerEntradaPendienteParaAnular,
+  marcarEntradaComoAnulada
 } from './servicio';
 
 export {

@@ -3,7 +3,7 @@ import db, { query, withTransaction } from '@/lib/database/db';
 import { StatsRepository } from '@/modules/reportes/dashboard/repositorio';
 import { TimerRepository } from '@/modules/operacion/temporizadores/consultas';
 import { CalendarRepository } from '@/modules/agenda/calendario/repositorio';
-import { ReportRepository } from '@/modules/reportes/informes/repositorio';
+import { ReportService } from '@/modules/reportes/informes/servicio';
 import { PayrollRepository } from '@/modules/personal/nomina/repositorio';
 import { EventRepository } from '@/modules/agenda/eventos/repositorio';
 import { SaleService as SaleRepository } from '@/workflows/ventas';
@@ -106,7 +106,7 @@ describe('Actual repositories on PostgreSQL', () => {
     ] as const) {
       it(`${name}: ${period}`, async () => {
         await (
-          ReportRepository[name] as (period: string, start: string, end: string) => Promise<unknown>
+          ReportService[name] as (period: string, start: string, end: string) => Promise<unknown>
         )(period, '2026-01-01', '2026-12-31');
       });
     }

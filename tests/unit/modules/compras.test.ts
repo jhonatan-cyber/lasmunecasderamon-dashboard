@@ -8,14 +8,11 @@ vi.mock('@/lib/database/db', () => ({
   generateUUID: () => 'uuid-test'
 }));
 
-vi.mock('@/lib/database/base-repository', () => ({
-  BaseRepository: { insert: vi.fn(), update: vi.fn(), findOne: vi.fn(), delete: vi.fn() }
-}));
-
 // La compra vive en el módulo: sus colaboradores son los repositorios privados
 // del propio módulo, no una API pública ni un repositorio heredado.
 vi.mock('@/modules/inventario/compras/repositorio', () => ({
   crearCompra: vi.fn(async (_trx: any, data: any) => ({ id: 'comp-1', folio: 'C-0001', ...data })),
+  actualizarPrecioCompraPresentacion: vi.fn(),
   listarCompras: vi.fn().mockResolvedValue([])
 }));
 
@@ -37,7 +34,7 @@ import { crearCompra } from '@/modules/inventario/compras/repositorio';
 import { productosPorIds } from '@/modules/inventario/productos/repositorio';
 import { listarPresentacionesPorProductos } from '@/modules/inventario/presentaciones/repositorio';
 import { generarUnidades, sincronizarStockTotal } from '@/modules/inventario/unidades/repositorio';
-import { BaseRepository } from '@/lib/database/base-repository';
+import { actualizarPrecioCompraPresentacion } from '@/modules/inventario/compras/repositorio';
 
 const detalle = {
   producto_id: 'prod-1',
@@ -170,12 +167,10 @@ describe('registrarCompra (modulo inventario)', () => {
     );
     expect(sincronizarStockTotal).toHaveBeenCalledTimes(1);
     expect(sincronizarStockTotal).toHaveBeenCalledWith(expect.anything(), 'prod-1');
-    expect(BaseRepository.update).toHaveBeenCalledWith(
+    expect(actualizarPrecioCompraPresentacion).toHaveBeenCalledWith(
       expect.anything(),
-      'inventario_presentaciones',
-      'id',
       'pres-1',
-      { precio_compra: 5000 }
+      5000
     );
   });
 

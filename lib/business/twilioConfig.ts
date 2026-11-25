@@ -1,4 +1,4 @@
-import { query } from '@/lib/database/db';
+import { obtenerValoresConfiguracion } from '@/modules/configuracion';
 
 /**
  * Credenciales de Twilio para enviar WhatsApp.
@@ -35,12 +35,7 @@ export async function getTwilioConfig(): Promise<TwilioConfig> {
 
   const desdeDb: Record<string, string> = {};
   try {
-    const rows = (await query(`SELECT clave, valor FROM configuraciones WHERE clave IN (?, ?, ?)`, [
-      ...TWILIO_CLAVES
-    ])) as Array<{ clave: string; valor: string | null }>;
-    for (const row of rows) {
-      desdeDb[row.clave] = clean(row.valor);
-    }
+    Object.assign(desdeDb, await obtenerValoresConfiguracion(TWILIO_CLAVES));
   } catch {
     // Sin base seguimos: el `.env` cubre el vacío.
   }

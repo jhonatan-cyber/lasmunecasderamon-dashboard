@@ -1,8 +1,10 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const db = vi.hoisted(() => ({ query: vi.fn() }));
-vi.mock('@/lib/database/db', () => ({ query: db.query }));
+const configuracion = vi.hoisted(() => ({ obtenerValoresConfiguracion: vi.fn() }));
+vi.mock('@/modules/configuracion', () => ({
+  obtenerValoresConfiguracion: configuracion.obtenerValoresConfiguracion
+}));
 
 import { clearTwilioConfigCache, getTwilioConfig } from '@/lib/business/twilioConfig';
 
@@ -18,8 +20,8 @@ const envOriginal: Record<string, string | undefined> = {};
 beforeEach(() => {
   for (const clave of ENV_CLAVES) envOriginal[clave] = process.env[clave];
   clearTwilioConfigCache();
-  db.query.mockReset();
-  db.query.mockResolvedValue([]);
+  configuracion.obtenerValoresConfiguracion.mockReset();
+  configuracion.obtenerValoresConfiguracion.mockResolvedValue({});
 });
 
 afterEach(() => {
@@ -30,18 +32,13 @@ afterEach(() => {
   clearTwilioConfigCache();
 });
 
-const filas = (valores: Record<string, string>) =>
-  Object.entries(valores).map(([clave, valor]) => ({ clave, valor }));
-
 describe('getTwilioConfig', () => {
   it('lee lo que está guardado en configuraciones', async () => {
-    db.query.mockResolvedValue(
-      filas({
-        twilio_account_sid: 'AC11111111111111111111111111111111',
-        twilio_auth_token: 'token-desde-la-base',
-        twilio_whatsapp_number: 'whatsapp:+56911111111'
-      })
-    );
+    configuracion.obtenerValoresConfiguracion.mockResolvedValue({
+      twilio_account_sid: 'AC11111111111111111111111111111111',
+      twilio_auth_token: 'token-desde-la-base',
+      twilio_whatsapp_number: 'whatsapp:+56911111111'
+    });
 
     const config = await getTwilioConfig();
 
@@ -56,13 +53,11 @@ describe('getTwilioConfig', () => {
     process.env.TWILIO_ACCOUNT_SID = 'AC22222222222222222222222222222222';
     process.env.TWILIO_AUTH_TOKEN = 'token-del-env';
     process.env.TWILIO_WHATSAPP_NUMBER = 'whatsapp:+56922222222';
-    db.query.mockResolvedValue(
-      filas({
-        twilio_account_sid: '',
-        twilio_auth_token: '',
-        twilio_whatsapp_number: ''
-      })
-    );
+    configuracion.obtenerValoresConfiguracion.mockResolvedValue({
+      twilio_account_sid: '',
+      twilio_auth_token: '',
+      twilio_whatsapp_number: ''
+    });
 
     const config = await getTwilioConfig();
 
@@ -75,7 +70,7 @@ describe('getTwilioConfig', () => {
     process.env.TWILIO_ACCOUNT_SID = 'AC33333333333333333333333333333333';
     process.env.TWILIO_AUTH_TOKEN = 'token-env';
     process.env.TWILIO_WHATSAPP_NUMBER = '+56933333333';
-    db.query.mockResolvedValue([]);
+    configuracion.obtenerValoresConfiguracion.mockResolvedValue({});
 
     const config = await getTwilioConfig();
 
@@ -88,7 +83,9 @@ describe('getTwilioConfig', () => {
 
   it('la base manda sobre el .env cuando tiene valor', async () => {
     process.env.TWILIO_ACCOUNT_SID = 'AC00000000000000000000000000000000';
-    db.query.mockResolvedValue(filas({ twilio_account_sid: 'AC99999999999999999999999999999999' }));
+    configuracion.obtenerValoresConfiguracion.mockResolvedValue({
+      twilio_account_sid: 'AC99999999999999999999999999999999'
+    });
 
     const config = await getTwilioConfig();
 
@@ -96,7 +93,7 @@ describe('getTwilioConfig', () => {
   });
 
   it('si nada está configurado usa el número por defecto de Twilio', async () => {
-    db.query.mockResolvedValue([]);
+    configuracion.obtenerValoresConfiguracion.mockResolvedValue({});
 
     const config = await getTwilioConfig();
 
@@ -105,7 +102,7 @@ describe('getTwilioConfig', () => {
 
   it('si la base falla sigue funcionando con el .env', async () => {
     process.env.TWILIO_AUTH_TOKEN = 'token-respaldo';
-    db.query.mockRejectedValue(new Error('sin conexion'));
+    configuracion.obtenerValoresConfiguracion.mockRejectedValue(new Error('sin conexion'));
 
     const config = await getTwilioConfig();
 
@@ -113,17 +110,17 @@ describe('getTwilioConfig', () => {
   });
 
   it('cachea el resultado hasta que se limpia la caché', async () => {
-    db.query.mockResolvedValue(filas({ twilio_auth_token: 'primero' }));
+    configuracion.obtenerValoresConfiguracion.mockResolvedValue({ twilio_auth_token: 'primero' });
 
     await getTwilioConfig();
     await getTwilioConfig();
-    expect(db.query).toHaveBeenCalledTimes(1);
+    expect(configuracion.obtenerValoresConfiguracion).toHaveBeenCalledTimes(1);
 
     clearTwilioConfigCache();
-    db.query.mockResolvedValue(filas({ twilio_auth_token: 'segundo' }));
+    configuracion.obtenerValoresConfiguracion.mockResolvedValue({ twilio_auth_token: 'segundo' });
 
     const config = await getTwilioConfig();
-    expect(db.query).toHaveBeenCalledTimes(2);
+    expect(configuracion.obtenerValoresConfiguracion).toHaveBeenCalledTimes(2);
     expect(config.authToken).toBe('segundo');
   });
 });

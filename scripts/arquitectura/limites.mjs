@@ -11,10 +11,14 @@
  *
  *   1. La UI no toca infraestructura: `components/` y `hooks/` no pueden
  *      importar el driver de PostgreSQL ni los repositorios.
- *   2. La lógica de negocio no depende del framework: `lib/business/` no
+ *   2. Las rutas API no importan directamente la persistencia; excepciones
+ *      heredadas requieren responsable y condición de eliminación.
+ *   3. El SQL ejecutable queda en repositorios o infraestructura; una lectura
+ *      o escritura nueva en servicios de aplicación hace fallar el control.
+ *   4. La lógica de negocio no depende del framework: `lib/business/` no
  *      importa `next/server`.
- *   3. Los módulos no importan workflows.
- *   4. El grafo entre dominios no tiene ciclos.
+ *   5. Los módulos no importan workflows.
+ *   6. El grafo entre dominios no tiene ciclos.
  *
  * Las violaciones que ya existen son herencia. No se las ignora en silencio:
  * viven en `docs/arquitectura/excepciones.json` con motivo, responsable y
@@ -155,7 +159,102 @@ function resolverDestino(spec, desdeRel) {
 
 const aristas = [];
 const escrituras = [];
+const sqlFueraDeInfraestructura = [];
 const archivosServidor = new Set();
+const RE_SENTENCIA_SQL =
+  /^\s*(?:SELECT\b[\s\S]*\bFROM\b|INSERT\s+INTO\s+["'`]?\w+|UPDATE\s+["'`]?\w+\s+SET\b|DELETE\s+FROM\s+["'`]?\w+|WITH\b[\s\S]*\b(?:SELECT|INSERT|UPDATE|DELETE)\b)/i;
+const RE_SELECT_SQL = /^\s*SELECT\b/i;
+const LLAMADAS_SQL = new Set([
+  'query',
+  'rawQuery',
+  'prepareQuery',
+  'execute',
+  'trx',
+  'tx',
+  'executor',
+  'ejecutor',
+  'connection',
+  'client',
+  'db'
+]);
+
+function detectarSentenciaSql(fuente) {
+  let sentencia = null;
+  const llamadas = new Set(LLAMADAS_SQL);
+  const sentenciasLocales = new Map();
+
+  function textoSql(nodo) {
+    if (ts.isStringLiteralLike(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo))
+      return RE_SENTENCIA_SQL.test(nodo.text) || RE_SELECT_SQL.test(nodo.text) ? nodo.text : null;
+    if (
+      ts.isTemplateExpression(nodo) &&
+      (RE_SENTENCIA_SQL.test(nodo.head.text) || RE_SELECT_SQL.test(nodo.head.text))
+    )
+      return nodo.head.text;
+    if (ts.isIdentifier(nodo)) return sentenciasLocales.get(nodo.text) ?? null;
+    return null;
+  }
+
+  function recogerNombresConsulta(nodo) {
+    if (
+      ts.isImportDeclaration(nodo) &&
+      ts.isStringLiteral(nodo.moduleSpecifier) &&
+      /(?:lib\/database\/(?:db|postgres)|lib\/repositories\/)/.test(nodo.moduleSpecifier.text)
+    ) {
+      const bindings = nodo.importClause?.namedBindings;
+      if (bindings && ts.isNamedImports(bindings)) {
+        for (const element of bindings.elements) {
+          const importado = element.propertyName?.text ?? element.name.text;
+          if (LLAMADAS_SQL.has(importado)) llamadas.add(element.name.text);
+        }
+      }
+    }
+    ts.forEachChild(nodo, recogerNombresConsulta);
+  }
+
+  function recogerSentenciasLocales(nodo) {
+    if (ts.isVariableDeclaration(nodo) && ts.isIdentifier(nodo.name) && nodo.initializer) {
+      const texto = textoSql(nodo.initializer);
+      if (texto) sentenciasLocales.set(nodo.name.text, texto);
+    }
+    ts.forEachChild(nodo, recogerSentenciasLocales);
+  }
+
+  function visitar(nodo) {
+    if (ts.isCallExpression(nodo)) {
+      const expresion = nodo.expression;
+      const nombre = ts.isIdentifier(expresion)
+        ? expresion.text
+        : ts.isPropertyAccessExpression(expresion)
+          ? expresion.name.text
+          : null;
+      if (nombre && llamadas.has(nombre) && nodo.arguments.length > 0) {
+        const sql = textoSql(nodo.arguments[0]);
+        if (sql) {
+          sentencia = sql.match(RE_SENTENCIA_SQL)?.[0] ?? sql.trim().split(/\s+/)[0];
+          return;
+        }
+      }
+    }
+    ts.forEachChild(nodo, visitar);
+  }
+  recogerNombresConsulta(fuente);
+  recogerSentenciasLocales(fuente);
+  visitar(fuente);
+  return sentencia;
+}
+
+function esInfraestructuraSql(rel) {
+  return (
+    rel.startsWith('lib/database/') ||
+    rel.startsWith('lib/repositories/') ||
+    rel.startsWith('lib/transaction/') ||
+    rel.startsWith('modules/infraestructura/') ||
+    /^modules\/.*(?:repositorio|consultas|registro|infraestructura)\.tsx?$/i.test(rel) ||
+    /\/infraestructura\//i.test(rel)
+  );
+}
+
 for (const abs of archivosDelProyecto()) {
   const rel = abs
     .slice(RAIZ.length + 1)
@@ -170,6 +269,10 @@ for (const abs of archivosDelProyecto()) {
   }
   const specs = [];
   const fuente = ts.createSourceFile(rel, txt, ts.ScriptTarget.Latest, true);
+  const sentenciaSql = detectarSentenciaSql(fuente);
+  if (!rel.startsWith('seed/') && !esInfraestructuraSql(rel) && sentenciaSql) {
+    sqlFueraDeInfraestructura.push({ desde: rel, sentencia: sentenciaSql });
+  }
   for (const tabla of escriturasDe(fuente)) escrituras.push({ desde: rel, tabla });
   function visitar(nodo) {
     if (
@@ -218,11 +321,14 @@ const ES_DRIVER = h => /^lib\/database\/(db|postgres)/.test(h) || h.startsWith('
  * Fachadas públicas adicionales al index/contracts de cada módulo.
  *
  * Son entradas mínimas y explícitas, no "cualquier archivo suelto en la raíz":
- * `modules/asistencia/recepcion.ts` existe para que `instrumentation.ts` no
- * tenga que importar el barrel completo y arrastrar facial, video y kioscos al
- * arranque del servidor.
+ * Asistencia evita cargar módulos no necesarios durante el arranque, e Identidad
+ * ofrece autorización ligera para el proxy sin importar su fachada completa.
  */
-const ENTRADAS_PUBLICAS_EXTRA = new Set(['modules/asistencia/recepcion.ts']);
+const ENTRADAS_PUBLICAS_EXTRA = new Set([
+  'modules/asistencia/recepcion.ts',
+  'modules/identidad/authorization.ts',
+  'modules/identidad/authorization'
+]);
 
 const REGLAS = [
   {
@@ -252,6 +358,14 @@ const REGLAS = [
       /^(components|hooks|app)\//.test(d.desde) &&
       !d.desde.startsWith('app/api/') &&
       ES_DRIVER(d.hacia)
+  },
+  {
+    id: 'api-no-importa-infraestructura',
+    plan: '§5 — las rutas HTTP traducen solicitudes y delegan persistencia en los módulos',
+    desc: 'app/api no importa directamente lib/database ni repositorios heredados',
+    viola: d =>
+      d.desde.startsWith('app/api/') &&
+      (d.hacia.startsWith('lib/database/') || d.hacia.startsWith('lib/repositories/'))
   },
   {
     id: 'negocio-sin-framework',
@@ -444,6 +558,29 @@ for (const escritura of escrituras) {
       hacia: `${escritura.tabla} (${propietario ?? 'sin propietario'})`,
       spec: ''
     });
+}
+const serviciosConEscrituras = new Set(
+  escrituras
+    .filter(escritura => /^modules\/.*\/servicio\.ts$/.test(escritura.desde))
+    .map(escritura => escritura.desde)
+);
+for (const desde of serviciosConEscrituras) {
+  hallazgos.push({
+    regla: 'servicio-sin-sql',
+    plan: '§5 — los servicios de aplicación coordinan; la persistencia vive en repositorios',
+    desde,
+    hacia: 'SQL de escritura en servicio',
+    spec: ''
+  });
+}
+for (const { desde, sentencia } of sqlFueraDeInfraestructura) {
+  hallazgos.push({
+    regla: 'sql-solo-infraestructura',
+    plan: '§5 — el SQL queda en repositorios e infraestructura técnica',
+    desde,
+    hacia: `SQL literal (${sentencia}) fuera de infraestructura`,
+    spec: ''
+  });
 }
 for (const regla of REGLAS) {
   for (const a of aristas) {

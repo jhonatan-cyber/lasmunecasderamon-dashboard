@@ -60,6 +60,16 @@ export interface CompraRow {
   fecha_crea: string;
 }
 
+export async function actualizarPrecioCompraPresentacion(
+  trx: TransactionQuery,
+  presentacionId: string,
+  precioCompra: number
+): Promise<void> {
+  await BaseRepository.update(trx, 'inventario_presentaciones', 'id', presentacionId, {
+    precio_compra: precioCompra
+  });
+}
+
 /** Crea cabecera + detalle. No genera stock: eso lo hace el servicio del módulo. */
 export async function crearCompra(
   trx: TransactionQuery,

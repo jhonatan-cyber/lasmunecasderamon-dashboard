@@ -18,27 +18,11 @@
  * fechas y borrado).
  */
 import type { TransactionQuery } from '@/lib/database/db';
-import { ESTADO_UNIDAD_ACTIVA } from './estados';
-
-type Ejecutor = TransactionQuery;
+import { sincronizarVencimientoDerivado } from './productos/repositorio';
 
 export async function sincronizarVencimientoProducto(
-  ejecutor: Ejecutor,
+  ejecutor: TransactionQuery,
   productoId: string
 ): Promise<void> {
-  await ejecutor(
-    `UPDATE productos
-        SET fecha_vencimiento = COALESCE(
-              (SELECT MIN(COALESCE(u.fecha_vencimiento, p.fecha_vencimiento))
-                 FROM inventario_unidades u
-                 JOIN inventario_presentaciones p ON p.id = u.presentacion_id
-                WHERE p.producto_id = productos.id_producto
-                  AND u.estado = '${ESTADO_UNIDAD_ACTIVA}'),
-              (SELECT MIN(p.fecha_vencimiento)
-                 FROM inventario_presentaciones p
-                WHERE p.producto_id = productos.id_producto),
-              fecha_vencimiento)
-      WHERE id_producto = ?`,
-    [productoId]
-  );
+  await sincronizarVencimientoDerivado(ejecutor, productoId);
 }

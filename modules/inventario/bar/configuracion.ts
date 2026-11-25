@@ -1,6 +1,6 @@
-import { query, type TransactionQuery } from '@/lib/database/db';
+import { leerConfiguracionBar, leerValorConfiguracionBar } from './configuracionRepositorio';
+import type { ConsultaInventario } from './configuracionRepositorio';
 
-export type ConsultaInventario = TransactionQuery | typeof query;
 export const DEFAULT_SHOT_ML = 50;
 export const DEFAULT_BOTTLE_ML = 750;
 export const DEFAULT_SHOTS_ALERTA = 3;
@@ -8,13 +8,10 @@ export const DEFAULT_MERMA_SHOTS_ML = 50;
 export const DEFAULT_ACOMPANAMIENTO_MAX_ML = 500;
 
 export async function getBarMlConfig(
-  consultar: ConsultaInventario = query
+  consultar?: ConsultaInventario
 ): Promise<{ shotMl: number; botellaMl: number; shotsAlerta: number; mermaShotsMl: number }> {
   try {
-    const rows = await consultar<any[]>(
-      "SELECT clave, valor FROM configuraciones WHERE clave IN ('shot_ml', 'botella_ml', 'shots_alerta', 'merma_shots_ml')",
-      []
-    );
+    const rows = await leerConfiguracionBar(consultar);
     const valores = new Map<string, number>();
     for (const row of rows) {
       const valor = Number(row?.valor);
@@ -38,14 +35,9 @@ export async function getBarMlConfig(
   }
 }
 
-export async function getAcompanamientoMaxMl(
-  consultar: ConsultaInventario = query
-): Promise<number> {
+export async function getAcompanamientoMaxMl(consultar?: ConsultaInventario): Promise<number> {
   try {
-    const rows = await consultar<any[]>(
-      "SELECT valor FROM configuraciones WHERE clave = 'acompanamiento_max_ml' LIMIT 1",
-      []
-    );
+    const rows = await leerValorConfiguracionBar('acompanamiento_max_ml', consultar);
     const valor = Number(rows[0]?.valor);
     return Number.isFinite(valor) && valor > 0 ? Math.floor(valor) : DEFAULT_ACOMPANAMIENTO_MAX_ML;
   } catch {
@@ -53,12 +45,9 @@ export async function getAcompanamientoMaxMl(
   }
 }
 
-export async function getTopeSimple(consultar: ConsultaInventario = query): Promise<number> {
+export async function getTopeSimple(consultar?: ConsultaInventario): Promise<number> {
   try {
-    const rows = await consultar<any[]>(
-      "SELECT valor FROM configuraciones WHERE clave = 'umbral_simple_hasta' LIMIT 1",
-      []
-    );
+    const rows = await leerValorConfiguracionBar('umbral_simple_hasta', consultar);
     const valor = Number(rows[0]?.valor);
     return Number.isFinite(valor) && valor >= 0 ? Math.floor(valor) : 10000;
   } catch {

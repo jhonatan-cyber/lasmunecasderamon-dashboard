@@ -88,7 +88,9 @@ const archivos = archivosDelProyecto();
 /** Capa técnica de un archivo, según su ruta relativa a la raíz. */
 function capaDe(rel) {
   if (rel.startsWith('modules/'))
-    return /(?:repositorio|Repositorio|consultas|registro|infraestructura)\.ts$/.test(rel)
+    return /(?:repositorio|Repositorio|consultas|registro|infraestructura)\.ts$|(?:^|\/)infraestructura\//.test(
+      rel
+    )
       ? 'modules/infraestructura'
       : 'modules/aplicacion';
   if (rel.startsWith('workflows/')) return 'workflows';
@@ -276,12 +278,16 @@ for (const abs of archivos) {
 
 /* ───────────────── SQL: acceso al driver y tablas ───────────────── */
 
-const SIMBOLOS_DB = /\b(query|rawQuery|withTransaction|getPool|prepareQuery)\s*\(/;
+const SIMBOLOS_DB = /\b(query|rawQuery|getPool|prepareQuery)\s*\(/;
 const MODULO_DRIVER = 'lib/database/db';
+const RE_SENTENCIA_SQL =
+  /\b(?:SELECT\b|INSERT\s+INTO\b|UPDATE\s+["'`]?\w+\s+SET\b|DELETE\s+FROM\b)/i;
 const ES_REPO = rel =>
   capaDe(rel) === 'lib/repositories' ||
   capaDe(rel) === 'modules/infraestructura' ||
-  rel.startsWith('lib/database/');
+  rel.startsWith('lib/database/') ||
+  /^modules\/.*(?:repositorio|consultas|registro|infraestructura)\.tsx?$/i.test(rel) ||
+  /\/infraestructura\//i.test(rel);
 const ES_TEST = rel => rel.startsWith('tests/');
 
 /**
@@ -297,6 +303,36 @@ function usaDriverDe(nodo) {
     if (d === MODULO_DRIVER || d === `${MODULO_DRIVER}/index`) return true;
   }
   return SIMBOLOS_DB.test(nodo.txt);
+}
+
+function contieneSentenciaSql(fuente) {
+  let encontrada = false;
+  function visitar(nodo) {
+    if (
+      (ts.isStringLiteralLike(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo)) &&
+      RE_SENTENCIA_SQL.test(nodo.text)
+    ) {
+      encontrada = true;
+      return;
+    }
+    if (ts.isTemplateExpression(nodo) && RE_SENTENCIA_SQL.test(nodo.head.text)) {
+      encontrada = true;
+      return;
+    }
+    ts.forEachChild(nodo, visitar);
+  }
+  visitar(fuente);
+  return encontrada;
+}
+
+function usaSqlDirecto(nodo) {
+  // Las transacciones por sí solas no son SQL: una sentencia sólo se atribuye
+  // al archivo cuando también existe una dependencia estática/dinámica del driver.
+  const importaDriver = [...nodo.imports, ...nodo.dinamicos].some(destino => {
+    const d = destino.replace(/\.(ts|tsx|mjs|js)$/, '');
+    return d === MODULO_DRIVER || d === `${MODULO_DRIVER}/index`;
+  });
+  return importaDriver && (contieneSentenciaSql(nodo.fuente) || SIMBOLOS_DB.test(nodo.txt));
 }
 
 const sqlFueraDeRepositorio = [];
@@ -315,8 +351,7 @@ for (const [rel, n] of grafo) {
   if (/\b(?:withTransaction|enUnaUnidad)\s*\(/.test(n.txt)) {
     transactores.push({ archivo: rel, capa: n.capa, modulo: n.modulo });
   }
-  const usaDriver = usaDriverDe(n);
-  if (usaDriver) {
+  if (usaSqlDirecto(n)) {
     const tablas = new Set(escriturasDe(n.fuente));
     if (!ES_REPO(rel)) {
       sqlFueraDeRepositorio.push({

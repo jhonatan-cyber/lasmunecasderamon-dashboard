@@ -1,6 +1,6 @@
-// ─── Sanitización avanzada de input ─────────────────────────────────────
-// Complementa la sanitización XSS básica de withRoute (que solo limpia URL params).
-// Este módulo sanitiza el body JSON de las requests para prevenir inyecciones.
+// ─── Normalización de input y señales de monitoreo ───────────────────────
+// No sustituye la validación de esquemas ni las consultas parametrizadas.
+// El detector SQL solo registra patrones sospechosos; no bloquea solicitudes.
 
 /**
  * Elimina caracteres peligrosos de inyección XSS de strings.
@@ -60,8 +60,8 @@ export function sanitizeBody(obj: unknown, maxDepth: number = 10): unknown {
 }
 
 /**
- * Valida que un objeto no contenga propiedades sospechosas de inyección SQL.
- * Retorna true si se detectan patrones sospechosos.
+ * Detecta heurísticamente patrones sospechosos de SQL para monitoreo.
+ * No confirma una inyección ni debe usarse como control de acceso o bloqueo.
  */
 export function detectSQLInjection(value: string): boolean {
   const patterns = [
@@ -79,8 +79,8 @@ export function detectSQLInjection(value: string): boolean {
 }
 
 /**
- * Busca recursivamente patrones de inyección SQL en un objeto.
- * Retorna un array de paths donde se detectaron patrones sospechosos.
+ * Busca recursivamente patrones sospechosos para registrarlos en logs.
+ * Retorna las rutas encontradas; el resultado no modifica ni rechaza el body.
  */
 export function scanForSQLInjection(obj: unknown, path: string = ''): string[] {
   const injections: string[] = [];
@@ -101,7 +101,8 @@ export function scanForSQLInjection(obj: unknown, path: string = ''): string[] {
 }
 
 /**
- * Middleware que sanitiza el body de una request JSON.
+ * Normaliza null bytes y claves de un body JSON y recopila avisos de monitoreo.
+ * La validación de campos corresponde a los esquemas del endpoint.
  * Retorna { body: sanitizedBody, warnings: string[] } o null si no es JSON.
  */
 export async function sanitizeRequest(

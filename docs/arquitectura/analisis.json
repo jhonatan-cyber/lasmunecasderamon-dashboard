@@ -1,10 +1,10 @@
 {
   "resumen": {
-    "commit": "82397cc64c4d01926edd1cd06e3a34a8f8da6b58",
-    "generado": "2026-11-25T01:44:40.281Z",
-    "archivos": 2320,
-    "rutas": 246,
-    "sqlFueraDeRepositorio": 66,
+    "commit": "1cff94b1c2ac482e7c6725ae80776fb8d5373a8a",
+    "generado": "2026-11-25T10:38:18.672Z",
+    "archivos": 2348,
+    "rutas": 247,
+    "sqlFueraDeRepositorio": 0,
     "tablasConEscritoresMultiples": 0,
     "ciclos": 0,
     "procesosPeriodicos": 21,
@@ -13,6 +13,15 @@
     "rutasSinWrapper": 23
   },
   "rutas": [
+    {
+      "ruta": "/api/products/stock-reconciliation",
+      "archivo": "app/api/products/stock-reconciliation/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -2228,414 +2237,14 @@
       "usaDriver": false
     }
   ],
-  "sqlFueraDeRepositorio": [
-    {
-      "archivo": "scripts/benchmark-indice-inventario.mjs",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": ["pg_temp"]
-    },
-    {
-      "archivo": "scripts/ci-setup-db.js",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": ["permissions", "role_permissions"]
-    },
-    {
-      "archivo": "scripts/clean-sync-probes.js",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": ["sync_operations"]
-    },
-    {
-      "archivo": "scripts/compare-schema.mjs",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "scripts/db_test.js",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "scripts/lib/twilio-config.js",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "scripts/postgres-migrations.mjs",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": ["_postgres_migrations"]
-    },
-    {
-      "archivo": "scripts/purge-query-logs.js",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": ["query_logs"]
-    },
-    {
-      "archivo": "scripts/reconcile-migration-checksum.mjs",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": ["_postgres_migrations"]
-    },
-    {
-      "archivo": "scripts/run-integration-all.js",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "scripts/verify-migrations.mjs",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "scripts/verify-schema-parity.mjs",
-      "capa": "scripts",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "proxy.ts",
-      "capa": "raiz",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "seed/seed-asistencia.mjs",
-      "capa": "raiz",
-      "modulo": null,
-      "escribe": ["asistencias"]
-    },
-    {
-      "archivo": "seed/seed-categorias.mjs",
-      "capa": "raiz",
-      "modulo": null,
-      "escribe": ["categorias"]
-    },
-    {
-      "archivo": "seed/seed-clientes.mjs",
-      "capa": "raiz",
-      "modulo": null,
-      "escribe": ["clientes"]
-    },
-    {
-      "archivo": "seed/seed-productos.mjs",
-      "capa": "raiz",
-      "modulo": null,
-      "escribe": [
-        "inventario_presentaciones",
-        "inventario_unidades",
-        "productos"
-      ]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/avisosAudio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/clockSync.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/deviceAuth.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/enrollmentService.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices", "biometric_plantillas"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/eventListener.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/identificacionFacial.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records", "biometric_plantillas"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/ipDiscovery.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_devices"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/processBiometricEvent.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_events"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/pruebaIdentificacion.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/recepcionConfig.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/recordPhotos.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/recordPoller.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["biometric_device_records"]
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/statusService.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/verificacionRemota.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/biometrico/videoStream.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/asistencia/kioskos/attendanceChallenges.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["asistencia_desafios"]
-    },
-    {
-      "archivo": "modules/asistencia/kioskos/deviceAuth.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "asistencia",
-      "escribe": ["kiosk_devices"]
-    },
-    {
-      "archivo": "modules/auditoria/alertas/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "auditoria",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/caja/retiros/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "caja",
-      "escribe": ["cajas"]
-    },
-    {
-      "archivo": "modules/comunicaciones/notificaciones/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "comunicaciones",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/comunicaciones/push/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "comunicaciones",
-      "escribe": ["push_tokens"]
-    },
-    {
-      "archivo": "modules/identidad/autenticacion/codigos.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "identidad",
-      "escribe": ["codigos"]
-    },
-    {
-      "archivo": "modules/identidad/usuarios/recoveryEmailNotificacion.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/bar/configuracion.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/bar/validarConfiguracionVenta.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/bar/validarPedido.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/compras/catalogo.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/compras/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": ["inventario_presentaciones"]
-    },
-    {
-      "archivo": "modules/inventario/limpieza/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": [
-        "limpieza_articulos",
-        "limpieza_movimientos",
-        "limpieza_stock"
-      ]
-    },
-    {
-      "archivo": "modules/inventario/mermas/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/productos/eliminarFotos.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/productos/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/reposicion/servicio.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": ["ordenes_reposicion"]
-    },
-    {
-      "archivo": "modules/inventario/tipos.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/inventario/vencimientoProducto.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "inventario",
-      "escribe": ["productos"]
-    },
-    {
-      "archivo": "modules/operacion/cuentas/alta.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/operacion/servicios/creacion.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "operacion",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/reportes/informes/caja.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "reportes",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/reportes/informes/comisiones.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "reportes",
-      "escribe": []
-    },
-    {
-      "archivo": "modules/reportes/informes/ventas.ts",
-      "capa": "modules/aplicacion",
-      "modulo": "reportes",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/notifications/orderNotificationUtils.ts",
-      "capa": "lib/otros",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/transaction/contract.ts",
-      "capa": "lib/otros",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/transaction/infrastructure.ts",
-      "capa": "lib/otros",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/middleware/auth.ts",
-      "capa": "lib/identidad",
-      "modulo": "identidad",
-      "escribe": []
-    },
-    {
-      "archivo": "lib/business/containerAlerts.ts",
-      "capa": "lib/business",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/business/shotAlerts.ts",
-      "capa": "lib/business",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/business/twilioConfig.ts",
-      "capa": "lib/business",
-      "modulo": null,
-      "escribe": []
-    },
-    {
-      "archivo": "lib/business/whatsappConfig.ts",
-      "capa": "lib/business",
-      "modulo": null,
-      "escribe": []
-    }
-  ],
+  "sqlFueraDeRepositorio": [],
   "escriturasCruzadas": [],
   "transacciones": [
+    {
+      "archivo": "modules/inventario/reconciliacion/repositorio.ts",
+      "capa": "modules/infraestructura",
+      "modulo": "inventario"
+    },
     {
       "archivo": "app/api/hostesses/[id]/release/route.ts",
       "capa": "app/api",
@@ -3039,13 +2648,13 @@
     },
     {
       "archivo": "modules/asistencia/biometrico/ipWatcher.ts",
-      "linea": 119,
+      "linea": 116,
       "tipo": "setInterval",
       "texto": "estado.timer = setInterval(arrancar, intervaloVigilanciaIp());"
     },
     {
       "archivo": "modules/asistencia/biometrico/recordPoller.ts",
-      "linea": 348,
+      "linea": 329,
       "tipo": "setInterval",
       "texto": "estado.timer = setInterval(() => {"
     }
@@ -3120,7 +2729,7 @@
     },
     {
       "archivo": "scripts/arquitectura/analisis.mjs",
-      "linea": 368,
+      "linea": 403,
       "texto": "/\\bnew (Redis|RedisClient|ioredis)\\b/.test(linea) ||"
     },
     {
@@ -3241,19 +2850,15 @@
   ],
   "ciclos": [],
   "matriz": {
-    "lib/api": {
-      "lib/otros": 8,
-      "lib/identidad": 4,
+    "app/api": {
+      "lib/api": 306,
+      "lib/otros": 93,
+      "workflows": 27,
+      "lib/identidad": 16,
+      "lib/business": 40,
       "modules/aplicacion": 1,
-      "lib/business": 2,
-      "lib/database": 2
-    },
-    "raiz": {
-      "hooks": 6,
-      "lib/otros": 13,
-      "lib/api": 2,
-      "lib/identidad": 2,
-      "modules/aplicacion": 1
+      "lib/database": 3,
+      "lib/integrations": 4
     },
     "app/ui": {
       "hooks": 64,
@@ -3264,23 +2869,38 @@
       "raiz": 14,
       "lib/business": 6
     },
-    "app/api": {
-      "lib/api": 305,
-      "workflows": 27,
-      "lib/otros": 92,
-      "lib/identidad": 16,
-      "lib/business": 40,
-      "modules/aplicacion": 1,
-      "lib/database": 3,
-      "lib/integrations": 4
-    },
     "components": {
-      "hooks": 158,
+      "hooks": 159,
+      "modules/aplicacion": 10,
       "lib/otros": 411,
       "raiz": 94,
       "lib/business": 60,
-      "lib/api": 3,
-      "modules/aplicacion": 9
+      "lib/api": 3
+    },
+    "modules/infraestructura": {
+      "lib/database": 127,
+      "raiz": 4,
+      "lib/otros": 172,
+      "lib/business": 76,
+      "modules/aplicacion": 24,
+      "lib/api": 9,
+      "lib/identidad": 2
+    },
+    "modules/aplicacion": {
+      "lib/otros": 108,
+      "modules/infraestructura": 22,
+      "lib/business": 47,
+      "lib/database": 23,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 8
+    },
+    "raiz": {
+      "hooks": 6,
+      "lib/otros": 13,
+      "lib/api": 2,
+      "lib/identidad": 2,
+      "modules/aplicacion": 1
     },
     "hooks": {
       "raiz": 40,
@@ -3290,19 +2910,25 @@
       "lib/business": 19,
       "modules/aplicacion": 2
     },
+    "lib/api": {
+      "lib/otros": 8,
+      "lib/identidad": 4,
+      "modules/aplicacion": 1,
+      "lib/business": 2,
+      "lib/database": 2
+    },
     "lib/identidad": {
       "lib/otros": 5
     },
     "lib/business": {
       "lib/api": 3,
       "lib/otros": 15,
-      "lib/database": 4,
-      "modules/aplicacion": 4,
+      "modules/aplicacion": 6,
       "raiz": 4,
       "components": 1
     },
     "lib/otros": {
-      "lib/database": 4,
+      "lib/database": 3,
       "lib/api": 2,
       "lib/business": 7,
       "raiz": 8,
@@ -3313,27 +2939,9 @@
       "lib/business": 1
     },
     "lib/integrations": {},
-    "modules/infraestructura": {
-      "lib/database": 114,
-      "lib/otros": 171,
-      "lib/business": 75,
-      "modules/aplicacion": 27,
-      "lib/api": 9,
-      "lib/identidad": 2,
-      "raiz": 3
-    },
-    "modules/aplicacion": {
-      "modules/infraestructura": 23,
-      "lib/otros": 107,
-      "lib/database": 49,
-      "lib/business": 47,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 8
-    },
     "scripts": {},
     "workflows": {
-      "lib/otros": 26,
+      "lib/otros": 25,
       "lib/business": 11,
       "lib/api": 4,
       "modules/aplicacion": 4

@@ -1,7 +1,8 @@
-import { query, generateUUID } from '@/lib/database/db';
+import { generateUUID } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { generateRandomCode4 } from '@/lib/utils/codeUtils';
+import { obtenerCodigoActual, reemplazarCodigoActual } from './codigos/repositorio';
 
 /**
  * Devuelve el codigo del local vigente y, si no hay ninguno valido, genera uno.
@@ -12,9 +13,7 @@ import { generateRandomCode4 } from '@/lib/utils/codeUtils';
  * que hacia que un endpoint publico pudiera rotarlo.
  */
 export async function getOrCreateAttendanceCode(): Promise<string> {
-  const actual = await query<any[]>(
-    'SELECT codigo FROM codigos WHERE estado = 1 ORDER BY fecha_crea DESC LIMIT 1'
-  );
+  const actual = await obtenerCodigoActual();
   const codigo = actual[0]?.codigo;
   if (typeof codigo === 'string' && /^\d{4}$/.test(codigo)) return codigo;
   return await regenerateAttendanceCode();
@@ -22,15 +21,11 @@ export async function getOrCreateAttendanceCode(): Promise<string> {
 export async function regenerateAttendanceCode(): Promise<string> {
   const newCode = generateRandomCode4();
   try {
-    await query('DELETE FROM codigos');
-
-    const fechaSQL = getNowInBusinessTimezone();
-
-    await query('INSERT INTO codigos (id_codigo, codigo, fecha_crea, estado) VALUES (?, ?, ?, 1)', [
-      generateUUID(),
-      newCode,
-      fechaSQL
-    ]);
+    await reemplazarCodigoActual({
+      id: generateUUID(),
+      codigo: newCode,
+      fecha: getNowInBusinessTimezone()
+    });
 
     try {
       const { sendNotificationToAll } = await import('@/lib/api/sseService');

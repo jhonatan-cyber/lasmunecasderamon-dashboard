@@ -12,7 +12,8 @@ import 'server-only';
 export {
   guardarClave,
   listarConfiguracionesAgrupadas,
-  obtenerValorConfiguracion
+  obtenerValorConfiguracion,
+  obtenerValoresConfiguracion
 } from './claves/servicio';
 export {
   crearRespaldo,

@@ -4,6 +4,14 @@ import { hoyDelNegocio } from '@/lib/business/vencimiento';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { NotificationService } from '@/modules/comunicaciones';
 import type { OrdenReposicion } from '@/modules/inventario/contracts';
+import {
+  actualizarOrdenReposicion,
+  bloquearSincronizacionReposicion,
+  crearOrdenReposicion,
+  listarOrdenesReposicionPendientes,
+  listarPresentacionesParaReposicion,
+  resolverOrdenReposicion
+} from './repositorio';
 
 /** Después del commit de inventario; serializa comprobaciones y evita órdenes/avisos duplicados. */
 export async function sincronizarReposicion(
@@ -11,61 +19,41 @@ export async function sincronizarReposicion(
 ): Promise<{ rows: OrdenReposicion[]; nuevas: number }> {
   let nuevas = 0;
   const result = await (async () => {
-    await trx('SELECT pg_advisory_xact_lock(7942079)');
+    await bloquearSincronizacionReposicion(trx);
     // Un lote vencido no se puede vender: no cuenta como stock disponible para
     // la reposición, pero sí se reporta para que se le dé de baja.
     const hoy = hoyDelNegocio();
-    const vigente = `COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL
-             OR COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) >= ?`;
-    const rows = await trx<any[]>(
-      `SELECT p.id, p.stock_minimo, p.stock_maximo,
-      p.precio_compra, p.producto_id, pr.nombre AS producto, p.nombre AS presentacion,
-      COUNT(u.id) FILTER (WHERE u.ubicacion = 'almacen' AND ${vigente})::int AS stock_bodega,
-      COUNT(u.id) FILTER (WHERE u.ubicacion = 'bar' AND ${vigente})::int AS stock_bar,
-      COUNT(u.id) FILTER (WHERE COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NOT NULL
-             AND COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) < ?)::int AS unidades_vencidas
-      FROM inventario_presentaciones p JOIN productos pr ON pr.id_producto = p.producto_id
-      LEFT JOIN inventario_unidades u ON u.presentacion_id = p.id AND u.estado = 'almacen' AND u.ubicacion IN ('almacen', 'bar')
-      WHERE pr.estado = 1 AND p.stock_minimo IS NOT NULL
-      GROUP BY p.id, pr.nombre ORDER BY p.id`,
-      [hoy, hoy, hoy]
-    );
-    const pendientes = await trx<{ id: string; presentacion_id: string }[]>(
-      "SELECT id, presentacion_id FROM ordenes_reposicion WHERE estado = 'pendiente'"
-    );
+    const rows = await listarPresentacionesParaReposicion(trx, hoy);
+    const pendientes = await listarOrdenesReposicionPendientes(trx);
     const orders = new Map(pendientes.map(order => [order.presentacion_id, order]));
     const ids = new Set(rows.map(row => row.id));
     for (const order of pendientes)
-      if (!ids.has(order.presentacion_id))
-        await trx(
-          "UPDATE ordenes_reposicion SET estado = 'resuelta', fecha_mod = CURRENT_TIMESTAMP WHERE id = ?",
-          [order.id]
-        );
+      if (!ids.has(order.presentacion_id)) await resolverOrdenReposicion(trx, order.id);
     const output: OrdenReposicion[] = [];
     for (const row of rows) {
       const stock = Number(row.stock_bodega) + Number(row.stock_bar);
       const cantidad = cantidadReposicion(stock, row.stock_minimo, row.stock_maximo);
       const old = orders.get(row.id);
       if (!cantidad) {
-        if (old)
-          await trx(
-            "UPDATE ordenes_reposicion SET estado = 'resuelta', fecha_mod = CURRENT_TIMESTAMP WHERE id = ?",
-            [old.id]
-          );
+        if (old) await resolverOrdenReposicion(trx, old.id);
         continue;
       }
       const id = old?.id ?? generateUUID();
       if (old) {
-        await trx(
-          `UPDATE ordenes_reposicion SET cantidad = ?, stock_actual = ?, stock_maximo = ?, fecha_mod = CURRENT_TIMESTAMP
-          WHERE id = ? AND (cantidad <> ? OR stock_actual <> ? OR stock_maximo <> ?)`,
-          [cantidad, stock, row.stock_maximo, id, cantidad, stock, row.stock_maximo]
-        );
+        await actualizarOrdenReposicion(trx, {
+          id,
+          cantidad,
+          stock,
+          stockMaximo: row.stock_maximo
+        });
       } else {
-        await trx(
-          'INSERT INTO ordenes_reposicion(id, presentacion_id, cantidad, stock_actual, stock_maximo) VALUES (?, ?, ?, ?, ?)',
-          [id, row.id, cantidad, stock, row.stock_maximo]
-        );
+        await crearOrdenReposicion(trx, {
+          id,
+          presentacionId: row.id,
+          cantidad,
+          stock,
+          stockMaximo: row.stock_maximo
+        });
         const mensaje = `${row.producto} · ${row.presentacion}: quedan ${stock} unidades (Bar + Bodega). Comprar ${cantidad} para llegar al máximo de ${row.stock_maximo}.`;
         for (const rol of ['administrador', 'almacen'])
           await NotificationService.crearParaRol(

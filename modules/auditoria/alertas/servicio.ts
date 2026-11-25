@@ -1,4 +1,4 @@
-import { query, generateUUID } from '@/lib/database/db';
+import { generateUUID } from '@/lib/database/db';
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { sendNotificationToAll } from '@/lib/api/sseService';
 import { sendPushByRole } from '@/modules/comunicaciones';
@@ -12,6 +12,7 @@ import {
   ANULATION_WINDOW_MS,
   AnulationCounter
 } from '@/modules/auditoria/alertas/contador';
+import { listarAdministradoresActivos } from './repositorio';
 
 // ─── Tipos ───────────────────────────────────────────────────────
 
@@ -246,11 +247,7 @@ export class SecurityAlertService {
     if (channels.includes('notification')) {
       try {
         // Notificar a todos los administradores
-        const adminUsers = await query<any[]>(
-          `SELECT u.id_usuario FROM usuarios u
-           INNER JOIN roles r ON u.rol_id = r.id_rol
-           WHERE LOWER(r.nombre) = 'administrador' AND u.estado = 1`
-        );
+        const adminUsers = await listarAdministradoresActivos();
 
         for (const admin of adminUsers) {
           await NotificationService.create({

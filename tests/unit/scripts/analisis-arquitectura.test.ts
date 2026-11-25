@@ -82,6 +82,12 @@ describe('analisis de arquitectura (Fase 0)', () => {
     expect(enRepo).toHaveLength(0);
   });
 
+  it('no cuenta la apertura de transacción sin SQL como acceso fuera de repositorios', () => {
+    const archivos = new Set(informe.sqlFueraDeRepositorio.map(x => x.archivo));
+    expect(archivos.has('modules/caja/retiros/servicio.ts')).toBe(false);
+    expect(archivos.has('modules/inventario/compras/servicio.ts')).toBe(false);
+  });
+
   it('inventa todas las rutas con SQL directo dentro de app/api', () => {
     const deApi = informe.sqlFueraDeRepositorio.filter(x => x.capa === 'app/api');
     expect(deApi.length).toBe(informe.resumen.rutasApiConSqlDirecto);

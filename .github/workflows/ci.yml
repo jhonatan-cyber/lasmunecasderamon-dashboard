@@ -92,6 +92,12 @@ jobs:
       - name: Typecheck del proyecto
         run: pnpm typecheck
 
+      - name: Presupuesto de tipos any en rutas API
+        run: pnpm lint:api-types
+
+      - name: Límites de arquitectura
+        run: pnpm arquitectura:limites
+
   quality:
     needs: changes
     if: needs.changes.outputs.build == 'true' || needs.changes.outputs.full == 'true'
@@ -134,10 +140,6 @@ jobs:
       - name: Lint all files
         if: needs.changes.outputs.full == 'true'
         run: pnpm lint:full
-
-      - name: Architecture boundaries
-        if: needs.changes.outputs.full == 'true' || needs.changes.outputs.integration == 'true'
-        run: pnpm arquitectura:limites
 
       # El typecheck vive en el job `directivas`, que corre siempre.
 

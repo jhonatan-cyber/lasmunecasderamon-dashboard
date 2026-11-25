@@ -22,6 +22,7 @@ import { BaseRepository } from '@/lib/database/base-repository';
 import { ConflictError, NotFoundError } from '@/lib/errors/errors';
 import { crearPresentacion } from '../presentaciones/repositorio';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
+import { ESTADO_UNIDAD_ACTIVA } from '../estados';
 
 export interface NuevaPresentacionProducto {
   stock_minimo?: number | null;
@@ -345,6 +346,35 @@ export async function reordenarProductos(
       fecha_mod: now
     });
   }
+}
+
+export async function productoFotoEnUso(foto: string): Promise<boolean> {
+  const rows = await query<Array<{ existe: number }>>(
+    'SELECT 1 AS existe FROM productos WHERE foto = ? UNION ALL SELECT 1 AS existe FROM inventario_presentaciones WHERE foto = ? LIMIT 1',
+    [foto, foto]
+  );
+  return rows.length > 0;
+}
+
+export async function sincronizarVencimientoDerivado(
+  trx: TransactionQuery,
+  productoId: string
+): Promise<void> {
+  await trx(
+    `UPDATE productos
+        SET fecha_vencimiento = COALESCE(
+              (SELECT MIN(COALESCE(u.fecha_vencimiento, p.fecha_vencimiento))
+                 FROM inventario_unidades u
+                 JOIN inventario_presentaciones p ON p.id = u.presentacion_id
+                WHERE p.producto_id = productos.id_producto
+                  AND u.estado = '${ESTADO_UNIDAD_ACTIVA}'),
+              (SELECT MIN(p.fecha_vencimiento)
+                 FROM inventario_presentaciones p
+                WHERE p.producto_id = productos.id_producto),
+              fecha_vencimiento)
+      WHERE id_producto = ?`,
+    [productoId]
+  );
 }
 
 /**

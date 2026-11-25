@@ -20,6 +20,37 @@ export function listarDestinatariosAnulaciones() {
   );
 }
 
+export async function listarUsuariosActivosPorRoles(
+  roles: readonly string[]
+): Promise<{ id_usuario: string }[]> {
+  if (roles.length === 0) return [];
+  const placeholders = roles.map(() => '?').join(', ');
+  return query<{ id_usuario: string }[]>(
+    `SELECT u.id_usuario FROM usuarios u
+     INNER JOIN roles r ON r.id_rol = u.rol_id
+     WHERE LOWER(r.nombre) IN (${placeholders}) AND u.estado = 1`,
+    roles.map(rol => rol.toLowerCase())
+  );
+}
+
+export async function listarStaffSinCorreoRecuperacion(
+  roles: readonly string[]
+): Promise<Array<{ id_usuario: string; nombre_completo: string; rol_nombre: string }>> {
+  if (roles.length === 0) return [];
+  const placeholders = roles.map(() => '?').join(', ');
+  return query(
+    `SELECT u.id_usuario,
+            CONCAT(u.nick, ' ', u.name, ' ', u.lastName) AS nombre_completo,
+            r.nombre AS rol_nombre
+     FROM usuarios u
+     INNER JOIN roles r ON r.id_rol = u.rol_id
+     WHERE u.estado = 1
+       AND LOWER(r.nombre) IN (${placeholders})
+       AND (u.recovery_email IS NULL OR u.recovery_email = '')`,
+    roles.map(rol => rol.toLowerCase())
+  );
+}
+
 export async function quitarModalidadesBiometricas(usuarioId: string, contexto: ContextoOperacion) {
   await resolverTransaccion(contexto)(
     'UPDATE usuarios SET biometrico_facial = 0, biometrico_huella = 0 WHERE id_usuario = ?',

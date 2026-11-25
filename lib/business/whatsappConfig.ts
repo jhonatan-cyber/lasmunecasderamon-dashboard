@@ -1,4 +1,4 @@
-import { query } from '@/lib/database/db';
+import { obtenerValorConfiguracion } from '@/modules/configuracion';
 
 let cachedAdminWhatsApp: string | null = null;
 
@@ -13,10 +13,7 @@ export async function getAdminWhatsApp(): Promise<string> {
   const desdeEnv = (process.env.ADMIN_WHATSAPP_NUMBER || '').replace('whatsapp:', '').trim();
 
   try {
-    const [row] = (await query(
-      "SELECT valor FROM configuraciones WHERE clave = 'admin_whatsapp' LIMIT 1"
-    )) as any[];
-    const raw = ((row?.valor as string) || '').trim();
+    const raw = ((await obtenerValorConfiguracion('admin_whatsapp')) || '').trim();
     cachedAdminWhatsApp = raw.replace('whatsapp:', '') || desdeEnv;
   } catch {
     cachedAdminWhatsApp = desdeEnv;
