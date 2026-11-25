@@ -24,7 +24,7 @@ const DashboardStatsCards = dynamic(() => import('@/components/dashboard/Dashboa
 
 const MiniSalesChart = dynamic(() => import('@/components/dashboard/MiniSalesChart'), {
   loading: () => (
-    <div className='h-[500px] animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800' />
+    <div className='h-[280px] animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800 sm:h-[360px] xl:h-[420px]' />
   )
 });
 
@@ -81,33 +81,18 @@ function GeneralDashboard({ user }: { user: CurrentUser }) {
           <PermissionGuard module='products' action='view' fallback={null}>
             <ReplenishmentNotice showProducts />
           </PermissionGuard>
-          <section className='space-y-6'>
-            <SectionHeading icon={ShieldCheck} title='Personal en Local (Login Activo)' />
-            <LoggedUsersCards />
-          </section>
-
-          <section className='space-y-6'>
-            <SectionHeading icon={BarChart3} title='Tendencias de Venta Diaria' />
-            <MiniSalesChart />
-          </section>
 
           <section className='space-y-6'>
             <SectionHeading icon={TrendingUp} title='Métricas Críticas de Operación' />
             <CriticalMetrics />
           </section>
 
-          <section className='space-y-6'>
-            <SectionHeading icon={Medal} title='Performance y Forecast' tone='amber' />
-            <div className='grid grid-cols-1 gap-6'>
-              <CollapsibleSection title='Top Performers' icon={Medal} defaultOpen={true}>
-                <TopPerformers />
-              </CollapsibleSection>
-
-              <CollapsibleSection title='Proyección Forecast' icon={TrendingUp} defaultOpen={true}>
-                <ForecastInsights />
-              </CollapsibleSection>
-            </div>
-          </section>
+          {isCajero && (
+            <section className='space-y-6'>
+              <SectionHeading icon={BarChart3} title='Reportes del Cajero' />
+              <DashboardStatsCards />
+            </section>
+          )}
 
           <section className='space-y-6'>
             <SectionHeading icon={Activity} title='Operación en Tiempo Real' tone='indigo' />
@@ -137,14 +122,32 @@ function GeneralDashboard({ user }: { user: CurrentUser }) {
             </div>
           </section>
 
-          {isCajero && (
-            <section className='grid grid-cols-1 lg:grid-cols-3 gap-10 items-start'>
-              <div className='lg:col-span-2'>
-                <SectionHeading icon={BarChart3} title='Reportes del Cajero' className='mb-6' />
-                <DashboardStatsCards />
-              </div>
+          <PermissionGuard module='users' action='view' fallback={null}>
+            <section className='space-y-6'>
+              <SectionHeading icon={ShieldCheck} title='Personal en Local (Login Activo)' />
+              <LoggedUsersCards />
             </section>
-          )}
+          </PermissionGuard>
+
+          <PermissionGuard module='sales' action='view' fallback={null}>
+            <section className='space-y-6'>
+              <SectionHeading icon={BarChart3} title='Tendencias de Venta Diaria' />
+              <MiniSalesChart />
+            </section>
+          </PermissionGuard>
+
+          <section className='space-y-6'>
+            <SectionHeading icon={Medal} title='Performance y Forecast' tone='amber' />
+            <div className='grid grid-cols-1 gap-6'>
+              <CollapsibleSection title='Top Performers' icon={Medal}>
+                <TopPerformers />
+              </CollapsibleSection>
+
+              <CollapsibleSection title='Proyección Forecast' icon={TrendingUp}>
+                <ForecastInsights />
+              </CollapsibleSection>
+            </div>
+          </section>
         </div>
       </BoneyardSkeleton>
     </div>

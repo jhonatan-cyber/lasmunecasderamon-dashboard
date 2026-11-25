@@ -31,12 +31,11 @@ export const useDashboardComposite = () => {
         throw new Error(result.message || 'Error en la respuesta del servidor');
       }
 
-      // Validación de contrato: si el SQL o un builder cambian, el panel sigue
-      // funcionando pero la discrepancia queda registrada con la ruta del campo.
+      // Si cambia el contrato, registra la ruta del campo y evita propagar datos inválidos.
       const parsed = DashboardCompositeSchema.safeParse(result.data);
       if (!parsed.success) {
         logger.captureException(parsed.error, { context: 'DashboardComposite:contrato' });
-        return result.data as DashboardCompositeResponse;
+        throw new Error('La respuesta del dashboard no cumple el contrato esperado');
       }
 
       return parsed.data;
