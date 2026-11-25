@@ -250,7 +250,7 @@ function ProductReconciliationCard({
 export function StockReconciliationClient() {
   const queryClient = useQueryClient();
   const { hasPermission } = useUserPermissions();
-  const canWrite = hasPermission('products', 'write');
+  const canWrite = hasPermission('products', 'edit');
   const reconciliation = useQuery({
     queryKey: ['products', 'stock-reconciliation'],
     queryFn: ({ signal }) => cargarConciliacion(signal)

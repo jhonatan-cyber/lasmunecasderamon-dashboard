@@ -67,7 +67,7 @@ export function ProductsPageClient() {
                 </p>
               </div>
               <div className='flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center lg:justify-end'>
-                <PermissionGuard module='products' action='write'>
+                <PermissionGuard module='products' action='edit'>
                   <Button
                     asChild
                     variant='outline'
