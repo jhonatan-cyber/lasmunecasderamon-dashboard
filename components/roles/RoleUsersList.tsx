@@ -62,12 +62,9 @@ export function RoleUsersList({ role }: { role: Role | null }) {
           Este rol no tiene usuarios asignados.
         </p>
       ) : (
-        <ul className='space-y-2 max-h-56 overflow-y-auto pr-1'>
+        <ul className='max-h-56 divide-y divide-zinc-100 overflow-y-auto pr-1 dark:divide-neutral-800'>
           {users.map(u => (
-            <li
-              key={u.id}
-              className='flex items-center justify-between gap-2 rounded-lg bg-zinc-50 dark:bg-neutral-800 px-3 py-2'
-            >
+            <li key={u.id} className='flex items-center justify-between gap-2 py-2'>
               <div className='min-w-0'>
                 <p className='text-xs sm:text-sm font-medium text-black dark:text-neutral-100 truncate'>
                   {[u.nombre, u.apellido].filter(Boolean).join(' ') || u.nick}

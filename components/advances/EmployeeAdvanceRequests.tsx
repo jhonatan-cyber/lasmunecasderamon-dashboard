@@ -74,7 +74,7 @@ export function EmployeeAdvanceRequests({ onRequested }: { onRequested: () => vo
             </CardDescription>
           </CardHeader>
           <CardContent className='space-y-5'>
-            <div className='rounded-2xl bg-gray-50 p-4 dark:bg-slate-800/50'>
+            <div className='border-b border-border pb-4'>
               <div className='mb-2 flex items-center gap-2 text-muted-foreground'>
                 <Wallet className='h-4 w-4' aria-hidden='true' />
                 <p className='text-xs font-medium uppercase tracking-wide'>

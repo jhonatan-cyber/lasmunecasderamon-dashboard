@@ -88,7 +88,7 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
                     : [])
                 ]}
               />
-              <dl className='grid grid-cols-1 gap-3 rounded-xl bg-muted/40 p-3 sm:grid-cols-2 sm:gap-4'>
+              <dl className='grid grid-cols-1 gap-3 border-t border-border pt-3 sm:grid-cols-2 sm:gap-4'>
                 <Measure
                   label='Máximo de anfitrionas'
                   value={Number(option.comision) > 0 ? record.max_anfitrionas || 1 : 0}
@@ -127,7 +127,7 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
               <div className='grid gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]'>
                 <section className='min-w-0 space-y-3'>
                   <h4 className='text-sm font-semibold'>Cliente</h4>
-                  <div className='rounded-xl bg-muted/40 p-3'>
+                  <div className='border-t border-border pt-3'>
                     <p className='text-lg font-semibold tabular-nums'>
                       {formatCurrencyCLP(option.precio)}
                     </p>
@@ -154,7 +154,7 @@ export function TransferSaleDetails({ record }: { record: TransferRecord }) {
                         ]
                     ).map((row, index) => ({ ...row, label: `Corto anfitriona ${index + 1}` }))}
                   />
-                  <dl className='grid grid-cols-1 gap-3 rounded-xl bg-muted/40 p-3 sm:grid-cols-2'>
+                  <dl className='grid grid-cols-1 gap-3 border-t border-border pt-3 sm:grid-cols-2'>
                     <Measure
                       label='Ml corto anfitriona'
                       value={

@@ -199,9 +199,7 @@ function ConfirmarAnulacionEntradaContent() {
           <div className='space-y-2 text-sm'>
             <div className='flex items-center justify-between'>
               <span className='text-muted-foreground'>Cliente</span>
-              <span className='font-medium'>
-                {solicitud.cliente_nombre || 'Sin nombre'}
-              </span>
+              <span className='font-medium'>{solicitud.cliente_nombre || 'Sin nombre'}</span>
             </div>
             <div className='flex items-center justify-between'>
               <span className='text-muted-foreground'>Monto a devolver</span>
@@ -216,7 +214,7 @@ function ConfirmarAnulacionEntradaContent() {
               <span className='font-medium'>{solicitud.solicitado_por}</span>
             </div>
             {solicitud.motivo && (
-              <div className='rounded-lg border bg-muted/40 p-3'>
+              <div className='border-t border-border pt-3'>
                 <p className='text-muted-foreground'>Motivo</p>
                 <p className='mt-1'>{solicitud.motivo}</p>
               </div>

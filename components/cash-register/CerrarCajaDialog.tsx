@@ -192,7 +192,7 @@ export const CerrarCajaDialog = ({
                   administrador con el link para autorizar; en cuanto responda, la caja se cierra
                   automáticamente.
                 </p>
-                <div className='rounded-xl bg-white/70 dark:bg-slate-900/40 p-3 space-y-1 text-sm'>
+                <div className='space-y-1 border-t border-amber-200 pt-3 text-sm dark:border-amber-800'>
                   <div className='flex justify-between'>
                     <span className='text-slate-500'>Saldos cubiertos con efectivo:</span>
                     <span className='font-bold'>
@@ -227,7 +227,7 @@ export const CerrarCajaDialog = ({
           ) : (
             <div className='space-y-4'>
               {}
-              <div className='bg-gray-50 p-1 px-2  rounded-lg space-y-2'>
+              <div className='space-y-2 border-b border-slate-200 pb-4 dark:border-slate-800'>
                 <h4 className='font-medium text-sm'>Resumen de la caja:</h4>
                 <div className='grid grid-cols-2 gap-2 text-sm'>
                   <div>
@@ -298,7 +298,7 @@ export const CerrarCajaDialog = ({
               </div>
 
               {}
-              <div className='bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-2'>
+              <div className='space-y-2 border-t border-amber-200 pt-4 dark:border-amber-800'>
                 <div className='flex items-center gap-2'>
                   <Users className='w-4 h-4 text-amber-600' />
                   <h4 className='font-medium text-sm text-amber-800 dark:text-amber-200'>

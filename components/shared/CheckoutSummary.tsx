@@ -54,7 +54,7 @@ export function CheckoutSummary({
         </div>
       </div>
 
-      <div className='mb-4 grid grid-cols-2 gap-3 rounded-xl bg-neutral-50 p-3 dark:bg-neutral-900'>
+      <div className='mb-4 grid grid-cols-2 gap-3 border-y border-neutral-200 py-3 dark:border-neutral-800'>
         <div>
           <p className='text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
             Subtotal

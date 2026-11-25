@@ -96,7 +96,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
 
         {/* Timer */}
         {isAdminOrCajero && (
-          <div className='bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3'>
+          <div className='space-y-3 border-y border-slate-200 py-3 dark:border-slate-800'>
             <div className='flex items-center justify-between'>
               <div className='flex items-center gap-2'>
                 <Clock
@@ -114,7 +114,7 @@ export default function SaleCard({ venta, onRefresh, onVerDetalles }: SaleCardPr
                 </span>
               </div>
             </div>
-            <div className='grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60'>
+            <div className='grid grid-cols-3 gap-2 pt-2'>
               <div className='flex flex-col'>
                 <span className='text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase'>
                   Ingreso
