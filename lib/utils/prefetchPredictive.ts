@@ -2,6 +2,7 @@
 
 import { indexedDBCache } from './indexedDBCache';
 import logger from './logger';
+import { getPersistedQueryCacheKey, persistQueryData } from './queryPersistence';
 
 // ─── Route Adjacency Map ────────────────────────────────────────────
 // Defines which routes to prefetch when the user is on a given page.
@@ -72,9 +73,8 @@ const ROUTE_API_ENDPOINTS: Record<string, string[]> = {
 };
 
 // ─── Endpoint → React Query Key Mapping ─────────────────────────────
-// Maps API endpoints to their corresponding React Query keys so that
-// prefetched data is stored under the same rq:... keys that
-// setupQueryPersistence.restoreFromCache() expects.
+// Maps API endpoints to their corresponding React Query keys so prefetched
+// data uses the same user-scoped keys as setupQueryPersistence.
 
 const ENDPOINT_TO_QUERY_KEY: Record<string, string[]> = {
   '/api/dashboard/composite': ['dashboard', 'composite'],
@@ -104,7 +104,6 @@ const ENDPOINT_TO_QUERY_KEY: Record<string, string[]> = {
 
 // ─── Prefetch Implementation ──────────────────────────────────────
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const PREFETCH_DELAY = 300; // ms to wait before prefetching
 
 let prefetchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -112,27 +111,30 @@ let prefetchTimer: ReturnType<typeof setTimeout> | null = null;
 type PrefetchOptions = {
   /** Delay in ms before starting prefetch (default: 300) */
   delay?: number;
+  /** Identity that owns the persisted responses. */
+  userId?: string | number | null;
   /** Enable logging of prefetched routes */
   debug?: boolean;
 };
 
 /**
  * Prefetches API data for routes adjacent to the current route.
- * Data is cached in IndexedDB under the same `rq:` keys that React Query
- * uses, making it available offline and on quick navigation.
+ * Data is cached in IndexedDB under the current user's React Query keys,
+ * making it available offline and on quick navigation.
  *
  * @param currentRoute - The current pathname (e.g., '/dashboard')
  * @param options - Prefetch options
  */
 export function prefetchAdjacentRoutes(currentRoute: string, options: PrefetchOptions = {}): void {
   const { delay = PREFETCH_DELAY, debug = false } = options;
-
-  if (typeof window === 'undefined') return;
+  const userId = options.userId;
 
   // Clear any pending prefetch
   if (prefetchTimer) {
     clearTimeout(prefetchTimer);
   }
+
+  if (typeof window === 'undefined' || userId == null) return;
 
   const routesToPrefetch = ROUTE_ADJACENCY[currentRoute];
   if (!routesToPrefetch) {
@@ -151,7 +153,7 @@ export function prefetchAdjacentRoutes(currentRoute: string, options: PrefetchOp
       if (!endpoints) continue;
 
       for (const endpoint of endpoints) {
-        prefetchEndpoint(endpoint);
+        prefetchEndpoint(endpoint, userId);
       }
     }
 
@@ -161,15 +163,15 @@ export function prefetchAdjacentRoutes(currentRoute: string, options: PrefetchOp
 
 /**
  * Prefetches a single API endpoint and caches it in IndexedDB under the
- * same `rq:` key prefix that React Query's setupQueryPersistence uses.
+ * same user-scoped key that React Query's setupQueryPersistence uses.
  * Skips if data is already cached and fresh.
  */
-async function prefetchEndpoint(endpoint: string): Promise<void> {
+async function prefetchEndpoint(endpoint: string, userId: string | number): Promise<void> {
   try {
     const queryKey = ENDPOINT_TO_QUERY_KEY[endpoint];
     if (!queryKey) return; // No matching query key, can't store usefully
 
-    const cacheKey = `rq:${JSON.stringify(queryKey)}`;
+    const cacheKey = getPersistedQueryCacheKey(userId, queryKey);
 
     // Skip if already cached and fresh
     const cached = await indexedDBCache.get<any>(cacheKey);
@@ -188,7 +190,7 @@ async function prefetchEndpoint(endpoint: string): Promise<void> {
     const data = await response.json();
     // Only cache successful responses to avoid caching error objects
     if (data && typeof data === 'object' && (data as any).success === false) return;
-    await indexedDBCache.set(cacheKey, data, CACHE_TTL);
+    await persistQueryData(userId, queryKey, data);
   } catch {
     // Silently ignore — prefetch failures are non-critical
   }
@@ -198,12 +200,14 @@ async function prefetchEndpoint(endpoint: string): Promise<void> {
  * Manually prefetch a specific route's data.
  * Useful for prefetching on hover or other user interactions.
  */
-export function prefetchRoute(route: string): void {
+export function prefetchRoute(route: string, userId: string | number | null | undefined): void {
+  if (userId == null) return;
+
   const endpoints = ROUTE_API_ENDPOINTS[route];
   if (!endpoints) return;
 
   for (const endpoint of endpoints) {
-    prefetchEndpoint(endpoint);
+    prefetchEndpoint(endpoint, userId);
   }
 }
 

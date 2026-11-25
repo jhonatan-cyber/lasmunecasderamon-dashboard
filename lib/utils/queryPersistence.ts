@@ -4,11 +4,44 @@ import type { QueryClient } from '@tanstack/react-query';
 import { indexedDBCache } from './indexedDBCache';
 import logger from './logger';
 
+type UserId = string | number;
+
+const pendingWritesByUser = new Map<string, Set<Promise<void>>>();
+const persistenceCleanupByClient = new WeakMap<QueryClient, () => void>();
+
 /**
- * Converts a React Query key array to a stable IndexedDB key string.
+ * Returns the IndexedDB namespace for a user's query data.
  */
-function queryKeyToCacheKey(queryKey: readonly unknown[]): string {
-  return `rq:${JSON.stringify(queryKey)}`;
+function userCachePrefix(userId: UserId): string {
+  return `rq:user:${encodeURIComponent(String(userId))}:`;
+}
+
+/**
+ * Converts a user ID and React Query key to a stable IndexedDB key string.
+ */
+export function getPersistedQueryCacheKey(userId: UserId, queryKey: readonly unknown[]): string {
+  return `${userCachePrefix(userId)}${JSON.stringify(queryKey)}`;
+}
+
+function persistForUser(
+  userId: UserId,
+  queryKey: readonly unknown[],
+  data: unknown
+): Promise<void> {
+  const prefix = userCachePrefix(userId);
+  const pendingWrites = pendingWritesByUser.get(prefix) ?? new Set<Promise<void>>();
+  pendingWritesByUser.set(prefix, pendingWrites);
+
+  const write = indexedDBCache
+    .set(getPersistedQueryCacheKey(userId, queryKey), data)
+    .catch(() => {})
+    .finally(() => {
+      pendingWrites.delete(write);
+      if (pendingWrites.size === 0) pendingWritesByUser.delete(prefix);
+    });
+  pendingWrites.add(write);
+
+  return write;
 }
 
 /**
@@ -27,10 +60,16 @@ function shouldExcludeQuery(queryKey: readonly unknown[]): boolean {
  * - Restore query results from IndexedDB when fetch fails (offline support)
  * - Automatic cache pruning on startup
  *
- * Usage: Call `setupQueryPersistence(queryClient)` after creating the QueryClient.
+ * Usage: Call `setupQueryPersistence(queryClient, userId)` after creating the QueryClient.
  */
-export function setupQueryPersistence(queryClient: QueryClient): void {
-  if (typeof window === 'undefined') return;
+export function setupQueryPersistence(queryClient: QueryClient, userId: UserId): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  stopQueryPersistence(queryClient);
+  let isActive = true;
+
+  // Remove entries written by older versions without an identity namespace.
+  void indexedDBCache.clear('rq:[');
 
   // Prune expired entries on startup
   indexedDBCache.prune().then(count => {
@@ -50,11 +89,11 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
     // Skip excluded query types
     if (shouldExcludeQuery(query.queryKey)) return;
 
-    const cacheKey = queryKeyToCacheKey(query.queryKey);
+    const cacheKey = getPersistedQueryCacheKey(userId, query.queryKey);
 
     // On successful fetch: persist data to IndexedDB
     if (state.status === 'success' && state.data) {
-      indexedDBCache.set(cacheKey, state.data).catch(() => {});
+      void persistForUser(userId, query.queryKey, state.data);
       return;
     }
 
@@ -63,7 +102,7 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
       indexedDBCache
         .get(cacheKey)
         .then(cached => {
-          if (cached?.data) {
+          if (isActive && cached?.data) {
             logger.debug('[QueryPersistence] Restored from cache', {
               queryKey: query.queryKey
             });
@@ -87,11 +126,21 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
 
   window.addEventListener('online', handleOnline);
 
-  // Cleanup
-  (queryClient as any).__queryPersistenceCleanup = () => {
+  const cleanup = () => {
+    if (!isActive) return;
+    isActive = false;
     unsubscribe();
     window.removeEventListener('online', handleOnline);
+    persistenceCleanupByClient.delete(queryClient);
   };
+
+  persistenceCleanupByClient.set(queryClient, cleanup);
+  return cleanup;
+}
+
+/** Stops persistence and any pending cache restoration for a query client. */
+export function stopQueryPersistence(queryClient: QueryClient): void {
+  persistenceCleanupByClient.get(queryClient)?.();
 }
 
 /**
@@ -99,9 +148,10 @@ export function setupQueryPersistence(queryClient: QueryClient): void {
  * Used for manually checking cache outside React Query lifecycle.
  */
 export async function restoreFromCache<T = unknown>(
+  userId: UserId,
   queryKey: readonly unknown[]
 ): Promise<T | null> {
-  const cacheKey = queryKeyToCacheKey(queryKey);
+  const cacheKey = getPersistedQueryCacheKey(userId, queryKey);
   const cached = await indexedDBCache.get<T>(cacheKey);
   return cached?.data ?? null;
 }
@@ -109,16 +159,29 @@ export async function restoreFromCache<T = unknown>(
 /**
  * Manually persist query data to IndexedDB.
  */
-export async function persistQueryData<T>(queryKey: readonly unknown[], data: T): Promise<void> {
-  const cacheKey = queryKeyToCacheKey(queryKey);
-  await indexedDBCache.set(cacheKey, data);
+export async function persistQueryData<T>(
+  userId: UserId,
+  queryKey: readonly unknown[],
+  data: T
+): Promise<void> {
+  await persistForUser(userId, queryKey, data);
 }
 
 /**
  * Clear persisted data matching a query key prefix.
- * @param pattern - Query key prefix (e.g., ['dashboard'])
+ * @param userId - Owner of the persisted query data.
+ * @param pattern - Optional query key prefix (e.g., ['dashboard']).
  */
-export async function clearPersistedQueries(pattern: readonly unknown[]): Promise<void> {
-  const prefix = queryKeyToCacheKey(pattern).replace(/\*$/, '');
-  await indexedDBCache.clear(prefix);
+export async function clearPersistedQueries(
+  userId: UserId,
+  pattern?: readonly unknown[]
+): Promise<void> {
+  const userPrefix = userCachePrefix(userId);
+  const pendingWrites = pendingWritesByUser.get(userPrefix);
+  if (pendingWrites?.size) await Promise.all([...pendingWrites]);
+
+  const queryPrefix = pattern?.length
+    ? `${userPrefix}${JSON.stringify(pattern).slice(0, -1)}`
+    : userPrefix;
+  await indexedDBCache.clear(queryPrefix);
 }
