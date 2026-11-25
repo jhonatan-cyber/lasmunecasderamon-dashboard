@@ -62,6 +62,7 @@ const items = [
     comision: 0,
     foto: null,
     stock: 5,
+    stock_bodega: 5,
     stock_bar: 2,
     max_anfitrionas: 0,
     categoria_nombre: 'Licores'
@@ -278,9 +279,31 @@ it('solo lista presentaciones con stock en bodega', async () => {
               id: 'pres-1',
               producto_id: 'prod-1',
               producto_nombre: 'Whisky',
-              stock: 3
+              categoria_nombre: 'Licores',
+              stock: 3,
+              stock_bar: 5,
+              stock_bodega: 3
             },
-            { ...items[0], id: 'pres-2', producto_id: 'prod-2', producto_nombre: 'Vodka', stock: 0 }
+            {
+              ...items[0],
+              id: 'pres-2',
+              producto_id: 'prod-2',
+              producto_nombre: 'Vodka',
+              categoria_nombre: 'Vodka',
+              stock: 3,
+              stock_bar: 0,
+              stock_bodega: 0
+            },
+            {
+              ...items[0],
+              id: 'pres-3',
+              producto_id: 'prod-3',
+              producto_nombre: 'Gin',
+              categoria_nombre: 'Destilados',
+              stock: 0,
+              stock_bar: 4,
+              stock_bodega: 0
+            }
           ],
           history
         }
@@ -292,12 +315,15 @@ it('solo lista presentaciones con stock en bodega', async () => {
 
   const card = await screen.findByRole('button', { name: /Licores/ });
   expect(card).toHaveTextContent('1 presentación');
+  expect(screen.queryByRole('button', { name: /Vodka/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Destilados/ })).not.toBeInTheDocument();
   fireEvent.click(card);
 
   expect(
     await screen.findByRole('button', { name: 'Transferir Whisky 750 ml' })
   ).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Transferir Vodka 750 ml' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Transferir Gin 750 ml' })).not.toBeInTheDocument();
 });
 
 it('el historial abre un modal con el detalle completo de la transferencia', async () => {

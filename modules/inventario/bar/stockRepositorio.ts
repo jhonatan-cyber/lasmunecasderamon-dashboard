@@ -38,6 +38,7 @@ export async function listarStockBar(
 ): Promise<
   (PresentacionRow & {
     producto_nombre: string;
+    stock_bodega: number;
     stock_bar_cerrado: number;
     producto_codigo: string;
     codigos_unidades_bar: string[];
@@ -142,6 +143,7 @@ export async function listarStockBar(
       { ...row, max_anfitrionas: maxMap[String(row.producto_id)] ?? null },
       topeSimple
     ),
+    stock_bodega: Number(row.stock ?? 0),
     stock_bar_cerrado: Number(row.stock_bar_cerrado || 0),
     producto_nombre: row.producto_nombre,
     producto_codigo: row.producto_codigo,

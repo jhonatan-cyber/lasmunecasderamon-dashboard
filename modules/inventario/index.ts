@@ -94,3 +94,5 @@ export { validarChampanaConfigurada } from './bar/validarChampana';
 
 export { revisarReposicion } from './reposicion/servicio';
 export type { OrdenReposicion } from './contracts';
+export { listarConciliacionStock, reclasificarStockPendiente } from './reconciliacion/servicio';
+export type { StockReconciliationProduct } from './contracts';

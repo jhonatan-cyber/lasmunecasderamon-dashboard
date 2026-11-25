@@ -11,7 +11,14 @@ import { useRef, useState } from 'react';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PackageCheck, ClipboardList, Search, X, AlertTriangle } from 'lucide-react';
+import {
+  PackageCheck,
+  ClipboardList,
+  Search,
+  X,
+  AlertTriangle,
+  ClipboardCheck
+} from 'lucide-react';
 
 export function ProductsPageClient() {
   const router = useRouter();
@@ -60,6 +67,18 @@ export function ProductsPageClient() {
                 </p>
               </div>
               <div className='flex w-full flex-col gap-2 lg:w-auto lg:flex-row lg:items-center lg:justify-end'>
+                <PermissionGuard module='products' action='write'>
+                  <Button
+                    asChild
+                    variant='outline'
+                    className='flex w-full items-center justify-center gap-2 rounded-full whitespace-nowrap lg:w-auto'
+                  >
+                    <Link href='/products/reconciliation'>
+                      <ClipboardCheck className='w-4 h-4' />
+                      Conciliar stock
+                    </Link>
+                  </Button>
+                </PermissionGuard>
                 <PermissionGuard module='products' action='confirm_container_return'>
                   <Button
                     variant='outline'
