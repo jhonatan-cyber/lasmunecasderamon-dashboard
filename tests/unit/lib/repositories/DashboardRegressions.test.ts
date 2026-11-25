@@ -26,27 +26,65 @@ beforeEach(() => {
 function summaryQueries(options: { tips?: boolean; commissions?: boolean } = {}) {
   mocks.query.mockImplementation(async (sql: string) => {
     if (sql.includes('SELECT sueldo')) return [{ sueldo: 10000, aporte: 1000, descuento: 0 }];
-    if (sql.includes('COUNT(DISTINCT')) return [{ semanas: 1 }];
-    if (sql.includes('FROM asistencias')) return [{ estado: 1 }];
+    if (sql.includes('FROM asistencias')) return [{ total: 1, weeks: 1 }];
+    if (sql.includes('FROM anticipos')) return [{ total: 0, pending_count: 0, pending_amount: 0 }];
     if (sql.includes('FROM propinas P')) {
-      // Simulate the DB projection: the shared header remains pending after this user is paid.
-      return options.tips ? [{ estado: sql.includes('DP.estado') ? 0 : 1, monto: 5000 }] : [];
+      // The detail for this user is paid even though another participant is still pending.
+      return options.tips
+        ? [{ total: 1, pending_count: 0, pending_amount: 0 }]
+        : [{ total: 0, pending_count: 0, pending_amount: 0 }];
     }
+    if (sql.includes('FROM horas_extras'))
+      return [{ total: 0, pending_count: 0, pending_amount: 0 }];
+    if (sql.includes('FROM pedidos')) return [{ total: 0 }];
+    if (sql.includes('FROM servicios')) return [{ total: 0 }];
     if (sql.includes('FROM detalle_comisiones')) {
       return options.commissions
-        ? [
-            { comision: 2000, venta_id: 'v1', estado: 1, estado_cabecera: 1 },
-            { comision: 3000, servicio_id: 's1', estado: 1, estado_cabecera: 1 },
-            { comision: 8000, venta_id: 'v2', estado: 0, estado_cabecera: 1 },
-            { comision: 9000, servicio_id: 's2', estado: 1, estado_cabecera: 0 }
-          ]
-        : [];
+        ? [{ total: 4, pending_count: 2, sales_amount: 2000, services_amount: 3000 }]
+        : [{ total: 0, pending_count: 0, sales_amount: 0, services_amount: 0 }];
     }
     return [];
   });
 }
 
 describe('Regresiones del dashboard', () => {
+  it('construye el resumen de personal a partir de agregados de la base de datos', async () => {
+    mocks.query.mockImplementation(async (sql: string) => {
+      if (sql.includes('SELECT sueldo')) return [{ sueldo: 10000, aporte: 1000, descuento: 200 }];
+      if (sql.includes('FROM asistencias')) return [{ total: 4, weeks: 2 }];
+      if (sql.includes('FROM anticipos'))
+        return [{ total: 3, pending_count: 1, pending_amount: 1500 }];
+      if (sql.includes('FROM propinas P'))
+        return [{ total: 3, pending_count: 1, pending_amount: 500 }];
+      if (sql.includes('FROM horas_extras'))
+        return [{ total: 2, pending_count: 1, pending_amount: 800 }];
+      if (sql.includes('FROM pedidos')) return [{ total: 5 }];
+      if (sql.includes('FROM servicios')) return [{ total: 6 }];
+      if (sql.includes('FROM detalle_comisiones'))
+        return [{ total: 4, pending_count: 2, sales_amount: 2000, services_amount: 3000 }];
+      return [];
+    });
+
+    const result = await StatsQueries.getUserDashboardSummary('u1', 'anfitriona');
+
+    expect(result).toEqual({
+      totalAsistencias: 4,
+      totalAnticipos: 3,
+      totalPropinas: 3,
+      totalHorasExtras: 2,
+      totalPedidos: 5,
+      totalComisiones: 4,
+      totalServicios: 6,
+      totalACobrar: 39100,
+      anticiposPendientes: 1,
+      propinasPendientes: 1,
+      horasExtrasPendientes: 1,
+      comisionesPendientes: 2
+    });
+    expect(mocks.query.mock.calls).toHaveLength(8);
+    expect(mocks.query.mock.calls.slice(1).every(([sql]) => sql.includes('COUNT(*)'))).toBe(true);
+  });
+
   it('suma comisiones de ventas y servicios pendientes, excluyendo pagadas y anuladas', async () => {
     summaryQueries({ commissions: true });
     const result = await StatsQueries.getUserDashboardSummary('u1', 'anfitriona');
@@ -55,6 +93,12 @@ describe('Regresiones del dashboard', () => {
     expect(
       mocks.query.mock.calls.find(([sql]) => sql.includes('FROM detalle_comisiones'))?.[0]
     ).toContain('INNER JOIN comisiones');
+    const commissionsSql = mocks.query.mock.calls.find(([sql]) =>
+      sql.includes('FROM detalle_comisiones')
+    )?.[0];
+    expect(commissionsSql).toContain('DC.estado = 1 AND C.estado = 1');
+    expect(commissionsSql).toContain('C.venta_id IS NOT NULL');
+    expect(commissionsSql).toContain('C.servicio_id IS NOT NULL');
   });
 
   it('excluye una propina ya pagada aunque otros participantes sigan pendientes', async () => {
@@ -63,6 +107,9 @@ describe('Regresiones del dashboard', () => {
     expect(result.totalPropinas).toBe(1);
     expect(result.propinasPendientes).toBe(0);
     expect(result.totalACobrar).toBe(9000);
+    const tipsSql = mocks.query.mock.calls.find(([sql]) => sql.includes('FROM propinas P'))?.[0];
+    expect(tipsSql).toContain('INNER JOIN detalle_propinas');
+    expect(tipsSql).toContain('FILTER (WHERE DP.estado = 1)');
   });
 
   it('descuenta el aporte del garzón como la nómina', async () => {

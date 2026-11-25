@@ -6,7 +6,13 @@ import { RedisDashboardCache } from '@/lib/cache/redisDashboardCache';
 
 vi.mock('@/lib/utils/logger', () => {
   const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
-  return { logger, default: logger , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
+  return {
+    logger,
+    default: logger,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
+  };
 });
 
 it('measures local read-only dashboard queries and Redis hits without exposing business data', async () => {

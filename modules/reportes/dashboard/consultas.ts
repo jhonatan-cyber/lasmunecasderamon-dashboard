@@ -28,6 +28,18 @@ import type {
   SalesByWeekRow
 } from '@/lib/database/rows';
 
+type UserDashboardCountRow = { total: number };
+type UserDashboardAttendanceRow = UserDashboardCountRow & { weeks: number };
+type UserDashboardPendingRow = UserDashboardCountRow & {
+  pending_count: number;
+  pending_amount: number;
+};
+type UserDashboardCommissionRow = UserDashboardCountRow & {
+  pending_count: number;
+  sales_amount: number;
+  services_amount: number;
+};
+
 export class StatsQueries {
   static async getShiftForecast() {
     const rows = await query<any[]>(
@@ -867,86 +879,98 @@ export class StatsQueries {
     try {
       const roleLower = role.toLowerCase();
 
-      const userRes = await query<any[]>(
-        'SELECT sueldo, aporte, descuento FROM usuarios WHERE id_usuario = ?',
-        [userId]
-      );
+      const userRes = await query<
+        { sueldo: number | null; aporte: number | null; descuento: number | null }[]
+      >('SELECT sueldo, aporte, descuento FROM usuarios WHERE id_usuario = ?', [userId]);
       if (userRes.length === 0) throw new NotFoundError('Usuario', userId);
       const userBase = userRes[0];
 
       const [
-        asistencias,
-        anticipos,
-        propinas,
-        horasExtras,
-        pedidos,
-        servicios,
-        comisiones,
-        semanasAsistencia
+        asistenciaSummaryRows,
+        anticiposSummaryRows,
+        propinasSummaryRows,
+        horasExtrasSummaryRows,
+        pedidosSummaryRows,
+        serviciosSummaryRows,
+        comisionesSummaryRows
       ] = await Promise.all([
-        query('SELECT * FROM asistencias WHERE usuario_id = ? AND estado = 1', [userId]) as Promise<
-          any[]
-        >,
-        query('SELECT * FROM anticipos WHERE usuario_id = ?', [userId]) as Promise<any[]>,
         query(
           `
-        SELECT P.id_propina, DP.estado, DP.monto
-        FROM propinas P
-        INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
-        WHERE DP.usuario_id = ?`,
+        SELECT COUNT(*) AS total,
+          COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW'))
+            FILTER (WHERE (EXTRACT(DOW FROM fecha)::integer + 1) IN (3,4,5,6,7,1)) AS weeks
+        FROM asistencias
+        WHERE usuario_id = ? AND estado = 1`,
           [userId]
-        ) as Promise<any[]>,
-        query('SELECT * FROM horas_extras WHERE usuario_id = ?', [userId]) as Promise<any[]>,
+        ) as Promise<UserDashboardAttendanceRow[]>,
+        query(
+          `SELECT COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE estado = 1) AS pending_count,
+            COALESCE(SUM(monto) FILTER (WHERE estado = 1), 0) AS pending_amount
+          FROM anticipos
+          WHERE usuario_id = ?`,
+          [userId]
+        ) as Promise<UserDashboardPendingRow[]>,
+        query(
+          `SELECT COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE DP.estado = 1) AS pending_count,
+            COALESCE(SUM(DP.monto) FILTER (WHERE DP.estado = 1), 0) AS pending_amount
+          FROM propinas P
+          INNER JOIN detalle_propinas DP ON DP.propina_id = P.id_propina
+          WHERE DP.usuario_id = ?`,
+          [userId]
+        ) as Promise<UserDashboardPendingRow[]>,
+        query(
+          `SELECT COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE estado = 1) AS pending_count,
+            COALESCE(SUM(total) FILTER (WHERE estado = 1), 0) AS pending_amount
+          FROM horas_extras
+          WHERE usuario_id = ?`,
+          [userId]
+        ) as Promise<UserDashboardPendingRow[]>,
         roleLower === 'garzon'
-          ? (query('SELECT id_pedido, estado FROM pedidos WHERE mesero_id = ?', [
+          ? (query('SELECT COUNT(*) AS total FROM pedidos WHERE mesero_id = ?', [
               userId
-            ]) as Promise<any[]>)
+            ]) as Promise<UserDashboardCountRow[]>)
           : (query(
-              'SELECT P.id_pedido, P.estado FROM pedidos P INNER JOIN pedidos_usuarios PU ON P.id_pedido = PU.pedido_id WHERE PU.usuario_id = ?',
+              'SELECT COUNT(*) AS total FROM pedidos P INNER JOIN pedidos_usuarios PU ON P.id_pedido = PU.pedido_id WHERE PU.usuario_id = ?',
               [userId]
-            ) as Promise<any[]>),
+            ) as Promise<UserDashboardCountRow[]>),
         query(
-          'SELECT S.* FROM servicios S INNER JOIN detalle_servicios DS ON S.id_servicio = DS.servicio_id WHERE DS.usuario_id = ?',
+          'SELECT COUNT(*) AS total FROM servicios S INNER JOIN detalle_servicios DS ON S.id_servicio = DS.servicio_id WHERE DS.usuario_id = ?',
           [userId]
-        ) as Promise<any[]>,
+        ) as Promise<UserDashboardCountRow[]>,
         query(
-          `SELECT DC.*, C.venta_id, C.servicio_id, C.estado AS estado_cabecera
+          `SELECT COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE DC.estado = 1 AND C.estado = 1) AS pending_count,
+            COALESCE(SUM(DC.comision) FILTER (
+              WHERE DC.estado = 1 AND C.estado = 1 AND C.venta_id IS NOT NULL
+            ), 0) AS sales_amount,
+            COALESCE(SUM(DC.comision) FILTER (
+              WHERE DC.estado = 1 AND C.estado = 1 AND C.servicio_id IS NOT NULL
+            ), 0) AS services_amount
            FROM detalle_comisiones DC
            INNER JOIN comisiones C ON C.id_comision = DC.comision_id
            WHERE DC.usuario_id = ?`,
           [userId]
-        ) as Promise<any[]>,
-        query(
-          `
-        SELECT COUNT(DISTINCT TO_CHAR(fecha, 'IYYY-IW')) as semanas
-        FROM asistencias
-        WHERE usuario_id = ? AND estado = 1 AND (EXTRACT(DOW FROM fecha)::integer + 1) IN (3,4,5,6,7,1)`,
-          [userId]
-        ) as Promise<any[]>
+        ) as Promise<UserDashboardCommissionRow[]>
       ]);
 
-      const filterEstado1 = (arr: any[]) => arr.filter(i => i.estado === 1);
+      const asistenciaSummary = asistenciaSummaryRows[0];
+      const anticiposSummary = anticiposSummaryRows[0];
+      const propinasSummary = propinasSummaryRows[0];
+      const horasExtrasSummary = horasExtrasSummaryRows[0];
+      const pedidosSummary = pedidosSummaryRows[0];
+      const serviciosSummary = serviciosSummaryRows[0];
+      const comisionesSummary = comisionesSummaryRows[0];
 
-      const anticiposPendientesArr = filterEstado1(anticipos);
-      const totalAnticiposPendientes = anticiposPendientesArr.reduce(
-        (s, a) => s + (a.monto || 0),
-        0
-      );
-
-      const propinasPendientesArr = filterEstado1(propinas);
-      const totalPropinasPendientes = propinasPendientesArr.reduce((s, p) => s + (p.monto || 0), 0);
-
-      const horasExtrasPendientesArr = filterEstado1(horasExtras);
-      const totalHorasExtrasPendientes = horasExtrasPendientesArr.reduce(
-        (s, h) => s + (h.total || 0),
-        0
-      );
-
-      const totalAsistenciasCount = asistencias.length;
+      const totalAnticiposPendientes = anticiposSummary.pending_amount;
+      const totalPropinasPendientes = propinasSummary.pending_amount;
+      const totalHorasExtrasPendientes = horasExtrasSummary.pending_amount;
+      const totalAsistenciasCount = asistenciaSummary.total;
       const totalSueldoAsistencias = totalAsistenciasCount * (userBase.sueldo || 0);
       const totalAporteAsistencias = totalAsistenciasCount * (userBase.aporte || 0);
-      const totalDescuentoAsistencias =
-        (semanasAsistencia[0]?.semanas || 0) * (userBase.descuento || 0);
+      const totalDescuentoAsistencias = asistenciaSummary.weeks * (userBase.descuento || 0);
 
       let totalACobrar = 0;
 
@@ -964,20 +988,10 @@ export class StatsQueries {
           totalSueldoAsistencias - totalAporteAsistencias - totalDescuentoAsistencias
         );
 
-        const comisionesVentas = comisiones.filter(
-          c => c.venta_id != null && c.estado === 1 && c.estado_cabecera === 1
-        );
-        const totalComisionesVentas = comisionesVentas.reduce((s, c) => s + (c.comision || 0), 0);
-
-        const comisionesServicios = comisiones.filter(
-          c => c.servicio_id != null && c.estado === 1 && c.estado_cabecera === 1
-        );
-        const totalGanadoServicios = comisionesServicios.reduce((s, c) => s + (c.comision || 0), 0);
-
         totalACobrar =
           totalACobrarAsistencias +
-          totalComisionesVentas +
-          totalGanadoServicios -
+          comisionesSummary.sales_amount +
+          comisionesSummary.services_amount -
           totalAnticiposPendientes;
       } else if (roleLower === 'cajero') {
         totalACobrar =
@@ -990,18 +1004,17 @@ export class StatsQueries {
 
       return {
         totalAsistencias: totalAsistenciasCount,
-        totalAnticipos: anticipos.length,
-        totalPropinas: propinas.length,
-        totalHorasExtras: horasExtras.length,
-        totalPedidos: pedidos.length,
-        totalComisiones: comisiones.length,
-        totalServicios: servicios.length,
+        totalAnticipos: anticiposSummary.total,
+        totalPropinas: propinasSummary.total,
+        totalHorasExtras: horasExtrasSummary.total,
+        totalPedidos: pedidosSummary.total,
+        totalComisiones: comisionesSummary.total,
+        totalServicios: serviciosSummary.total,
         totalACobrar,
-        anticiposPendientes: anticiposPendientesArr.length,
-        propinasPendientes: propinasPendientesArr.length,
-        horasExtrasPendientes: horasExtrasPendientesArr.length,
-        comisionesPendientes: comisiones.filter(c => c.estado === 1 && c.estado_cabecera === 1)
-          .length
+        anticiposPendientes: anticiposSummary.pending_count,
+        propinasPendientes: propinasSummary.pending_count,
+        horasExtrasPendientes: horasExtrasSummary.pending_count,
+        comisionesPendientes: comisionesSummary.pending_count
       };
     } catch (err) {
       logger.error('[StatsQueries] Error en getUserDashboardSummary:', { userId, role, err });
