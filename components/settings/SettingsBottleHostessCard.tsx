@@ -26,8 +26,8 @@ import {
   type SettingsSaleOptionsHandle
 } from './SettingsSaleOptionsEditor';
 import type { SaleOption } from '@/types/sale-options';
-import { SettingsCategoryCard } from './SettingsCategoryCard';
-import { SettingsProductCard } from './SettingsProductCard';
+import { SettingsCategoryOption } from './SettingsCategoryCard';
+import { SettingsProductOption } from './SettingsProductCard';
 
 type PresentacionComisiones = {
   codigo_barras?: string | null;
@@ -670,10 +670,10 @@ export function SettingsBottleHostessCard() {
       ) : (
         <div className='space-y-5'>
           {!selectedCategory ? (
-            /* Category cards grid */
+            /* Category options */
             <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3'>
               {productosAgrupados.map(([categoria, items]) => (
-                <SettingsCategoryCard
+                <SettingsCategoryOption
                   key={categoria}
                   categoria={categoria}
                   productoCount={items.length}
@@ -700,7 +700,7 @@ export function SettingsBottleHostessCard() {
                 </h3>
               </div>
 
-              {/* Product cards grid for this category */}
+              {/* Product options for this category */}
               <div className='space-y-2'>
                 <div className='flex items-center justify-between'>
                   <p className='text-xs font-semibold text-neutral-600 dark:text-neutral-400'>
@@ -718,7 +718,7 @@ export function SettingsBottleHostessCard() {
                   {productosAgrupados
                     .find(([cat]) => cat === selectedCategory)?.[1]
                     ?.map(p => (
-                      <SettingsProductCard
+                      <SettingsProductOption
                         key={p.id}
                         id={String(p.id)}
                         name={p.name}

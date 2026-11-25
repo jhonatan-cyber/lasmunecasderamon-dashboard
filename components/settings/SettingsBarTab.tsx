@@ -229,7 +229,7 @@ export function SettingsBarTab() {
         {fields.map(({ id, title, icon: Icon, value, onChange, min, max, unit, tone }) => (
           <div
             key={id}
-            className='flex min-w-0 flex-col rounded-xl border border-neutral-200/70 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-950/40'
+            className='flex min-w-0 flex-col gap-2 border-b border-neutral-200/70 pb-3 dark:border-neutral-800'
           >
             <div className='mb-2 flex items-center gap-2'>
               <div

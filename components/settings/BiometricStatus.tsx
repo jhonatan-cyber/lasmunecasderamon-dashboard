@@ -199,7 +199,7 @@ export function BiometricStatus() {
       <section className='flex flex-col gap-3'>
         <TituloSeccion>Hoy</TituloSeccion>
         <div className='grid gap-4 sm:grid-cols-[10rem_1fr]'>
-          <div className='flex flex-col justify-center rounded-2xl bg-muted/60 px-5 py-4'>
+          <div className='flex flex-col justify-center border-b border-border pb-3 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4'>
             <p className='text-4xl font-semibold tabular-nums'>
               {estado.asistenciasBiometricasHoy}
             </p>

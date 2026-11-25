@@ -94,12 +94,9 @@ export function SettingsAuditLogsCard({
           </div>
 
           {/* Vista en cards para móvil */}
-          <div className='space-y-3 md:hidden'>
+          <div className='divide-y divide-zinc-200 md:hidden dark:divide-zinc-700'>
             {paginatedAuditLogs.map(log => (
-              <div
-                key={log.id}
-                className='rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900'
-              >
+              <div key={log.id} className='py-3 first:pt-0 last:pb-0'>
                 <div className='mb-3 flex items-start justify-between'>
                   <div className='flex-1'>
                     <div className='flex flex-col'>

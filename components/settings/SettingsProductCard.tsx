@@ -7,7 +7,7 @@ import { Users, Tag, Percent } from 'lucide-react';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { useState, useEffect } from 'react';
 
-interface SettingsProductCardProps {
+interface SettingsProductOptionProps {
   id: string;
   name: string;
   presentacion: string;
@@ -20,7 +20,7 @@ interface SettingsProductCardProps {
   onClick: () => void;
 }
 
-export function SettingsProductCard({
+export function SettingsProductOption({
   id,
   name,
   presentacion,
@@ -31,7 +31,7 @@ export function SettingsProductCard({
   isSelected = false,
   hasPending = false,
   onClick
-}: SettingsProductCardProps) {
+}: SettingsProductOptionProps) {
   const [imgFailed, setImgFailed] = useState(false);
 
   const src =
@@ -49,12 +49,10 @@ export function SettingsProductCard({
       type='button'
       onClick={onClick}
       className={cn(
-        'group flex flex-col items-start gap-3 rounded-2xl border p-4 text-left transition-all duration-200',
-        'bg-white dark:bg-neutral-900',
-        'border-neutral-200 dark:border-neutral-800',
+        'group flex min-w-0 flex-col items-start gap-3 border-b border-neutral-200 p-3 text-left transition dark:border-neutral-800',
         isSelected
-          ? 'ring-2 ring-black dark:ring-white border-black dark:border-white shadow-md'
-          : 'hover:ring-2 hover:ring-neutral-300 dark:hover:ring-neutral-600 hover:shadow-sm'
+          ? 'border-b-neutral-900 dark:border-b-white'
+          : 'hover:border-b-neutral-400 dark:hover:border-b-neutral-600'
       )}
     >
       {/* Product photo */}

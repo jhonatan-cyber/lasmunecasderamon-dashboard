@@ -189,7 +189,7 @@ export function SettingsBillingTab() {
             </div>
           </div>
           <div className='space-y-4'>
-            <div className='p-4 border border-gray-200 rounded-2xl'>
+            <div className='border-t border-gray-200 pt-4 dark:border-gray-800'>
               <p className='text-sm font-medium'>Split pago con tarjeta</p>
               <div className='mt-3 grid grid-cols-2 gap-3'>
                 <div>
