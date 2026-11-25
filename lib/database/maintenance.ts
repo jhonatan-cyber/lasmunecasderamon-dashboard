@@ -103,6 +103,10 @@ export async function cleanDatabase() {
       );
       await reactivarTriggersDeBorrado(trx);
     }
+    // Clientes: la tabla se conserva, pero su saldo prepago se borra.
+    if (all.includes('clientes')) {
+      await trx(`UPDATE clientes SET saldo = 0`);
+    }
     return { deletedTables, skippedTables };
   });
 }

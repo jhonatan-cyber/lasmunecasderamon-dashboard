@@ -3,7 +3,11 @@ export const DATABASE_CLEAN_PROTECTED_TABLES = [
   'usuarios',
   'roles',
   'role_permissions',
-  'permissions'
+  'permissions',
+  'categorias',
+  'productos',
+  'habitaciones',
+  'clientes'
 ] as const;
 
 // Metadatos del esquema: vaciarlos haría que se repitieran migraciones ya aplicadas.

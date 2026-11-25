@@ -1,31 +1,44 @@
+'use client';
+
 import { DATABASE_CLEAN_PROTECTED_TABLES } from '@/lib/constants/database-maintenance';
+import { useState } from 'react';
 import { AlertTriangle, Loader2, Database } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface CleanDatabaseConfirmModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   isLoading?: boolean;
+  tablasAVaciar?: number;
+  tablasProtegidas?: number;
 }
 
 export function CleanDatabaseConfirmModal({
   open,
   onOpenChange,
   onConfirm,
-  isLoading = false
+  isLoading = false,
+  tablasAVaciar,
+  tablasProtegidas
 }: CleanDatabaseConfirmModalProps) {
+  const [confirmaEntendido, setConfirmaEntendido] = useState(false);
+
   const handleConfirm = () => {
+    if (!confirmaEntendido) return;
     onConfirm();
   };
 
-  const handleCancel = () => {
-    onOpenChange(false);
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) setConfirmaEntendido(false);
+    onOpenChange(isOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='sm:max-w-[425px] flex flex-col p-0 overflow-hidden rounded-2xl max-h-[90vh]'>
         <DialogHeader className='shrink-0 border-b p-4 pr-12 pb-3 dark:border-slate-800 sm:p-6 sm:pr-14 sm:pb-3'>
           <DialogTitle className='flex items-center gap-2'>
@@ -40,6 +53,18 @@ export function CleanDatabaseConfirmModal({
               ¿Estás seguro de que querés vaciar la base de datos?
             </p>
 
+            {tablasAVaciar !== undefined && tablasProtegidas !== undefined && (
+              <div className='mb-4 bg-neutral-50 dark:bg-neutral-900/40 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700'>
+                <div className='flex items-center gap-2 text-xs font-medium text-neutral-700 dark:text-neutral-300'>
+                  <Database className='h-3 w-3' />
+                  <span>
+                    {tablasAVaciar} tabla(s) se vaciará(n), {tablasProtegidas} tabla(s) protegida(s)
+                    se conservará(n).
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className='bg-red-50 dark:bg-red-950/40 p-4 rounded-xl border border-red-200 dark:border-red-800'>
               <div className='space-y-2 text-sm text-red-900 dark:text-red-100'>
                 <p className='text-center'>
@@ -47,11 +72,10 @@ export function CleanDatabaseConfirmModal({
                 </p>
                 <ul className='list-disc list-inside text-xs text-red-600 dark:text-red-400 mt-2'>
                   <li>Ventas, pedidos y detalles</li>
-                  <li>Clientes y prepago</li>
                   <li>Cajas, anticipos y propinas</li>
                   <li>Asistencias y servicios</li>
-                  <li>Productos, categorías, inventario y compras</li>
-                  <li>Habitaciones, configuración y respaldos guardados</li>
+                  <li>Inventario y compras</li>
+                  <li>Configuración y respaldos guardados</li>
                 </ul>
               </div>
             </div>
@@ -67,12 +91,30 @@ export function CleanDatabaseConfirmModal({
               </ul>
             </div>
 
+            <p className='mt-4 text-xs text-orange-600 dark:text-orange-300 font-medium text-center'>
+              <span className='font-bold'>Advertencia:</span> haga un backup manual antes de
+              continuar. Esta acción no crea respaldo automático y no se puede revertir.
+            </p>
             <p className='mt-4 text-xs text-red-500 dark:text-red-400 font-medium text-center uppercase tracking-wider'>
               Esta acción no se puede revertir
             </p>
             <p className='mt-2 text-xs text-blue-600 dark:text-blue-300 font-medium text-center'>
-              Se creará y descargará un backup antes de vaciar. Conservá el archivo descargado.
+              Se conservan los clientes, pero su saldo prepago se borra (queda en 0).
             </p>
+
+            <Label className='mt-5 flex cursor-pointer select-none items-start gap-2'>
+              <Checkbox
+                id='confirmo-entendido'
+                checked={confirmaEntendido}
+                onCheckedChange={checked => setConfirmaEntendido(checked === true)}
+                disabled={isLoading}
+                className='border-neutral-300 data-[state=checked]:bg-red-600 dark:border-neutral-600'
+              />
+              <span className='text-xs leading-relaxed text-neutral-600 dark:text-neutral-300'>
+                Entiendo que esta acción es <span className='font-bold'>irreversible</span> y no se
+                puede deshacer.
+              </span>
+            </Label>
           </div>
         </div>
 
@@ -81,7 +123,7 @@ export function CleanDatabaseConfirmModal({
             <Button
               variant='outline'
               className='flex items-center gap-2 rounded-full hover:scale-105 transition-all duration-200 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black px-6 text-sm sm:text-base w-full sm:w-auto'
-              onClick={handleCancel}
+              onClick={() => handleOpenChange(false)}
               disabled={isLoading}
             >
               Cancelar
@@ -89,7 +131,7 @@ export function CleanDatabaseConfirmModal({
             <Button
               onClick={handleConfirm}
               variant='outline'
-              disabled={isLoading}
+              disabled={isLoading || !confirmaEntendido}
               className='flex items-center bg-red-600 text-white dark:bg-red-600 dark:text-white gap-2 rounded-full px-6 hover:scale-105 transition-all duration-200 w-full sm:w-auto hover:bg-red-700 dark:hover:bg-red-700 text-sm sm:text-base'
             >
               {isLoading ? (
