@@ -76,10 +76,10 @@ it('borra un producto sin dependencias', async () => {
   expect(mocks.delete).toHaveBeenCalledWith(mocks.trx, 'productos', 'id_producto', 'p1');
 });
 
-it('responde NotFound cuando el producto no existe', async () => {
+it('considera exitoso borrar un producto que ya no existe', async () => {
   mocks.trx.mockResolvedValueOnce([]);
 
-  await expect(eliminarProducto('p1')).rejects.toBeInstanceOf(NotFoundError);
+  await expect(eliminarProducto('p1')).resolves.toBeUndefined();
   expect(mocks.delete).not.toHaveBeenCalled();
 });
 

@@ -47,6 +47,8 @@ export interface IdempotentConfig {
   endpoint: string;
   usuarioId?: string | null;
   deviceDate?: string;
+  /** Permite reclamar de nuevo fallos solo si el handler es idempotente y transaccional. */
+  retryFailed?: boolean;
 }
 
 /** Traduce la fila guardada a la respuesta HTTP que hay que replicar. */
@@ -60,8 +62,8 @@ export function buildReplayResponse(operation: SyncOperation): Response {
     }
   }
 
-  // Pendiente (en curso u huérfana) o fallida: puede que haya aplicado, así que
-  // reintentar en automático es justo lo que duplica. Queda para revisión.
+  // Pendiente (en curso u huérfana) o fallida: puede que haya aplicado. Solo las
+  // rutas idempotentes pueden reclamar explícitamente un estado fallido.
   const message =
     operation.estado === 'pendiente'
       ? 'Esta operación ya está en curso; esperá la respuesta del servidor antes de reintentar.'
@@ -128,12 +130,29 @@ export async function runIdempotent(
         { status: 409 }
       );
     }
-    logger.info('[idempotency] reintento: se replica la respuesta guardada', {
-      key,
-      endpoint: config.endpoint,
-      estado: operation.estado
-    });
-    return buildReplayResponse(operation);
+
+    if (operation.estado === 'fallida' && config.retryFailed) {
+      const reclaimed = await SyncOperationRepository.retryFailed(key);
+      if (reclaimed) {
+        claimed = true;
+        operation = null;
+      } else {
+        try {
+          operation = (await SyncOperationRepository.get(key)) ?? operation;
+        } catch {
+          // Si no se puede comprobar el estado, conservar el bloqueo seguro.
+        }
+      }
+    }
+
+    if (!claimed && operation) {
+      logger.info('[idempotency] reintento: se replica la respuesta guardada', {
+        key,
+        endpoint: config.endpoint,
+        estado: operation.estado
+      });
+      return buildReplayResponse(operation);
+    }
   }
 
   try {

@@ -113,6 +113,26 @@ export class SyncOperationRepository {
     }
   }
 
+  /** Reclama una fila fallida para reejecutar handlers idempotentes de forma segura. */
+  static async retryFailed(idCliente: string): Promise<boolean> {
+    try {
+      const rows = await query<{ id_cliente: string }[]>(
+        `UPDATE sync_operations
+            SET estado = 'pendiente', respuesta = NULL, aplicado_en = NULL
+          WHERE id_cliente = ? AND estado = 'fallida'
+          RETURNING id_cliente`,
+        [idCliente]
+      );
+      return rows.length > 0;
+    } catch (err) {
+      logger.warn('[sync_operations] No se pudo reclamar el reintento', {
+        idCliente,
+        error: err instanceof Error ? err.message : String(err)
+      });
+      return false;
+    }
+  }
+
   /**
    * Cierra la operación con la respuesta que hay que replicar. `fallida` se usa
    * cuando el servidor respondió 5xx: se guarda su respuesta real (más útil para

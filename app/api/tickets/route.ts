@@ -2,18 +2,15 @@ import { NextResponse } from 'next/server';
 import { withRoute } from '@/lib/api/withRoute';
 import { runIdempotent } from '@/lib/api/idempotency';
 import { ApiResponse } from '@/lib/api/api-response';
-import { listarEntradas, registrarEntrada } from '@/modules/entradas';
+import { listarEntradasCajaAbierta, registrarEntrada } from '@/modules/entradas';
 import { AppError, ValidationError } from '@/lib/errors/errors';
 import { esBaucherDataUrlValido } from '@/lib/business/baucher';
 import { notificarEntradaRegistrada } from '@/lib/notifications/entradaNotificationUtils';
 
 type JsonRecord = Record<string, unknown>;
 
-export const GET = withRoute({ auth: true, module: 'entradas', action: 'view' }, async request => {
-  const fecha = new URL(request.url).searchParams.get('fecha') || undefined;
-  if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha))
-    throw new ValidationError('La fecha debe tener formato AAAA-MM-DD');
-  return NextResponse.json({ success: true, data: await listarEntradas(fecha) });
+export const GET = withRoute({ auth: true, module: 'entradas', action: 'view' }, async () => {
+  return NextResponse.json({ success: true, data: await listarEntradasCajaAbierta() });
 });
 
 /**

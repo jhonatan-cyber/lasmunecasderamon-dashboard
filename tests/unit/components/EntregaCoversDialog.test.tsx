@@ -183,6 +183,22 @@ describe('EntregaCoversDialog', () => {
     expect(await screen.findByRole('button', { name: /Whisky/ })).toBeInTheDocument();
   });
 
+  it('redondea los selectores de modalidad y de entrada individual', () => {
+    stubCatalogo([]);
+    renderDialog(2, 5000, 10000);
+
+    expect(screen.getByRole('radio', { name: 'Entrega grupal' })).toHaveAttribute(
+      'data-state',
+      'on'
+    );
+    const modalidadIndividual = screen.getByRole('radio', { name: 'Entrega individual' });
+    expect(modalidadIndividual).toHaveClass('rounded-full');
+    fireEvent.click(modalidadIndividual);
+    expect(screen.getByRole('button', { name: 'Entrada 1, $5.000, 22:00' })).toHaveClass(
+      'rounded-full'
+    );
+  });
+
   it('suma un adicional al total de cinco entradas para una botella grupal', async () => {
     const fetchMock = stubCatalogo([
       {
@@ -198,6 +214,7 @@ describe('EntregaCoversDialog', () => {
     fireEvent.change(screen.getByLabelText('Monto adicional del grupo'), {
       target: { value: '10000' }
     });
+    expect(screen.getByLabelText('Monto adicional del grupo')).toHaveValue('10.000');
     await abrirCategoria('Licores');
 
     const opciones = await screen.findAllByRole('button', { name: /Whisky/ });
@@ -308,7 +325,7 @@ describe('EntregaCoversDialog', () => {
     fireEvent.click(producto);
     fireEvent.click(producto);
     fireEvent.change(aporte, { target: { value: '500' } });
-    expect(aporte).toHaveValue('4000');
+    expect(aporte).toHaveValue('4.000');
     expect(screen.getByRole('alert')).toHaveTextContent('Quita productos antes de reducir');
     expect(screen.getByText(/3 productos para 1 entrada/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Entregar 3 en la barra' })).toBeEnabled();

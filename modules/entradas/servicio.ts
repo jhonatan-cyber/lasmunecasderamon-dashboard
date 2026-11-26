@@ -4,6 +4,10 @@ export function listarEntradas(...args: Parameters<typeof repositorio.listarEntr
   return repositorio.listarEntradas(...args);
 }
 
+export function listarEntradasCajaAbierta() {
+  return repositorio.listarEntradasCajaAbierta();
+}
+
 export function listarPendientes(...args: Parameters<typeof repositorio.listarPendientes>) {
   return repositorio.listarPendientes(...args);
 }

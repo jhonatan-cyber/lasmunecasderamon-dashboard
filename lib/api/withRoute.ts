@@ -47,6 +47,8 @@ type PermissionRouteConfig<M extends PermissionModule = PermissionModule> = {
   action: keyof UserPermissions[M] & string;
   access?: never;
   audit?: boolean;
+  /** Solo para handlers transaccionales que pueden repetirse sin duplicar efectos. */
+  retryFailedRegistration?: boolean;
 };
 
 type AdministratorRouteConfig = {
@@ -55,6 +57,7 @@ type AdministratorRouteConfig = {
   module?: never;
   action?: never;
   audit?: boolean;
+  retryFailedRegistration?: boolean;
 };
 
 type SessionRouteConfig = {
@@ -63,6 +66,7 @@ type SessionRouteConfig = {
   module?: never;
   action?: never;
   audit?: boolean;
+  retryFailedRegistration?: boolean;
 };
 
 type PublicRouteConfig = {
@@ -337,7 +341,10 @@ export function withRoute<M extends PermissionModule>(
       const invoke = (nextRequest: Request) => (handler as any)(nextRequest, handlerContext);
       const handlerStartedAt = profileStages ? performance.now() : 0;
       const response = user
-        ? await runRegistration(request, String(user.id), invoke)
+        ? await runRegistration(request, String(user.id), invoke, {
+            retryFailed:
+              'retryFailedRegistration' in config ? config.retryFailedRegistration : undefined
+          })
         : await invoke(request);
       if (profileStages) handlerDurationMs = performance.now() - handlerStartedAt;
       const normalizeStartedAt = profileStages ? performance.now() : 0;

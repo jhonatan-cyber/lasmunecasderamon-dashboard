@@ -19,7 +19,7 @@ import { resolverVencimiento } from '@/lib/business/vencimiento';
 import { formatFechaISO } from '@/lib/utils/fechaSql';
 import { logger } from '@/lib/utils/logger';
 import { BaseRepository } from '@/lib/database/base-repository';
-import { ConflictError, NotFoundError } from '@/lib/errors/errors';
+import { ConflictError } from '@/lib/errors/errors';
 import { crearPresentacion } from '../presentaciones/repositorio';
 import { generarUnidades, sincronizarStockTotal } from '../unidades/repositorio';
 import { ESTADO_UNIDAD_ACTIVA } from '../estados';
@@ -391,7 +391,7 @@ export async function eliminarProducto(id: string): Promise<void> {
       'SELECT id_producto FROM productos WHERE id_producto = ? FOR UPDATE',
       [id]
     );
-    if (!producto) throw new NotFoundError('Producto', id);
+    if (!producto) return;
 
     const [deps] = await trx<
       {

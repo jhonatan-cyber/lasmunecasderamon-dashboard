@@ -312,8 +312,7 @@ function conAliasLegacy(fila: EntradaCliente) {
   };
 }
 
-export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> {
-  const fechaFiltro = fecha || getNowInBusinessTimezone().slice(0, 10);
+async function consultarEntradas(filtro: string, parametros: unknown[]): Promise<EntradaCliente[]> {
   const filas = await query<EntradaCliente[]>(
     `SELECT e.id, e.grupo_registro_id, e.cliente_nombre, e.monto_entrada, e.monto_bebida_adicional, e.metodo_pago,
             e.baucher_foto,
@@ -353,10 +352,24 @@ export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> 
        LEFT JOIN productos pr ON pr.id_producto = p.producto_id
        LEFT JOIN inventario_presentaciones pa ON pa.id = e.bebida_acompanamiento_presentacion_id
        LEFT JOIN productos pra ON pra.id_producto = pa.producto_id
-      WHERE e.fecha = ? ORDER BY e.hora DESC, e.fecha_crea DESC`,
-    [fechaFiltro]
+      WHERE ${filtro} ORDER BY e.fecha DESC, e.hora DESC, e.fecha_crea DESC`,
+    parametros
   );
   return filas.map(conAliasLegacy);
+}
+
+export async function listarEntradas(fecha?: string): Promise<EntradaCliente[]> {
+  const fechaFiltro = fecha || getNowInBusinessTimezone().slice(0, 10);
+  return consultarEntradas('e.fecha = ?', [fechaFiltro]);
+}
+
+export function listarEntradasCajaAbierta(): Promise<EntradaCliente[]> {
+  return consultarEntradas(
+    `e.caja_id = (
+      SELECT id_caja FROM cajas WHERE estado = 1 ORDER BY fecha_apertura DESC LIMIT 1
+    )`,
+    []
+  );
 }
 
 export async function listarPendientes(fecha?: string): Promise<EntradaPendiente[]> {

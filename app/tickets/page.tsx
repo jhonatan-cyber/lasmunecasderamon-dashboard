@@ -11,13 +11,12 @@ import {
   Minus,
   Plus,
   Ticket,
-  UserRoundPlus,
-  Wine
+  TicketCheck,
+  UserRoundPlus
 } from 'lucide-react';
 import { BaucherFileInput } from '@/components/shared/BaucherFileInput';
 import { BaucherFoto } from '@/components/shared/BaucherFoto';
 import { CajaStatusBanner } from '@/components/sales/CajaStatusBanner';
-import { DatePicker } from '@/components/shared/DatePicker';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,6 +47,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EntregaCoversDialog, type GrupoCover } from '@/components/bar/EntregaCoversDialog';
 import { useCashRegisterStatus } from '@/hooks/cash-register/useCashRegisterStatus';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -55,7 +55,6 @@ import { useRealtimeRefresh } from '@/hooks/realtime/useRealtimeRefresh';
 import { formatCurrencyCLP } from '@/lib/utils/formatters';
 import { fechaDeNegocio } from '@/lib/business/timezoneService';
 import { useConfigValue } from '@/hooks/shared/useConfigValue';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CreditCard, Clock } from 'lucide-react';
 
 type EstadoCover = 'pendiente' | 'entregada' | 'anulada';
@@ -163,7 +162,6 @@ const varianteGrupo = (grupo: GrupoEntrada): 'success' | 'secondary' | 'destruct
 };
 
 export default function EntradasPage() {
-  const [fechaFiltro, setFechaFiltro] = useState(fechaDeNegocio);
   const [fechaHoraEntrada, setFechaHoraEntrada] = useState(fechaHoraLocal);
   const [clienteNombre, setClienteNombre] = useState('');
   const [cantidadEntradas, setCantidadEntradas] = useState(1);
@@ -196,28 +194,20 @@ export default function EntradasPage() {
     return () => window.clearInterval(interval);
   }, []);
 
-  const cargar = useCallback(
-    async (silent = false) => {
-      if (!silent) setLoading(true);
-      try {
-        const entriesResponse = await fetch(
-          `/api/tickets?fecha=${encodeURIComponent(fechaFiltro)}`,
-          {
-            cache: 'no-store'
-          }
-        );
-        const entriesJson = await entriesResponse.json();
-        if (!entriesResponse.ok || !entriesJson.success)
-          throw new Error(entriesJson.message || 'No se pudieron cargar las entradas');
-        setEntradas(entriesJson.data || []);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Error al cargar entradas');
-      } finally {
-        if (!silent) setLoading(false);
-      }
-    },
-    [fechaFiltro]
-  );
+  const cargar = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const entriesResponse = await fetch('/api/tickets', { cache: 'no-store' });
+      const entriesJson = await entriesResponse.json();
+      if (!entriesResponse.ok || !entriesJson.success)
+        throw new Error(entriesJson.message || 'No se pudieron cargar las entradas');
+      setEntradas(entriesJson.data || []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al cargar entradas');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void cargar();
@@ -362,6 +352,7 @@ export default function EntradasPage() {
 
   const anularPendientes = (grupo: GrupoEntrada) => {
     if (grupo.pendientes.length === 0) return;
+    setGrupoDetalleId(null);
     setGrupoAAnular(grupo);
     setMotivoAnulacion('');
   };
@@ -613,21 +604,16 @@ export default function EntradasPage() {
         <div className='flex flex-wrap items-center justify-between gap-3'>
           <div>
             <h2 className='font-semibold'>Entradas registradas</h2>
-            <p className='text-sm text-muted-foreground'>Detalle por fecha seleccionada.</p>
+            <p className='text-sm text-muted-foreground'>
+              Entradas de la caja abierta, sin filtro de fecha.
+            </p>
           </div>
-          <DatePicker
-            ariaLabel='Filtrar entradas por fecha'
-            displayFormat='short'
-            className='w-auto'
-            value={fechaFiltro}
-            onChange={setFechaFiltro}
-          />
         </div>
         {loading ? (
           <p className='text-sm text-muted-foreground'>Cargando entradas…</p>
         ) : entradas.length === 0 ? (
           <p className='text-sm text-muted-foreground'>
-            No hay entradas registradas para esta fecha.
+            No hay entradas registradas en la caja abierta.
           </p>
         ) : (
           <>
@@ -697,47 +683,61 @@ export default function EntradasPage() {
                           </p>
                         )}
 
-                        <div className='flex items-center gap-2 pt-2 border-t'>
-                          {canDeliver && grupo.pendientes.length > 0 && (
-                            <>
-                              <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                disabled={anulandoGrupoId === grupo.id}
-                                onClick={() => abrirEntregaMultiple(grupo)}
-                                className='flex-1 rounded-full bg-emerald-50 border-emerald-200 hover:bg-emerald-700 hover:text-white text-xs dark:border-emerald-900/40 dark:bg-emerald-950/20'
-                              >
-                                <Wine className='w-3 h-3 mr-1' />
-                                Entregar
-                              </Button>
-                              <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                disabled={anulandoGrupoId === grupo.id}
-                                onClick={() => anularPendientes(grupo)}
-                                className='flex-1 rounded-full bg-red-50 border-red-200 hover:bg-red-700 hover:text-white text-xs dark:border-red-900/40 dark:bg-red-950/20'
-                              >
-                                {anulandoGrupoId === grupo.id ? (
-                                  <LoaderCircle className='w-3 h-3 mr-1 animate-spin' />
-                                ) : (
-                                  <Ban className='w-3 h-3 mr-1' />
-                                )}
-                                Anular
-                              </Button>
-                            </>
-                          )}
-                          <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            onClick={() => setGrupoDetalleId(grupo.id)}
-                            className='flex-1 rounded-full bg-blue-50 border-blue-200 hover:bg-blue-700 hover:text-white text-xs dark:border-blue-900/40 dark:bg-blue-950/20'
-                          >
-                            <Eye className='w-3 h-3 mr-1' />
-                            Detalle
-                          </Button>
+                        <div className='flex flex-wrap gap-2 border-t pt-2'>
+                          <TooltipProvider delayDuration={0}>
+                            {canDeliver && grupo.pendientes.length > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type='button'
+                                    size='icon'
+                                    aria-label='Entregar cover'
+                                    disabled={anulandoGrupoId === grupo.id}
+                                    onClick={() => abrirEntregaMultiple(grupo)}
+                                    className='rounded-full'
+                                  >
+                                    <TicketCheck className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Entregar cover</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {canDeliver && grupo.pendientes.length > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='icon'
+                                    aria-label={`Solicitar anulación de las pendientes (${grupo.pendientes.length})`}
+                                    disabled={anulandoGrupoId === grupo.id}
+                                    onClick={() => anularPendientes(grupo)}
+                                    className='rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 dark:border-red-900/40 dark:hover:bg-red-950/20'
+                                  >
+                                    <Ban className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Solicitar anulación de las pendientes ({grupo.pendientes.length})
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type='button'
+                                  variant='outline'
+                                  size='icon'
+                                  aria-label='Ver detalle'
+                                  onClick={() => setGrupoDetalleId(grupo.id)}
+                                  className='rounded-full'
+                                >
+                                  <Eye className='h-4 w-4' />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Ver detalle</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
                     </CardContent>
@@ -797,72 +797,43 @@ export default function EntradasPage() {
                         <TableCell>{primero.registrado_por_nombre}</TableCell>
                         <TableCell className='tabular-nums'>{primero.hora}</TableCell>
                         <TableCell className='text-right'>
-                          <TooltipProvider delayDuration={300}>
-                            <div className='flex flex-wrap items-center justify-end gap-2'>
+                          <div className='flex flex-wrap justify-end gap-2'>
+                            <TooltipProvider delayDuration={0}>
                               {canDeliver && grupo.pendientes.length > 0 && (
-                                <Tooltip key='entregar'>
+                                <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       type='button'
-                                      variant='ghost'
                                       size='icon'
+                                      aria-label='Entregar cover'
                                       disabled={anulandoGrupoId === grupo.id}
-                                      aria-label={
-                                        grupo.pendientes.length > 1
-                                          ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
-                                          : 'Entregar la entrada pendiente'
-                                      }
                                       onClick={() => abrirEntregaMultiple(grupo)}
-                                      className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
+                                      className='rounded-full'
                                     >
-                                      <Wine className='h-4 w-4' />
-                                      {grupo.pendientes.length > 1 && (
-                                        <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground'>
-                                          {grupo.pendientes.length}
-                                        </span>
-                                      )}
+                                      <TicketCheck className='h-4 w-4' />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent side='left'>
-                                    {grupo.pendientes.length > 1
-                                      ? `Entregar las ${grupo.pendientes.length} entradas pendientes`
-                                      : 'Entregar la entrada pendiente'}
-                                  </TooltipContent>
+                                  <TooltipContent>Entregar cover</TooltipContent>
                                 </Tooltip>
                               )}
                               {canDeliver && grupo.pendientes.length > 0 && (
-                                <Tooltip key='anular'>
+                                <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       type='button'
-                                      variant='ghost'
+                                      variant='outline'
                                       size='icon'
+                                      aria-label={`Solicitar anulación de las pendientes (${grupo.pendientes.length})`}
                                       disabled={anulandoGrupoId === grupo.id}
-                                      aria-label={
-                                        grupo.pendientes.length > 1
-                                          ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
-                                          : 'Anular y devolver la entrada pendiente'
-                                      }
                                       onClick={() => anularPendientes(grupo)}
-                                      className='relative rounded-full transition-all duration-200 hover:scale-110 hover:bg-destructive/10 hover:text-destructive hover:shadow-md active:scale-95'
+                                      className='rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 dark:border-red-900/40 dark:hover:bg-red-950/20'
                                     >
-                                      {anulandoGrupoId === grupo.id ? (
-                                        <LoaderCircle className='h-4 w-4 animate-spin' />
-                                      ) : (
-                                        <Ban className='h-4 w-4' />
-                                      )}
-                                      {grupo.pendientes.length > 1 &&
-                                        anulandoGrupoId !== grupo.id && (
-                                          <span className='absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-white'>
-                                            {grupo.pendientes.length}
-                                          </span>
-                                        )}
+                                      <Ban className='h-4 w-4' />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent side='left'>
-                                    {grupo.pendientes.length > 1
-                                      ? `Anular y devolver ${grupo.pendientes.length} entradas pendientes`
-                                      : 'Anular y devolver la entrada pendiente'}
+                                  <TooltipContent>
+                                    Solicitar anulación de las pendientes ({grupo.pendientes.length}
+                                    )
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -870,21 +841,19 @@ export default function EntradasPage() {
                                 <TooltipTrigger asChild>
                                   <Button
                                     type='button'
-                                    variant='ghost'
+                                    variant='outline'
                                     size='icon'
-                                    aria-label={`Ver detalle de ${grupo.registros.length} entrada(s)`}
+                                    aria-label='Ver detalle'
                                     onClick={() => setGrupoDetalleId(grupo.id)}
-                                    className='rounded-full transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:text-primary hover:shadow-md active:scale-95'
+                                    className='rounded-full'
                                   >
                                     <Eye className='h-4 w-4' />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent side='left'>
-                                  Ver detalle de {grupo.registros.length} entrada(s)
-                                </TooltipContent>
+                                <TooltipContent>Ver detalle</TooltipContent>
                               </Tooltip>
-                            </div>
-                          </TooltipProvider>
+                            </TooltipProvider>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -965,15 +934,6 @@ export default function EntradasPage() {
                 </div>
               </div>
 
-              {canDeliver && grupoDetalle.pendientes.length > 1 ? (
-                <Button
-                  type='button'
-                  className='w-full rounded-full'
-                  onClick={() => abrirEntregaMultiple(grupoDetalle)}
-                >
-                  Entregar todas las pendientes ({grupoDetalle.pendientes.length})
-                </Button>
-              ) : null}
               {baucherDetalle && (
                 <BaucherFoto
                   src={`/api/tickets/${baucherDetalle.id}/baucher`}
@@ -1033,18 +993,6 @@ export default function EntradasPage() {
                                 )} en la puerta`)}
                           {registro.cover_estado === 'pendiente' && 'Pendiente de entrega'}
                         </span>
-                        {registro.cover_estado === 'pendiente' && canDeliver && (
-                          <Button
-                            type='button'
-                            size='sm'
-                            className='rounded-full'
-                            onClick={() => {
-                              if (grupoDetalle) abrirEntregaMultiple(grupoDetalle, [registro]);
-                            }}
-                          >
-                            Entregar bebida
-                          </Button>
-                        )}
                       </div>
                     </div>
                   );
