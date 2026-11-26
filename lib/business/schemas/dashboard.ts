@@ -200,7 +200,7 @@ export const DashboardPendingItemsSchema = z.object({
 export type DashboardPendingItemsResponse = z.infer<typeof DashboardPendingItemsSchema>;
 
 export const DashboardCompositeSchema = z.object({
-  generatedAt: z.string().datetime().optional(),
+  generatedAt: z.iso.datetime({ offset: true }).optional(),
   fromCache: z.boolean().optional(),
   insights: DashboardInsightsSchema,
   cajaStats: DashboardCajaStatsSchema,
