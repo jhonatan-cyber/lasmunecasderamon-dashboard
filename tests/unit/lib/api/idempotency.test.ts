@@ -13,13 +13,21 @@ vi.mock('@/lib/utils/logger', () => {
     warn: vi.fn(),
     debug: vi.fn()
   };
-  return { logger: mocks, default: mocks , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()};
+  return {
+    logger: mocks,
+    default: mocks,
+    setRequestId: vi.fn(),
+    getRequestId: vi.fn(() => 'test-request-id'),
+    clearRequestId: vi.fn()
+  };
 });
 
 /** Repositorio de sincronización en memoria: la fila es el estado del test. */
 const repo = vi.hoisted(() => ({
   filas: new Map<string, Record<string, unknown>>(),
   claim: vi.fn(),
+  retryFailed: vi.fn(),
+  get: vi.fn(),
   resolve: vi.fn(),
   fail: vi.fn()
 }));
@@ -27,6 +35,8 @@ const repo = vi.hoisted(() => ({
 vi.mock('@/lib/database/sync-operations', () => ({
   SyncOperationRepository: {
     claim: repo.claim,
+    retryFailed: repo.retryFailed,
+    get: repo.get,
     resolve: repo.resolve,
     fail: repo.fail,
     // El parseo real es trivial y forma parte del contrato: se conserva.
@@ -126,6 +136,8 @@ describe('claves de idempotencia', () => {
 describe('runIdempotent', () => {
   beforeEach(() => {
     repo.claim.mockReset();
+    repo.retryFailed.mockReset();
+    repo.get.mockReset();
     repo.resolve.mockReset();
     repo.fail.mockReset();
     repo.resolve.mockResolvedValue(undefined);
@@ -285,6 +297,64 @@ describe('runIdempotent', () => {
     expect(handler).not.toHaveBeenCalled();
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({ code: 'IDEMPOTENCY_FALLIDA' });
+  });
+
+  it('permite reintentar una operación fallida cuando la ruta lo habilita explícitamente', async () => {
+    repo.claim.mockResolvedValue({
+      claimed: false,
+      operation: {
+        ...filaAplicada({}),
+        endpoint: 'products.delete',
+        estado: 'fallida',
+        respuesta: '{no-es-json'
+      }
+    });
+    repo.retryFailed.mockResolvedValue(true);
+    const handler = vi.fn().mockResolvedValue(Response.json({ success: true }));
+
+    const response = await runIdempotent(
+      buildRequest(CLAVE),
+      { endpoint: 'products.delete', retryFailed: true },
+      handler
+    );
+
+    expect(repo.retryFailed).toHaveBeenCalledWith(CLAVE);
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(repo.resolve).toHaveBeenCalledWith(CLAVE, 'aplicada', {
+      status: 200,
+      body: { success: true }
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it('no vuelve a ejecutar si otra solicitud ya reclamó el reintento', async () => {
+    repo.claim.mockResolvedValue({
+      claimed: false,
+      operation: {
+        ...filaAplicada({}),
+        endpoint: 'products.delete',
+        estado: 'fallida',
+        respuesta: '{no-es-json'
+      }
+    });
+    repo.retryFailed.mockResolvedValue(false);
+    repo.get.mockResolvedValue({
+      ...filaAplicada({}),
+      endpoint: 'products.delete',
+      estado: 'pendiente',
+      respuesta: null
+    });
+    const handler = vi.fn();
+
+    const response = await runIdempotent(
+      buildRequest(CLAVE),
+      { endpoint: 'products.delete', retryFailed: true },
+      handler
+    );
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({ code: 'IDEMPOTENCY_PENDIENTE' });
   });
 
   it('debe ejecutar igual si el claim dice que no se reclamó pero no hay fila', async () => {

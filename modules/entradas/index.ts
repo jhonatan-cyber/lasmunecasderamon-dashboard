@@ -7,6 +7,7 @@ export {
   entregarGrupoEntradas,
   existeSolicitudAnulacionEntrada,
   listarEntradas,
+  listarEntradasCajaAbierta,
   listarPendientes,
   obtenerBaucherEntrada,
   obtenerSolicitudAnulacionEntradaPorToken,

@@ -7,7 +7,8 @@ import { isValidIdempotencyKey, runIdempotent } from './idempotency';
 export async function runRegistration(
   request: Request,
   usuarioId: string,
-  handler: (request: Request) => Promise<Response>
+  handler: (request: Request) => Promise<Response>,
+  options: { retryFailed?: boolean } = {}
 ): Promise<Response> {
   const key = request.headers.get(REGISTRATION_HEADER);
   if (!key || !isRegistrationMethod(request.method)) return handler(request);
@@ -29,7 +30,11 @@ export async function runRegistration(
   guarded.headers.set('x-idempotency-key', key);
   return runIdempotent(
     guarded,
-    { endpoint: `web.${request.method}.${scope}`, usuarioId },
+    {
+      endpoint: `web.${request.method}.${scope}`,
+      usuarioId,
+      retryFailed: options.retryFailed
+    },
     async () => {
       // Evita reclamar dos veces la misma intencion en rutas que ya usan runIdempotent.
       const cleanRequest = guarded.clone();

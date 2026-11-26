@@ -30,7 +30,7 @@ export const normalizeDateValueForResponse = (value: unknown): unknown => {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => [
         key,
-        normalizeDateValueForResponse(entryValue)
+        key === 'generatedAt' ? entryValue : normalizeDateValueForResponse(entryValue)
       ])
     );
   }

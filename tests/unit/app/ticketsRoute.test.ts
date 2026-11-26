@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const entradas = vi.hoisted(() => ({
   listarEntradas: vi.fn(),
+  listarEntradasCajaAbierta: vi.fn(),
   listarPendientes: vi.fn(),
   registrarEntrada: vi.fn(),
   entregarEntrada: vi.fn(),
@@ -75,6 +76,9 @@ beforeEach(() => {
     async (_request: Request, _config: unknown, handler: () => Promise<Response>) => handler()
   );
   entradas.registrarEntrada.mockResolvedValue({ id: 'e1', ids: ['e1'], monto_total: 10000 });
+  entradas.listarEntradasCajaAbierta.mockResolvedValue([
+    { id: 'e1', monto_entrada: 10000, cliente_nombre: 'Ana', metodo_pago: 'efectivo' }
+  ]);
   entradas.listarPendientes.mockResolvedValue([]);
   entradas.entregarEntrada.mockResolvedValue({ tipo: 'cover', montoCobrarBarra: 0 });
   entradas.anularEntrada.mockResolvedValue({ entradaId: 'e1', monto: 10000 });
@@ -229,10 +233,14 @@ describe('registro en la puerta', () => {
 });
 
 describe('listados', () => {
-  it('rechaza una fecha con formato inválido', async () => {
-    await expect(
-      (GET as unknown as Handler)(new Request('http://localhost/api/tickets?fecha=19-10-2026'))
-    ).rejects.toThrow(/AAAA-MM-DD/);
+  it('lista las entradas de la caja abierta sin filtrar por fecha', async () => {
+    const response = await (GET as unknown as Handler)(
+      new Request('http://localhost/api/tickets?fecha=2026-10-19')
+    );
+
+    expect(entradas.listarEntradasCajaAbierta).toHaveBeenCalledOnce();
+    expect(entradas.listarEntradas).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({ success: true, data: [{ id: 'e1' }] });
   });
 
   it('devuelve la cola de pendientes del bar', async () => {

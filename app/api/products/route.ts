@@ -202,7 +202,13 @@ export const PATCH = withRoute(
 );
 
 export const DELETE = withRoute(
-  { auth: true, audit: true, module: 'products', action: 'delete' },
+  {
+    auth: true,
+    audit: true,
+    module: 'products',
+    action: 'delete',
+    retryFailedRegistration: true
+  },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

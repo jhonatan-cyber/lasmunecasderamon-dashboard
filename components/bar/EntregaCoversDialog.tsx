@@ -26,7 +26,7 @@ import {
 import { urlProductosParaVenta } from '@/lib/constants/api-endpoints';
 import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
 import { dividirRepartoPorEntrega, recortarReparto } from '@/lib/sales/repartoAcompanamiento';
-import { formatCurrencyCLP } from '@/lib/utils/formatters';
+import { formatCurrencyCLP, formatNumberInputOrEmpty } from '@/lib/utils/formatters';
 import { productImageUrl } from '@/lib/utils/productImage';
 import { cn } from '@/lib/utils/utils';
 
@@ -793,10 +793,10 @@ export function EntregaCoversDialog({
               aria-labelledby='modalidad-entrega-label'
               className='w-full justify-start'
             >
-              <ToggleGroupItem value='grupal' className='min-h-11 flex-1'>
+              <ToggleGroupItem value='grupal' className='min-h-11 flex-1 rounded-full'>
                 Entrega grupal
               </ToggleGroupItem>
-              <ToggleGroupItem value='individual' className='min-h-11 flex-1'>
+              <ToggleGroupItem value='individual' className='min-h-11 flex-1 rounded-full'>
                 Entrega individual
               </ToggleGroupItem>
             </ToggleGroup>
@@ -819,7 +819,7 @@ export function EntregaCoversDialog({
                       aria-label={`Entrada ${indice + 1}, ${formatCurrencyCLP(fila.monto_entrada)}, ${fila.hora}`}
                       disabled={entregando}
                       onClick={() => seleccionarEntradaIndividual(fila.id)}
-                      className='h-auto min-h-11 justify-between gap-3 py-2 text-left'
+                      className='h-auto min-h-11 justify-between gap-3 rounded-full py-2 text-left'
                     >
                       <span>Entrada {indice + 1}</span>
                       <span className='shrink-0 tabular-nums'>
@@ -848,7 +848,7 @@ export function EntregaCoversDialog({
             id='monto-adicional-grupo'
             inputMode='numeric'
             {...register('montoAdicional')}
-            value={montoAdicional}
+            value={formatNumberInputOrEmpty(montoAdicional)}
             disabled={entregando}
             onChange={evento => cambiarMontoAdicional(evento.target.value)}
             aria-invalid={Boolean(formState.errors.montoAdicional)}
@@ -904,6 +904,7 @@ export function EntregaCoversDialog({
                 variant='outline'
                 size='sm'
                 onClick={() => setCategoriaSeleccionada(null)}
+                className='rounded-full'
               >
                 <ChevronLeft data-icon='inline-start' />
                 Categorías

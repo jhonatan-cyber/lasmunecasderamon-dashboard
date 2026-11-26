@@ -42,7 +42,13 @@ export const PUT = withRoute(
 );
 
 export const DELETE = withRoute(
-  { auth: true, audit: true, module: 'products', action: 'delete' },
+  {
+    auth: true,
+    audit: true,
+    module: 'products',
+    action: 'delete',
+    retryFailedRegistration: true
+  },
   async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
     const id = (await params).id;
     await ProductService.delete(id);

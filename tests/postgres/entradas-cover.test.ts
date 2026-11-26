@@ -23,6 +23,7 @@ import {
   entregarGrupoEntradas,
   entregarEntrada,
   listarEntradas,
+  listarEntradasCajaAbierta,
   listarPendientes,
   postearPendientesDeCaja,
   registrarEntrada
@@ -47,10 +48,45 @@ import { SaleService } from '@/workflows/ventas';
 
 const FECHA = '2026-01-20';
 const HORA = '21:30';
+const FECHA_ANTIGUA = '2020-01-01';
 
 afterAll(async () => {
   await db.pool.end();
   globalThis.__lasMunecasPgPool = undefined;
+});
+
+it('lista por caja abierta sin importar la fecha y excluye las cajas cerradas', async () => {
+  const snapshot = await snapshotDatabase();
+  try {
+    await query('UPDATE cajas SET estado = 0 WHERE estado = 1');
+    await fijarConfiguracion('costo_entrada', 10000);
+    const cajaCerradaId = await cajaAbierta();
+    const usuarioId = await primerUsuarioActivo();
+    const entradaCerrada = await registrarEntrada({
+      cantidadEntradas: 1,
+      metodoPago: 'efectivo',
+      fecha: FECHA_ANTIGUA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+    await query('UPDATE cajas SET estado = 0 WHERE id_caja = ?', [cajaCerradaId]);
+
+    await cajaAbierta();
+    const entradaActual = await registrarEntrada({
+      cantidadEntradas: 1,
+      metodoPago: 'efectivo',
+      fecha: FECHA_ANTIGUA,
+      hora: HORA,
+      registradoPor: usuarioId
+    });
+
+    const entradas = await listarEntradasCajaAbierta();
+    expect(entradas.map(entrada => entrada.id)).toContain(entradaActual.id);
+    expect(entradas.map(entrada => entrada.id)).not.toContain(entradaCerrada.id);
+    expect(entradas.find(entrada => entrada.id === entradaActual.id)?.fecha).toBe(FECHA_ANTIGUA);
+  } finally {
+    await restoreDatabase(snapshot, 'test-only');
+  }
 });
 
 interface Saldos {
