@@ -5,12 +5,14 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { LoaderCircle, Minus, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, LoaderCircle, Minus, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import CategoryCardList from '@/components/shared/CategoryCardList';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { AcompanamientoDistribuidor } from '@/components/shared/AcompanamientoDistribuidor';
 import {
@@ -34,7 +36,6 @@ type OpcionVenta = {
   tipo: string;
   precio?: number;
   precio_sin_anfitriona?: number;
-  cover_habilitado?: boolean;
   acompanamiento_cliente?: boolean;
   acompanamiento?: { unidades: number };
 };
@@ -135,8 +136,6 @@ function opcionesDeVenta(valor: unknown): OpcionVenta[] {
     tipo: texto(opcion.tipo),
     precio: numero(opcion.precio),
     precio_sin_anfitriona: numero(opcion.precio_sin_anfitriona),
-    cover_habilitado:
-      typeof opcion.cover_habilitado === 'boolean' ? opcion.cover_habilitado : undefined,
     acompanamiento_cliente:
       typeof opcion.acompanamiento_cliente === 'boolean'
         ? opcion.acompanamiento_cliente
@@ -199,16 +198,11 @@ function precioCorte(bebida: Bebida): number | null {
   return precio > 0 ? precio : null;
 }
 
-function formatosCover(bebida: Bebida, presupuesto: number): Formato[] {
+function formatosCover(bebida: Bebida, precioMaximo: number): Formato[] {
   const formatos: Formato[] = [];
-  if (bebida.opciones_venta.find(opcion => opcion.tipo === 'botella')?.cover_habilitado === false)
-    return formatos;
   const corte = precioCorte(bebida);
-  // Si hay precio de shot configurado, usarlo; si no, usar precio_venta como fallback
-  // para que el producto sea visible aunque no tenga shot configurado.
-  const precioCorteEfectivo = corte ?? bebida.precio_venta;
-  if (precioCorteEfectivo > 0 && precioCorteEfectivo <= presupuesto) formatos.push('corte');
-  if (bebida.precio_sin_anfitriona > 0 && bebida.precio_sin_anfitriona <= presupuesto)
+  if (corte !== null && corte <= precioMaximo) formatos.push('corte');
+  if (bebida.precio_sin_anfitriona > 0 && bebida.precio_sin_anfitriona <= precioMaximo)
     formatos.push('botella');
   return formatos;
 }
@@ -270,16 +264,31 @@ type UnidadEntrega = {
   acompanamientos: { presentacion_id: string; unidades: number }[] | null;
 };
 
-export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entrega' }: Props) {
+export function EntregaCoversDialog({
+  grupo,
+  tope,
+  onClose,
+  onEntregado,
+  modo = 'entrega'
+}: Props) {
   const enviando = useRef(false);
   const [busqueda, setBusqueda] = useState('');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
   const [seleccion, setSeleccion] = useState<Record<string, LineaSeleccion>>({});
+  const [tipoEntrega, setTipoEntrega] = useState<'grupal' | 'individual'>('grupal');
+  const [entradaIndividualId, setEntradaIndividualId] = useState(grupo?.filas[0]?.id ?? '');
   const { register, watch, reset, setValue, setError, clearErrors, formState } = useForm({
     resolver: zodResolver(aporteSchema),
     defaultValues: { montoAdicional: '' }
   });
   const montoAdicional = watch('montoAdicional');
   const abierto = grupo !== null;
+  const filasGrupo = useMemo(() => grupo?.filas ?? [], [grupo?.filas]);
+  const filas = useMemo(() => {
+    if (tipoEntrega !== 'individual' || filasGrupo.length <= 1) return filasGrupo;
+    const fila = filasGrupo.find(item => item.id === entradaIndividualId) ?? filasGrupo[0];
+    return fila ? [fila] : [];
+  }, [entradaIndividualId, filasGrupo, tipoEntrega]);
   const catalogo = useQuery({
     queryKey: ['bar', 'covers', 'productos'],
     enabled: abierto,
@@ -332,7 +341,11 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
         throw new Error(
           mensajeDe(
             json,
-            solicitud ? 'No se pudo enviar la solicitud' : 'No se pudo entregar el grupo'
+            solicitud
+              ? 'No se pudo enviar la solicitud'
+              : payload.entrada_ids.length === 1
+                ? 'No se pudo entregar la entrada'
+                : 'No se pudo entregar el grupo'
           )
         );
       if (solicitud) return { productos: payload.unidades.length };
@@ -341,31 +354,64 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
     retry: false
   });
   const entregando = mutacionGrupo.isPending;
-  const filas = useMemo(() => grupo?.filas ?? [], [grupo]);
   const totalEntradas = useMemo(
     () => filas.reduce((suma, fila) => suma + (Number(fila.monto_entrada) || 0), 0),
     [filas]
   );
   const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
   const presupuesto = totalEntradas + adicional;
+  const topeCover = Number.isFinite(tope) ? Math.max(0, tope) : 0;
+  const precioMaximo = Math.min(
+    presupuesto,
+    filas.length === 1 ? topeCover + adicional : presupuesto
+  );
+
+  const limpiarSeleccionDeEntrega = () => {
+    setSeleccion({});
+    reset({ montoAdicional: '' });
+    clearErrors('montoAdicional');
+  };
+
+  const cambiarTipoEntrega = (valor: string) => {
+    if ((valor !== 'grupal' && valor !== 'individual') || valor === tipoEntrega || entregando)
+      return;
+    setTipoEntrega(valor);
+    if (valor === 'individual') setEntradaIndividualId(filasGrupo[0]?.id ?? '');
+    limpiarSeleccionDeEntrega();
+  };
+
+  const seleccionarEntradaIndividual = (id: string) => {
+    if (entregando || id === entradaIndividualId || !filasGrupo.some(fila => fila.id === id))
+      return;
+    setEntradaIndividualId(id);
+    limpiarSeleccionDeEntrega();
+  };
 
   useEffect(() => {
     if (!abierto) return;
+    setTipoEntrega('grupal');
+    setEntradaIndividualId(grupo?.filas[0]?.id ?? '');
     setSeleccion({});
     setBusqueda('');
+    setCategoriaSeleccionada(null);
     reset({ montoAdicional: '' });
-  }, [abierto, grupo?.id, reset]);
+  }, [abierto, grupo?.filas, grupo?.id, reset]);
 
   const visibles = useMemo(() => {
     const termino = normalizar(busqueda);
     return bebidas
       .flatMap(bebida => {
-        if (categoriaFueraDeCover(bebida.categoria_nombre)) return [];
-        const formatos = formatosCover(bebida, presupuesto);
+        if (bebida.stock_bar <= 0 || categoriaFueraDeCover(bebida.categoria_nombre)) return [];
+        const formatos = formatosCover(bebida, precioMaximo);
         // Lo ya elegido se mantiene visible aunque el presupuesto baje.
         for (const formato of ['corte', 'botella'] as Formato[]) {
           const clave = claveDe(bebida, formato);
-          if (seleccion[clave] && !formatos.includes(formato)) formatos.push(formato);
+          if (
+            seleccion[clave] &&
+            precioVisible(bebida, formato) <= topeCover &&
+            !formatos.includes(formato)
+          )
+            formatos.push(formato);
         }
         return formatos.map(formato => ({ bebida, formato }));
       })
@@ -375,7 +421,7 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
           Boolean(seleccion[claveDe(bebida, formato)]) ||
           normalizar(`${bebida.producto_nombre} ${bebida.presentacion_nombre}`).includes(termino)
       );
-  }, [bebidas, busqueda, presupuesto, seleccion]);
+  }, [bebidas, busqueda, precioMaximo, seleccion, topeCover]);
 
   // El catálogo se agrupa por categoría para que la anfitriona encuentre el
   // producto por tipo; "Sin categoría" queda al final.
@@ -395,6 +441,31 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
       })
       .map(([categoria, items]) => ({ categoria, items }));
   }, [visibles]);
+  const categoriasVisibles = useMemo(() => {
+    const grupos = new Map<string, Set<string>>();
+    for (const bebida of bebidas) {
+      if (bebida.stock_bar <= 0 || categoriaFueraDeCover(bebida.categoria_nombre)) continue;
+      const categoria = bebida.categoria_nombre ?? 'Sin categoría';
+      const presentaciones = grupos.get(categoria) ?? new Set<string>();
+      presentaciones.add(bebida.presentacion_id);
+      grupos.set(categoria, presentaciones);
+    }
+    return [...grupos.entries()]
+      .sort(([a], [b]) => {
+        if (a === 'Sin categoría') return 1;
+        if (b === 'Sin categoría') return -1;
+        return a.localeCompare(b, 'es');
+      })
+      .map(([name, presentaciones]) => ({
+        id: name,
+        name,
+        total_products: presentaciones.size
+      }));
+  }, [bebidas]);
+  const itemsCategoriaSeleccionada = useMemo(
+    () => gruposVisibles.find(grupo => grupo.categoria === categoriaSeleccionada)?.items ?? [],
+    [categoriaSeleccionada, gruposVisibles]
+  );
 
   const totalSeleccionado = useMemo(
     () => Object.values(seleccion).reduce((suma, linea) => suma + linea.cantidad, 0),
@@ -436,6 +507,9 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
     [acompanamientos, lineas]
   );
 
+  const excedeTopeIndividual =
+    filas.length === 1 &&
+    lineas.some(linea => precioVisible(linea.bebida, linea.formato) > topeCover + adicional);
   const precioSeleccionado = costoDe(seleccion);
   const restante = Math.max(0, presupuesto - precioSeleccionado);
   const excedePresupuesto = precioSeleccionado > presupuesto;
@@ -495,6 +569,7 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
   };
   const puedeAgregar = (bebida: Bebida, formato: Formato) =>
     !entregando &&
+    (filas.length > 1 || precioVisible(bebida, formato) <= topeCover + adicional) &&
     precioSeleccionado + precioVisible(bebida, formato) <= presupuesto &&
     (consumo.get(bebida.presentacion_id) ?? 0) + consumoProducto(bebida, formato) <=
       bebida.stock_bar + 1e-9;
@@ -508,6 +583,15 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
       });
       return;
     }
+    if (
+      filas.length === 1 &&
+      lineas.some(linea => precioVisible(linea.bebida, linea.formato) > topeCover + nuevo)
+    ) {
+      setError('montoAdicional', {
+        message: 'El adicional no alcanza para ampliar el tope de la bebida seleccionada.'
+      });
+      return;
+    }
     clearErrors('montoAdicional');
     setValue('montoAdicional', limpio, { shouldValidate: true });
   };
@@ -517,6 +601,8 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
       if (entregando) return;
       const clave = claveDe(bebida, formato);
       setSeleccion(previo => {
+        if (filas.length === 1 && precioVisible(bebida, formato) > topeCover + adicional)
+          return previo;
         if (costoDe(previo) + precioVisible(bebida, formato) > presupuesto) return previo;
         const siguiente = {
           ...previo,
@@ -528,7 +614,7 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
         return stockValido(siguiente) ? siguiente : previo;
       });
     },
-    [costoDe, entregando, presupuesto, stockValido]
+    [adicional, costoDe, entregando, filas.length, presupuesto, stockValido, topeCover]
   );
 
   const quitar = useCallback((clave: string, unidadesPorEntrega: number) => {
@@ -602,7 +688,7 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
       toast.error('Selecciona el acompañamiento de cada producto que lo incluye');
       return;
     }
-    if (excedePresupuesto || excedeStock) {
+    if (excedePresupuesto || excedeTopeIndividual || excedeStock) {
       toast.error(
         excedeStock
           ? 'La selección supera el stock disponible'
@@ -644,7 +730,11 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
       }
     } catch (error) {
       toast.error(
-        modo === 'solicitud' ? 'No se pudo enviar la solicitud' : 'No se pudo entregar el grupo',
+        modo === 'solicitud'
+          ? 'No se pudo enviar la solicitud'
+          : filas.length === 1
+            ? 'No se pudo entregar la entrada'
+            : 'No se pudo entregar el grupo',
         {
           description: error instanceof Error ? error.message : 'Intenta de nuevo.'
         }
@@ -660,7 +750,9 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
       toast.error(
         modo === 'solicitud'
           ? 'La solicitud se envió. No se pudo actualizar el listado.'
-          : 'El grupo se entregó. No se pudo actualizar el listado.'
+          : filas.length === 1
+            ? 'La entrada se entregó. No se pudo actualizar el listado.'
+            : 'El grupo se entregó. No se pudo actualizar el listado.'
       );
     }
   };
@@ -679,12 +771,67 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
           </DialogTitle>
           <DialogDescription>
             {grupo
-              ? `${grupo.cliente || 'Sin nombre'} · ${grupo.cantidad} ${
-                  grupo.cantidad === 1 ? 'entrada' : 'entradas'
-                } · ${formatCurrencyCLP(grupo.total)} · ${grupo.hora}`
+              ? `${grupo.cliente || 'Sin nombre'} · ${filas.length} ${
+                  filas.length === 1 ? 'entrada' : 'entradas'
+                } · ${formatCurrencyCLP(totalEntradas)} · ${grupo.hora}`
               : ''}
           </DialogDescription>
         </DialogHeader>
+
+        {modo === 'entrega' && filasGrupo.length > 1 ? (
+          <div className='flex flex-col gap-2'>
+            <p id='modalidad-entrega-label' className='text-sm font-medium'>
+              Modalidad de entrega
+            </p>
+            <ToggleGroup
+              type='single'
+              value={tipoEntrega}
+              onValueChange={cambiarTipoEntrega}
+              variant='outline'
+              size='sm'
+              disabled={entregando}
+              aria-labelledby='modalidad-entrega-label'
+              className='w-full justify-start'
+            >
+              <ToggleGroupItem value='grupal' className='min-h-11 flex-1'>
+                Entrega grupal
+              </ToggleGroupItem>
+              <ToggleGroupItem value='individual' className='min-h-11 flex-1'>
+                Entrega individual
+              </ToggleGroupItem>
+            </ToggleGroup>
+            {tipoEntrega === 'individual' ? (
+              <div className='flex flex-col gap-2'>
+                <p id='entrada-individual-label' className='text-sm text-muted-foreground'>
+                  Elige la entrada que vas a atender ahora.
+                </p>
+                <div
+                  role='group'
+                  aria-labelledby='entrada-individual-label'
+                  className='grid gap-2 sm:grid-cols-2'
+                >
+                  {filasGrupo.map((fila, indice) => (
+                    <Button
+                      key={fila.id}
+                      type='button'
+                      variant={fila.id === entradaIndividualId ? 'secondary' : 'outline'}
+                      aria-pressed={fila.id === entradaIndividualId}
+                      aria-label={`Entrada ${indice + 1}, ${formatCurrencyCLP(fila.monto_entrada)}, ${fila.hora}`}
+                      disabled={entregando}
+                      onClick={() => seleccionarEntradaIndividual(fila.id)}
+                      className='h-auto min-h-11 justify-between gap-3 py-2 text-left'
+                    >
+                      <span>Entrada {indice + 1}</span>
+                      <span className='shrink-0 tabular-nums'>
+                        {formatCurrencyCLP(fila.monto_entrada)}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <Input
           value={busqueda}
@@ -695,7 +842,7 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
 
         <div className='space-y-1'>
           <Label htmlFor='monto-adicional-grupo' className='text-xs'>
-            Monto adicional del grupo
+            {filas.length === 1 ? 'Monto adicional individual' : 'Monto adicional del grupo'}
           </Label>
           <Input
             id='monto-adicional-grupo'
@@ -719,8 +866,11 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
         <p className='text-xs text-muted-foreground'>
           Entradas {formatCurrencyCLP(totalEntradas)}
           {adicional > 0 ? ` + adicional ${formatCurrencyCLP(adicional)}` : ''} = presupuesto{' '}
-          {formatCurrencyCLP(presupuesto)}. Se listan cortes y botellas sin anfitriona hasta ese
-          monto. El adicional se cobra completo en la barra con el método de pago del grupo.
+          {formatCurrencyCLP(presupuesto)}.{' '}
+          {filas.length === 1
+            ? `La entrada cubre bebidas hasta ${formatCurrencyCLP(topeCover)}; el adicional amplía ese tope.`
+            : 'El grupo comparte el presupuesto de sus entradas para elegir las bebidas.'}{' '}
+          El adicional se cobra completo en la barra con el método de pago de la entrada.
         </p>
 
         {cargando ? (
@@ -731,106 +881,131 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
           <p className='rounded-xl border border-dashed p-4 text-sm text-destructive'>
             {errorBebidas}
           </p>
-        ) : visibles.length === 0 ? (
-          <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
-            {busqueda.trim()
-              ? 'No hay bebidas que coincidan con la búsqueda.'
-              : `Sin productos hasta ${formatCurrencyCLP(presupuesto)} con stock en el bar.`}
-          </p>
+        ) : categoriaSeleccionada === null ? (
+          categoriasVisibles.length === 0 ? (
+            <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
+              No hay bebidas disponibles en el bar.
+            </p>
+          ) : (
+            <CategoryCardList
+              categorias={categoriasVisibles}
+              countLabel={categoria =>
+                categoria.total_products === 1 ? 'presentación' : 'presentaciones'
+              }
+              paginate={false}
+              onSelect={categoria => setCategoriaSeleccionada(categoria.name ?? '')}
+            />
+          )
         ) : (
-          <div role='group' aria-label='Bebidas del bar' className='space-y-4'>
-            {gruposVisibles.map(({ categoria, items }) => (
-              <section key={categoria} aria-label={categoria} className='space-y-2'>
-                <div className='flex items-baseline justify-between gap-2'>
-                  <h3 className='text-sm font-semibold'>{categoria}</h3>
-                  <span className='text-xs text-muted-foreground tabular-nums'>
-                    {items.length} {items.length === 1 ? 'opción' : 'opciones'}
-                  </span>
-                </div>
-                <div className='grid grid-cols-2 gap-3 sm:grid-cols-3'>
-                  {items.map(({ bebida, formato }) => {
-                    const clave = claveDe(bebida, formato);
-                    const cantidad = seleccion[clave]?.cantidad ?? 0;
-                    const sinStock =
-                      (consumo.get(bebida.presentacion_id) ?? 0) +
-                        consumoProducto(bebida, formato) >
-                      bebida.stock_bar + 1e-9;
-                    const precio = precioVisible(bebida, formato);
-                    const excede = precioSeleccionado + precio > presupuesto;
-                    const nombreBebida =
-                      `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim();
-                    return (
-                      <Button
-                        key={clave}
-                        type='button'
-                        variant='unstyled'
-                        disabled={!puedeAgregar(bebida, formato)}
-                        aria-pressed={cantidad > 0}
-                        onClick={() => agregar(bebida, formato)}
-                        className={cn(
-                          'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-background text-left font-normal whitespace-normal transition disabled:cursor-not-allowed disabled:opacity-40',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                          cantidad > 0
-                            ? 'border-primary ring-2 ring-primary/25'
-                            : 'hover:border-primary/40 hover:bg-muted/30'
-                        )}
-                      >
-                        <span className='relative block h-20 w-full bg-muted/40'>
-                          <ProductPhoto
-                            src={productImageUrl(bebida.foto)}
-                            alt={nombreBebida}
-                            fill
-                            className='object-contain p-2'
-                          />
-                          <span
-                            className={cn(
-                              'absolute right-2 top-2 flex min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold',
-                              cantidad > 0
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-background/80 text-muted-foreground'
-                            )}
-                            aria-hidden='true'
-                          >
-                            {cantidad > 0 ? cantidad : <Plus className='size-3' />}
-                          </span>
+          <section role='region' aria-label={categoriaSeleccionada} className='space-y-3'>
+            <div className='flex items-center justify-between gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => setCategoriaSeleccionada(null)}
+              >
+                <ChevronLeft data-icon='inline-start' />
+                Categorías
+              </Button>
+              <div className='min-w-0 text-right'>
+                <h3 className='truncate text-sm font-semibold'>{categoriaSeleccionada}</h3>
+                <span className='text-xs text-muted-foreground tabular-nums'>
+                  {itemsCategoriaSeleccionada.length}{' '}
+                  {itemsCategoriaSeleccionada.length === 1 ? 'opción' : 'opciones'}
+                </span>
+              </div>
+            </div>
+            {itemsCategoriaSeleccionada.length === 0 ? (
+              <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
+                {busqueda.trim()
+                  ? 'No hay bebidas de esta categoría que coincidan con la búsqueda.'
+                  : `Sin productos hasta ${formatCurrencyCLP(precioMaximo)} en esta categoría.`}
+              </p>
+            ) : (
+              <div
+                role='group'
+                aria-label='Bebidas del bar'
+                className='grid grid-cols-2 gap-3 sm:grid-cols-3'
+              >
+                {itemsCategoriaSeleccionada.map(({ bebida, formato }) => {
+                  const clave = claveDe(bebida, formato);
+                  const cantidad = seleccion[clave]?.cantidad ?? 0;
+                  const sinStock =
+                    (consumo.get(bebida.presentacion_id) ?? 0) + consumoProducto(bebida, formato) >
+                    bebida.stock_bar + 1e-9;
+                  const precio = precioVisible(bebida, formato);
+                  const excede = precioSeleccionado + precio > presupuesto;
+                  const nombreBebida =
+                    `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim();
+                  return (
+                    <Button
+                      key={clave}
+                      type='button'
+                      variant='unstyled'
+                      disabled={!puedeAgregar(bebida, formato)}
+                      aria-pressed={cantidad > 0}
+                      onClick={() => agregar(bebida, formato)}
+                      className={cn(
+                        'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-background text-left font-normal whitespace-normal transition disabled:cursor-not-allowed disabled:opacity-40',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        cantidad > 0
+                          ? 'border-primary ring-2 ring-primary/25'
+                          : 'hover:border-primary/40 hover:bg-muted/30'
+                      )}
+                    >
+                      <span className='relative block h-20 w-full bg-muted/40'>
+                        <ProductPhoto
+                          src={productImageUrl(bebida.foto)}
+                          alt={nombreBebida}
+                          fill
+                          className='object-contain p-2'
+                        />
+                        <span
+                          className={cn(
+                            'absolute right-2 top-2 flex min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold',
+                            cantidad > 0
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-background/80 text-muted-foreground'
+                          )}
+                          aria-hidden='true'
+                        >
+                          {cantidad > 0 ? cantidad : <Plus className='size-3' />}
                         </span>
-                        <span className='flex flex-1 flex-col gap-1 border-t p-3'>
-                          <span className='line-clamp-2 text-sm font-semibold leading-snug'>
-                            {bebida.producto_nombre}
+                      </span>
+                      <span className='flex flex-1 flex-col gap-1 border-t p-3'>
+                        <span className='line-clamp-2 text-sm font-semibold leading-snug'>
+                          {bebida.producto_nombre}
+                        </span>
+                        <span className='line-clamp-1 text-xs text-muted-foreground'>
+                          {bebida.presentacion_nombre}
+                        </span>
+                        <span className='text-sm font-medium tabular-nums text-primary'>
+                          {formatCurrencyCLP(precio)}
+                        </span>
+                        <span className='text-[11px] text-muted-foreground'>
+                          {formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'}
+                        </span>
+                        {excede && !sinStock ? (
+                          <span className='text-[11px] font-medium text-amber-600 dark:text-amber-400'>
+                            No alcanza el presupuesto
                           </span>
-                          <span className='line-clamp-1 text-xs text-muted-foreground'>
-                            {bebida.presentacion_nombre}
-                          </span>
-                          <span className='text-sm font-medium tabular-nums text-primary'>
-                            {formatCurrencyCLP(precio)}
-                          </span>
+                        ) : null}
+                        <span className='mt-auto flex flex-wrap items-center gap-1.5 pt-1'>
                           <span className='text-[11px] text-muted-foreground'>
-                            {formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'}
+                            {sinStock ? 'Sin stock' : `${bebida.stock_bar} en bar`}
                           </span>
-                          {excede && !sinStock ? (
-                            <span className='text-[11px] font-medium text-amber-600 dark:text-amber-400'>
-                              No alcanza el presupuesto
-                            </span>
-                          ) : null}
-                          <span className='mt-auto flex flex-wrap items-center gap-1.5 pt-1'>
-                            <span className='text-[11px] text-muted-foreground'>
-                              {sinStock ? 'Sin stock' : `${bebida.stock_bar} en bar`}
-                            </span>
-                            <Badge
-                              variant='secondary'
-                              className='rounded-full px-2 py-0 text-[11px]'
-                            >
-                              Cover
-                            </Badge>
-                          </span>
+                          <Badge variant='secondary' className='rounded-full px-2 py-0 text-[11px]'>
+                            Cover
+                          </Badge>
                         </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         )}
 
         {lineas.length > 0 ? (
@@ -1025,6 +1200,7 @@ export function EntregaCoversDialog({ grupo, onClose, onEntregado, modo = 'entre
               lineas.length === 0 ||
               faltaAcompanamiento ||
               excedePresupuesto ||
+              excedeTopeIndividual ||
               excedeStock ||
               Boolean(errorCover) ||
               filas.length === 0

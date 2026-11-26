@@ -142,6 +142,10 @@ function renderDialog(
   return { onClose, onEntregado };
 }
 
+async function abrirCategoria(nombre: string) {
+  fireEvent.click(await screen.findByRole('button', { name: new RegExp(nombre, 'i') }));
+}
+
 describe('EntregaCoversDialog', () => {
   it('no exige acompañamiento al corte cuando está deshabilitado en la configuración', async () => {
     const producto = bebida('Whisky', 'Licores', 2000);
@@ -156,14 +160,15 @@ describe('EntregaCoversDialog', () => {
       ],
       [{ presentacion_id: 'cover-1', producto_nombre: 'Coca-Cola', stock_bar: 3 }]
     );
-    const { onClose } = renderDialog(1, 5000, 1);
+    const { onClose } = renderDialog(1, 5000, 10000);
+    await abrirCategoria('Licores');
     fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
     expect(screen.queryByRole('button', { name: 'Repartir cover-1' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Entregar 1 en la barra' }));
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
-  it('no ofrece bebidas con cover deshabilitado', async () => {
+  it('ofrece bebidas dentro del tope aunque cover_habilitado esté desactivado', async () => {
     const producto = bebida('Whisky', 'Licores', 2000);
     stubCatalogo([
       {
@@ -173,16 +178,81 @@ describe('EntregaCoversDialog', () => {
         )
       }
     ]);
-    renderDialog(1, 5000, 1);
-    await screen.findByText(/Sin productos hasta/);
-    expect(screen.queryByRole('button', { name: /Whisky/ })).not.toBeInTheDocument();
+    renderDialog(1, 5000, 10000);
+    await abrirCategoria('Licores');
+    expect(await screen.findByRole('button', { name: /Whisky/ })).toBeInTheDocument();
+  });
+
+  it('suma un adicional al total de cinco entradas para una botella grupal', async () => {
+    const fetchMock = stubCatalogo([
+      {
+        ...bebida('Whisky', 'Licores', 2000),
+        precio_venta: 60000,
+        opciones_venta: [
+          { tipo: 'shot', precio: 2000 },
+          { tipo: 'botella', precio: 60000, precio_sin_anfitriona: 60000 }
+        ]
+      }
+    ]);
+    renderDialog(5, 10000, 10000);
+    fireEvent.change(screen.getByLabelText('Monto adicional del grupo'), {
+      target: { value: '10000' }
+    });
+    await abrirCategoria('Licores');
+
+    const opciones = await screen.findAllByRole('button', { name: /Whisky/ });
+    fireEvent.click(opciones.find(opcion => within(opcion).queryByText('Botella sin anfitriona'))!);
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar 1 en la barra' }));
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => url === '/api/tickets/entregar-grupo')).toBe(true)
+    );
+    const llamada = fetchMock.mock.calls.find(([url]) => url === '/api/tickets/entregar-grupo');
+    expect(JSON.parse(String(llamada?.[1]?.body))).toMatchObject({
+      entrada_ids: ['t-0', 't-1', 't-2', 't-3', 't-4'],
+      monto_adicional: 10000,
+      unidades: [{ presentacion_id: 'p-Whisky', tipo_entrega: 'botella', acompanamientos: null }]
+    });
+  });
+
+  it('permite ampliar individualmente el tope con un adicional', async () => {
+    const fetchMock = stubCatalogo([
+      {
+        ...bebida('Whisky', 'Licores', 2000),
+        precio_venta: 15000,
+        opciones_venta: [
+          { tipo: 'shot', precio: 2000 },
+          { tipo: 'botella', precio: 15000, precio_sin_anfitriona: 15000 }
+        ]
+      }
+    ]);
+    renderDialog(1, 10000, 10000);
+    fireEvent.change(screen.getByLabelText('Monto adicional individual'), {
+      target: { value: '5000' }
+    });
+    await abrirCategoria('Licores');
+
+    const opciones = await screen.findAllByRole('button', { name: /Whisky/ });
+    fireEvent.click(opciones.find(opcion => within(opcion).queryByText('Botella sin anfitriona'))!);
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar 1 en la barra' }));
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => url === '/api/tickets/entregar-grupo')).toBe(true)
+    );
+    const llamada = fetchMock.mock.calls.find(([url]) => url === '/api/tickets/entregar-grupo');
+    expect(JSON.parse(String(llamada?.[1]?.body))).toMatchObject({
+      entrada_ids: ['t-0'],
+      monto_adicional: 5000,
+      unidades: [{ presentacion_id: 'p-Whisky', tipo_entrega: 'botella', acompanamientos: null }]
+    });
   });
 
   it('entrega varios productos con una entrada, una petición de grupo y el aporte íntegro', async () => {
     const fetchMock = stubCatalogo([bebida('Whisky', 'Licores', 2000)]);
-    const { onClose } = renderDialog(1, 5000, 1);
+    const { onClose } = renderDialog(1, 5000, 10000);
+    await abrirCategoria('Licores');
     const producto = await screen.findByRole('button', { name: /Whisky/ });
-    fireEvent.change(screen.getByLabelText('Monto adicional del grupo'), {
+    fireEvent.change(screen.getByLabelText('Monto adicional individual'), {
       target: { value: '4000' }
     });
     fireEvent.click(producto);
@@ -215,7 +285,8 @@ describe('EntregaCoversDialog', () => {
 
   it('usa todas las entradas aunque haya menos productos y no cobra diferencias individuales', async () => {
     const fetchMock = stubCatalogo([bebida('Whisky', 'Licores', 6000)]);
-    const { onClose } = renderDialog(3, 5000, 1);
+    const { onClose } = renderDialog(3, 5000, 10000);
+    await abrirCategoria('Licores');
     fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Entregar 1 en la barra' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -228,9 +299,10 @@ describe('EntregaCoversDialog', () => {
 
   it('bloquea la reducción de aporte que excedería presupuesto sin cambiar la selección', async () => {
     stubCatalogo([bebida('Whisky', 'Licores', 2000)]);
-    renderDialog(1, 5000, 1);
+    renderDialog(1, 5000, 10000);
+    await abrirCategoria('Licores');
     const producto = await screen.findByRole('button', { name: /Whisky/ });
-    const aporte = screen.getByLabelText('Monto adicional del grupo');
+    const aporte = screen.getByLabelText('Monto adicional individual');
     fireEvent.change(aporte, { target: { value: '4000' } });
     fireEvent.click(producto);
     fireEvent.click(producto);
@@ -247,7 +319,8 @@ describe('EntregaCoversDialog', () => {
     producto.stock_bar = 1;
     producto.opciones_venta[1]!.precio_sin_anfitriona = 4000;
     stubCatalogo([producto]);
-    renderDialog(2, 5000, 1);
+    renderDialog(2, 5000, 10000);
+    await abrirCategoria('Licores');
     const botones = await screen.findAllByRole('button', { name: /Whisky/ });
     fireEvent.click(botones.find(boton => within(boton).queryByText('Corte'))!);
     botones.forEach(boton => expect(boton).toBeDisabled());
@@ -259,7 +332,8 @@ describe('EntregaCoversDialog', () => {
     stubCatalogo([
       { ...bebida('Whisky', 'Licores', 1000), stock_bar: 1, ml_botella: 750, ml_shot: 50 }
     ]);
-    renderDialog(1, 20000, 1);
+    renderDialog(1, 20000, 10000);
+    await abrirCategoria('Licores');
     const botones = await screen.findAllByRole('button', { name: /Whisky/ });
     const corte = botones.find(boton => within(boton).queryByText('Corte'))!;
     for (let indice = 0; indice < 15; indice += 1) fireEvent.click(corte);
@@ -269,7 +343,8 @@ describe('EntregaCoversDialog', () => {
 
   it('con un fallo del grupo mantiene la selección sin cerrar ni refrescar parcialmente', async () => {
     stubCatalogo([bebida('Whisky', 'Licores', 2000)], [], true);
-    const { onClose, onEntregado } = renderDialog(1, 5000, 1);
+    const { onClose, onEntregado } = renderDialog(1, 5000, 10000);
+    await abrirCategoria('Licores');
     fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Entregar 1 en la barra' }));
     await waitFor(() =>
@@ -291,7 +366,8 @@ describe('EntregaCoversDialog', () => {
         }
       ]
     );
-    renderDialog(2, 5000, 1);
+    renderDialog(2, 5000, 10000);
+    await abrirCategoria('Licores');
     fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
     fireEvent.click(screen.getByRole('button', { name: /Ron/ }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Repartir cover-1' })[0]!);
@@ -311,14 +387,79 @@ describe('EntregaCoversDialog', () => {
     ]);
     renderDialog(2, 5000, 5000);
 
+    const categoriaLicores = await screen.findByRole('button', { name: /Licores/ });
+    expect(screen.getByRole('button', { name: /Bebidas/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Whisky/ })).not.toBeInTheDocument();
+
+    fireEvent.click(categoriaLicores);
     const licores = await screen.findByRole('region', { name: 'Licores' });
     expect(within(licores).getByRole('button', { name: /Whisky/ })).toBeInTheDocument();
     expect(within(licores).getByRole('button', { name: /Ron/ })).toBeInTheDocument();
     expect(within(licores).queryByRole('button', { name: /Agua tónica/ })).not.toBeInTheDocument();
-
-    const bebidas = screen.getByRole('region', { name: 'Bebidas' });
-    expect(within(bebidas).getByRole('button', { name: /Agua tónica/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Licores' })).toBeInTheDocument();
+  });
+
+  it('muestra categorías primero y respeta los formatos configurados al abrir una categoría', async () => {
+    stubCatalogo([
+      bebida('Whisky', 'Licores', 4000),
+      bebida('Ron', 'Licores', 6000),
+      bebida('Tequila', 'Premium', 6000),
+      {
+        ...bebida('Vino', 'Vinos', 3000),
+        precio_venta: 3000,
+        opciones_venta: [{ tipo: 'botella', precio: 3000, precio_sin_anfitriona: 3000 }]
+      }
+    ]);
+    renderDialog(1, 5000, 5000);
+
+    const licores = await screen.findByRole('button', { name: /Licores/ });
+    expect(screen.getByRole('button', { name: /Vinos/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Premium/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Whisky/ })).not.toBeInTheDocument();
+
+    fireEvent.click(licores);
+    const whisky = await screen.findByRole('button', { name: /Whisky/ });
+    expect(within(whisky).getByText('750 ml')).toBeInTheDocument();
+    expect(within(whisky).getByText('Corte')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ron/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Vino/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Categorías/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Vinos/ }));
+    const vino = await screen.findByRole('button', { name: /Vino/ });
+    expect(within(vino).getByText('Botella sin anfitriona')).toBeInTheDocument();
+    expect(within(vino).queryByText('Corte')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Categorías/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Premium/ }));
+    expect(
+      await screen.findByText('Sin productos hasta $5.000 en esta categoría.')
+    ).toBeInTheDocument();
+  });
+
+  it('limita el catálogo individual al tope y excluye productos sin stock', async () => {
+    stubCatalogo([
+      bebida('Whisky', 'Licores', 5000),
+      bebida('Ron', 'Licores', 5001),
+      { ...bebida('Vodka', 'Agotados', 1000), stock_bar: 0 }
+    ]);
+    renderDialog(1, 10000, 5000);
+
+    await abrirCategoria('Licores');
+    const licores = await screen.findByRole('region', { name: 'Licores' });
+    expect(within(licores).getByRole('button', { name: /Whisky/ })).toBeInTheDocument();
+    expect(within(licores).queryByRole('button', { name: /Ron/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Agotados' })).not.toBeInTheDocument();
+  });
+
+  it('permite al grupo elegir un producto sobre el tope individual si cabe en el total', async () => {
+    stubCatalogo([bebida('Ron', 'Licores', 5001)]);
+    renderDialog(2, 5000, 5000);
+
+    await abrirCategoria('Licores');
+    fireEvent.click(await screen.findByRole('button', { name: /Ron/ }));
+
+    expect(screen.getByText(/1 productos para 2 entradas/)).toBeInTheDocument();
   });
 
   it('deja agregar hasta el tope del presupuesto y bloquea lo que no cabe', async () => {
@@ -329,9 +470,10 @@ describe('EntregaCoversDialog', () => {
       bebida('Pisco', 'Licores', 6000),
       bebida('Tequila', 'Licores', 8000)
     ]);
-    // 4 entradas de $4.000 = $16.000 compartidos, independientemente del tope.
+    // El presupuesto es compartido; el tope sigue aplicándose a cada producto.
     renderDialog(4, 4000, 10000);
 
+    await abrirCategoria('Licores');
     fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
     fireEvent.click(screen.getByRole('button', { name: /Ron/ }));
 
@@ -360,8 +502,9 @@ describe('EntregaCoversDialog', () => {
 
   it('en modo solicitud pide autorización al cajero en vez de entregar', async () => {
     const fetchMock = stubCatalogo([bebida('Whisky', 'Licores', 2000)]);
-    const { onClose, onEntregado } = renderDialog(1, 5000, 1, 'solicitud');
+    const { onClose, onEntregado } = renderDialog(1, 5000, 10000, 'solicitud');
 
+    await abrirCategoria('Licores');
     fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Solicitar 1 covers' }));
 
@@ -380,12 +523,46 @@ describe('EntregaCoversDialog', () => {
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/tickets/entregar-grupo')).toBe(false);
   });
 
+  it('permite cambiar a entrega individual y envía solo la entrada elegida', async () => {
+    const fetchMock = stubCatalogo([bebida('Whisky', 'Licores', 2000)]);
+    renderDialog(3, 5000, 10000);
+
+    await abrirCategoria('Licores');
+    fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
+    expect(screen.getByText(/1 productos para 3 entradas/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Monto adicional del grupo'), {
+      target: { value: '5000' }
+    });
+
+    fireEvent.click(screen.getByText('Entrega individual'));
+    expect(screen.queryByText(/1 productos para 3 entradas/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Monto adicional individual')).toHaveValue('');
+    fireEvent.click(screen.getByText('Entrega grupal'));
+    expect(screen.getByText(/3 entradas · \$15\.000/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Entrega individual'));
+    expect(screen.getByText(/1 entrada · \$5\.000/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Entrada 2, $5.000, 22:00' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar 1 en la barra' }));
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => url === '/api/tickets/entregar-grupo')).toBe(true)
+    );
+    const llamada = fetchMock.mock.calls.find(([url]) => url === '/api/tickets/entregar-grupo');
+    expect(JSON.parse(String(llamada?.[1]?.body))).toMatchObject({
+      entrada_ids: ['t-1'],
+      monto_adicional: 0,
+      unidades: [{ presentacion_id: 'p-Whisky', tipo_entrega: 'corte', acompanamientos: null }]
+    });
+  });
+
   it('con el presupuesto bajo el precio más barato no ofrece productos', async () => {
     stubCatalogo([bebida('Whisky', 'Licores', 5000)]);
     renderDialog(1, 4000, 10000);
 
+    await abrirCategoria('Licores');
     expect(
-      await screen.findByText('Sin productos hasta $4.000 con stock en el bar.')
+      await screen.findByText('Sin productos hasta $4.000 en esta categoría.')
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Whisky/ })).not.toBeInTheDocument();
   });

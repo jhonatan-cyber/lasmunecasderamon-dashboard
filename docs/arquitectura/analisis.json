@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "1cff94b1c2ac482e7c6725ae80776fb8d5373a8a",
-    "generado": "2026-11-25T10:38:18.672Z",
-    "archivos": 2348,
+    "commit": "bbedee7b91f1ae4bfeaa3efb3564a06d921366b4",
+    "generado": "2026-11-25T21:12:57.683Z",
+    "archivos": 2351,
     "rutas": 247,
     "sqlFueraDeRepositorio": 0,
     "tablasConEscritoresMultiples": 0,
@@ -13,15 +13,6 @@
     "rutasSinWrapper": 23
   },
   "rutas": [
-    {
-      "ruta": "/api/products/stock-reconciliation",
-      "archivo": "app/api/products/stock-reconciliation/route.ts",
-      "metodos": [],
-      "nivel": "products.read",
-      "audit": true,
-      "moduloDominio": null,
-      "usaDriver": false
-    },
     {
       "ruta": "/api/accounts/:id/charge-with-sale",
       "archivo": "app/api/accounts/[id]/charge-with-sale/route.ts",
@@ -1409,6 +1400,15 @@
       "usaDriver": false
     },
     {
+      "ruta": "/api/products/stock-reconciliation",
+      "archivo": "app/api/products/stock-reconciliation/route.ts",
+      "metodos": [],
+      "nivel": "products.read",
+      "audit": true,
+      "moduloDominio": null,
+      "usaDriver": false
+    },
+    {
       "ruta": "/api/products/units/printed",
       "archivo": "app/api/products/units/printed/route.ts",
       "metodos": [],
@@ -2241,11 +2241,6 @@
   "escriturasCruzadas": [],
   "transacciones": [
     {
-      "archivo": "modules/inventario/reconciliacion/repositorio.ts",
-      "capa": "modules/infraestructura",
-      "modulo": "inventario"
-    },
-    {
       "archivo": "app/api/hostesses/[id]/release/route.ts",
       "capa": "app/api",
       "modulo": null
@@ -2368,6 +2363,11 @@
     {
       "archivo": "modules/inventario/productos/servicio.ts",
       "capa": "modules/aplicacion",
+      "modulo": "inventario"
+    },
+    {
+      "archivo": "modules/inventario/reconciliacion/repositorio.ts",
+      "capa": "modules/infraestructura",
       "modulo": "inventario"
     },
     {
@@ -2850,16 +2850,6 @@
   ],
   "ciclos": [],
   "matriz": {
-    "app/api": {
-      "lib/api": 306,
-      "lib/otros": 93,
-      "workflows": 27,
-      "lib/identidad": 16,
-      "lib/business": 40,
-      "modules/aplicacion": 1,
-      "lib/database": 3,
-      "lib/integrations": 4
-    },
     "app/ui": {
       "hooks": 64,
       "lib/otros": 57,
@@ -2869,31 +2859,23 @@
       "raiz": 14,
       "lib/business": 6
     },
+    "app/api": {
+      "lib/api": 306,
+      "workflows": 27,
+      "lib/otros": 93,
+      "lib/identidad": 16,
+      "lib/business": 40,
+      "modules/aplicacion": 1,
+      "lib/database": 3,
+      "lib/integrations": 4
+    },
     "components": {
       "hooks": 159,
-      "modules/aplicacion": 10,
       "lib/otros": 411,
       "raiz": 94,
       "lib/business": 60,
-      "lib/api": 3
-    },
-    "modules/infraestructura": {
-      "lib/database": 127,
-      "raiz": 4,
-      "lib/otros": 172,
-      "lib/business": 76,
-      "modules/aplicacion": 24,
-      "lib/api": 9,
-      "lib/identidad": 2
-    },
-    "modules/aplicacion": {
-      "lib/otros": 108,
-      "modules/infraestructura": 22,
-      "lib/business": 47,
-      "lib/database": 23,
-      "lib/api": 11,
-      "lib/identidad": 3,
-      "raiz": 8
+      "lib/api": 3,
+      "modules/aplicacion": 10
     },
     "raiz": {
       "hooks": 6,
@@ -2939,6 +2921,24 @@
       "lib/business": 1
     },
     "lib/integrations": {},
+    "modules/infraestructura": {
+      "lib/database": 127,
+      "lib/otros": 172,
+      "lib/business": 76,
+      "modules/aplicacion": 24,
+      "lib/api": 9,
+      "lib/identidad": 2,
+      "raiz": 4
+    },
+    "modules/aplicacion": {
+      "modules/infraestructura": 22,
+      "lib/otros": 108,
+      "lib/business": 47,
+      "lib/database": 23,
+      "lib/api": 11,
+      "lib/identidad": 3,
+      "raiz": 8
+    },
     "scripts": {},
     "workflows": {
       "lib/otros": 25,

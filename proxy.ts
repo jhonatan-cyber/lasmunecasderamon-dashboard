@@ -78,7 +78,7 @@ function addCspHeaders(request: NextRequest): {
     default-src 'self';
     script-src ${scriptSrc};
     style-src 'self' 'nonce-${nonce}';
-    style-src-attr 'nonce-${nonce}';
+    style-src-attr 'unsafe-inline';
     img-src 'self' blob: data: https:;
     font-src 'self' data: https:;
     connect-src 'self' https: ws: wss:;

@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+/* Sonner inyecta su CSS con un <style> en runtime, que la CSP de producción
+   bloquea (style-src usa nonce). Cargarlo como hoja estática desde 'self'. */
+@import 'sonner/dist/styles.css';
 
 @source '../*.{js,ts,jsx,tsx,mdx}';
 

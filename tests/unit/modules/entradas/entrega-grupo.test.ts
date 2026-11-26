@@ -17,6 +17,7 @@ const estado = vi.hoisted(() => ({
     estado: number;
   }>,
   solicitud: 'pendiente',
+  tope: 20000,
   caja: true,
   commits: 0,
   rollbacks: 0,
@@ -95,6 +96,7 @@ beforeEach(() => {
   estado.entradas = [entrada('e1'), entrada('e2')];
   estado.presentaciones = [producto('p1', 15000), producto('p2', 5000)];
   estado.solicitud = 'pendiente';
+  estado.tope = 20000;
   estado.caja = true;
   estado.commits = 0;
   estado.rollbacks = 0;
@@ -103,6 +105,7 @@ beforeEach(() => {
   vi.mocked(consumirCorteCoverBar).mockReset();
   db.mockReset();
   trx.mockImplementation(async (sql: string, params: unknown[] = []) => {
+    if (sql.includes('FROM configuraciones')) return [{ valor: String(estado.tope) }];
     if (sql.startsWith('SELECT estado FROM solicitudes')) return [{ estado: estado.solicitud }];
     if (sql.includes('FROM entradas_clientes WHERE id IN'))
       return estado.entradas.filter(fila => params.includes(fila.id));
@@ -134,6 +137,7 @@ describe('presupuesto compartido de covers', () => {
   });
 
   it('cobra el aporte completo y utiliza un único contexto para todos los productos', async () => {
+    estado.tope = 30000;
     estado.presentaciones[0].precio_venta = 25000;
     const onVenta = venta();
     const resultado = await entregarGrupoEntradas(
@@ -201,6 +205,77 @@ describe('presupuesto compartido de covers', () => {
     expect(consumirProductoCoverBar).toHaveBeenCalledTimes(1);
   });
 
+  it('no exige cover_habilitado en una botella que cumple el tope de clientes', async () => {
+    estado.presentaciones[0] = producto('p1', 15000, [
+      { tipo: 'botella', cover_habilitado: false }
+    ]);
+
+    await expect(entregarGrupoEntradas(input)).resolves.toMatchObject({ productos: 1 });
+    expect(consumirProductoCoverBar).toHaveBeenCalledTimes(1);
+  });
+
+  it('permite usar el presupuesto de varias entradas para superar el tope individual', async () => {
+    estado.tope = 10000;
+    estado.entradas = Array.from({ length: 5 }, (_, indice) => entrada(`e${indice + 1}`));
+    estado.presentaciones[0] = producto('p1', 50000);
+
+    await expect(
+      entregarGrupoEntradas({ ...input, entradaIds: estado.entradas.map(fila => fila.id) })
+    ).resolves.toMatchObject({ entradas: 5, presupuesto: 50000 });
+    expect(consumirProductoCoverBar).toHaveBeenCalledTimes(1);
+    expect(registrarMovimientoCobro).toHaveBeenCalledWith(
+      'caja',
+      { efectivo: 50000, tarjeta: 0, transferencia: 0 },
+      { id: 'grupo-tx' }
+    );
+  });
+
+  it('suma un aporte al presupuesto compartido para una bebida de mayor valor', async () => {
+    estado.tope = 10000;
+    estado.entradas = Array.from({ length: 5 }, (_, indice) => entrada(`e${indice + 1}`));
+    estado.presentaciones[0] = producto('p1', 60000);
+    const onVenta = venta();
+
+    await expect(
+      entregarGrupoEntradas(
+        {
+          ...input,
+          entradaIds: estado.entradas.map(fila => fila.id),
+          montoAdicional: 10000
+        },
+        onVenta
+      )
+    ).resolves.toMatchObject({ entradas: 5, presupuesto: 60000, montoCobrarBarra: 10000 });
+    expect(onVenta.mock.calls[0]?.[0]).toMatchObject({
+      totalVenta: 60000,
+      detalles: [{ precio: 60000, sub_total: 60000 }]
+    });
+  });
+
+  it('permite ampliar el tope individual con el aporte correspondiente', async () => {
+    estado.tope = 10000;
+    estado.entradas = [entrada('e1')];
+    estado.presentaciones[0] = producto('p1', 15000);
+    const onVenta = venta();
+
+    await expect(
+      entregarGrupoEntradas({ ...input, entradaIds: ['e1'], montoAdicional: 5000 }, onVenta)
+    ).resolves.toMatchObject({ entradas: 1, montoCobrarBarra: 5000, presupuesto: 15000 });
+    expect(onVenta.mock.calls[0]?.[0].totalVenta).toBe(15000);
+  });
+
+  it('rechaza el upgrade individual cuando el aporte no amplía suficiente el tope', async () => {
+    estado.tope = 10000;
+    estado.entradas = [entrada('e1')];
+    estado.presentaciones[0] = producto('p1', 15000);
+
+    await expect(
+      entregarGrupoEntradas({ ...input, entradaIds: ['e1'], montoAdicional: 4000 }, venta())
+    ).rejects.toThrow(/tope.*cover/i);
+    expect(consumirProductoCoverBar).not.toHaveBeenCalled();
+    expect(estado.writes).toEqual([]);
+  });
+
   it('valida el precio del corte y no consume una botella entera', async () => {
     estado.presentaciones[0] = producto('p1', 50000, [{ tipo: 'shot', precio: 5000 }]);
     await entregarGrupoEntradas({
@@ -212,6 +287,7 @@ describe('presupuesto compartido de covers', () => {
   });
 
   it('rechaza sobrepresupuesto antes de consumir o postear dinero', async () => {
+    estado.tope = 25000;
     estado.presentaciones[0].precio_venta = 20001;
     await expect(entregarGrupoEntradas(input)).rejects.toThrow(/superan el presupuesto/);
     expect(consumirProductoCoverBar).not.toHaveBeenCalled();
