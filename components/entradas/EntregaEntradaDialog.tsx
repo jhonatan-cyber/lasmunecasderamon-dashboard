@@ -180,7 +180,7 @@ function previsionDeCobro(
   if (precio <= umbral) return { etiqueta: 'Cover', esCover: true, montoAdicional: 0 };
   const montoAdicional = Math.max(0, precio - montoEntrada);
   return {
-    etiqueta: `Cobra ${formatCurrencyCLP(montoAdicional)}`,
+    etiqueta: montoAdicional > 0 ? `Cobra ${formatCurrencyCLP(montoAdicional)}` : 'Venta en barra',
     esCover: false,
     montoAdicional
   };
@@ -236,7 +236,7 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
     return () => controller.abort();
   }, [dialogoAbierto]);
 
-  const umbral = Math.max(topeCover, entrada?.monto_entrada ?? 0);
+  const umbral = topeCover;
   const bebidaSeleccionada = useMemo(
     () => productos.find(bebida => bebida.presentacion_id === presentacionId),
     [productos, presentacionId]
@@ -388,7 +388,9 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
       toast.success(
         tipo === 'cover'
           ? 'Cover entregado'
-          : `Adicional registrado: cobrar ${formatCurrencyCLP(montoCobrarBarra)}`
+          : montoCobrarBarra > 0
+            ? `Adicional registrado: cobrar ${formatCurrencyCLP(montoCobrarBarra)}`
+            : 'Venta en barra registrada'
       );
       await onEntregada?.();
       onClose();
@@ -526,8 +528,8 @@ export function EntregaEntradaDialog({ entrada, onClose, onEntregada }: Props) {
         )}
 
         <p className='text-xs text-muted-foreground'>
-          Elige corte o botella. El servidor valida el precio, el cover y el stock; si hay
-          adicional, registra la venta en la barra.
+          Elige corte o botella. El servidor valida el tope de precio y el stock; los productos
+          sobre el tope se registran como venta en barra.
         </p>
 
         {bebidaSeleccionada && precioCorte(bebidaSeleccionada) !== null ? (

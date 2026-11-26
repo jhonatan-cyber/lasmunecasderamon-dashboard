@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { EntregaCoversDialog } from '@/components/bar/EntregaCoversDialog';
+import { EntregaCoversDialog, type GrupoCover } from '@/components/bar/EntregaCoversDialog';
 import { SolicitudesCoversPanel } from '@/components/bar/SolicitudesCoversPanel';
 import { useCurrentUser } from '@/hooks/auth/useCurrentUser';
 import { useUserPermissions } from '@/hooks/auth/useUserPermissions';
@@ -108,7 +108,7 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
   const [loading, setLoading] = useState(true);
   const [errorCola, setErrorCola] = useState<string | null>(null);
   const [recargando, setRecargando] = useState(false);
-  const [grupoSeleccionado, setGrupoSeleccionado] = useState<GrupoPendiente | null>(null);
+  const [grupoSeleccionado, setGrupoSeleccionado] = useState<GrupoCover | null>(null);
   const [comprasExpandidas, setComprasExpandidas] = useState<Set<string>>(() => new Set());
   const [solicitudesPendientes, setSolicitudesPendientes] = useState<Set<string>>(() => new Set());
 
@@ -199,7 +199,7 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
     }
   }, [recargando, cargarCola, cargarSolicitudes]);
 
-  // La cola trae una persona por fila; la barra atiende la compra completa.
+  // La cola trae una persona por fila; la barra puede atender la compra completa o por entrada.
   const grupos = useMemo<GrupoPendiente[]>(() => {
     const porGrupo = new Map<string, EntradaPendiente[]>();
     for (const fila of entradas) {
@@ -247,6 +247,15 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
   );
 
   const abrirDialogo = (grupo: GrupoPendiente) => setGrupoSeleccionado(grupo);
+
+  const abrirDialogoIndividual = (grupo: GrupoPendiente, fila: EntradaPendiente) =>
+    setGrupoSeleccionado({
+      ...grupo,
+      filas: [fila],
+      cantidad: 1,
+      total: fila.monto_entrada,
+      montoUnitario: fila.monto_entrada
+    });
 
   const cerrarDialogo = () => setGrupoSeleccionado(null);
 
@@ -446,6 +455,18 @@ export function CoversTab({ searchTerm = '' }: { searchTerm?: string }) {
                                         {fila.registrado_por_nombre || '—'}
                                       </span>
                                     </span>
+                                    {puedeEntregar && !esBarman ? (
+                                      <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        className='ml-auto rounded-full'
+                                        onClick={() => abrirDialogoIndividual(grupo, fila)}
+                                        aria-label={`Entregar entrada ${fila.id} individualmente`}
+                                      >
+                                        Entregar individual
+                                      </Button>
+                                    ) : null}
                                   </li>
                                 ))}
                               </ul>

@@ -248,6 +248,19 @@ async function leerCostoEntrada(): Promise<number> {
   return valor;
 }
 
+async function leerTopeCoverCliente(contexto: ContextoOperacion): Promise<number> {
+  const trx = resolverTransaccion(contexto);
+  const filas = await trx<{ valor: string | null }[]>(
+    'SELECT valor FROM configuraciones WHERE clave = ? LIMIT 1',
+    ['monto_base_trago_cover_cliente']
+  );
+  const guardado = filas[0]?.valor;
+  const valor = guardado == null || guardado.trim() === '' ? Number.NaN : Number(guardado);
+  const valorEntero = Math.floor(valor);
+  const respaldo = defaultDeClave<number>('monto_base_trago_cover_cliente') ?? 10000;
+  return Number.isSafeInteger(valorEntero) && valorEntero >= 0 ? valorEntero : respaldo;
+}
+
 function parseOpcionesVenta(valor: unknown): Record<string, unknown>[] {
   if (valor == null) return [];
   if (typeof valor === 'string') {
@@ -543,6 +556,7 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
     const presupuesto = montoEntrada + input.montoAdicional;
     if (!Number.isSafeInteger(presupuesto) || presupuesto > 2147483647)
       throw new ValidationError('El presupuesto supera el monto permitido');
+    const topeCoverCliente = await leerTopeCoverCliente(contexto);
     const presentacionIds = [...new Set(input.unidades.map(item => item.presentacion_id))].sort();
     const presentaciones = await trx<
       Array<{
@@ -564,8 +578,6 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
         throw new ValidationError('La bebida seleccionada no está disponible');
       const opciones = parseOpcionesVenta(presentacion.opciones_venta);
       const botella = opciones.find(opcion => opcion.tipo === 'botella');
-      if (botella?.cover_habilitado === false)
-        throw new ValidationError('La bebida seleccionada no está habilitada como cover');
       const esCorte = item.tipo_entrega === 'corte';
       const shot = opciones.find(opcion => opcion.tipo === 'shot');
       const precioSin = Number(botella?.precio_sin_anfitriona ?? 0);
@@ -576,6 +588,12 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
           : Number(presentacion.precio_venta);
       if (!Number.isSafeInteger(precio) || precio <= 0)
         throw new ValidationError('El precio de la bebida no está configurado');
+      if (
+        entradas.length === 1 &&
+        precio > topeCoverCliente &&
+        precio - topeCoverCliente > input.montoAdicional
+      )
+        throw new ValidationError('El precio de la bebida supera el tope de cover para clientes');
       const reparto = normalizarAcompanamientoBotella(item.acompanamientos);
       const total = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
       if (
@@ -763,7 +781,8 @@ export async function entregarEntrada(
   let resultado: ResultadoEntrega | null = null;
 
   await enUnaUnidad(async unidad => {
-    const trx = resolverTransaccion({ id: unidad.id });
+    const contexto = { id: unidad.id };
+    const trx = resolverTransaccion(contexto);
     const filas = await trx<
       {
         id: string;
@@ -810,8 +829,6 @@ export async function entregarEntrada(
       throw new ValidationError('La bebida seleccionada no se vende por corte');
 
     const botella = opciones.find(opcion => opcion.tipo === 'botella');
-    if (botella?.cover_habilitado === false)
-      throw new ValidationError('La bebida seleccionada no está habilitada como cover');
     const precioSin = Number(botella?.precio_sin_anfitriona ?? 0);
     const precio = esCorte
       ? precioCorte
@@ -820,10 +837,11 @@ export async function entregarEntrada(
         : Number(presentacion.precio_venta);
     if (!Number.isSafeInteger(precio) || precio <= 0)
       throw new ValidationError('El precio de la bebida no está configurado');
+    const topeCoverCliente = await leerTopeCoverCliente(contexto);
     const montoEntrada = Number(entrada.monto_entrada);
     const adicionalPorPrecio = Math.max(0, precio - montoEntrada);
     const montoAdicional = normalizarMontoAdicional(input.montoAdicional, adicionalPorPrecio);
-    const esCover = montoAdicional <= 0;
+    const esCover = montoAdicional <= 0 && precio <= topeCoverCliente;
     const unidades = esCorte ? 0 : unidadesAcompanamiento(opciones);
     const reparto = input.acompanamientos?.length
       ? normalizarAcompanamientoBotella(input.acompanamientos)

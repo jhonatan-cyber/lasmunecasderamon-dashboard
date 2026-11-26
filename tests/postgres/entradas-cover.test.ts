@@ -20,6 +20,7 @@ import db, { query } from '@/lib/database/db';
 import { restoreDatabase, snapshotDatabase } from '@/lib/database/maintenance';
 import {
   anularEntrada,
+  entregarGrupoEntradas,
   entregarEntrada,
   listarEntradas,
   listarPendientes,
@@ -117,12 +118,21 @@ interface Bebida {
 }
 
 /** Bebida con una unidad en el bar, al precio de lista indicado. */
-async function crearBebida(nombre: string, precio: number): Promise<Bebida> {
+async function crearBebida(
+  nombre: string,
+  precio: number,
+  coverHabilitado?: boolean
+): Promise<Bebida> {
   const productoId = crypto.randomUUID();
   const presentacionId = crypto.randomUUID();
   const unidadId = crypto.randomUUID();
   const codigo = `ENT${productoId.slice(0, 8)}`;
-  const opcion = { tipo: 'botella', precio, comision: 0 };
+  const opcion = {
+    tipo: 'botella',
+    precio,
+    comision: 0,
+    ...(coverHabilitado === undefined ? {} : { cover_habilitado: coverHabilitado })
+  };
 
   await query(
     `INSERT INTO productos
@@ -381,7 +391,7 @@ it('entrega la cover: consume el bar, postea la entrada y cierra la fila', async
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
     await fijarConfiguracion('monto_base_trago_cover_cliente', 10000);
-    const bebida = await crearBebida('Bebida de cover', 8000);
+    const bebida = await crearBebida('Bebida de cover', 8000, false);
 
     const entrada = await registrarEntrada({
       cantidadEntradas: 1,
@@ -442,14 +452,13 @@ it('entrega la cover: consume el bar, postea la entrada y cierra la fila', async
   }
 });
 
-it('usa el mayor entre el tope de cover y lo pagado en la puerta', async () => {
+it('no trata como cover un producto sobre el tope aunque la entrada cubra su precio', async () => {
   const snapshot = await snapshotDatabase();
   try {
     const cajaId = await cajaAbierta();
     const usuarioId = await primerUsuarioActivo();
     await fijarConfiguracion('costo_entrada', 10000);
-    // Tope configurado por debajo de la entrada: la bebida vale más que el tope
-    // pero menos que lo ya pagado, así que sigue siendo cover.
+    // La entrada cuesta más que el tope configurado, pero eso no amplía el cover.
     await fijarConfiguracion('monto_base_trago_cover_cliente', 3000);
     const bebida = await crearBebida('Bebida intermedia', 9000);
 
@@ -461,16 +470,31 @@ it('usa el mayor entre el tope de cover y lo pagado en la puerta', async () => {
       registradoPor: usuarioId
     });
     const saldosAntes = await saldosCaja(cajaId);
+    const planes: PlanVentaEntrada[] = [];
+    const registrarVenta: RegistradorVenta = async plan => {
+      planes.push(plan);
+      return { ventaId: 'venta-de-prueba' };
+    };
 
-    const entrega = await entregarEntrada({
-      entradaId: entrada.id,
-      presentacionId: bebida.presentacionId,
-      usuarioId
+    const entrega = await entregarEntrada(
+      {
+        entradaId: entrada.id,
+        presentacionId: bebida.presentacionId,
+        usuarioId
+      },
+      registrarVenta
+    );
+
+    expect(entrega).toMatchObject({
+      tipo: 'upgrade',
+      montoCobrarBarra: 0,
+      ventaId: 'venta-de-prueba'
     });
-
-    expect(entrega.tipo).toBe('cover');
-    expect(entrega.montoCobrarBarra).toBe(0);
-    expect((await saldosCaja(cajaId)).efectivo - saldosAntes.efectivo).toBe(10000);
+    expect(planes[0]).toMatchObject({
+      totalVenta: 10000,
+      detalles: [{ precio: 9000, sub_total: 10000 }]
+    });
+    expect(await saldosCaja(cajaId)).toEqual(saldosAntes);
   } finally {
     await restoreDatabase(snapshot, 'test-only');
   }

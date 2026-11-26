@@ -115,6 +115,7 @@ beforeEach(() => {
       : [{ valor: String(estado.costoEntrada) }]
   );
   trx.mockImplementation(async (sql: string, params: unknown[] = []) => {
+    if (sql.includes('FROM configuraciones')) return [{ valor: String(estado.tope) }];
     if (sql.includes('FROM cajas WHERE estado = 1')) return [{ id_caja: 'caja-1' }];
     if (sql.includes('FROM entradas_clientes WHERE id = ? FOR UPDATE'))
       return estado.entrada ? [estado.entrada] : [];
@@ -311,14 +312,23 @@ describe('entrega como cover', () => {
     expect(estado.inserts[0].sql).toContain('entradas_clientes_productos');
   });
 
-  it('trata como cover lo que no supera lo ya pagado aunque el tope sea menor', async () => {
+  it('no exige cover_habilitado para entregar una botella a un cliente', async () => {
+    estado.opciones = [{ tipo: 'botella', cover_habilitado: false }];
+
+    await expect(entregarEntrada(entregaBase)).resolves.toMatchObject({ tipo: 'cover' });
+    expect(consumirProductoCoverBar).toHaveBeenCalledTimes(1);
+  });
+
+  it('registra como venta una bebida sobre el tope aunque la entrada cubra su precio', async () => {
     estado.tope = 8000;
     estado.precio = 10000;
+    const onVenta = vi.fn(async () => ({ ventaId: 'venta-1' }));
 
-    const resultado = await entregarEntrada(entregaBase);
+    const resultado = await entregarEntrada(entregaBase, onVenta);
 
-    expect(resultado.tipo).toBe('cover');
-    expect(registrarMovimientoCobro).toHaveBeenCalledTimes(1);
+    expect(resultado).toMatchObject({ tipo: 'upgrade', montoCobrarBarra: 0, ventaId: 'venta-1' });
+    expect(onVenta).toHaveBeenCalledTimes(1);
+    expect(registrarMovimientoCobro).not.toHaveBeenCalled();
   });
 
   it('sirve un corte con el precio del shot y descuenta ml, no la botella', async () => {
