@@ -312,11 +312,13 @@ describe('entrega como cover', () => {
     expect(estado.inserts[0].sql).toContain('entradas_clientes_productos');
   });
 
-  it('no exige cover_habilitado para entregar una botella a un cliente', async () => {
+  it('permite entregar la bebida principal con cover_habilitado desactivado', async () => {
+    estado.tope = 20000;
     estado.opciones = [{ tipo: 'botella', cover_habilitado: false }];
 
     await expect(entregarEntrada(entregaBase)).resolves.toMatchObject({ tipo: 'cover' });
     expect(consumirProductoCoverBar).toHaveBeenCalledTimes(1);
+    expect(estado.updates).toHaveLength(1);
   });
 
   it('registra como venta una bebida sobre el tope aunque la entrada cubra su precio', async () => {
