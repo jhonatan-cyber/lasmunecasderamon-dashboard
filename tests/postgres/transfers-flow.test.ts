@@ -59,8 +59,8 @@ it('consulta presentaciones y transfiere unidades con botella y shot en la misma
         ml_abierta: 750
       });
       const options = [
-        { tipo: 'botella' as const, precio: 70000, comision: 15000 },
-        { tipo: 'shot' as const, precio: 5000, comision: 0 }
+        { tipo: 'botella' as const, precio: 72000, comision: 13000 },
+        { tipo: 'shot' as const, precio: 5500, comision: 0 }
       ];
       const result = await conContextoOperacionExistente(trx, contexto =>
         traspasarAlBar(
@@ -89,9 +89,18 @@ it('consulta presentaciones y transfiere unidades con botella y shot en la misma
         id: result.transferencia_id,
         estado: 'pendiente',
         opciones_venta: options,
-        precio_venta: 70000,
-        comision: 15000
+        precio_venta: 72000,
+        comision: 13000
       });
+      const [savedPresentation] = await trx<
+        Array<{ opciones_venta: unknown; precio_venta: number; comision: number }>
+      >(
+        'SELECT opciones_venta, precio_venta, comision FROM inventario_presentaciones WHERE id = ?',
+        [presentacionId]
+      );
+      expect(savedPresentation.opciones_venta).toEqual(options);
+      expect(Number(savedPresentation.precio_venta)).toBe(72000);
+      expect(Number(savedPresentation.comision)).toBe(13000);
       const [updated] = await conContextoOperacionExistente(trx, contexto =>
         listarPresentaciones(productoId, contexto)
       );
