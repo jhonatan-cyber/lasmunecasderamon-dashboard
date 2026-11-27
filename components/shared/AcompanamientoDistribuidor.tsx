@@ -119,7 +119,8 @@ export function AcompanamientoDistribuidor({
           options={disponibles.map(opcion => ({
             value: opcion.id,
             label: `${nombreDe(opcion)} · ${opcion.stock_bar} en bar`,
-            keywords: [opcion.producto_nombre, opcion.nombre]
+            keywords: [opcion.producto_nombre, opcion.nombre],
+            imageSrc: productImageUrl(opcion.foto)
           }))}
         />
       ) : null}

@@ -109,7 +109,6 @@ export function ShotMixerSelection({
                       );
                       if (p.shot_anfitriona) {
                         if (bottleOption?.corto_anfitriona_habilitado === false) return false;
-                        if (bottleOption?.colacion_habilitada !== true) return false;
                       } else {
                         if (bottleOption?.cover_habilitado !== true) return false;
                         const productoEstado =

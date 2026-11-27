@@ -11,17 +11,24 @@ const config = [
   },
   { tipo: 'botella', precio: 20000, comision: 1000, acompanamiento: { unidades: 4 } }
 ];
-const spriteColacion = {
+const spriteAcompanamientoAnfitriona = {
   id: 'sprite',
   estado: 1,
-  opciones_venta: [{ tipo: 'botella', colacion_habilitada: true, cover_habilitado: true }]
+  opciones_venta: [
+    {
+      tipo: 'botella',
+      corto_anfitriona_habilitado: true,
+      colacion_habilitada: false,
+      cover_habilitado: true
+    }
+  ]
 };
 const stockBarRow = { presentacion_id: 'sprite', stock_bar: 10, ml_abierta: 5000 };
 const trx = vi.fn(async (_sql: string, params?: unknown[]) => {
   if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
     return params && params.length > 0 ? [stockBarRow] : [];
   }
-  return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
+  return [{ id: 'vodka', opciones_venta: config }, spriteAcompanamientoAnfitriona];
 }) as unknown as TransactionQuery;
 describe('server configured consumption', () => {
   it('rechaza una presentación desactivada aunque el producto siga activo', async () => {
@@ -77,7 +84,7 @@ describe('server configured consumption', () => {
             { tipo: 'shot', precio: 5000, comision: 0, ml_acompanamiento_anfitriona: 0 }
           ]
         },
-        spriteColacion
+        spriteAcompanamientoAnfitriona
       ];
     }) as unknown as TransactionQuery;
     const short = { presentacion_id: 'vodka', tipo_venta: 'shot' as const, shot_anfitriona: true };
@@ -147,8 +154,8 @@ describe('server configured consumption', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('rejects hostess short if accompaniment lacks colacion_habilitada', async () => {
-    const withoutColacion = vi.fn(async (_sql: string, params?: unknown[]) => {
+  it('rejects hostess short if accompaniment is disabled for that use', async () => {
+    const disabledForHostessShort = vi.fn(async (_sql: string, params?: unknown[]) => {
       if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
         return params && params.length > 0 ? [stockBarRow] : [];
       }
@@ -157,12 +164,14 @@ describe('server configured consumption', () => {
         {
           id: 'sprite',
           estado: 1,
-          opciones_venta: [{ tipo: 'botella', colacion_habilitada: false, cover_habilitado: true }]
+          opciones_venta: [
+            { tipo: 'botella', corto_anfitriona_habilitado: false, colacion_habilitada: true }
+          ]
         }
       ];
     }) as unknown as TransactionQuery;
     await expect(
-      validarConfiguracionVenta(withoutColacion, [
+      validarConfiguracionVenta(disabledForHostessShort, [
         {
           presentacion_id: 'vodka',
           tipo_venta: 'shot',
@@ -173,7 +182,7 @@ describe('server configured consumption', () => {
     ).rejects.toThrow('no está habilitada para corto con anfitriona');
   });
 
-  it('accepts hostess short when accompaniment has colacion_habilitada', async () => {
+  it('accepts hostess short when its accompaniment is enabled, regardless of colacion_habilitada', async () => {
     await expect(
       validarConfiguracionVenta(trx, [
         {
@@ -266,7 +275,7 @@ describe('server configured consumption', () => {
       if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
         return params && params.length > 0 ? [] : [];
       }
-      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
+      return [{ id: 'vodka', opciones_venta: config }, spriteAcompanamientoAnfitriona];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(noStock, [
@@ -287,7 +296,7 @@ describe('server configured consumption', () => {
           ? [{ presentacion_id: 'sprite', stock_bar: 1, ml_abierta: 50 }]
           : [];
       }
-      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
+      return [{ id: 'vodka', opciones_venta: config }, spriteAcompanamientoAnfitriona];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(lowMl, [
@@ -309,7 +318,7 @@ describe('server configured consumption', () => {
           ? [{ presentacion_id: 'sprite', stock_bar: 1, ml_abierta: 0 }]
           : [];
       }
-      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
+      return [{ id: 'vodka', opciones_venta: config }, spriteAcompanamientoAnfitriona];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(lowStock, [
@@ -330,7 +339,7 @@ describe('server configured consumption', () => {
           ? [{ presentacion_id: 'sprite', stock_bar: 2, ml_abierta: 0 }]
           : [];
       }
-      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
+      return [{ id: 'vodka', opciones_venta: config }, spriteAcompanamientoAnfitriona];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(lowBottleStock, [

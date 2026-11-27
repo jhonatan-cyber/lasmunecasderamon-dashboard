@@ -150,34 +150,50 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
     .flatMap(option =>
       // Para cortos: un format por unidad. Para botellas con anfitriona (no champagne):
       // un format por unidad para permitir multi-select. Para champagne: un solo format.
-      Array.from({ length: esBotella(option.value) && !isChampagne ? option.cantidad : (esBotella(option.value) ? 1 : option.cantidad) }, (_, unitIndex) => {
-        const key = esBotella(option.value) && !isChampagne
-          ? `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`
-          : esBotella(option.value)
-            ? id
-            : `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
-        return {
-          unitIndex,
-          value: option.value,
-          label: option.label,
-          cantidad: esBotella(option.value) && isChampagne ? option.cantidad : (esBotella(option.value) ? 1 : 1),
-          comision: option.comision,
-          selected:
-            esBotella(option.value) && isChampagne
-              ? ctx.champagneHostessSelections[id] || []
-              : (ctx.otherProductHostessSelections[key] || []).slice(
-                  0,
-                  esBotella(option.value) && isChampagne ? undefined : 1
-                ),
-          onChange: (ids: string[]) =>
-            esBotella(option.value) && isChampagne
-              ? ctx.onChampagneHostessChange(id, ids)
-              : ctx.onOtherProductHostessChange(
-                  key,
-                  esBotella(option.value) && isChampagne ? ids : ids.slice(0, 1)
-                )
-        };
-      })
+      Array.from(
+        {
+          length:
+            esBotella(option.value) && !isChampagne
+              ? option.cantidad
+              : esBotella(option.value)
+                ? 1
+                : option.cantidad
+        },
+        (_, unitIndex) => {
+          const key =
+            esBotella(option.value) && !isChampagne
+              ? `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`
+              : esBotella(option.value)
+                ? id
+                : `${id}:${option.value}${unitIndex > 0 ? `:unit:${unitIndex}` : ''}`;
+          return {
+            unitIndex,
+            value: option.value,
+            label: option.label,
+            cantidad:
+              esBotella(option.value) && isChampagne
+                ? option.cantidad
+                : esBotella(option.value)
+                  ? 1
+                  : 1,
+            comision: option.comision,
+            selected:
+              esBotella(option.value) && isChampagne
+                ? ctx.champagneHostessSelections[id] || []
+                : (ctx.otherProductHostessSelections[key] || []).slice(
+                    0,
+                    esBotella(option.value) && isChampagne ? undefined : 1
+                  ),
+            onChange: (ids: string[]) =>
+              esBotella(option.value) && isChampagne
+                ? ctx.onChampagneHostessChange(id, ids)
+                : ctx.onOtherProductHostessChange(
+                    key,
+                    esBotella(option.value) && isChampagne ? ids : ids.slice(0, 1)
+                  )
+          };
+        }
+      )
     );
 
   const enCarrito = (ctx.productosEnCarrito || [])
@@ -220,8 +236,6 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           );
           if (!bottle && esCortoAnfitriona(opcion.value)) {
             if (bottleOption?.corto_anfitriona_habilitado === false) return false;
-            // Si colacion_habilitada no está definido, permitir (compatibilidad legacy)
-            if (bottleOption && bottleOption.colacion_habilitada === false) return false;
           } else if (!bottle) {
             // Si cover_habilitado no está definido, permitir (compatibilidad legacy)
             if (bottleOption && bottleOption.cover_habilitado === false) return false;

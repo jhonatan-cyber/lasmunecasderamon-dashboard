@@ -210,8 +210,7 @@ function formatosCover(bebida: Bebida, precioMaximo: number): Formato[] {
 function precioVisible(bebida: Bebida, formato: Formato): number {
   if (formato === 'corte') {
     const corte = precioCorte(bebida);
-    // Usar precio_venta como fallback si no hay shot configurado
-    return corte ?? bebida.precio_venta;
+    return corte ?? 0;
   }
   return bebida.precio_sin_anfitriona;
 }
@@ -444,7 +443,12 @@ export function EntregaCoversDialog({
   const categoriasVisibles = useMemo(() => {
     const grupos = new Map<string, Set<string>>();
     for (const bebida of bebidas) {
-      if (bebida.stock_bar <= 0 || categoriaFueraDeCover(bebida.categoria_nombre)) continue;
+      if (
+        bebida.stock_bar <= 0 ||
+        categoriaFueraDeCover(bebida.categoria_nombre) ||
+        formatosCover(bebida, precioMaximo).length === 0
+      )
+        continue;
       const categoria = bebida.categoria_nombre ?? 'Sin categoría';
       const presentaciones = grupos.get(categoria) ?? new Set<string>();
       presentaciones.add(bebida.presentacion_id);
@@ -461,7 +465,7 @@ export function EntregaCoversDialog({
         name,
         total_products: presentaciones.size
       }));
-  }, [bebidas]);
+  }, [bebidas, precioMaximo]);
   const itemsCategoriaSeleccionada = useMemo(
     () => gruposVisibles.find(grupo => grupo.categoria === categoriaSeleccionada)?.items ?? [],
     [categoriaSeleccionada, gruposVisibles]

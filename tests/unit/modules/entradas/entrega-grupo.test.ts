@@ -207,7 +207,8 @@ describe('presupuesto compartido de covers', () => {
     expect(consumirProductoCoverBar).toHaveBeenCalledTimes(1);
   });
 
-  it('no exige cover_habilitado en una botella que cumple el tope de clientes', async () => {
+  it('permite entregar la bebida principal con cover_habilitado desactivado', async () => {
+    estado.tope = 20000;
     estado.presentaciones[0] = producto('p1', 15000, [
       { tipo: 'botella', cover_habilitado: false }
     ]);
