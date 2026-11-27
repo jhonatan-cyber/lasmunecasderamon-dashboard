@@ -55,6 +55,7 @@ corepack pnpm arquitectura:limites
 corepack pnpm db:migrate
 
 # Testing
+corepack pnpm test:unit:affected
 corepack pnpm test:unit
 corepack pnpm test:e2e
 corepack pnpm test:integration:legacy-db
@@ -76,10 +77,15 @@ corepack pnpm test:integration:legacy-db
 ### Unit
 
 ```bash
+corepack pnpm test:unit:affected
 corepack pnpm test:unit
 corepack pnpm test:unit:watch
 corepack pnpm test:unit:coverage
 ```
+
+Para el trabajo diario, `test:unit:affected` ejecuta las pruebas relacionadas
+con los cambios locales. `test:unit` y `test:unit:coverage` siguen disponibles
+para validaciones completas.
 
 Ubicacion: `tests/unit/`
 
@@ -145,7 +151,7 @@ entorno.
 ```bash
 corepack pnpm lint:full
 corepack pnpm typecheck
-corepack pnpm test:unit
+corepack pnpm test:unit:affected
 corepack pnpm build
 ```
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyChanges } from '../scripts/ci-changes.mjs';
-import { selectUnitTests } from '../scripts/run-affected-unit-tests.mjs';
+import { collectWorkingTreeChanges, selectUnitTests } from '../scripts/run-affected-unit-tests.mjs';
 
 test('UI del mismo dominio ejecuta unitarias y E2E, no jobs ajenos', () => {
   const result = classifyChanges(['components/cash-register/CajaDetails.tsx']);
@@ -43,8 +43,10 @@ test('migraciones y configuración global activan todas las validaciones', () =>
     'lib/auth/auth-app.ts'
   ]) {
     const result = classifyChanges([path]);
-    for (const key of ['full', 'unit', 'build', 'integration', 'e2e', 'redis', 'migrations', 'mcp'])
+    const checks = ['full', 'unit', 'build', 'integration', 'e2e', 'redis', 'migrations', 'mcp'];
+    for (const key of checks) {
       assert.equal(result[key], true, `${path}: ${key}`);
+    }
   }
 });
 
@@ -68,5 +70,36 @@ test('el selector de unitarias acota por ruta y usa pruebas reales del repositor
   ]);
   assert.deepEqual(selectUnitTests(['app/api/whatsapp/webhook/route.ts'], candidates), [
     'tests/unit/lib/api/whatsapp-test-route.test.ts'
+  ]);
+});
+
+test('el selector incluye toda la suite para cambios de configuración global', () => {
+  const candidates = ['tests/unit/z.test.ts', 'tests/unit/a.test.ts'];
+  assert.deepEqual(selectUnitTests(['package.json'], candidates), [
+    'tests/unit/a.test.ts',
+    'tests/unit/z.test.ts'
+  ]);
+});
+
+test('cambios en helpers de tests ejecutan las pruebas de su carpeta', () => {
+  const candidates = ['tests/unit/components/a.test.tsx', 'tests/unit/hooks/b.test.tsx'];
+  assert.deepEqual(selectUnitTests(['tests/unit/components/test-harness.tsx'], candidates), [
+    'tests/unit/components/a.test.tsx'
+  ]);
+});
+
+test('el diff local incluye cambios rastreados y archivos nuevos sin duplicados', () => {
+  const tracked = 'components/Form.tsx\0tests/Form.test.tsx';
+  const untracked = 'tests/Form.test.tsx\0components/NewCard.tsx';
+  const runGit = args => {
+    if (args[0] === 'diff') return tracked;
+    return untracked;
+  };
+  const changed = collectWorkingTreeChanges(runGit);
+
+  assert.deepEqual(changed, [
+    'components/Form.tsx',
+    'tests/Form.test.tsx',
+    'components/NewCard.tsx'
   ]);
 });

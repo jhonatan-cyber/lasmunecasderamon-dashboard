@@ -45,6 +45,7 @@
     "audit:web:quality:json": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=json",
     "audit:web:quality:ci": "node ./.agents/skills/web-quality-audit/scripts/analyze.mjs --format=json \"--fail-rules=Accessibility:high,SEO:high,Best Practices:high\"",
     "test:unit": "vitest run",
+    "test:unit:affected": "node scripts/run-affected-unit-tests.mjs",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
     "test:integration": "node tests/integration/order_flow.test.js",
