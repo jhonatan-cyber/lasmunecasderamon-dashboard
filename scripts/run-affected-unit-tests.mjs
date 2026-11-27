@@ -42,6 +42,16 @@ const DIRECT_TESTS = {
   whatsapp: ['whatsapp', 'WhatsApp', 'twilio', 'Twilio'],
   auth: ['auth-routes', 'AuthService', 'auth', 'session']
 };
+const GLOBAL_CHANGE =
+  /^(\.github\/|tests\/setup\/|scripts\/(ci-|run-affected-unit-tests)|package\.json$|pnpm-|\.npmrc$|patches\/|next\.config|tsconfig|vitest\.config|eslint\.config|playwright\.config|proxy\.ts$|middleware\.ts$|lib\/(auth|api|db|database|middleware|constants\/route-permissions|utils\/env|utils\/logger)|modules\/(identidad|salud)\/)/;
+
+export function collectWorkingTreeChanges(
+  runGit = args => execFileSync('git', args, { encoding: 'utf8' })
+) {
+  const tracked = runGit(['diff', '--name-only', '-z', 'HEAD']);
+  const untracked = runGit(['ls-files', '--others', '--exclude-standard', '-z']);
+  return [...new Set(`${tracked}\0${untracked}`.split('\0').filter(Boolean))];
+}
 
 function walk(dir) {
   const result = [];
@@ -55,6 +65,8 @@ function walk(dir) {
 
 export function selectUnitTests(files, candidates = walk(path.join(ROOT, 'tests', 'unit'))) {
   const changed = files.map(file => file.replaceAll('\\', '/'));
+  if (changed.some(file => GLOBAL_CHANGE.test(file))) return [...candidates].sort();
+
   const selected = new Set();
   const addMatching = patterns => {
     for (const testFile of candidates) {
@@ -67,7 +79,14 @@ export function selectUnitTests(files, candidates = walk(path.join(ROOT, 'tests'
 
   for (const file of changed) {
     if (/^tests\/unit\//.test(file)) {
-      if (/\.(test|spec)\.(ts|tsx)$/.test(file)) selected.add(path.join(ROOT, file));
+      if (/\.(test|spec)\.(ts|tsx)$/.test(file)) {
+        const testFile = candidates.find(
+          candidate => path.resolve(candidate) === path.resolve(ROOT, file)
+        );
+        if (testFile) selected.add(testFile);
+      } else {
+        addMatching([file.slice(0, file.lastIndexOf('/') + 1)]);
+      }
       continue;
     }
     if (/^tests\//.test(file)) continue;
@@ -117,23 +136,36 @@ export function selectUnitTests(files, candidates = walk(path.join(ROOT, 'tests'
   return [...selected].sort();
 }
 
+export function filesForVitestInvocation(selected, candidates) {
+  const selectedFiles = new Set(selected);
+  return candidates.every(file => selectedFiles.has(file)) ? [] : selected;
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let base = process.env.BASE_SHA;
-  const head = process.env.HEAD_SHA;
+  const head = process.env.HEAD_SHA || 'HEAD';
   let files;
   try {
-    if (!base || /^0+$/.test(base)) {
-      base = execFileSync('git', ['rev-parse', `${head}^`], { encoding: 'utf8' }).trim();
+    if (process.env.BASE_SHA || process.env.HEAD_SHA) {
+      if (!base || /^0+$/.test(base)) {
+        base = execFileSync('git', ['rev-parse', `${head}^`], { encoding: 'utf8' }).trim();
+      }
+      files = execFileSync('git', ['diff', '--name-only', '-z', base, head], { encoding: 'utf8' })
+        .split('\0')
+        .filter(Boolean);
+    } else {
+      files = collectWorkingTreeChanges();
     }
-    files = execFileSync('git', ['diff', '--name-only', base, head], { encoding: 'utf8' })
-      .split(/\r?\n/)
-      .filter(Boolean);
   } catch {
     console.error('No se pudo obtener el diff; se cancela para no omitir pruebas.');
     process.exit(1);
   }
 
-  const selected = selectUnitTests(files);
+  if (files.some(file => GLOBAL_CHANGE.test(file.replaceAll('\\', '/')))) {
+    console.log('Cambio global de configuración; se ejecuta toda la suite unitaria.');
+  }
+  const candidates = walk(path.join(ROOT, 'tests', 'unit'));
+  const selected = selectUnitTests(files, candidates);
   if (!selected.length) {
     console.log('Los cambios no tienen pruebas unitarias asociadas.');
     process.exit(0);
@@ -143,7 +175,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   for (const file of selected) console.log(`- ${path.relative(ROOT, file).replaceAll('\\', '/')}`);
   const result = spawnSync(
     process.execPath,
-    [path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs'), 'run', ...selected],
+    [
+      path.join(ROOT, 'node_modules', 'vitest', 'vitest.mjs'),
+      'run',
+      ...filesForVitestInvocation(selected, candidates)
+    ],
     {
       stdio: 'inherit',
       env: process.env

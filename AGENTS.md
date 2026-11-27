@@ -53,9 +53,13 @@ exponen `contracts.ts`, solo los que lo necesitan.
 ```bash
 corepack pnpm typecheck
 corepack pnpm lint:full
-corepack pnpm test:unit
+corepack pnpm test:unit:affected
 corepack pnpm build
 ```
+
+Para cambios locales, `test:unit:affected` ejecuta pruebas relacionadas con el
+diff. Cambios globales de configuración ejecutan toda la suite; usa `test:unit`
+o `test:unit:coverage` para una validación completa manual.
 
 Si tocas flujos con base de datos: `corepack pnpm test:integration:legacy-db`.
 
