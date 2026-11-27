@@ -24,6 +24,7 @@ const productHarness = vi.hoisted(() => ({
   listarStockBar: vi.fn().mockResolvedValue([]),
   obtenerResumenShots: vi.fn(),
   listarParaVenta: vi.fn().mockResolvedValue([]),
+  exists: vi.fn().mockResolvedValue(true),
   listarMovimientos: vi.fn().mockResolvedValue([]),
   listarMovimientosRecientes: vi.fn().mockResolvedValue([]),
   obtenerProductoPorCodigoONombre: vi.fn(),
@@ -43,10 +44,16 @@ vi.mock('@/modules/inventario/envases/servicio', () => productHarness);
 vi.mock('@/modules/inventario/movimientos/servicio', () => productHarness);
 vi.mock('@/modules/inventario/catalogo/servicio', () => productHarness);
 vi.mock('@/modules/inventario/bar/servicio', () => productHarness);
+vi.mock('@/modules/inventario/categorias/servicio', () => ({
+  CategoryService: { exists: productHarness.exists }
+}));
 
 vi.mock('@/lib/utils/logger', () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 
 import {
   aceptarTransferencia,
@@ -184,6 +191,7 @@ describe('ProductService.createProduct', () => {
     vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-1',
       producto_id: 'otro-producto',
+      activa: true,
       nombre: '750 ml',
       codigo_barras: '7801234567890',
       precio_compra: 8000,
@@ -210,6 +218,7 @@ describe('ProductService.createProduct', () => {
     vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-1',
       producto_id: 'prod-1',
+      activa: true,
       nombre: '750 ml',
       codigo_barras: '7801234567890',
       precio_compra: 8000,
@@ -231,6 +240,7 @@ describe('ProductService.createProduct', () => {
     vi.mocked(buscarPresentacionPorCodigo).mockResolvedValue({
       id: 'pres-otra',
       producto_id: 'prod-1',
+      activa: true,
       nombre: '500 ml',
       codigo_barras: '7801234567890',
       precio_compra: 5000,
@@ -324,6 +334,7 @@ describe('ProductService.addUnits', () => {
       {
         id: 'pres-1',
         producto_id: 'prod-1',
+        activa: true,
         nombre: '750 ml',
         codigo_barras: null,
         precio_compra: 8000,
@@ -367,6 +378,29 @@ describe('ProductService.addUnits', () => {
 
     await expect(ProductService.addUnits('prod-1', 'pres-ajena', 3)).rejects.toThrow(
       'no pertenece a este producto'
+    );
+    expect(registrarUnidades).not.toHaveBeenCalled();
+  });
+
+  it('rechaza generar stock para una presentación desactivada', async () => {
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(listarPresentaciones).mockResolvedValue([
+      {
+        id: 'pres-1',
+        producto_id: 'prod-1',
+        activa: false,
+        nombre: '750 ml',
+        codigo_barras: null,
+        precio_compra: 0,
+        precio_venta: 0,
+        comision: 0,
+        foto: null,
+        stock: 0
+      }
+    ]);
+
+    await expect(ProductService.addUnits('prod-1', 'pres-1', 1)).rejects.toThrow(
+      'presentación desactivada'
     );
     expect(registrarUnidades).not.toHaveBeenCalled();
   });
@@ -457,6 +491,7 @@ describe('ProductService.traspasarAlBar', () => {
     {
       id: 'pres-1',
       producto_id: 'prod-1',
+      activa: true,
       nombre: '750 ml',
       codigo_barras: null,
       precio_compra: 8000,
@@ -491,7 +526,19 @@ describe('ProductService.traspasarAlBar', () => {
     expect(result).toEqual({ trasladadas: 3, stock_bar: 8 });
   });
 
+  it('rechaza traspasar una presentación desactivada al bar', async () => {
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(listarPresentaciones).mockResolvedValue([{ ...presConStock[0], activa: false }]);
+
+    await expect(ProductService.traspasarAlBar('prod-1', 'pres-1', 1, 15000, 0)).rejects.toThrow(
+      'presentación desactivada'
+    );
+    expect(traspasarAlBar).not.toHaveBeenCalled();
+  });
+
   it('rechaza cantidades y montos inválidos', async () => {
+    vi.mocked(obtenerProductoPorId).mockResolvedValue({ id: 'prod-1' } as any);
+    vi.mocked(listarPresentaciones).mockResolvedValue(presConStock);
     await expect(ProductService.traspasarAlBar('prod-1', 'pres-1', 0, 15000, 0)).rejects.toThrow(
       'entre 1 y 1000'
     );

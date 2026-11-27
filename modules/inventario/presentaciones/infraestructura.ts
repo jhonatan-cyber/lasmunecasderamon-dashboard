@@ -64,8 +64,8 @@ export async function actualizarFotoPresentacion(id: string, foto: string): Prom
   await actualizarFotoEnRepositorio(id, foto);
 }
 
-export async function eliminarPresentacion(id: string): Promise<void> {
-  await eliminarEnRepositorio(id);
+export async function eliminarPresentacion(id: string): Promise<'desactivada' | 'eliminada'> {
+  return await eliminarEnRepositorio(id);
 }
 
 export async function obtenerPresentacion(id: string): Promise<PresentacionRow | null> {

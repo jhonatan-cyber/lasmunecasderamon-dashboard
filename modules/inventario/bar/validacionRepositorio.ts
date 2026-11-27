@@ -1,6 +1,7 @@
 import type { TransactionQuery } from '@/lib/database/db';
 
 export interface PresentacionVentaBloqueada {
+  activa: boolean;
   id: string;
   producto_id: string;
   nombre: string;
@@ -59,7 +60,7 @@ export function bloquearPresentacionesVenta(
   presentacionIds: string[]
 ): Promise<PresentacionVentaBloqueada[]> {
   return trx(
-    `SELECT id, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella,
+    `SELECT id, activa, opciones_venta, producto_id, nombre, precio_venta, comision, ml_botella,
             fecha_vencimiento,
             (SELECT pr.estado FROM productos pr WHERE pr.id_producto = inventario_presentaciones.producto_id) AS estado
        FROM inventario_presentaciones

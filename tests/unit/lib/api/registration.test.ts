@@ -17,6 +17,13 @@ vi.mock('@/lib/database/sync-operations', () => ({
       });
       return { claimed: true, operation: null };
     }),
+    retryFailed: vi.fn(async (key: string) => {
+      const row = state.rows.get(key);
+      if (!row || row.estado !== 'fallida') return false;
+      row.estado = 'pendiente';
+      row.respuesta = null;
+      return true;
+    }),
     resolve: vi.fn(async (key: string, estado: string, response: any) =>
       Object.assign(state.rows.get(key), { estado, respuesta: JSON.stringify(response) })
     ),
@@ -28,17 +35,27 @@ vi.mock('@/lib/database/sync-operations', () => ({
 }));
 vi.mock('@/lib/auth/auth-app', () => ({ getAuth: vi.fn(async () => state.user) }));
 vi.mock('@/modules/auditoria', () => ({
-  AuditService: { log: vi.fn() },
+  AuditService: { log: vi.fn().mockResolvedValue(undefined) },
   ErrorLogService: { log: vi.fn(async () => {}) }
 }));
 vi.mock('@/lib/api/date-response', () => ({
   normalizeJsonResponseDates: (response: Response) => response
 }));
+vi.mock('@/modules/inventario', () => ({
+  ProductService: { removePresentation: vi.fn() },
+  revisarReposicion: vi.fn()
+}));
 vi.mock('@/lib/utils/logger', () => ({
-  default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), captureException: vi.fn() }
-, setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+  default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), captureException: vi.fn() },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 import { withRoute } from '@/lib/api/withRoute';
 import { runIdempotent } from '@/lib/api/idempotency';
+import { SyncOperationRepository } from '@/lib/database/sync-operations';
+import { ProductService } from '@/modules/inventario';
+import { DELETE as deletePresentation } from '@/app/api/products/presentations/route';
 const request = (path = '/api/purchases', key = 'registration-key-one', method = 'POST') =>
   new Request(`http://localhost${path}`, {
     method,
@@ -159,5 +176,31 @@ describe('idempotencia general despues de permisos', () => {
     const route = withRoute({ auth: true, access: 'authenticated' }, handler);
     expect((await route(request('/api/purchases', 'bad'), context)).status).toBe(400);
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('reintenta la eliminación de una presentación tras un fallo transitorio', async () => {
+    state.user = {
+      id: 'u1',
+      role: 'administrador',
+      permissions: { products: { delete: true } }
+    };
+    vi.mocked(ProductService.removePresentation)
+      .mockRejectedValueOnce(new Error('Fallo transitorio'))
+      .mockResolvedValueOnce('eliminada');
+    const deleteRequest = () =>
+      new Request('http://localhost/api/products/presentations?id=pres-1', {
+        method: 'DELETE',
+        headers: { 'x-registration-key': 'registration-key-one' }
+      });
+
+    const first = await deletePresentation(deleteRequest(), context);
+    expect(first.status).toBeGreaterThanOrEqual(500);
+    expect(ProductService.removePresentation).toHaveBeenCalledTimes(1);
+
+    const retry = await deletePresentation(deleteRequest(), context);
+
+    expect(retry.status).toBe(200);
+    expect(SyncOperationRepository.retryFailed).toHaveBeenCalledWith('registration-key-one');
+    expect(ProductService.removePresentation).toHaveBeenCalledTimes(2);
   });
 });

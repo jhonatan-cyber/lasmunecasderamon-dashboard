@@ -13,7 +13,7 @@ import type { NuevaPresentacionInput, PresentacionCamposInput } from '../contrac
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
 import { resolverVencimiento } from '@/lib/business/vencimiento';
 import { BaseRepository } from '@/lib/database/base-repository';
-import { ConflictError, NotFoundError } from '@/lib/errors/errors';
+import { NotFoundError } from '@/lib/errors/errors';
 import { sincronizarVencimientoProducto } from '../vencimientoProducto';
 
 type Ejecutor = TransactionQuery | typeof query;
@@ -83,15 +83,9 @@ export async function crearPresentacion(
   return mapPresentacion(row);
 }
 
-/**
- * Cuenta las dependencias que impiden borrar una presentación sin perder
- * auditoría. Son **contadores de dependencias**, no métricas de uso: `colaciones`
- * dice cuántas colaciones apuntan a esta presentación, no cuánta bebida se
- * sirvió. Un conteo es justo lo que la guarda necesita, así que no se cambia
- * por una suma de ml.
- */
-export async function eliminarPresentacion(id: string): Promise<void> {
-  await withTransaction(async trx => {
+/** Conserva las presentaciones con historial y elimina las que no lo tienen. */
+export async function eliminarPresentacion(id: string): Promise<'desactivada' | 'eliminada'> {
+  return await withTransaction(async trx => {
     const [presentacion] = await trx<{ id: string; producto_id: string }[]>(
       'SELECT id, producto_id FROM inventario_presentaciones WHERE id = ? FOR UPDATE',
       [id]
@@ -100,7 +94,6 @@ export async function eliminarPresentacion(id: string): Promise<void> {
 
     const [deps] = await trx<
       {
-        unidades: string;
         movimientos: string;
         consumos: string;
         compras: string;
@@ -114,7 +107,6 @@ export async function eliminarPresentacion(id: string): Promise<void> {
       }[]
     >(
       `SELECT
-         (SELECT COUNT(*) FROM inventario_unidades WHERE presentacion_id = ?) AS unidades,
          (SELECT COUNT(*) FROM inventario_movimientos WHERE presentacion_id = ?) AS movimientos,
          (SELECT COUNT(*) FROM inventario_movimiento_unidades mu
             INNER JOIN inventario_unidades u ON u.id = mu.unidad_id
@@ -132,14 +124,26 @@ export async function eliminarPresentacion(id: string): Promise<void> {
       [id, id, id, id, id, id, id, id, id, id, id, id]
     );
 
-    if (Object.values(deps ?? {}).some(valor => Number(valor) > 0)) {
-      throw new ConflictError(
-        'No se puede eliminar la presentación: tiene stock o historial asociado.'
-      );
+    const dependenciasHistoricas = [
+      deps?.movimientos,
+      deps?.consumos,
+      deps?.compras,
+      deps?.ventas,
+      deps?.colaciones,
+      deps?.entradas,
+      deps?.entradas_productos,
+      deps?.reposicion,
+      deps?.servicios,
+      deps?.solicitudes
+    ];
+    if (dependenciasHistoricas.some(valor => Number(valor) > 0)) {
+      await BaseRepository.update(trx, 'inventario_presentaciones', 'id', id, { activa: false });
+      return 'desactivada';
     }
 
     await BaseRepository.delete(trx, 'inventario_presentaciones', 'id', id);
     await sincronizarVencimientoProducto(trx, presentacion.producto_id);
+    return 'eliminada';
   });
 }
 

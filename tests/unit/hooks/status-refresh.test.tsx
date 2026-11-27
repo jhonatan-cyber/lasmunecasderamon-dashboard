@@ -67,7 +67,14 @@ describe('actualización de estados', () => {
       if (options?.method === 'DELETE') deleted = true;
       return {
         ok: true,
-        json: async () => ({ success: true, data: [{ id: 'producto', name: 'Ron' }] })
+        json: async () => ({
+          success: true,
+          message:
+            options?.method === 'DELETE'
+              ? 'Presentación desactivada para conservar su historial'
+              : undefined,
+          data: [{ id: 'producto', name: 'Ron' }]
+        })
       };
     });
     vi.stubGlobal('fetch', request);
@@ -88,6 +95,9 @@ describe('actualización de estados', () => {
     });
     await waitFor(() => expect(result.current.presentations.data).toEqual(['grande']));
     expect(result.current.products.allProducts[0].id).toBe('producto');
+    expect(toast.success).toHaveBeenCalledWith(
+      'Presentación desactivada para conservar su historial'
+    );
     const removals = request.mock.calls.filter(([, options]) => options?.method === 'DELETE');
     expect(removals).toHaveLength(1);
     expect(removals[0][0]).toBe('/api/products/presentations?id=peque%C3%B1a');

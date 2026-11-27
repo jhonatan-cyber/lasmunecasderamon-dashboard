@@ -45,6 +45,7 @@ describe('parámetros del catálogo del bar', () => {
   ])('enlaza los filtros $filters con el adaptador PostgreSQL', async ({ filters, params }) => {
     await expect(listarParaVenta(filters)).resolves.toEqual([]);
     expect(query).toHaveBeenCalledWith(expect.stringContaining("ubicacion = 'bar'"), params);
+    expect(String(vi.mocked(query).mock.calls[0][0])).toContain('p.activa = true');
   });
 
   it('expone el ml restante de la botella abierta para la colación', async () => {

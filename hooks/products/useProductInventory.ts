@@ -210,13 +210,6 @@ export function useProductInventory({
   };
 
   const deleteExistente = async (id: string) => {
-    const pres = existentes.find(e => e.id === id);
-    if (pres && (pres.stock ?? 0) > 0) {
-      toast.error(
-        `No se puede eliminar: esta presentación tiene ${pres.stock} unidades con códigos generados`
-      );
-      return;
-    }
     try {
       const response = await fetch(`/api/products/presentations?id=${encodeURIComponent(id)}`, {
         method: 'DELETE'
@@ -226,7 +219,7 @@ export function useProductInventory({
         throw new Error(
           result.message || result.error?.message || 'Error al eliminar presentación'
         );
-      toast.success('Presentación eliminada correctamente');
+      toast.success(result.message || 'Presentación procesada correctamente');
       if (productId) await fetchInventario(productId);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al eliminar presentación');

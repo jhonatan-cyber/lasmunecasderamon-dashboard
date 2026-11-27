@@ -461,6 +461,7 @@ CREATE TABLE inventario_presentaciones (
   opciones_venta text DEFAULT NULL,
   foto varchar(255) DEFAULT NULL,
   ml_botella integer DEFAULT NULL,
+  activa boolean NOT NULL DEFAULT true,
   fecha_crea timestamp NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX uq_inventario_presentaciones_codigo_barras

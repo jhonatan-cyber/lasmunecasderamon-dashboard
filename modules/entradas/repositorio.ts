@@ -575,19 +575,20 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
       Array<{
         id: string;
         producto_id: string;
+        activa: boolean;
         precio_venta: number;
         opciones_venta: unknown;
         estado: number | null;
       }>
     >(
-      `SELECT p.id, p.producto_id, p.precio_venta, p.opciones_venta, pr.estado
+      `SELECT p.id, p.producto_id, p.activa, p.precio_venta, p.opciones_venta, pr.estado
          FROM inventario_presentaciones p JOIN productos pr ON pr.id_producto = p.producto_id
         WHERE p.id IN (${presentacionIds.map(() => '?').join(',')}) ORDER BY p.id FOR UPDATE OF p`,
       presentacionIds
     );
     const seleccion = input.unidades.map(item => {
       const presentacion = presentaciones.find(fila => fila.id === item.presentacion_id);
-      if (!presentacion || Number(presentacion.estado) !== 1)
+      if (!presentacion || !presentacion.activa || Number(presentacion.estado) !== 1)
         throw new ValidationError('La bebida seleccionada no está disponible');
       const opciones = parseOpcionesVenta(presentacion.opciones_venta);
       const botella = opciones.find(opcion => opcion.tipo === 'botella');
@@ -817,12 +818,13 @@ export async function entregarEntrada(
       {
         id: string;
         producto_id: string;
+        activa: boolean;
         precio_venta: number;
         opciones_venta: unknown;
         estado: number | null;
       }[]
     >(
-      `SELECT p.id, p.producto_id, p.precio_venta, p.opciones_venta, pr.estado
+      `SELECT p.id, p.producto_id, p.activa, p.precio_venta, p.opciones_venta, pr.estado
          FROM inventario_presentaciones p
          LEFT JOIN productos pr ON pr.id_producto = p.producto_id
         WHERE p.id = ? FOR UPDATE OF p`,
@@ -830,7 +832,7 @@ export async function entregarEntrada(
     );
     const presentacion = presentaciones[0];
     if (!presentacion) throw new ValidationError('La bebida seleccionada ya no existe');
-    if (Number(presentacion.estado) !== 1)
+    if (!presentacion.activa || Number(presentacion.estado) !== 1)
       throw new ValidationError('La bebida seleccionada no está disponible');
 
     const opciones = parseOpcionesVenta(presentacion.opciones_venta);

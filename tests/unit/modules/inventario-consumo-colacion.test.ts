@@ -63,6 +63,38 @@ beforeEach(() => {
 });
 
 describe('consumirColacion con Acompañamiento por unidades', () => {
+  it('rechaza una presentación desactivada antes de leer o consumir stock', async () => {
+    trx.mockImplementation(async (sql: string) => {
+      if (sql.includes('FROM inventario_presentaciones p')) {
+        return [
+          {
+            id: 'p-mixer',
+            producto_id: 'prod-mixer',
+            nombre: 'Mixer 750 ml',
+            activa: false,
+            ml_botella: 750
+          }
+        ];
+      }
+      return [];
+    });
+
+    await expect(
+      consumirColacion(
+        [{ presentacion_id: 'p-mixer', unidades: 1 }],
+        'usuario-1',
+        '2025-01-01 12:00:00',
+        contexto
+      )
+    ).rejects.toThrow('presentación de la colación no está disponible');
+
+    expect(trx).not.toHaveBeenCalledWith(
+      expect.stringContaining('FROM inventario_unidades'),
+      expect.anything()
+    );
+    expect(movimientos).toHaveLength(0);
+  });
+
   it('registra en el movimiento los ml que salen del bar', async () => {
     await consumirColacion(
       [{ presentacion_id: 'p-mixer', unidades: 2 }],

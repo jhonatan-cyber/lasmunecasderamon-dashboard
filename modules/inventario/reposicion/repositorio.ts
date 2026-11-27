@@ -37,7 +37,7 @@ export async function listarPresentacionesParaReposicion(
              AND COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) < ?)::int AS unidades_vencidas
       FROM inventario_presentaciones p JOIN productos pr ON pr.id_producto = p.producto_id
       LEFT JOIN inventario_unidades u ON u.presentacion_id = p.id AND u.estado = 'almacen' AND u.ubicacion IN ('almacen', 'bar')
-      WHERE pr.estado = 1 AND p.stock_minimo IS NOT NULL
+      WHERE pr.estado = 1 AND p.activa = true AND p.stock_minimo IS NOT NULL
       GROUP BY p.id, pr.nombre ORDER BY p.id`,
     [hoy, hoy, hoy]
   );

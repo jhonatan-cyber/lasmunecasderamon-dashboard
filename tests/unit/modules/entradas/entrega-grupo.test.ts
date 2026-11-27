@@ -12,6 +12,7 @@ const estado = vi.hoisted(() => ({
   presentaciones: [] as Array<{
     id: string;
     producto_id: string;
+    activa: boolean;
     precio_venta: number;
     opciones_venta: unknown[];
     estado: number;
@@ -80,6 +81,7 @@ const entrada = (id: string) => ({
 const producto = (id: string, precio: number, opciones: unknown[] = []) => ({
   id,
   producto_id: `prod-${id}`,
+  activa: true,
   precio_venta: precio,
   opciones_venta: opciones,
   estado: 1

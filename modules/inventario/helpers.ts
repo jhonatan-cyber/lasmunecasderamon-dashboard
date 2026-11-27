@@ -152,6 +152,7 @@ export const mapPresentacion = (row: any, topeSimple = 10000): PresentacionRow =
     opciones_venta: opciones,
     id: row.id,
     producto_id: row.producto_id,
+    activa: row.activa !== false,
     nombre: row.nombre,
     codigo_barras: row.codigo_barras ?? null,
     precio_compra: Number(row.precio_compra ?? 0),

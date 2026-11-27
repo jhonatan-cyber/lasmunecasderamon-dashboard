@@ -319,7 +319,10 @@ export function ExistingPresentacionCard({
                 className='w-9 h-9 rounded-xl object-cover border border-gray-200 dark:border-slate-700 shrink-0'
               />
               <div className='flex-1 min-w-0'>
-                <p className='text-sm font-semibold truncate'>{p.nombre}</p>
+                <p className='text-sm font-semibold truncate'>
+                  {p.nombre}
+                  {p.activa === false && ' (desactivada)'}
+                </p>
                 <p className='text-xs text-gray-500'>
                   {formatCurrencyCLP(p.precio_venta ?? 0)} · {p.stock ?? 0} un.
                 </p>
@@ -359,19 +362,21 @@ export function ExistingPresentacionCard({
             >
               <Pencil className='w-4 h-4' />
             </Button>
-            <Button
-              variant='unstyled'
-              type='button'
-              onClick={e => {
-                e.stopPropagation();
-                deleteExistente(p.id);
-              }}
-              disabled={isLoading}
-              title='Eliminar presentación'
-              className='p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
-            >
-              <Trash2 className='w-4 h-4' />
-            </Button>
+            {p.activa !== false && (
+              <Button
+                variant='unstyled'
+                type='button'
+                onClick={e => {
+                  e.stopPropagation();
+                  deleteExistente(p.id);
+                }}
+                disabled={isLoading}
+                title='Eliminar presentación'
+                className='p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 shrink-0'
+              >
+                <Trash2 className='w-4 h-4' />
+              </Button>
+            )}
             {/* Botón contraer/expandir — siempre visible en el header */}
             <CollapsibleTrigger asChild>
               <Button
@@ -406,7 +411,7 @@ export function ExistingPresentacionCard({
                   value={stockExtra[p.id] || ''}
                   onChange={e => changeStockExtra(p.id, e.target.value)}
                   placeholder='Cantidad a agregar'
-                  disabled={isLoading || agregandoStock}
+                  disabled={isLoading || agregandoStock || p.activa === false}
                   inputMode='numeric'
                   className='h-9 text-sm'
                 />
@@ -414,7 +419,7 @@ export function ExistingPresentacionCard({
                   variant='unstyled'
                   type='button'
                   onClick={() => agregarStock(p.id)}
-                  disabled={isLoading || agregandoStock}
+                  disabled={isLoading || agregandoStock || p.activa === false}
                   title='Generar códigos para esta presentación'
                   className='flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-full bg-blue-600 text-white hover:scale-105 transition-all disabled:opacity-50 shrink-0'
                 >

@@ -7,7 +7,12 @@ import { useProductForm } from '@/hooks/products/useProductForm';
 import { toast } from 'sonner';
 vi.unmock('@tanstack/react-query');
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/lib/utils/logger', () => ({ default: { warn: vi.fn() } , setRequestId: vi.fn(), getRequestId: vi.fn(() => 'test-request-id'), clearRequestId: vi.fn()}));
+vi.mock('@/lib/utils/logger', () => ({
+  default: { warn: vi.fn() },
+  setRequestId: vi.fn(),
+  getRequestId: vi.fn(() => 'test-request-id'),
+  clearRequestId: vi.fn()
+}));
 const clients: QueryClient[] = [];
 function wrapper() {
   const client = new QueryClient();
@@ -23,13 +28,13 @@ afterEach(() => {
   clients.splice(0).forEach(client => client.clear());
 });
 const product = (id: string) => ({ id, code: id, name: id }) as Product;
-const response = (url: string, id: string) => ({
+const response = (url: string, id: string, stock = 0) => ({
   ok: true,
   json: async () => ({
     success: true,
     data: url.includes('/units')
       ? { total: 1, unidades: [{ id, codigo: id }] }
-      : [{ id, nombre: id, stock: 0 }]
+      : [{ id, nombre: id, stock }]
   })
 });
 describe('inventario del formulario de productos', () => {
@@ -178,5 +183,32 @@ describe('inventario del formulario de productos', () => {
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith('No permitido');
     expect(request).toHaveBeenCalledTimes(3);
+  });
+  it('envía la eliminación aunque haya stock cuando no hay historial', async () => {
+    const request = vi.fn(async (url: string, options?: RequestInit) =>
+      options?.method === 'DELETE'
+        ? {
+            ok: true,
+            json: async () => ({ success: true, message: 'Presentación eliminada correctamente' })
+          }
+        : response(url, 'vigente', 2)
+    );
+    vi.stubGlobal('fetch', request);
+    const item = product('1');
+    const { result } = renderHook(
+      () => useProductForm({ initialValues: item, open: true, categoryId: '1', onSubmit: vi.fn() }),
+      { wrapper: wrapper() }
+    );
+    await waitFor(() => expect(result.current.existentes).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.deleteExistente('vigente');
+    });
+
+    expect(request).toHaveBeenCalledWith(
+      '/api/products/presentations?id=vigente',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+    expect(toast.success).toHaveBeenCalledWith('Presentación eliminada correctamente');
   });
 });

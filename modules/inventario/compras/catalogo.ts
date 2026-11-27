@@ -50,21 +50,23 @@ export async function listar() {
   }
 
   return productos.flatMap(producto =>
-    (presentaciones[String(producto.id)] ?? []).map(presentacion => ({
-      id: String(presentacion.id),
-      producto_id: String(producto.id),
-      producto_nombre: producto.name,
-      categoria_nombre: (producto as typeof producto & { categoria?: string }).categoria,
-      codigo_barras: presentacion.codigo_barras,
-      nombre: presentacion.nombre,
-      foto: presentacion.foto || producto.foto || 'default.png',
-      precio_compra: Number(presentacion.precio_compra ?? 0),
-      stock: Number(presentacion.stock ?? 0),
-      resumen_stock: resumenPorPresentacion.get(String(presentacion.id)) ?? {
-        vencidas: { cantidad: 0, codigos: [] },
-        por_vencer: { cantidad: 0, codigos: [] },
-        buen_estado: { cantidad: 0, codigos: [] }
-      }
-    }))
+    (presentaciones[String(producto.id)] ?? [])
+      .filter(presentacion => presentacion.activa !== false)
+      .map(presentacion => ({
+        id: String(presentacion.id),
+        producto_id: String(producto.id),
+        producto_nombre: producto.name,
+        categoria_nombre: (producto as typeof producto & { categoria?: string }).categoria,
+        codigo_barras: presentacion.codigo_barras,
+        nombre: presentacion.nombre,
+        foto: presentacion.foto || producto.foto || 'default.png',
+        precio_compra: Number(presentacion.precio_compra ?? 0),
+        stock: Number(presentacion.stock ?? 0),
+        resumen_stock: resumenPorPresentacion.get(String(presentacion.id)) ?? {
+          vencidas: { cantidad: 0, codigos: [] },
+          por_vencer: { cantidad: 0, codigos: [] },
+          buen_estado: { cantidad: 0, codigos: [] }
+        }
+      }))
   );
 }

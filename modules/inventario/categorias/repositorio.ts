@@ -124,6 +124,13 @@ export class CategoryRepository {
     };
   }
 
+  static async exists(id: string): Promise<boolean> {
+    const results = await query<any[]>('SELECT 1 FROM categorias WHERE id_categoria = ? LIMIT 1', [
+      id
+    ]);
+    return results.length > 0;
+  }
+
   static async getAll(forSale = false) {
     const results = (await query(`
       SELECT 

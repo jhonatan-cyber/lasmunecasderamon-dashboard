@@ -2,7 +2,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   trx: vi.fn(),
   transaction: vi.fn(),
-  delete: vi.fn()
+  delete: vi.fn(),
+  update: vi.fn()
 }));
 vi.mock('@/lib/database/db', () => ({
   query: vi.fn(),
@@ -12,7 +13,7 @@ vi.mock('@/lib/database/db', () => ({
 vi.mock('@/lib/database/base-repository', () => ({
   BaseRepository: {
     delete: mocks.delete,
-    update: vi.fn(),
+    update: mocks.update,
     findOne: vi.fn(),
     insert: vi.fn()
   }
@@ -83,13 +84,27 @@ it('considera exitoso borrar un producto que ya no existe', async () => {
   expect(mocks.delete).not.toHaveBeenCalled();
 });
 
-it('bloquea el borrado de una presentación con unidades o referencias', async () => {
+it('desactiva una presentación con referencias históricas para conservarlas', async () => {
   mocks.trx
     .mockResolvedValueOnce([{ id: 'pres1' }])
     .mockResolvedValueOnce([{ ...sinDependenciasPresentacion, ventas: '1' }]);
 
-  await expect(eliminarPresentacion('pres1')).rejects.toBeInstanceOf(ConflictError);
+  await expect(eliminarPresentacion('pres1')).resolves.toBe('desactivada');
   expect(mocks.delete).not.toHaveBeenCalled();
+  expect(mocks.update).toHaveBeenCalledWith(mocks.trx, 'inventario_presentaciones', 'id', 'pres1', {
+    activa: false
+  });
+});
+
+it('borra una presentación con stock si no tiene historial', async () => {
+  mocks.trx
+    .mockResolvedValueOnce([{ id: 'pres1' }])
+    .mockResolvedValueOnce([{ ...sinDependenciasPresentacion, unidades: '2' }]);
+
+  await expect(eliminarPresentacion('pres1')).resolves.toBe('eliminada');
+
+  expect(mocks.delete).toHaveBeenCalledWith(mocks.trx, 'inventario_presentaciones', 'id', 'pres1');
+  expect(mocks.update).not.toHaveBeenCalled();
 });
 
 it('borra una presentación sin dependencias', async () => {
@@ -97,8 +112,10 @@ it('borra una presentación sin dependencias', async () => {
     .mockResolvedValueOnce([{ id: 'pres1' }])
     .mockResolvedValueOnce([sinDependenciasPresentacion]);
 
-  await eliminarPresentacion('pres1');
+  await expect(eliminarPresentacion('pres1')).resolves.toBe('eliminada');
 
+  const [sql, params] = mocks.trx.mock.calls[1];
+  expect([...String(sql).matchAll(/\?/g)]).toHaveLength(params.length);
   expect(mocks.delete).toHaveBeenCalledWith(mocks.trx, 'inventario_presentaciones', 'id', 'pres1');
 });
 
