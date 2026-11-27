@@ -76,9 +76,9 @@ export async function bloquearYValidarConfiguracionVenta(
       const mixerBottleOption = mixerOptions?.find(o => o.tipo === 'botella');
 
       if (detalle.shot_anfitriona) {
-        // Corto con anfitriona: el acompañamiento debe tener colacion_habilitada
+        // Corto con anfitriona: el acompañamiento debe permitir este uso.
         // Si no hay opciones configuradas, permitir (compatibilidad legacy)
-        if (mixerBottleOption && mixerBottleOption.colacion_habilitada === false)
+        if (mixerBottleOption?.corto_anfitriona_habilitado === false)
           throw new BusinessError(
             'La bebida seleccionada como acompañamiento no está habilitada para corto con anfitriona'
           );

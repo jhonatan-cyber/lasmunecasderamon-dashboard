@@ -29,9 +29,8 @@ import CategoryCardList from '@/components/shared/CategoryCardList';
 
 const isTierPriced = (item: BarStockItem) => isTierPricedItem(item);
 
-const SIN_CATEGORIA = 'Sin categoría';
-function categoryKey(item: BarStockItem) {
-  return item.categoria_nombre?.trim() || SIN_CATEGORIA;
+function categoryKey(item: BarStockItem): string | null {
+  return item.categoria_nombre?.trim() || null;
 }
 
 interface BarProductosTabProps {
@@ -81,6 +80,7 @@ export function BarProductosTab({
     const map = new Map<string, BarStockItem[]>();
     for (const item of filtered) {
       const key = categoryKey(item);
+      if (!key) continue;
       const list = map.get(key);
       if (list) list.push(item);
       else map.set(key, [item]);
@@ -98,11 +98,7 @@ export function BarProductosTab({
     const visible = term
       ? cards.filter(card => card.name.toLocaleLowerCase('es').includes(term))
       : cards;
-    return visible.sort((a, b) => {
-      if (a.name === SIN_CATEGORIA) return 1;
-      if (b.name === SIN_CATEGORIA) return -1;
-      return a.name.localeCompare(b.name, 'es');
-    });
+    return visible.sort((a, b) => a.name.localeCompare(b.name, 'es'));
   }, [groups, search]);
 
   // Nivel 2: productos de la categoría seleccionada, con búsqueda propia

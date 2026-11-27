@@ -836,6 +836,7 @@ export async function entregarEntrada(
       throw new ValidationError('La bebida seleccionada no está disponible');
 
     const opciones = parseOpcionesVenta(presentacion.opciones_venta);
+    const botella = opciones.find(opcion => opcion.tipo === 'botella');
     const esCorte = input.tipoEntrega === 'corte';
     const opcionCorte = opciones.find(opcion => opcion?.tipo === 'shot') as
       { precio?: unknown } | undefined;
@@ -843,7 +844,6 @@ export async function entregarEntrada(
     if (esCorte && (!Number.isFinite(precioCorte) || precioCorte <= 0))
       throw new ValidationError('La bebida seleccionada no se vende por corte');
 
-    const botella = opciones.find(opcion => opcion.tipo === 'botella');
     const precioSin = Number(botella?.precio_sin_anfitriona ?? 0);
     const precio = esCorte
       ? precioCorte

@@ -313,6 +313,7 @@ export default function BarPage() {
     const term = search.trim().toLowerCase();
     return items
       .filter(i => {
+        if (!i.categoria_nombre?.trim()) return false;
         // El bar solo lista lo que tiene existencia: stock en barra, botellas
         // abiertas o vacías por cortos pendientes de devolución.
         const disponible =

@@ -85,14 +85,18 @@ it('descuenta los ml configurados al elegir Coca-Cola o Sprite para cortos de an
             producto_nombre: 'Coca-Cola',
             nombre: '350 ml',
             stock_bar: 3,
-            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]
+            opciones_venta: [
+              { tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: false }
+            ]
           },
           {
             id: 'sprite',
             producto_nombre: 'Sprite',
             nombre: '350 ml',
             stock_bar: 3,
-            opciones_venta: [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]
+            opciones_venta: [
+              { tipo: 'botella', corto_anfitriona_habilitado: false, colacion_habilitada: true }
+            ]
           }
         ]
       })
@@ -113,11 +117,11 @@ it('descuenta los ml configurados al elegir Coca-Cola o Sprite para cortos de an
   }
   render(<Form />);
   await screen.findByRole('option', { name: /Coca-Cola/ });
-  expect(screen.getByRole('option', { name: /Sprite/ })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /Sprite/ })).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Soda o gaseosa para Whisky'), {
-    target: { value: 'sprite' }
+    target: { value: 'cola' }
   });
-  expect(screen.getByText('Consumo incluido: 300 ml de Sprite 350 ml')).toBeInTheDocument();
+  expect(screen.getByText('Consumo incluido: 300 ml de Coca-Cola 350 ml')).toBeInTheDocument();
 });
 it('valida el consumo y rechaza usar la propia bebida como bebida', () => {
   const detail = {

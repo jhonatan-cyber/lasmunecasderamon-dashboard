@@ -168,7 +168,7 @@ describe('EntregaCoversDialog', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
-  it('ofrece bebidas dentro del tope aunque cover_habilitado esté desactivado', async () => {
+  it('muestra la bebida principal aunque cover_habilitado esté desactivado', async () => {
     const producto = bebida('Whisky', 'Licores', 2000);
     stubCatalogo([
       {
@@ -416,6 +416,44 @@ describe('EntregaCoversDialog', () => {
     expect(screen.getByRole('heading', { name: 'Licores' })).toBeInTheDocument();
   });
 
+  it('solo lista categorías con productos dentro del tope de covers configurado', async () => {
+    stubCatalogo([
+      bebida('Vino al tope', 'Vinos', 5000),
+      bebida('Ron sobre el tope', 'Destilados', 5001)
+    ]);
+    renderDialog(1, 10000, 5000);
+
+    expect(await screen.findByRole('button', { name: /Vinos/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Destilados/ })).not.toBeInTheDocument();
+  });
+
+  it('filtra categorías por el total grupal de 40.000 y el límite individual de 10.000', async () => {
+    const bebidaConPrecio = (nombre: string, categoria: string, precio: number) => ({
+      ...bebida(nombre, categoria, precio),
+      precio_venta: precio,
+      opciones_venta: [
+        { tipo: 'shot', precio },
+        { tipo: 'botella', precio, precio_sin_anfitriona: precio }
+      ]
+    });
+    stubCatalogo([
+      bebidaConPrecio('Cerveza', 'Cervezas', 8000),
+      bebidaConPrecio('Destilado', 'Destilados', 40000),
+      bebidaConPrecio('Campaña', 'Campaña', 45000)
+    ]);
+    renderDialog(4, 10000, 10000);
+
+    expect(await screen.findByRole('button', { name: /Cervezas/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Destilados/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Campaña/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Entrega individual' }));
+
+    expect(screen.getByRole('button', { name: /Cervezas/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Destilados/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Campaña/ })).not.toBeInTheDocument();
+  });
+
   it('muestra categorías primero y respeta los formatos configurados al abrir una categoría', async () => {
     stubCatalogo([
       bebida('Whisky', 'Licores', 4000),
@@ -431,7 +469,7 @@ describe('EntregaCoversDialog', () => {
 
     const licores = await screen.findByRole('button', { name: /Licores/ });
     expect(screen.getByRole('button', { name: /Vinos/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Premium/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Premium/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Whisky/ })).not.toBeInTheDocument();
 
     fireEvent.click(licores);
@@ -446,12 +484,6 @@ describe('EntregaCoversDialog', () => {
     const vino = await screen.findByRole('button', { name: /Vino/ });
     expect(within(vino).getByText('Botella sin anfitriona')).toBeInTheDocument();
     expect(within(vino).queryByText('Corte')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /Categorías/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Premium/ }));
-    expect(
-      await screen.findByText('Sin productos hasta $5.000 en esta categoría.')
-    ).toBeInTheDocument();
   });
 
   it('limita el catálogo individual al tope y excluye productos sin stock', async () => {
@@ -470,13 +502,18 @@ describe('EntregaCoversDialog', () => {
   });
 
   it('permite al grupo elegir un producto sobre el tope individual si cabe en el total', async () => {
-    stubCatalogo([bebida('Ron', 'Licores', 5001)]);
+    stubCatalogo([bebida('Whisky', 'Licores', 4000), bebida('Ron', 'Destilados', 5001)]);
     renderDialog(2, 5000, 5000);
 
-    await abrirCategoria('Licores');
+    expect(await screen.findByRole('button', { name: /Destilados/ })).toBeInTheDocument();
+    await abrirCategoria('Destilados');
     fireEvent.click(await screen.findByRole('button', { name: /Ron/ }));
 
     expect(screen.getByText(/1 productos para 2 entradas/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Entrega individual' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Categorías' }));
+    expect(screen.queryByRole('button', { name: /Destilados/ })).not.toBeInTheDocument();
   });
 
   it('deja agregar hasta el tope del presupuesto y bloquea lo que no cabe', async () => {
@@ -577,10 +614,44 @@ describe('EntregaCoversDialog', () => {
     stubCatalogo([bebida('Whisky', 'Licores', 5000)]);
     renderDialog(1, 4000, 10000);
 
-    await abrirCategoria('Licores');
-    expect(
-      await screen.findByText('Sin productos hasta $4.000 en esta categoría.')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('No hay bebidas disponibles en el bar.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Licores/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Whisky/ })).not.toBeInTheDocument();
+  });
+
+  it('muestra la imagen del producto en las opciones de acompañamiento', async () => {
+    const { AcompanamientoDistribuidor: AcompanamientoReal } = await vi.importActual<
+      typeof import('@/components/shared/AcompanamientoDistribuidor')
+    >('@/components/shared/AcompanamientoDistribuidor');
+    const onChange = vi.fn();
+    render(
+      <AcompanamientoReal
+        id='acompanamiento-test'
+        opciones={[
+          {
+            id: 'presentacion-cola',
+            producto_nombre: 'Cola',
+            nombre: '330 ml',
+            stock_bar: 2,
+            foto: 'cola.png'
+          }
+        ]}
+        requeridas={1}
+        valor={[]}
+        onChange={onChange}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+    const opcion = await screen.findByRole('option', { name: /Cola 330 ml/ });
+    const imagen = opcion.querySelector('img');
+    expect(imagen).toBeInTheDocument();
+    expect(imagen?.getAttribute('src')).toContain('/api/images/products/cola.png');
+
+    fireEvent.click(opcion);
+
+    expect(onChange).toHaveBeenCalledWith([
+      expect.objectContaining({ presentacion_id: 'presentacion-cola', unidades: 1 })
+    ]);
   });
 });
