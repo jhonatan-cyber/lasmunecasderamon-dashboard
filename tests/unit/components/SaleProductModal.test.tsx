@@ -350,7 +350,7 @@ it.each([
   }
 );
 
-it('excluye del corto anfitriona bebidas que no están habilitadas para ese uso', async () => {
+it('lista acompañamientos habilitados para corto anfitriona, aunque no estén habilitados para colación', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -369,7 +369,8 @@ it('excluye del corto anfitriona bebidas que no están habilitadas para ese uso'
                 precio: 2000,
                 comision: 0,
                 cover_habilitado: false,
-                corto_anfitriona_habilitado: false
+                corto_anfitriona_habilitado: false,
+                colacion_habilitada: true
               }
             ]
           },
@@ -385,7 +386,7 @@ it('excluye del corto anfitriona bebidas que no están habilitadas para ese uso'
                 comision: 0,
                 cover_habilitado: true,
                 corto_anfitriona_habilitado: true,
-                colacion_habilitada: true
+                colacion_habilitada: false
               }
             ]
           }
