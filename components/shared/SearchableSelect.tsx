@@ -13,6 +13,7 @@ import {
   CommandList
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils/utils';
+import { ProductPhoto } from '@/components/shared/ProductPhoto';
 
 export function SearchableSelect({
   id,
@@ -28,7 +29,7 @@ export function SearchableSelect({
   onChange: (value: string) => void;
   placeholder: string;
   searchPlaceholder: string;
-  options: { value: string; label: string; keywords?: string[] }[];
+  options: { value: string; label: string; keywords?: string[]; imageSrc?: string }[];
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -71,6 +72,16 @@ export function SearchableSelect({
                   <Check
                     className={cn('size-4', value === option.value ? 'opacity-100' : 'opacity-0')}
                   />
+                  {option.imageSrc ? (
+                    <span className='relative size-9 shrink-0 overflow-hidden rounded-lg bg-muted/40'>
+                      <ProductPhoto
+                        src={option.imageSrc}
+                        alt=''
+                        fill
+                        className='object-contain p-1'
+                      />
+                    </span>
+                  ) : null}
                   {option.label}
                 </CommandItem>
               ))}
