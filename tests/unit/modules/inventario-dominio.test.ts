@@ -97,9 +97,11 @@ describe('transferencias de almacén al bar', () => {
       expect.arrayContaining(['traspaso', 'prod-1', 'pres-1', 2, 'user-1'])
     );
     expect(movement![1]).toContain(JSON.stringify(options));
-    // El precio de la presentación se define recién al aceptar, no al solicitar.
-    expect(trx.mock.calls.some(([sql]) => sql.includes('UPDATE inventario_presentaciones'))).toBe(
-      false
+    const presentationUpdate = trx.mock.calls.find(([sql]) =>
+      sql.includes('UPDATE inventario_presentaciones')
+    );
+    expect(presentationUpdate?.[1]).toEqual(
+      expect.arrayContaining([JSON.stringify(options), 1500, 100, 'pres-1'])
     );
     expect(result).toEqual({
       transferencia_id: 'uuid-test',

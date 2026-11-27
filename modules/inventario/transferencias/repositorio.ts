@@ -2,11 +2,9 @@
  * SQL de transferencias entre bodega y bar. Infraestructura privada del módulo:
  * nadie fuera de `modules/inventario` importa este archivo (§5).
  *
- * El traspaso crea el movimiento pendiente y reserva las unidades en tránsito; la
- * aceptación las ingresa al bar y fija precio/comisión en la presentación; el
- * rechazo las devuelve a la bodega y recalcula el stock del producto. Mismo SQL,
- * mismos bloqueos `FOR UPDATE` y mismas validaciones que la capa heredada
- * (`TransferQueries`/`BarQueries`): este corte mueve código, no cambia reglas.
+ * El traspaso crea el movimiento pendiente, reserva las unidades en tránsito y
+ * guarda la configuración en la presentación para reutilizarla; la aceptación
+ * las ingresa al bar y el rechazo las devuelve a la bodega.
  */
 import { query, generateUUID, type TransactionQuery } from '@/lib/database/db';
 import { getBarMlConfig, getTopeSimple } from '../bar/configuracion';
@@ -193,6 +191,11 @@ export async function traspasarAlBar(
     );
   }
   const opcionesVenta = JSON.stringify(opciones);
+  await BaseRepository.update(trx, 'inventario_presentaciones', 'id', input.presentacion_id, {
+    opciones_venta: opcionesVenta,
+    precio_venta: Math.floor(precioVenta),
+    comision: Math.floor(comision)
+  });
   await BaseRepository.insert(trx, 'inventario_movimientos', {
     id: movimientoId,
     tipo: 'traspaso',
@@ -264,11 +267,6 @@ export async function aceptarTransferencia(
   const opcionesAceptadas = parseOpcionesVenta(movement.opciones_venta);
   if (!opcionesAceptadas || opcionesAceptadas.length === 0)
     throw new BusinessError('La transferencia no contiene una configuración de venta válida');
-  await BaseRepository.update(trx, 'inventario_presentaciones', 'id', movement.presentacion_id, {
-    opciones_venta: JSON.stringify(opcionesAceptadas),
-    precio_venta: movement.precio_venta,
-    comision: movement.comision
-  });
   await BaseRepository.update(trx, 'inventario_movimientos', 'id', id, {
     estado: 'aceptada',
     aceptado_por: usuarioId,

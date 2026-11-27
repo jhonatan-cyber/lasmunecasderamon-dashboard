@@ -171,6 +171,65 @@ it('un rol personalizado con products/accept_transfer aprueba el traspaso de pun
   }
 });
 
+it('no revierte la configuración del último traspaso al aceptar uno anterior', async () => {
+  try {
+    await withTransaction(async trx => {
+      const sufijo = randomUUID().slice(0, 8);
+      const rolId = await crearRol(trx, `Encargado de bar ${sufijo}`, true);
+      const remitente = await crearUsuario(trx, rolId, `fixture-envia-${sufijo}`);
+      const aprobador = await crearUsuario(trx, rolId, `fixture-aprueba-${sufijo}`);
+      const { productoId, presentacionId } = await crearProductoConStock(trx, 2);
+      const opcionesNuevas = [{ ...opciones[0], precio: 98000, comision: 12000 }, opciones[1]];
+
+      const anterior = await conContextoOperacionExistente(trx, contexto =>
+        traspasarAlBar(
+          {
+            producto_id: productoId,
+            presentacion_id: presentacionId,
+            cantidad: 1,
+            usuario_id: remitente,
+            opciones_venta: opciones
+          },
+          contexto
+        )
+      );
+      const ultimo = await conContextoOperacionExistente(trx, contexto =>
+        traspasarAlBar(
+          {
+            producto_id: productoId,
+            presentacion_id: presentacionId,
+            cantidad: 1,
+            usuario_id: remitente,
+            opciones_venta: opcionesNuevas
+          },
+          contexto
+        )
+      );
+      if (!anterior.transferencia_id || !ultimo.transferencia_id)
+        throw new Error('El traspaso no devolvió id');
+
+      const [antesDeAceptar] = await trx<Array<{ opciones_venta: unknown }>>(
+        'SELECT opciones_venta FROM inventario_presentaciones WHERE id = ?',
+        [presentacionId]
+      );
+      expect(antesDeAceptar.opciones_venta).toEqual(opcionesNuevas);
+
+      await conContextoOperacionExistente(trx, contexto =>
+        aceptarTransferencia(anterior.transferencia_id!, aprobador, contexto)
+      );
+
+      const [despuesDeAceptar] = await trx<Array<{ opciones_venta: unknown }>>(
+        'SELECT opciones_venta FROM inventario_presentaciones WHERE id = ?',
+        [presentacionId]
+      );
+      expect(despuesDeAceptar.opciones_venta).toEqual(opcionesNuevas);
+      throw new Error(ROLLBACK);
+    });
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== ROLLBACK) throw error;
+  }
+});
+
 it('el administrador puede aceptar el traspaso que él mismo envió', async () => {
   try {
     await withTransaction(async trx => {
