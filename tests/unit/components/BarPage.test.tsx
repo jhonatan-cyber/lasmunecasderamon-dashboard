@@ -151,7 +151,8 @@ it('navega categorías, busca en cada nivel y vuelve sin perder la agrupación',
     await screen.findByRole('button', { name: /Champagne.*1 presentación/ })
   ).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Licores.*2 presentaciones/ })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Sin categoría.*1 presentación/ })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Sin categoría/ })).not.toBeInTheDocument();
+  expect(screen.queryByText('Sin clasificar')).not.toBeInTheDocument();
   expect(screen.queryByRole('list', { name: 'Productos' })).not.toBeInTheDocument();
   fireEvent.change(screen.getByRole('textbox', { name: 'Buscar categoría' }), {
     target: { value: 'lico' }
@@ -171,8 +172,6 @@ it('navega categorías, busca en cada nivel y vuelve sin perder la agrupación',
   fireEvent.click(screen.getByRole('button', { name: 'Atrás' }));
   expect(screen.getByRole('textbox', { name: 'Buscar categoría' })).toHaveValue('');
   expect(screen.queryByRole('list', { name: 'Productos' })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /Sin categoría/ }));
-  expect(screen.getByRole('list', { name: 'Productos' })).toHaveTextContent('Sin clasificar');
 });
 
 const champagneItem = (options: SaleOption[] | string): BarStockItem => ({
