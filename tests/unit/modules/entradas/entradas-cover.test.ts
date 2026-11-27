@@ -126,6 +126,7 @@ beforeEach(() => {
         {
           id: 'pres-1',
           producto_id: 'prod-1',
+          activa: true,
           precio_venta: estado.precio,
           opciones_venta: estado.opciones,
           estado: 1

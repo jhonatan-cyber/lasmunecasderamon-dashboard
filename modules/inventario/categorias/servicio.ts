@@ -12,6 +12,10 @@ export class CategoryService {
     return await CategoryRepository.getAll(forSale);
   }
 
+  static async exists(id: string) {
+    return await CategoryRepository.exists(id);
+  }
+
   static async create(name: string, description: string = '') {
     const validated = CategorySchema.parse({ name, description });
     return await CategoryRepository.create(validated.name, validated.description);

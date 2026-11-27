@@ -50,6 +50,7 @@ import {
 } from '@/modules/inventario/movimientos/servicio';
 import { listarParaVenta } from '@/modules/inventario/catalogo/servicio';
 import { listarStockBar, obtenerResumenShots } from '@/modules/inventario/bar/servicio';
+import { CategoryService } from '@/modules/inventario/categorias/servicio';
 import { ConflictError, ValidationError, NotFoundError } from '@/lib/errors/errors';
 import { z } from 'zod';
 import {
@@ -69,6 +70,12 @@ function assertStockNoEditable(data: Record<string, unknown>) {
     throw new ValidationError(
       'El stock de bodega se calcula desde las unidades y no se edita directamente'
     );
+  }
+}
+
+async function assertCategoryExists(categoryId: string): Promise<void> {
+  if (!(await CategoryService.exists(categoryId))) {
+    throw new ValidationError('La categoría seleccionada no existe');
   }
 }
 
@@ -127,6 +134,7 @@ export class ProductService {
     };
 
     const validated = ProductSchema.parse(normalizedBody);
+    await assertCategoryExists(validated.category_id);
 
     const existing = await obtenerProductoPorCodigoONombre(
       validated.code,
@@ -165,6 +173,7 @@ export class ProductService {
   static async update(id: string | number, data: Record<string, unknown>) {
     assertStockNoEditable(data);
     const validated = ProductSchema.partial().parse(data);
+    if (validated.category_id !== undefined) await assertCategoryExists(validated.category_id);
     return await actualizarProducto(id.toString(), validated as Record<string, unknown>);
   }
 
@@ -188,6 +197,7 @@ export class ProductService {
     };
 
     const validated = ProductSchema.partial().parse(normalizedBody);
+    if (validated.category_id !== undefined) await assertCategoryExists(validated.category_id);
 
     const currentProduct = await obtenerProductoPorId(id);
     const categoryId = validated.category_id || currentProduct?.category_id || '0';
@@ -253,8 +263,8 @@ export class ProductService {
     });
   }
 
-  static async removePresentation(id: string): Promise<void> {
-    await eliminarPresentacion(id);
+  static async removePresentation(id: string): Promise<'desactivada' | 'eliminada'> {
+    return await eliminarPresentacion(id);
   }
 
   static async updatePresentation(id: string, input: unknown): Promise<void> {
@@ -484,6 +494,8 @@ export class ProductService {
     if (!presentacion) {
       throw new ValidationError('La presentación no pertenece a este producto');
     }
+    if (presentacion.activa === false)
+      throw new ValidationError('No se puede traspasar una presentación desactivada al bar');
     // Si ya hay configuración guardada (precio, comisión), reutilizarla sin pedirla manual.
     if (!options && sinPrecioManual) {
       const guardadas = Array.isArray((presentacion as any).opciones_venta)
@@ -698,6 +710,8 @@ export class ProductService {
     if (!presentacion) {
       throw new ValidationError('La presentación no pertenece a este producto');
     }
+    if (presentacion.activa === false)
+      throw new ValidationError('No se puede generar stock para una presentación desactivada');
     return await registrarUnidades({
       producto_id: productoId,
       cantidad: unidades,

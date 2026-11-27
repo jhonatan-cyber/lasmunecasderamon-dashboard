@@ -8,6 +8,7 @@ export const PRESENTACION_UNIDADES = [
   { value: 'ml', label: 'Mililitros' },
   { value: 'cc', label: 'Centímetros cúbicos' },
   { value: 'oz', label: 'Onzas' },
+  { value: 'g', label: 'Gramos' },
   { value: 'un', label: 'Unidades' }
 ] as const;
 

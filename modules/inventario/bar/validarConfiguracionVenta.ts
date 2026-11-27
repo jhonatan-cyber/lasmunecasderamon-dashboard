@@ -22,6 +22,7 @@ import {
 } from './validacionRepositorio';
 
 export const productoDesactivado = (estado: number | null | undefined) => estado === 0;
+export const presentacionDesactivada = (activa: boolean | null | undefined) => activa === false;
 
 export type { PresentacionVentaBloqueada } from './validacionRepositorio';
 
@@ -60,7 +61,10 @@ export async function bloquearYValidarConfiguracionVenta(
     ]) {
       if (!presentacionId) continue;
       const presentacion = rows.find(row => row.id === presentacionId);
-      if (presentacion && productoDesactivado(presentacion.estado))
+      if (
+        presentacion &&
+        (presentacionDesactivada(presentacion.activa) || productoDesactivado(presentacion.estado))
+      )
         throw new BusinessError('La bebida seleccionada no está disponible');
     }
 

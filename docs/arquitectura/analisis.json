@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "bbedee7b91f1ae4bfeaa3efb3564a06d921366b4",
-    "generado": "2026-11-25T21:12:57.683Z",
-    "archivos": 2351,
+    "commit": "1ef4de7a741d6f21e0cb3e02c231cb0ee640b909",
+    "generado": "2026-11-27T01:10:29.028Z",
+    "archivos": 2362,
     "rutas": 247,
     "sqlFueraDeRepositorio": 0,
     "tablasConEscritoresMultiples": 0,
@@ -2558,7 +2558,7 @@
     },
     {
       "archivo": "app/tickets/page.tsx",
-      "linea": 195,
+      "linea": 193,
       "tipo": "setInterval",
       "texto": "const interval = window.setInterval(actualizarFechaHora, 60_000);"
     },
@@ -2850,6 +2850,22 @@
   ],
   "ciclos": [],
   "matriz": {
+    "components": {
+      "lib/otros": 413,
+      "raiz": 95,
+      "hooks": 158,
+      "lib/business": 60,
+      "lib/api": 3,
+      "modules/aplicacion": 10
+    },
+    "hooks": {
+      "lib/api": 9,
+      "raiz": 41,
+      "lib/otros": 111,
+      "components": 20,
+      "lib/business": 19,
+      "modules/aplicacion": 2
+    },
     "app/ui": {
       "hooks": 64,
       "lib/otros": 57,
@@ -2869,28 +2885,12 @@
       "lib/database": 3,
       "lib/integrations": 4
     },
-    "components": {
-      "hooks": 159,
-      "lib/otros": 411,
-      "raiz": 94,
-      "lib/business": 60,
-      "lib/api": 3,
-      "modules/aplicacion": 10
-    },
     "raiz": {
       "hooks": 6,
       "lib/otros": 13,
       "lib/api": 2,
       "lib/identidad": 2,
       "modules/aplicacion": 1
-    },
-    "hooks": {
-      "raiz": 40,
-      "lib/otros": 111,
-      "lib/api": 8,
-      "components": 20,
-      "lib/business": 19,
-      "modules/aplicacion": 2
     },
     "lib/api": {
       "lib/otros": 8,

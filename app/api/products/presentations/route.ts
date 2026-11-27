@@ -169,7 +169,13 @@ export const PATCH = withRoute(
 );
 
 export const DELETE = withRoute(
-  { auth: true, audit: true, module: 'products', action: 'delete' },
+  {
+    auth: true,
+    audit: true,
+    module: 'products',
+    action: 'delete',
+    retryFailedRegistration: true
+  },
   async (request: Request) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -178,7 +184,14 @@ export const DELETE = withRoute(
       return NextResponse.json({ success: false, message: 'ID es requerido' }, { status: 400 });
     }
 
-    await ProductService.removePresentation(id);
-    return NextResponse.json({ success: true, message: 'Presentación eliminada correctamente' });
+    const resultado = await ProductService.removePresentation(id);
+    return NextResponse.json({
+      success: true,
+      resultado,
+      message:
+        resultado === 'desactivada'
+          ? 'Presentación desactivada para conservar su historial'
+          : 'Presentación eliminada correctamente'
+    });
   }
 );

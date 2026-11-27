@@ -157,7 +157,7 @@ export async function registrarColacion(input: {
        FROM inventario_presentaciones p
        INNER JOIN productos pr ON pr.id_producto = p.producto_id AND pr.estado = 1
        LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
-       WHERE p.id = ? AND EXISTS (
+       WHERE p.id = ? AND p.activa = true AND EXISTS (
          SELECT 1 FROM inventario_unidades u
          WHERE u.presentacion_id = p.id AND u.estado = 'almacen' AND u.ubicacion = 'bar'
        ) AND EXISTS (
@@ -213,7 +213,7 @@ export async function registrarColacion(input: {
            FROM inventario_presentaciones p
            INNER JOIN productos pr ON pr.id_producto = p.producto_id AND pr.estado = 1
            LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
-          WHERE p.id = ? AND p.id <> ? AND c.system_key = ?
+          WHERE p.id = ? AND p.id <> ? AND p.activa = true AND c.system_key = ?
             AND EXISTS (
               SELECT 1 FROM inventario_unidades u
               WHERE u.presentacion_id = p.id AND u.estado = 'almacen' AND u.ubicacion = 'bar'

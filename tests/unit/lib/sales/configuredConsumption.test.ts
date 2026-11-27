@@ -21,12 +21,22 @@ const trx = vi.fn(async (_sql: string, params?: unknown[]) => {
   if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
     return params && params.length > 0 ? [stockBarRow] : [];
   }
-  return [
-    { id: 'vodka', opciones_venta: config },
-    spriteColacion
-  ];
+  return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
 }) as unknown as TransactionQuery;
 describe('server configured consumption', () => {
+  it('rechaza una presentación desactivada aunque el producto siga activo', async () => {
+    const inactivePresentation = vi.fn(async (_sql: string, params?: unknown[]) => {
+      if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) return [stockBarRow];
+      return [{ id: 'vodka', activa: false, estado: 1, opciones_venta: config }];
+    }) as unknown as TransactionQuery;
+
+    await expect(
+      validarConfiguracionVenta(inactivePresentation, [
+        { presentacion_id: 'vodka', tipo_venta: 'shot' }
+      ])
+    ).rejects.toThrow('no está disponible');
+  });
+
   it('rechaza corto cliente cuando solo existe precio de anfitriona', async () => {
     const onlyHostess = vi.fn(async (_sql: string, params?: unknown[]) => {
       if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
@@ -256,10 +266,7 @@ describe('server configured consumption', () => {
       if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
         return params && params.length > 0 ? [] : [];
       }
-      return [
-        { id: 'vodka', opciones_venta: config },
-        spriteColacion
-      ];
+      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(noStock, [
@@ -280,10 +287,7 @@ describe('server configured consumption', () => {
           ? [{ presentacion_id: 'sprite', stock_bar: 1, ml_abierta: 50 }]
           : [];
       }
-      return [
-        { id: 'vodka', opciones_venta: config },
-        spriteColacion
-      ];
+      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(lowMl, [
@@ -305,10 +309,7 @@ describe('server configured consumption', () => {
           ? [{ presentacion_id: 'sprite', stock_bar: 1, ml_abierta: 0 }]
           : [];
       }
-      return [
-        { id: 'vodka', opciones_venta: config },
-        spriteColacion
-      ];
+      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(lowStock, [
@@ -329,10 +330,7 @@ describe('server configured consumption', () => {
           ? [{ presentacion_id: 'sprite', stock_bar: 2, ml_abierta: 0 }]
           : [];
       }
-      return [
-        { id: 'vodka', opciones_venta: config },
-        spriteColacion
-      ];
+      return [{ id: 'vodka', opciones_venta: config }, spriteColacion];
     }) as unknown as TransactionQuery;
     await expect(
       validarConfiguracionVenta(lowBottleStock, [

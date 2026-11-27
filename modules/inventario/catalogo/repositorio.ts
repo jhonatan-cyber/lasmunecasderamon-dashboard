@@ -73,7 +73,7 @@ export async function listarParaVenta(filters?: FiltrosParaVenta): Promise<any[]
      FROM inventario_presentaciones p
      INNER JOIN productos pr ON pr.id_producto = p.producto_id AND pr.estado = 1
      LEFT JOIN categorias c ON c.id_categoria = pr.categoria_id
-     WHERE EXISTS (
+     WHERE p.activa = true AND EXISTS (
        SELECT 1 FROM inventario_unidades u WHERE u.presentacion_id = p.id
          AND u.estado = '${ESTADO_UNIDAD_ACTIVA}' AND u.ubicacion = 'bar'
          AND (COALESCE(u.fecha_vencimiento, p.fecha_vencimiento) IS NULL

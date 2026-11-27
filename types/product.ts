@@ -33,6 +33,7 @@ export interface Presentacion {
   opciones_venta?: import('./sale-options').SaleOption[];
   id: string;
   producto_id: string;
+  activa?: boolean;
   nombre: string;
   codigo_barras?: string | null;
   precio_compra?: number;

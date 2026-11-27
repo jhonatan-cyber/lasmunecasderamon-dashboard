@@ -140,7 +140,11 @@ export async function registrarCompra(
       }
       presentacionesMap = await listarPresentacionesPorProductos(productoIds, trx);
       for (const d of detalles) {
-        const validas = new Set((presentacionesMap[d.producto_id] ?? []).map(p => String(p.id)));
+        const validas = new Set(
+          (presentacionesMap[d.producto_id] ?? [])
+            .filter(p => p.activa !== false)
+            .map(p => String(p.id))
+        );
         if (!validas.has(String(d.presentacion_id))) {
           throw new ValidationError('La presentación no pertenece a este producto');
         }

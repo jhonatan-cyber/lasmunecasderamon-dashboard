@@ -30,6 +30,7 @@ export interface PresentacionRow {
   opciones_venta?: SaleOption[];
   id: string;
   producto_id: string;
+  activa: boolean;
   nombre: string;
   codigo_barras: string | null;
   precio_compra: number;

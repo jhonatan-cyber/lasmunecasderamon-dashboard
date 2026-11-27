@@ -31,6 +31,14 @@ export function useGenericMutations<T>(
     await options?.onSuccess?.();
   };
 
+  const messageFromResponse = (response: unknown) =>
+    typeof response === 'object' &&
+    response !== null &&
+    'message' in response &&
+    typeof response.message === 'string'
+      ? response.message
+      : undefined;
+
   const request = async (method: 'POST' | 'PUT' | 'DELETE', path: string, body?: BodyInit) => {
     const response = await fetch(`${endpoint}${path}`, {
       method,
@@ -95,8 +103,8 @@ export function useGenericMutations<T>(
     mutationFn: async (id: number | string) => {
       return request('DELETE', `?id=${encodeURIComponent(String(id))}`);
     },
-    onSuccess: async () => {
-      await handleSuccess(`${entityName} eliminado correctamente`);
+    onSuccess: async result => {
+      await handleSuccess(messageFromResponse(result) || `${entityName} eliminado correctamente`);
     },
     onError: (err: Error) => {
       if (showToasts) toast.error(err.message);
