@@ -12,6 +12,7 @@
 import { query } from '@/lib/database/db';
 import { logger } from '@/lib/utils/logger';
 import { DatabaseError } from '@/lib/errors/errors';
+import { resolveBotellaMlVisible } from '@/lib/business/shotMl';
 import type { SaleType } from '@/lib/business/schemas';
 import type {
   VentaRawRow,
@@ -296,14 +297,26 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
          ORDER BY monto DESC`,
         [id]
       ),
-      query<{ nombre: string; foto: string | null; unidades: number; ml: number }[]>(
-        `SELECT CONCAT_WS(' ', p.nombre, ip.nombre) AS nombre, COALESCE(ip.foto,p.foto) AS foto,
-          SUM(COALESCE(m.cantidad,0)) AS unidades, SUM(COALESCE(m.ml,0)) AS ml
+      query<
+        {
+          nombre: string;
+          nombre_presentacion: string;
+          nombre_producto: string;
+          foto: string | null;
+          unidades: number;
+          ml: number;
+          ml_botella: number | null;
+        }[]
+      >(
+        `SELECT CONCAT_WS(' ', p.nombre, ip.nombre) AS nombre,
+          ip.nombre AS nombre_presentacion, p.nombre AS nombre_producto,
+          COALESCE(ip.foto,p.foto) AS foto,
+          ip.ml_botella, SUM(COALESCE(m.cantidad,0)) AS unidades, SUM(COALESCE(m.ml,0)) AS ml
          FROM inventario_movimientos m
          JOIN inventario_presentaciones ip ON ip.id = m.presentacion_id
          JOIN productos p ON p.id_producto = ip.producto_id
          WHERE m.venta_id = ? AND m.tipo = 'venta'
-         GROUP BY p.nombre, ip.nombre, ip.foto, p.foto ORDER BY p.nombre, ip.nombre`,
+         GROUP BY p.nombre, ip.nombre, ip.foto, p.foto, ip.ml_botella ORDER BY p.nombre, ip.nombre`,
         [id]
       )
     ]);
@@ -313,9 +326,15 @@ export async function obtenerVenta(id: string): Promise<VentaGetByIdResponse | n
     return {
       ...venta,
       consumos_inventario: consumos.map(row => ({
-        ...row,
+        nombre: row.nombre,
+        foto: row.foto,
         unidades: Number(row.unidades),
-        ml: Number(row.ml)
+        ml: Number(row.ml),
+        capacidad_ml: resolveBotellaMlVisible(
+          row.ml_botella,
+          row.nombre_presentacion,
+          row.nombre_producto
+        )
       })),
       cajero_nick: res[0].cajero_nick,
       cajero_nombre: res[0].cajero_nombre,

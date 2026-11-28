@@ -3,6 +3,7 @@
 import { Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
+import { cn } from '@/lib/utils/utils';
 import type { SaleChoice } from '@/lib/sales/saleChoice';
 
 export interface SaleFormatQuantityOption {
@@ -20,13 +21,15 @@ export function SaleFormatQuantities({
   onChange,
   dense = false,
   compact = false,
-  hideLabel = false
+  hideLabel = false,
+  optionClassName
 }: {
   options: SaleFormatQuantityOption[];
   onChange: (value: SaleChoice, cantidad: number) => void;
   dense?: boolean;
   compact?: boolean;
   hideLabel?: boolean;
+  optionClassName?: string;
 }) {
   return (
     <div className={compact ? 'space-y-1.5' : 'mt-2 space-y-1.5'}>
@@ -36,11 +39,15 @@ export function SaleFormatQuantities({
         return (
           <div
             key={option.value}
-            className={`flex items-center justify-between gap-2 ${
+            className={cn(
+              'flex items-center justify-between gap-2',
               compact
                 ? 'min-h-12 border-0 bg-transparent px-0 py-1 dark:bg-transparent'
-                : 'rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950'
-            } ${dense && !compact ? 'h-14 min-h-14 py-2' : ''} ${!dense && !compact ? 'py-2' : ''}`}
+                : 'rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950',
+              dense && !compact && 'h-14 min-h-14 py-2',
+              !dense && !compact && 'py-2',
+              optionClassName
+            )}
           >
             <div className='min-w-0 flex-1'>
               {!hideLabel && (

@@ -195,7 +195,7 @@ describe('server configured consumption', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('rejects client short if accompaniment lacks cover_habilitado', async () => {
+  it('rejects client short if accompaniment is neither on sale nor enabled for cover', async () => {
     const withoutCover = vi.fn(async (_sql: string, params?: unknown[]) => {
       if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
         return params && params.length > 0 ? [stockBarRow] : [];
@@ -205,7 +205,14 @@ describe('server configured consumption', () => {
         {
           id: 'sprite',
           estado: 1,
-          opciones_venta: [{ tipo: 'botella', colacion_habilitada: true, cover_habilitado: false }]
+          opciones_venta: [
+            {
+              tipo: 'botella',
+              colacion_habilitada: true,
+              en_venta: false,
+              cover_habilitado: false
+            }
+          ]
         }
       ];
     }) as unknown as TransactionQuery;
@@ -217,7 +224,78 @@ describe('server configured consumption', () => {
           acompanamiento_corto: { presentacion_id: 'sprite', unidades: 1 }
         }
       ])
-    ).rejects.toThrow('no está habilitada para corto al cliente');
+    ).rejects.toThrow('no está a la venta ni habilitada para cover');
+  });
+
+  it('accepts client short accompaniment that is on sale without cover', async () => {
+    const onSaleWithoutCover = vi.fn(async (_sql: string, params?: unknown[]) => {
+      if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
+        return params && params.length > 0 ? [stockBarRow] : [];
+      }
+      return [
+        { id: 'vodka', opciones_venta: config },
+        {
+          id: 'sprite',
+          estado: 1,
+          opciones_venta: [{ tipo: 'botella', en_venta: true, cover_habilitado: false }]
+        }
+      ];
+    }) as unknown as TransactionQuery;
+    await expect(
+      validarConfiguracionVenta(onSaleWithoutCover, [
+        {
+          presentacion_id: 'vodka',
+          tipo_venta: 'shot',
+          acompanamiento_corto: { presentacion_id: 'sprite', unidades: 1 }
+        }
+      ])
+    ).resolves.toBeUndefined();
+  });
+
+  it('allows legacy client short accompaniment without eligibility flags', async () => {
+    const legacyMixer = vi.fn(async (_sql: string, params?: unknown[]) => {
+      if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
+        return params && params.length > 0 ? [stockBarRow] : [];
+      }
+      return [
+        { id: 'vodka', opciones_venta: config },
+        { id: 'sprite', estado: 1, opciones_venta: [{ tipo: 'botella' }] }
+      ];
+    }) as unknown as TransactionQuery;
+    await expect(
+      validarConfiguracionVenta(legacyMixer, [
+        {
+          presentacion_id: 'vodka',
+          tipo_venta: 'shot',
+          acompanamiento_corto: { presentacion_id: 'sprite', unidades: 1 }
+        }
+      ])
+    ).resolves.toBeUndefined();
+  });
+
+  it('rejects bottle accompaniment that is neither on sale nor enabled for cover', async () => {
+    const unavailableMixer = vi.fn(async (_sql: string, params?: unknown[]) => {
+      if (typeof _sql === 'string' && _sql.includes('inventario_unidades')) {
+        return params && params.length > 0 ? [stockBarRow] : [];
+      }
+      return [
+        { id: 'vodka', opciones_venta: config },
+        {
+          id: 'sprite',
+          estado: 1,
+          opciones_venta: [{ tipo: 'botella', en_venta: false, cover_habilitado: false }]
+        }
+      ];
+    }) as unknown as TransactionQuery;
+    await expect(
+      validarConfiguracionVenta(unavailableMixer, [
+        {
+          presentacion_id: 'vodka',
+          tipo_venta: 'botella',
+          acompanamiento_botella: { presentacion_id: 'sprite', unidades: 4 }
+        }
+      ])
+    ).rejects.toThrow('no está a la venta ni habilitada para cover');
   });
 
   it('rejects client short if accompaniment product is inactive', async () => {

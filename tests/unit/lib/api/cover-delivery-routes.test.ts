@@ -91,6 +91,78 @@ describe('contratos HTTP de entrega de covers', () => {
     );
   });
 
+  it('recibe configuraciones individuales y pasa anfitriona y habitación a cada venta', async () => {
+    const individual = {
+      entregas: [
+        {
+          entrada_id: 'e1',
+          monto_adicional: 1000,
+          anfitriona_id: 'host-1',
+          habitacion_id: 'room-1',
+          unidades: [{ presentacion_id: 'p1', tipo_entrega: 'botella' }]
+        },
+        {
+          entrada_id: 'e2',
+          monto_adicional: 0,
+          anfitriona_id: null,
+          habitacion_id: null,
+          unidades: [{ presentacion_id: 'p2', tipo_entrega: 'corte' }]
+        }
+      ]
+    };
+    await POST(request(individual), { params: Promise.resolve({}) });
+
+    expect(mocks.entregar.mock.calls[0]?.[0]).toEqual({
+      entradaIds: ['e1', 'e2'],
+      unidades: [],
+      montoAdicional: 0,
+      usuarioId: 'b1',
+      entregas: [
+        {
+          entradaId: 'e1',
+          unidades: individual.entregas[0].unidades,
+          montoAdicional: 1000,
+          anfitrionaId: 'host-1',
+          habitacionId: 'room-1'
+        },
+        {
+          entradaId: 'e2',
+          unidades: individual.entregas[1].unidades,
+          montoAdicional: 0,
+          anfitrionaId: null,
+          habitacionId: null
+        }
+      ]
+    });
+    expect(mocks.notificar).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ entradaId: 'e1', montoCobrarBarra: 1000 })
+    );
+    expect(mocks.notificar).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ entradaId: 'e2', montoCobrarBarra: 0 })
+    );
+
+    const registrar = mocks.entregar.mock.calls[0]?.[1];
+    await registrar?.(
+      {
+        totalVenta: 11000,
+        metodoPago: 'efectivo',
+        entradaId: 'e1',
+        usuarioId: 'b1',
+        detalles: [],
+        anfitrionas: ['host-1'],
+        habitacionId: 'room-1'
+      },
+      { id: 'unidad' },
+      vi.fn()
+    );
+    expect(mocks.venta.mock.calls[0]?.[0]).toMatchObject({
+      usuarios: ['host-1'],
+      habitacion_id: 'room-1'
+    });
+  });
+
   it('no notifica nada cuando el lote falla', async () => {
     mocks.entregar.mockRejectedValue(new Error('Sin stock'));
     await expect(POST(request(payload), { params: Promise.resolve({}) })).rejects.toThrow(

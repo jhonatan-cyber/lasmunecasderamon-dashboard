@@ -19,6 +19,7 @@ export function validarPreciosVenta(
   // valida igual en estructura y champaña, pero conserva su precio histórico.
   return validarPreciosConfigurados(resolverTransaccion(contexto), detalles, {
     exigirAnfitrionas: false,
+    permitirReutilizarAnfitrionas: true,
     permitirSinConfiguracion: true
   });
 }

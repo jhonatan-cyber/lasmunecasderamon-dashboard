@@ -24,13 +24,15 @@ const FACTOR_UNIDAD_ML: Record<string, number> = {
   mililitros: 1,
   l: 1000,
   litro: 1000,
-  litros: 1000
+  litros: 1000,
+  cc: 1,
+  oz: 29.5735295625
 };
 
 export function mlDesdeNombrePresentacion(nombre?: string | null): number | null {
   const texto = (nombre ?? '').trim();
   if (!texto) return null;
-  const encontrado = texto.match(/(\d+(?:[.,]\d+)?)\s*(ml|mililitros?|litros?|l)\b/i);
+  const encontrado = texto.match(/(\d+(?:[.,]\d+)?)\s*(ml|mililitros?|litros?|l|cc|oz)\b/i);
   if (!encontrado) return null;
   const cantidad = Number(encontrado[1].replace(',', '.'));
   const factor = FACTOR_UNIDAD_ML[encontrado[2].toLowerCase()] ?? 1;
@@ -46,4 +48,18 @@ export function resolveBotellaMl(
   const propia = Math.floor(Number(mlBotella ?? 0));
   if (propia > 0) return propia;
   return mlDesdeNombrePresentacion(nombrePresentacion) ?? globalBotellaMl;
+}
+
+/** Capacidad para mostrar: prioriza el rótulo y no sustituye datos faltantes por un global. */
+export function resolveBotellaMlVisible(
+  mlBotella: number | null | undefined,
+  nombrePresentacion: string | null | undefined,
+  nombreProducto?: string | null
+): number | null {
+  const porPresentacion = mlDesdeNombrePresentacion(nombrePresentacion);
+  if (porPresentacion !== null) return porPresentacion;
+  const porProducto = mlDesdeNombrePresentacion(nombreProducto);
+  if (porProducto !== null) return porProducto;
+  const propia = Math.floor(Number(mlBotella ?? 0));
+  return propia > 0 ? propia : null;
 }

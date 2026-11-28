@@ -7,3 +7,7 @@ export function listarColaciones(...args: Parameters<typeof repositorio.listarCo
 export function registrarColacion(...args: Parameters<typeof repositorio.registrarColacion>) {
   return repositorio.registrarColacion(...args);
 }
+
+export function obtenerTopesColacionesPorRol() {
+  return repositorio.obtenerTopesColacionesPorRol();
+}

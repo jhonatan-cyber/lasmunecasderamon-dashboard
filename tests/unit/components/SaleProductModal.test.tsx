@@ -427,7 +427,7 @@ it('lista acompañamientos habilitados para corto anfitriona, aunque no estén h
   expect(screen.queryByRole('option', { name: /Bebida deshabilitada/ })).not.toBeInTheDocument();
 });
 
-it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async () => {
+it('para cortos cliente ofrece bebidas a la venta o habilitadas para cover', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -436,11 +436,11 @@ it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async ()
         success: true,
         data: [
           {
-            id: 'cover-disabled',
-            producto_nombre: 'Sin cover',
+            id: 'on-sale',
+            producto_nombre: 'A la venta',
             nombre: '350 ml',
             stock_bar: 20,
-            opciones_venta: [{ tipo: 'botella', cover_habilitado: false }]
+            opciones_venta: [{ tipo: 'botella', en_venta: true, cover_habilitado: false }]
           },
           {
             id: 'cover-enabled',
@@ -448,7 +448,14 @@ it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async ()
             nombre: '350 ml',
             stock_bar: 20,
             producto_estado: 1,
-            opciones_venta: [{ tipo: 'botella', cover_habilitado: true }]
+            opciones_venta: [{ tipo: 'botella', en_venta: false, cover_habilitado: true }]
+          },
+          {
+            id: 'not-eligible',
+            producto_nombre: 'No elegible',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [{ tipo: 'botella', en_venta: false, cover_habilitado: false }]
           }
         ]
       })
@@ -471,6 +478,73 @@ it('para cortos de cliente solo ofrece bebidas habilitadas para cover', async ()
   await waitFor(() => expect(mixer).toBeEnabled());
   fireEvent.click(mixer);
 
+  expect(await screen.findByRole('option', { name: /A la venta/ })).toBeInTheDocument();
   expect(await screen.findByRole('option', { name: /Con cover/ })).toBeInTheDocument();
-  expect(screen.queryByRole('option', { name: /Sin cover/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /No elegible/ })).not.toBeInTheDocument();
+});
+
+it.each([
+  ['botella', /^Botella(?! sin anfitriona).*aumentar cantidad/],
+  ['botella_sin_anfitriona', /Botella sin anfitriona.*aumentar cantidad/]
+])('filtra acompañamientos de %s por venta o cover', async (_format, buttonName) => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: [
+          {
+            id: 'on-sale',
+            producto_nombre: 'A la venta',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [{ tipo: 'botella', en_venta: true, cover_habilitado: false }]
+          },
+          {
+            id: 'cover-enabled',
+            producto_nombre: 'Con cover',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [{ tipo: 'botella', en_venta: false, cover_habilitado: true }]
+          },
+          {
+            id: 'not-eligible',
+            producto_nombre: 'No elegible',
+            nombre: '350 ml',
+            stock_bar: 20,
+            opciones_venta: [{ tipo: 'botella', en_venta: false, cover_habilitado: false }]
+          }
+        ]
+      })
+    })
+  );
+  renderExpanded(
+    <Harness
+      productos={[
+        {
+          ...product,
+          opciones_venta: [
+            {
+              tipo: 'botella',
+              precio: 50000,
+              comision: 5000,
+              precio_sin_anfitriona: 35000,
+              acompanamiento: { unidades: 1 }
+            }
+          ]
+        }
+      ]}
+      onAdd={vi.fn()}
+    />
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: buttonName }));
+  const mixer = await screen.findByRole('combobox', { name: /Agregar sabor/ });
+  await waitFor(() => expect(mixer).toBeEnabled());
+  fireEvent.click(mixer);
+
+  expect(await screen.findByRole('option', { name: /A la venta/ })).toBeInTheDocument();
+  expect(await screen.findByRole('option', { name: /Con cover/ })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /No elegible/ })).not.toBeInTheDocument();
 });

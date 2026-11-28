@@ -1,6 +1,9 @@
 import type { TransactionQuery } from '@/lib/database/db';
 import { BusinessError } from '@/lib/errors/errors';
-import { normalizarAcompanamientoBotella } from '@/lib/sales/acompanamientoBotella';
+import {
+  acompanamientoElegibleParaVentaOCover,
+  normalizarAcompanamientoBotella
+} from '@/lib/sales/acompanamientoBotella';
 import { parseOpcionesVenta } from '../helpers';
 import type {
   ConsumoInventarioDetalle,
@@ -83,11 +86,11 @@ export async function bloquearYValidarConfiguracionVenta(
             'La bebida seleccionada como acompañamiento no está habilitada para corto con anfitriona'
           );
       } else {
-        // Corto cliente: el acompañamiento debe tener cover_habilitado y producto activo
+        // Corto cliente: el acompañamiento debe estar a la venta o habilitado para cover
         // Si no hay opciones configuradas, permitir (compatibilidad legacy)
-        if (mixerBottleOption && mixerBottleOption.cover_habilitado === false)
+        if (!acompanamientoElegibleParaVentaOCover(mixerBottleOption))
           throw new BusinessError(
-            'La bebida seleccionada como acompañamiento no está habilitada para corto al cliente'
+            'La bebida seleccionada como acompañamiento no está a la venta ni habilitada para cover'
           );
         if (mixerRow && productoDesactivado(mixerRow.estado))
           throw new BusinessError('La bebida seleccionada como acompañamiento no está disponible');
@@ -98,6 +101,13 @@ export async function bloquearYValidarConfiguracionVenta(
     if (detalle.tipo_venta !== 'shot' && saboresBotella.length > 0) {
       for (const sabor of saboresBotella) {
         const saborRow = rows.find(row => row.id === sabor.presentacion_id);
+        const saborBottleOption = saborRow
+          ? parseOpcionesVenta(saborRow.opciones_venta)?.find(option => option.tipo === 'botella')
+          : undefined;
+        if (!acompanamientoElegibleParaVentaOCover(saborBottleOption))
+          throw new BusinessError(
+            'La bebida seleccionada como acompañamiento no está a la venta ni habilitada para cover'
+          );
         if (saborRow && productoDesactivado(saborRow.estado))
           throw new BusinessError(
             'La bebida seleccionada como acompañamiento de botella no está disponible'
@@ -198,6 +208,8 @@ export async function bloquearYValidarConfiguracionVenta(
 export interface OpcionesPreciosVenta {
   /** Los pedidos exigen asignación de anfitrionas; las ventas directas no. */
   exigirAnfitrionas?: boolean;
+  /** Las ventas directas permiten asignar la misma anfitriona a varias líneas. */
+  permitirReutilizarAnfitrionas?: boolean;
   /** Catálogo legado sin `opciones_venta`: solo se valida estructura y champaña. */
   permitirSinConfiguracion?: boolean;
 }
@@ -208,14 +220,24 @@ export async function validarPreciosConfigurados(
   detalles: DetallePrecioInventario[],
   opciones: OpcionesPreciosVenta = {}
 ): Promise<PrecioInventarioValidado[]> {
-  const { exigirAnfitrionas = true, permitirSinConfiguracion = false } = opciones;
+  const {
+    exigirAnfitrionas = true,
+    permitirReutilizarAnfitrionas = false,
+    permitirSinConfiguracion = false
+  } = opciones;
   if (!detalles.length) return [];
   const presentations = await bloquearYValidarConfiguracionVenta(trx, detalles);
   const ids = [...new Set(detalles.map(d => d.producto_id))];
   const products = await listarProductosPreciosVenta(trx, ids);
   const tiers = await listarTramosPrecioVenta(trx, ids);
-  const drinkHosts = new Set<string>();
-  const champagneHosts = new Set<string>();
+  const hostessUsages = new Map<
+    string,
+    Array<{
+      productId: string;
+      saleType: DetallePrecioInventario['tipo_venta'];
+      champagne: boolean;
+    }>
+  >();
   return detalles.map(d => {
     const product = products.find(p => String(p.id_producto) === d.producto_id);
     if (!product || Number(product.estado) === 0)
@@ -305,15 +327,26 @@ export async function validarPreciosConfigurados(
     const limit = d.tipo_venta === 'shot' ? cantidad : limitePorUnidad * cantidad;
     if (hosts.length > limit)
       throw new BusinessError('El producto excede el maximo de anfitrionas');
-    for (const id of hosts) {
-      if (
-        (champagne && drinkHosts.has(id)) ||
-        (!champagne && (drinkHosts.has(id) || champagneHosts.has(id)))
-      )
-        throw new BusinessError(
-          'Cada bebida debe tener anfitrionas unicas; no pueden repetirse con champanas'
-        );
-      (champagne ? champagneHosts : drinkHosts).add(id);
+    if (!permitirReutilizarAnfitrionas) {
+      for (const id of hosts) {
+        const previousUsages = hostessUsages.get(id) ?? [];
+        const hasConflictingUsage = previousUsages.some(previous => {
+          if (champagne && previous.champagne) return false;
+          const sameProductBottleAndShot =
+            previous.productId === d.producto_id &&
+            ((previous.saleType === 'botella' && d.tipo_venta === 'shot') ||
+              (previous.saleType === 'shot' && d.tipo_venta === 'botella'));
+          return !sameProductBottleAndShot;
+        });
+        if (hasConflictingUsage)
+          throw new BusinessError(
+            'Cada bebida debe tener anfitrionas unicas; no pueden repetirse con champanas'
+          );
+        hostessUsages.set(id, [
+          ...previousUsages,
+          { productId: d.producto_id, saleType: d.tipo_venta, champagne }
+        ]);
+      }
     }
     return { isChampagne: champagne };
   });

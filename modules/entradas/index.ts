@@ -32,6 +32,7 @@ export type {
   EntradaCliente,
   EntradaPendiente,
   EntregaEntradaInput,
+  EntregaIndividualCoverInput,
   EntregaGrupoInput,
   UnidadCover,
   EstadoCover,

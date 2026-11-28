@@ -72,7 +72,13 @@ export interface VentaUsuario {
 }
 
 export interface VentaWithDetails extends Venta {
-  consumos_inventario?: { nombre: string; foto?: string | null; unidades: number; ml: number }[];
+  consumos_inventario?: {
+    nombre: string;
+    foto?: string | null;
+    unidades: number;
+    ml: number;
+    capacidad_ml?: number | null;
+  }[];
   comisiones_detalle?: DistribucionVenta[];
   propinas_detalle?: DistribucionVenta[];
   detalles: VentaDetalle[];

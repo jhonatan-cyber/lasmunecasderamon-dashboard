@@ -179,6 +179,8 @@ export interface PlanVentaEntrada {
   usuarioId: string;
   entradaId: string;
   detalles: Record<string, unknown>[];
+  anfitrionas?: string[];
+  habitacionId?: string | null;
 }
 
 export type RegistradorVenta = (
@@ -502,15 +504,47 @@ export interface UnidadCover {
   acompanamientos?: AcompanamientoBotellaItem[] | null;
 }
 
+export interface EntregaIndividualCoverInput {
+  entradaId: string;
+  unidades: UnidadCover[];
+  montoAdicional: number;
+  anfitrionaId: string | null;
+  habitacionId: string | null;
+}
+
 export interface EntregaGrupoInput {
   entradaIds: string[];
   unidades: UnidadCover[];
   montoAdicional: number;
   usuarioId: string;
   solicitudId?: string;
+  entregas?: EntregaIndividualCoverInput[];
 }
 
-export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: RegistradorVenta) {
+interface ResultadoEntregaGrupo {
+  entradas: number;
+  productos: number;
+  montoEntrada: number;
+  montoCobrarBarra: number;
+  presupuesto: number;
+  ventaId: string | null;
+  cajaId: string;
+}
+
+interface CobroCoverPendiente {
+  cajaId: string;
+  metodoPago: MetodoPagoEntrada;
+  monto: number;
+}
+
+async function procesarEntregaGrupo(
+  input: EntregaGrupoInput,
+  onVenta: RegistradorVenta | undefined,
+  contextoExterno?: ContextoOperacion,
+  tareasExternas?: Array<() => void | Promise<void>>,
+  asignacion?: Pick<EntregaIndividualCoverInput, 'anfitrionaId' | 'habitacionId'>,
+  cobrosExternos?: CobroCoverPendiente[]
+): Promise<ResultadoEntregaGrupo> {
   if (!input.usuarioId || !input.entradaIds.length || input.entradaIds.length > 100)
     throw new ValidationError('Selecciona las entradas a entregar');
   const ids = [...new Set(input.entradaIds)].sort();
@@ -525,9 +559,8 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
   )
     throw new ValidationError('El aporte adicional debe ser un monto entero no negativo');
   const fecha = getNowInBusinessTimezone();
-  const tareas: Array<() => void | Promise<void>> = [];
-  const resultado = await enUnaUnidad(async unidad => {
-    const contexto = { id: unidad.id };
+  const tareas = tareasExternas ?? [];
+  const ejecutar = async (contexto: ContextoOperacion): Promise<ResultadoEntregaGrupo> => {
     const trx = resolverTransaccion(contexto);
     if (input.solicitudId) {
       const solicitudes = await trx<{ estado: string }[]>(
@@ -679,7 +712,7 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
     );
     if (!cajas.length) throw new ValidationError('Abre una caja antes de entregar las bebidas');
     let ventaId: string | null = null;
-    if (input.montoAdicional > 0) {
+    if (input.montoAdicional > 0 || asignacion?.anfitrionaId || asignacion?.habitacionId) {
       if (!onVenta) throw new ValidationError('La entrega con aporte requiere registrar una venta');
       const detalles = seleccion.map((item, indice) => ({
         producto_id: item.presentacion.producto_id,
@@ -706,7 +739,9 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
           metodoPago: primera.metodo_pago,
           usuarioId: input.usuarioId,
           entradaId: primera.id,
-          detalles
+          detalles,
+          anfitrionas: asignacion?.anfitrionaId ? [asignacion.anfitrionaId] : [],
+          habitacionId: asignacion?.habitacionId ?? null
         },
         contexto,
         tarea => tareas.push(tarea)
@@ -735,7 +770,15 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
       }
       const pagos = { efectivo: 0, tarjeta: 0, transferencia: 0 };
       pagos[primera.metodo_pago] = montoEntrada;
-      await registrarMovimientoCobro(cajas[0].id_caja, pagos, contexto);
+      if (cobrosExternos) {
+        cobrosExternos.push({
+          cajaId: cajas[0].id_caja,
+          metodoPago: primera.metodo_pago,
+          monto: montoEntrada
+        });
+      } else {
+        await registrarMovimientoCobro(cajas[0].id_caja, pagos, contexto);
+      }
     }
     for (const [indice, entrada] of entradas.entries()) {
       const producto = seleccion[indice];
@@ -813,6 +856,87 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
       presupuesto,
       ventaId,
       cajaId: cajas[0].id_caja
+    };
+  };
+  const resultado = contextoExterno
+    ? await ejecutar(contextoExterno)
+    : await enUnaUnidad(unidad => ejecutar({ id: unidad.id }));
+  if (!tareasExternas) await ejecutarEfectosConfirmados(tareas);
+  return resultado;
+}
+
+export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: RegistradorVenta) {
+  if (!input.entregas) return procesarEntregaGrupo(input, onVenta);
+  if (!input.usuarioId || !input.entradaIds.length || input.entradaIds.length > 100)
+    throw new ValidationError('Selecciona las entradas a entregar');
+  if (input.solicitudId) throw new ValidationError('La solicitud no admite entregas individuales');
+
+  const ids = [...new Set(input.entradaIds)].sort();
+  if (ids.length !== input.entradaIds.length || ids.some(id => !id))
+    throw new ValidationError('Las entradas seleccionadas no pueden repetirse');
+  const idsAsignados = input.entregas.map(entrega => entrega.entradaId).sort();
+  if (
+    !input.entregas.length ||
+    input.entregas.length !== ids.length ||
+    idsAsignados.some((id, indice) => id !== ids[indice])
+  )
+    throw new ValidationError('Configura exactamente una entrega para cada entrada');
+  if (input.entregas.reduce((total, entrega) => total + entrega.unidades.length, 0) > 500)
+    throw new ValidationError('Selecciona hasta 500 productos entre las entradas');
+  for (const entrega of input.entregas) {
+    if (!entrega.entradaId.trim() || !entrega.unidades.length || entrega.unidades.length > 500)
+      throw new ValidationError('Cada entrada debe tener al menos un producto');
+    if (
+      !Number.isSafeInteger(entrega.montoAdicional) ||
+      entrega.montoAdicional < 0 ||
+      entrega.montoAdicional > 2147483647
+    )
+      throw new ValidationError('El aporte adicional debe ser un monto entero no negativo');
+    if (
+      [entrega.anfitrionaId, entrega.habitacionId].some(
+        id => id !== null && (!id.trim() || id.length > 36)
+      )
+    )
+      throw new ValidationError('La anfitriona o habitación seleccionada no es válida');
+  }
+
+  const tareas: Array<() => void | Promise<void>> = [];
+  const cobros: CobroCoverPendiente[] = [];
+  const resultado = await enUnaUnidad(async unidad => {
+    const resultados: ResultadoEntregaGrupo[] = [];
+    for (const entrega of input.entregas ?? []) {
+      resultados.push(
+        await procesarEntregaGrupo(
+          {
+            entradaIds: [entrega.entradaId],
+            unidades: entrega.unidades,
+            montoAdicional: entrega.montoAdicional,
+            usuarioId: input.usuarioId
+          },
+          onVenta,
+          { id: unidad.id },
+          tareas,
+          entrega,
+          cobros
+        )
+      );
+    }
+    for (const cobro of cobros) {
+      const pagos = { efectivo: 0, tarjeta: 0, transferencia: 0 };
+      pagos[cobro.metodoPago] = cobro.monto;
+      await registrarMovimientoCobro(cobro.cajaId, pagos, { id: unidad.id });
+    }
+    return {
+      entradas: resultados.reduce((total, resultado) => total + resultado.entradas, 0),
+      productos: resultados.reduce((total, resultado) => total + resultado.productos, 0),
+      montoEntrada: resultados.reduce((total, resultado) => total + resultado.montoEntrada, 0),
+      montoCobrarBarra: resultados.reduce(
+        (total, resultado) => total + resultado.montoCobrarBarra,
+        0
+      ),
+      presupuesto: resultados.reduce((total, resultado) => total + resultado.presupuesto, 0),
+      ventaId: resultados.find(resultado => resultado.ventaId)?.ventaId ?? null,
+      cajaId: resultados[0]?.cajaId ?? ''
     };
   });
   await ejecutarEfectosConfirmados(tareas);

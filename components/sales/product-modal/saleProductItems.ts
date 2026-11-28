@@ -11,6 +11,7 @@ import {
 
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { precioUnitarioAcompanamiento } from '@/lib/sales/recargoAcompanamiento';
+import { acompanamientoElegibleParaVentaOCover } from '@/lib/sales/acompanamientoBotella';
 import {
   getChampagneHostessLimit,
   getExplicitMaxAnfitrionas,
@@ -242,11 +243,12 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           const bottleOption = parseSavedOptions(b.opciones_venta)?.find(
             option => option.tipo === 'botella'
           );
+          const clientShort = !bottle && !esCortoAnfitriona(opcion.value);
+          if ((bottle || clientShort) && !acompanamientoElegibleParaVentaOCover(bottleOption))
+            return false;
           if (!bottle && esCortoAnfitriona(opcion.value)) {
             if (bottleOption?.corto_anfitriona_habilitado === false) return false;
           } else if (!bottle) {
-            // Si cover_habilitado no está definido, permitir (compatibilidad legacy)
-            if (bottleOption && bottleOption.cover_habilitado === false) return false;
             const productoEstado = b.producto_estado === undefined ? 1 : Number(b.producto_estado);
             if (productoEstado !== 1) return false;
           }

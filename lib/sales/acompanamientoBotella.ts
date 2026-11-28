@@ -1,6 +1,17 @@
 import type { AcompanamientoBotella, AcompanamientoBotellaItem } from '@/types/venta';
+import type { SaleOption } from '@/types/sale-options';
 
 export type { AcompanamientoBotella, AcompanamientoBotellaItem };
+
+export function acompanamientoElegibleParaVentaOCover(
+  opcion?: Pick<SaleOption, 'en_venta' | 'cover_habilitado'> | null
+): boolean {
+  if (!opcion) return true;
+  const tieneConfiguracionDeElegibilidad =
+    opcion.en_venta !== undefined || opcion.cover_habilitado !== undefined;
+  if (!tieneConfiguracionDeElegibilidad) return true;
+  return opcion.en_venta === true || opcion.cover_habilitado === true;
+}
 
 /**
  * El acompañamiento de una botella reparte las unidades de bebida configuradas

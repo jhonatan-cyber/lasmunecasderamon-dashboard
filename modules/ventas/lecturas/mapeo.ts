@@ -24,7 +24,13 @@ export type VentaRefundDetailRow = {
 };
 
 export type VentaGetByIdResponse = SaleType & {
-  consumos_inventario?: { nombre: string; foto: string | null; unidades: number; ml: number }[];
+  consumos_inventario?: {
+    nombre: string;
+    foto: string | null;
+    unidades: number;
+    ml: number;
+    capacidad_ml: number | null;
+  }[];
   cajero_nick?: string | null;
   cajero_nombre?: string | null;
   cajero_apellido?: string | null;
