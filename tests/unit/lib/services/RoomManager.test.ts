@@ -2,7 +2,8 @@ vi.mock('@/modules/identidad', async () => import('@/modules/identidad/disponibi
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/business/timezoneService', () => ({
-  getNowInBusinessTimezone: vi.fn(() => '2026-01-15 12:00:00')
+  getNowInBusinessTimezone: vi.fn(() => '2026-01-15 12:00:00'),
+  getSystemTimezone: vi.fn(() => 'America/Santiago')
 }));
 
 import { RoomManager } from '@/tests/setup/room-manager';

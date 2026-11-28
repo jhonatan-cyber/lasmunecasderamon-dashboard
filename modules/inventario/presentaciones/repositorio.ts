@@ -15,6 +15,7 @@ import { resolverVencimiento } from '@/lib/business/vencimiento';
 import { BaseRepository } from '@/lib/database/base-repository';
 import { NotFoundError } from '@/lib/errors/errors';
 import { sincronizarVencimientoProducto } from '../vencimientoProducto';
+import { mlDesdeNombrePresentacion } from '@/lib/business/shotMl';
 
 type Ejecutor = TransactionQuery | typeof query;
 
@@ -66,6 +67,7 @@ export async function crearPresentacion(
     id,
     producto_id: data.producto_id,
     nombre: data.nombre,
+    ml_botella: mlDesdeNombrePresentacion(data.nombre),
     codigo_barras: data.codigo_barras?.trim() ? data.codigo_barras.trim() : null,
     precio_compra: data.precio_compra ?? 0,
     stock_minimo: data.stock_minimo ?? null,
@@ -206,6 +208,12 @@ export async function actualizarPresentacion(
   }
 
   if (Object.keys(data).length === 0) return;
+  const [presentacion] = await query<{ nombre: string }[]>(
+    'SELECT nombre FROM inventario_presentaciones WHERE id = ? LIMIT 1',
+    [id]
+  );
+  if (!presentacion) throw new NotFoundError('Presentación', id);
+  data.ml_botella = mlDesdeNombrePresentacion(fields.nombre ?? presentacion.nombre);
   await BaseRepository.update(query, 'inventario_presentaciones', 'id', id, data);
   if (productoId) await sincronizarVencimientoProducto(query, productoId);
 }

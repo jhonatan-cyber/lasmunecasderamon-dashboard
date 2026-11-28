@@ -35,6 +35,7 @@ interface IndividualHostessSelectProps {
   searchPlaceholder?: string;
   className?: string;
   disabled?: boolean;
+  ariaLabel?: string;
 }
 
 const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
@@ -44,7 +45,8 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
   placeholder = 'Seleccionar anfitriona',
   searchPlaceholder = 'Buscar anfitriona...',
   className = '',
-  disabled = false
+  disabled = false,
+  ariaLabel = 'Anfitriona'
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -88,6 +90,7 @@ const IndividualHostessSelect: React.FC<IndividualHostessSelectProps> = ({
           <SelectTrigger
             className={`${SELECT_TRIGGER_CLASS} pl-10 justify-center`}
             disabled={disabled}
+            aria-label={ariaLabel}
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>

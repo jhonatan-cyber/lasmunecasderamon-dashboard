@@ -63,10 +63,13 @@ export function SaleProductFormatRows({
           ? `${option.value === 'botella_sin_anfitriona' ? 'Botella sin anfitriona' : 'Botella'}${units > 0 ? ` · ${units} ${units === 1 ? 'unidad' : 'unidades'} de bebida` : ''}`
           : `${option.label.replace(/ · \$[\d.,]+/g, '')}${!shortHasMixer ? '' : esCortoAnfitriona(option.value) ? (drinkMl > 0 ? ` y ${drinkMl} ml de bebida` : '') : ' y 1 unidad de bebida'}`;
 
-        // Detectar si esta opción tiene múltiples unidades con anfitriona
-        // (cortos o botellas con anfitriona)
+        // Los formatos con varias anfitrionas comparten selector, excepto los cortos.
         const optionHostessFormats = item.hostessFormats?.filter(h => h.value === option.value);
         const multiHostess = optionHostessFormats && optionHostessFormats.length > 1;
+        const hostessShortColorClass =
+          multipleShorts && hasHostessColumn && esCortoAnfitriona(option.value)
+            ? 'border-amber-200/70 bg-amber-50/80 dark:border-amber-500/20 dark:bg-amber-500/10'
+            : undefined;
 
         return (
           <div
@@ -141,9 +144,15 @@ export function SaleProductFormatRows({
                             dense
                             compact={compact}
                             hideLabel={compact && item.opcionesTipo.length === 1}
+                            optionClassName={hostessShortColorClass}
                           />
                         ) : (
-                          <div className='flex h-14 items-center rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950'>
+                          <div
+                            className={cn(
+                              'flex h-14 items-center rounded-xl border border-neutral-200/70 bg-white px-2.5 dark:border-white/10 dark:bg-neutral-950',
+                              hostessShortColorClass
+                            )}
+                          >
                             <div className='min-w-0'>
                               {!(compact && item.opcionesTipo.length === 1) && (
                                 <p className='text-xs font-bold leading-tight'>{displayLabel}</p>
@@ -181,7 +190,7 @@ export function SaleProductFormatRows({
                         )}
                       </div>
                     )}
-                    {hasHostessColumn && !multiHostess && (
+                    {hasHostessColumn && (!multiHostess || multipleShorts) && (
                       <div
                         className={cn(
                           'min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden',
@@ -220,27 +229,6 @@ export function SaleProductFormatRows({
                   </Fragment>
                 );
               }
-            )}
-            {/* En cortos, el selector compartido va después de los selectores de bebida. */}
-            {multipleShorts && hasHostessColumn && multiHostess && (
-              <div
-                className={cn(
-                  'min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden',
-                  'md:row-start-1',
-                  hostessColumnClass
-                )}
-              >
-                <p className='mb-1 text-xs font-medium text-muted-foreground'>
-                  Anfitrionas de los cortos
-                </p>
-                <SaleProductHostess
-                  item={{
-                    ...item,
-                    opcionesTipo: [option]
-                  }}
-                  availableHostesses={availableHostesses}
-                />
-              </div>
             )}
           </div>
         );

@@ -306,23 +306,30 @@ export function SalesDetailModal({
             <section className='space-y-3'>
               <h4 className='text-sm font-semibold'>Consumo de inventario registrado</h4>
               <div className='grid gap-x-6 sm:grid-cols-2'>
-                {selectedVenta.consumos_inventario.map((consumo, index) => (
-                  <div key={index} className='flex min-w-0 items-center gap-3 border-b py-3'>
-                    <SaleProductPhoto
-                      foto={consumo.foto ?? undefined}
-                      name={consumo.nombre}
-                      large={false}
-                      compact
-                    />
-                    <div className='space-y-1 text-sm'>
-                      <p className='font-medium'>{consumo.nombre}</p>
-                      <p className='text-xs text-muted-foreground'>
-                        {consumo.unidades} unidades descontadas
-                        {consumo.ml > 0 ? ` · ${consumo.ml} ml servidos` : ''}
-                      </p>
+                {selectedVenta.consumos_inventario.map((consumo, index) => {
+                  const capacidadMl = Number(consumo.capacidad_ml);
+
+                  return (
+                    <div key={index} className='flex min-w-0 items-center gap-3 border-b py-3'>
+                      <SaleProductPhoto
+                        foto={consumo.foto ?? undefined}
+                        name={consumo.nombre}
+                        large={false}
+                        compact
+                      />
+                      <div className='space-y-1 text-sm'>
+                        <p className='font-medium'>{consumo.nombre}</p>
+                        <p className='text-xs text-muted-foreground'>
+                          {consumo.ml > 0
+                            ? `${consumo.ml} ml servidos${capacidadMl > 0 ? ` de ${capacidadMl} ml` : ''}`
+                            : consumo.unidades === 1
+                              ? '1 unidad descontada'
+                              : `${consumo.unidades} unidades descontadas`}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}

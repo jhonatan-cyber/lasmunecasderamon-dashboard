@@ -32,6 +32,10 @@ function trx(
     opciones?: unknown;
     estado?: number;
     stockUnits?: number;
+    productoIds?: string[];
+    conPresentaciones?: boolean;
+    precioProducto?: number;
+    comisionProducto?: number;
     tiers?: Array<{ producto_id: string; anfitrionas: number; precio: number; comision: number }>;
   } = {}
 ) {
@@ -78,17 +82,15 @@ function trx(
         }));
     if (sql.includes('FROM producto_champagne_tiers')) return config.tiers ?? [];
     if (sql.includes('FROM productos'))
-      return [
-        {
-          id_producto: 'prod',
-          estado: config.estado ?? 1,
-          tiene_presentaciones: true,
-          precio: 60000,
-          comision: 0,
-          max_anfitrionas: config.max === undefined ? 1 : config.max,
-          categoria: config.categoria
-        }
-      ];
+      return (Array.isArray(values) ? values : (config.productoIds ?? ['prod'])).map(id => ({
+        id_producto: id,
+        estado: config.estado ?? 1,
+        tiene_presentaciones: config.conPresentaciones ?? true,
+        precio: config.precioProducto ?? 60000,
+        comision: config.comisionProducto ?? 0,
+        max_anfitrionas: config.max === undefined ? 1 : config.max,
+        categoria: config.categoria
+      }));
     return [];
   }) as unknown as TransactionQuery;
 }
@@ -497,4 +499,85 @@ it('un corto anfitriona legado conserva el precio del formato', async () => {
       permitirSinConfiguracion: true
     })
   ).resolves.toEqual([{ isChampagne: false }]);
+});
+
+it('permite reutilizar anfitriona entre botella y corto del mismo producto', async () => {
+  const opciones = [
+    { tipo: 'botella', precio: 60000, comision: 40000 },
+    {
+      tipo: 'shot',
+      precio: 10000,
+      precios_anfitriona: [{ precio: 20000, comision: 7000 }]
+    }
+  ];
+  const config = trx({ opciones });
+  const botella = {
+    producto_id: 'prod',
+    presentacion_id: 'pres',
+    tipo_venta: 'botella' as const,
+    precio: 60000,
+    cantidad: 1,
+    comision: 40000,
+    generaComision: 1,
+    hostesses: ['ana']
+  };
+  const corto = {
+    producto_id: 'prod',
+    presentacion_id: 'pres',
+    tipo_venta: 'shot' as const,
+    shot_anfitriona: true,
+    precio: 20000,
+    cantidad: 1,
+    comision: 7000,
+    generaComision: 1,
+    hostesses: ['ana']
+  };
+
+  await expect(validarPreciosConfigurados(config, [botella, corto])).resolves.toEqual([
+    { isChampagne: false },
+    { isChampagne: false }
+  ]);
+  await expect(validarPreciosConfigurados(config, [corto, botella])).resolves.toEqual([
+    { isChampagne: false },
+    { isChampagne: false }
+  ]);
+  await expect(
+    validarPreciosConfigurados(
+      trx({
+        categoria: 'Champana',
+        max: 1,
+        opciones,
+        tiers: [{ producto_id: 'prod', anfitrionas: 1, precio: 60000, comision: 40000 }]
+      }),
+      [botella, corto]
+    )
+  ).resolves.toEqual([{ isChampagne: true }, { isChampagne: false }]);
+  await expect(
+    validarPreciosConfigurados(config, [corto, { ...corto }], {
+      permitirReutilizarAnfitrionas: true
+    })
+  ).resolves.toEqual([{ isChampagne: false }, { isChampagne: false }]);
+});
+
+it('permite reutilizar anfitriona en productos distintos de la misma venta', async () => {
+  const config = trx({
+    productoIds: ['prod', 'prod-2'],
+    conPresentaciones: false,
+    precioProducto: 60000,
+    comisionProducto: 40000
+  });
+  const detalles = ['prod', 'prod-2'].map(producto_id => ({
+    producto_id,
+    tipo_venta: 'botella' as const,
+    precio: 60000,
+    cantidad: 1,
+    comision: 40000,
+    generaComision: 1,
+    hostesses: ['ana']
+  }));
+
+  await expect(
+    validarPreciosConfigurados(config, detalles, { permitirReutilizarAnfitrionas: true })
+  ).resolves.toEqual([{ isChampagne: false }, { isChampagne: false }]);
+  await expect(validarPreciosConfigurados(config, detalles)).rejects.toThrow('anfitrionas unicas');
 });

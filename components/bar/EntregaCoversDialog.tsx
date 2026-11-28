@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ChevronLeft, Info, LoaderCircle, Minus, Plus, Trash2 } from 'lucide-react';
@@ -16,6 +16,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import CategoryCardList from '@/components/shared/CategoryCardList';
 import { ProductPhoto } from '@/components/shared/ProductPhoto';
 import { AcompanamientoDistribuidor } from '@/components/shared/AcompanamientoDistribuidor';
+import { IndividualHostessSelect, RoomSelect } from '@/components/shared/selects';
 import {
   Dialog,
   DialogContent,
@@ -70,6 +71,21 @@ type Acompanamiento = {
   foto: string | null;
 };
 
+type AnfitrionaOpcion = {
+  id_usuario: number;
+  nombre: string;
+  apellido?: string;
+  nick?: string;
+};
+
+type HabitacionOpcion = {
+  id_habitacion: string;
+  nombre: string;
+  numero?: string;
+  estado: number;
+  display_order?: number | null;
+};
+
 export type CoverPendiente = {
   id: string;
   monto_entrada: number;
@@ -93,6 +109,48 @@ type LineaSeleccion = {
   reparto: AcompanamientoBotellaItem[];
 };
 
+type LineaBebida = LineaSeleccion & {
+  clave: string;
+  bebida: Bebida;
+  formato: Formato;
+};
+
+type BorradorIndividual = {
+  seleccion: Record<string, LineaSeleccion>;
+  montoAdicional: string;
+  anfitrionaId: string;
+  habitacionId: string;
+};
+
+type UnidadEntrega = {
+  presentacion_id: string;
+  tipo_entrega: Formato;
+  acompanamientos: { presentacion_id: string; unidades: number }[] | null;
+};
+
+type EntregaIndividualPayload = {
+  entregas: {
+    entrada_id: string;
+    monto_adicional: number;
+    unidades: UnidadEntrega[];
+    anfitriona_id: string | null;
+    habitacion_id: string | null;
+  }[];
+};
+
+type EntregaGrupalPayload = {
+  entrada_ids: string[];
+  monto_adicional: number;
+  unidades: UnidadEntrega[];
+};
+
+const BORRADOR_VACIO: BorradorIndividual = {
+  seleccion: {},
+  montoAdicional: '',
+  anfitrionaId: '',
+  habitacionId: ''
+};
+
 type Props = {
   grupo: GrupoCover | null;
   tope: number;
@@ -112,6 +170,56 @@ const numero = (valor: unknown, respaldo = 0): number => {
   const convertido = Number(valor);
   return Number.isFinite(convertido) ? convertido : respaldo;
 };
+
+function aAnfitriona(valor: unknown): AnfitrionaOpcion | null {
+  if (!esRegistro(valor)) return null;
+  const id = Number(valor.id_usuario ?? valor.id);
+  if (!Number.isSafeInteger(id) || id <= 0) return null;
+  return {
+    id_usuario: id,
+    nombre: texto(valor.nombre),
+    apellido: texto(valor.apellido) || undefined,
+    nick: texto(valor.nick) || undefined
+  };
+}
+
+function aHabitacion(valor: unknown): HabitacionOpcion | null {
+  if (!esRegistro(valor)) return null;
+  const id = texto(valor.id_habitacion ?? valor.id);
+  if (!id) return null;
+  return {
+    id_habitacion: id,
+    nombre: texto(valor.nombre ?? valor.name),
+    numero: texto(valor.numero) || undefined,
+    estado: numero(valor.estado ?? valor.status),
+    display_order: numero(valor.display_order, 0)
+  };
+}
+
+function combinarSelecciones(
+  selecciones: Record<string, LineaSeleccion>[]
+): Record<string, LineaSeleccion> {
+  const resultado: Record<string, LineaSeleccion> = {};
+  for (const seleccion of selecciones) {
+    for (const [clave, linea] of Object.entries(seleccion)) {
+      const actual = resultado[clave];
+      const repartos = new Map<string, number>();
+      for (const sabor of [...(actual?.reparto ?? []), ...linea.reparto])
+        repartos.set(
+          sabor.presentacion_id,
+          (repartos.get(sabor.presentacion_id) ?? 0) + sabor.unidades
+        );
+      resultado[clave] = {
+        cantidad: (actual?.cantidad ?? 0) + linea.cantidad,
+        reparto: [...repartos].map(([presentacion_id, unidades]) => ({
+          presentacion_id,
+          unidades
+        }))
+      };
+    }
+  }
+  return resultado;
+}
 
 function listaDe(json: unknown): unknown[] | null {
   if (!esRegistro(json) || !Array.isArray(json.data)) return null;
@@ -235,6 +343,25 @@ function unidadesAcompanamientoLinea(bebida: Bebida, formato: Formato, cantidad:
   return unidadesAcompanamientoFormato(bebida, formato) * Math.max(1, cantidad);
 }
 
+function unidadesDeLineas(lineas: LineaBebida[]): UnidadEntrega[] {
+  return lineas.flatMap(linea => {
+    const repartos = requiereAcompanamiento(linea.bebida, linea.formato)
+      ? dividirRepartoPorEntrega(
+          linea.reparto,
+          unidadesAcompanamientoFormato(linea.bebida, linea.formato),
+          linea.cantidad
+        )
+      : [];
+    return Array.from({ length: linea.cantidad }, (_, indice) => ({
+      presentacion_id: linea.bebida.presentacion_id,
+      tipo_entrega: linea.formato,
+      acompanamientos: repartos[indice]?.length
+        ? repartos[indice].map(({ presentacion_id, unidades }) => ({ presentacion_id, unidades }))
+        : null
+    }));
+  });
+}
+
 function requiereAcompanamiento(bebida: Bebida, formato: Formato): boolean {
   return unidadesAcompanamientoFormato(bebida, formato) > 0;
 }
@@ -255,20 +382,17 @@ function consumoProducto(bebida: Bebida, formato: Formato): number {
 
 const aporteSchema = z.object({ montoAdicional: z.string().regex(/^\d*$/) });
 
-async function pedirCatalogo(url: string, signal: AbortSignal): Promise<unknown[]> {
+async function pedirCatalogo(
+  url: string,
+  signal: AbortSignal,
+  errorFallback = 'No se pudieron cargar las bebidas del bar'
+): Promise<unknown[]> {
   const respuesta = await fetch(url, { cache: 'no-store', signal });
   const json: unknown = await respuesta.json().catch(() => null);
   const lista = listaDe(json);
-  if (!respuesta.ok || lista === null)
-    throw new Error(mensajeDe(json, 'No se pudieron cargar las bebidas del bar'));
+  if (!respuesta.ok || lista === null) throw new Error(mensajeDe(json, errorFallback));
   return lista;
 }
-
-type UnidadEntrega = {
-  presentacion_id: string;
-  tipo_entrega: Formato;
-  acompanamientos: { presentacion_id: string; unidades: number }[] | null;
-};
 
 export function EntregaCoversDialog({
   grupo,
@@ -280,16 +404,25 @@ export function EntregaCoversDialog({
   const enviando = useRef(false);
   const [busqueda, setBusqueda] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
-  const [seleccion, setSeleccion] = useState<Record<string, LineaSeleccion>>({});
+  const [seleccionGrupal, setSeleccionGrupal] = useState<Record<string, LineaSeleccion>>({});
+  const [borradoresIndividuales, setBorradoresIndividuales] = useState<
+    Record<string, BorradorIndividual>
+  >({});
   const [tipoEntrega, setTipoEntrega] = useState<'grupal' | 'individual'>('grupal');
   const [entradaIndividualId, setEntradaIndividualId] = useState(grupo?.filas[0]?.id ?? '');
-  const { register, watch, reset, setValue, setError, clearErrors, formState } = useForm({
+  const { control, register, reset, setValue, setError, clearErrors, formState } = useForm({
     resolver: zodResolver(aporteSchema),
     defaultValues: { montoAdicional: '' }
   });
-  const montoAdicional = watch('montoAdicional');
+  const montoAdicionalFormulario = useWatch({ control, name: 'montoAdicional' });
   const abierto = grupo !== null;
   const filasGrupo = useMemo(() => grupo?.filas ?? [], [grupo?.filas]);
+  const entregaIndividual = modo === 'entrega' && tipoEntrega === 'individual';
+  const borradorActual = borradoresIndividuales[entradaIndividualId] ?? BORRADOR_VACIO;
+  const seleccion = entregaIndividual ? borradorActual.seleccion : seleccionGrupal;
+  const montoAdicional = entregaIndividual
+    ? borradorActual.montoAdicional
+    : montoAdicionalFormulario;
   const filas = useMemo(() => {
     if (tipoEntrega !== 'individual' || filasGrupo.length <= 1) return filasGrupo;
     const fila = filasGrupo.find(item => item.id === entradaIndividualId) ?? filasGrupo[0];
@@ -305,6 +438,18 @@ export function EntregaCoversDialog({
     enabled: abierto,
     queryFn: ({ signal }) => pedirCatalogo(urlProductosParaVenta({ solo_cover: true }), signal)
   });
+  const anfitrionasQuery = useQuery({
+    queryKey: ['bar', 'covers', 'anfitrionas'],
+    enabled: abierto && entregaIndividual,
+    queryFn: ({ signal }) =>
+      pedirCatalogo('/api/hostesses/available', signal, 'No se pudieron cargar las anfitrionas')
+  });
+  const habitacionesQuery = useQuery({
+    queryKey: ['bar', 'covers', 'habitaciones'],
+    enabled: abierto && entregaIndividual,
+    queryFn: ({ signal }) =>
+      pedirCatalogo('/api/rooms?status=1', signal, 'No se pudieron cargar las habitaciones')
+  });
   const bebidas = useMemo(
     () => (catalogo.data ?? []).map(aBebida).filter((item): item is Bebida => item !== null),
     [catalogo.data]
@@ -316,16 +461,29 @@ export function EntregaCoversDialog({
         .filter((item): item is Acompanamiento => item !== null),
     [catalogoCover.data]
   );
+  const anfitrionas = useMemo(
+    () =>
+      (anfitrionasQuery.data ?? [])
+        .map(aAnfitriona)
+        .filter((item): item is AnfitrionaOpcion => item !== null),
+    [anfitrionasQuery.data]
+  );
+  const habitaciones = useMemo(
+    () =>
+      (habitacionesQuery.data ?? [])
+        .map(aHabitacion)
+        .filter((item): item is HabitacionOpcion => item !== null),
+    [habitacionesQuery.data]
+  );
   const cargando = catalogo.isFetching || catalogoCover.isFetching;
+  const cargandoRelaciones = anfitrionasQuery.isLoading || habitacionesQuery.isLoading;
+  const errorRelaciones = anfitrionasQuery.error?.message ?? habitacionesQuery.error?.message;
   const errorBebidas = catalogo.error?.message;
   const errorCover = catalogoCover.error?.message;
   const mutacionGrupo = useMutation({
-    mutationFn: async (payload: {
-      entrada_ids: string[];
-      monto_adicional: number;
-      unidades: UnidadEntrega[];
-    }) => {
+    mutationFn: async (payload: EntregaGrupalPayload | EntregaIndividualPayload) => {
       const solicitud = modo === 'solicitud';
+      const esIndividual = 'entregas' in payload;
       const respuesta = await fetch(
         solicitud ? '/api/tickets/cover-solicitudes' : '/api/tickets/entregar-grupo',
         {
@@ -349,12 +507,19 @@ export function EntregaCoversDialog({
             json,
             solicitud
               ? 'No se pudo enviar la solicitud'
-              : payload.entrada_ids.length === 1
-                ? 'No se pudo entregar la entrada'
-                : 'No se pudo entregar el grupo'
+              : esIndividual
+                ? 'No se pudieron entregar las entradas'
+                : payload.entrada_ids.length === 1
+                  ? 'No se pudo entregar la entrada'
+                  : 'No se pudo entregar el grupo'
           )
         );
-      if (solicitud) return { productos: payload.unidades.length };
+      if (solicitud)
+        return {
+          productos: esIndividual
+            ? payload.entregas.reduce((total, entrega) => total + entrega.unidades.length, 0)
+            : payload.unidades.length
+        };
       return { productos: numero((json.data as JsonRecord).productos) };
     },
     retry: false
@@ -372,8 +537,45 @@ export function EntregaCoversDialog({
     filas.length === 1 ? topeCover + adicionalManual : presupuestoProductos
   );
 
+  const setSeleccion = useCallback(
+    (
+      actualizacion:
+        | Record<string, LineaSeleccion>
+        | ((actual: Record<string, LineaSeleccion>) => Record<string, LineaSeleccion>)
+    ) => {
+      if (!entregaIndividual) {
+        setSeleccionGrupal(actualizacion);
+        return;
+      }
+      setBorradoresIndividuales(previo => {
+        const actual = previo[entradaIndividualId] ?? BORRADOR_VACIO;
+        const siguiente =
+          typeof actualizacion === 'function' ? actualizacion(actual.seleccion) : actualizacion;
+        return {
+          ...previo,
+          [entradaIndividualId]: { ...actual, seleccion: siguiente }
+        };
+      });
+    },
+    [entradaIndividualId, entregaIndividual]
+  );
+
+  const actualizarBorrador = useCallback(
+    (actualizacion: Partial<BorradorIndividual>) => {
+      setBorradoresIndividuales(previo => ({
+        ...previo,
+        [entradaIndividualId]: {
+          ...(previo[entradaIndividualId] ?? BORRADOR_VACIO),
+          ...actualizacion
+        }
+      }));
+    },
+    [entradaIndividualId]
+  );
+
   const limpiarSeleccionDeEntrega = () => {
-    setSeleccion({});
+    setSeleccionGrupal({});
+    setBorradoresIndividuales({});
     reset({ montoAdicional: '' });
     clearErrors('montoAdicional');
   };
@@ -390,14 +592,17 @@ export function EntregaCoversDialog({
     if (entregando || id === entradaIndividualId || !filasGrupo.some(fila => fila.id === id))
       return;
     setEntradaIndividualId(id);
-    limpiarSeleccionDeEntrega();
+    if (modo === 'solicitud') setSeleccionGrupal({});
+    reset({ montoAdicional: borradoresIndividuales[id]?.montoAdicional ?? '' });
+    clearErrors('montoAdicional');
   };
 
   useEffect(() => {
     if (!abierto) return;
     setTipoEntrega('grupal');
     setEntradaIndividualId(grupo?.filas[0]?.id ?? '');
-    setSeleccion({});
+    setSeleccionGrupal({});
+    setBorradoresIndividuales({});
     setBusqueda('');
     setCategoriaSeleccionada(null);
     reset({ montoAdicional: '' });
@@ -494,16 +699,17 @@ export function EntregaCoversDialog({
     [bebidas]
   );
 
-  const lineas = useMemo(
-    () =>
-      Object.entries(seleccion).flatMap(([clave, linea]) => {
+  const lineasDeSeleccion = useCallback(
+    (seleccionActual: Record<string, LineaSeleccion>): LineaBebida[] =>
+      Object.entries(seleccionActual).flatMap(([clave, linea]) => {
         const [presentacionId, formato] = clave.split(':') as [string, Formato];
         const bebida = bebidas.find(item => item.presentacion_id === presentacionId);
         if (!bebida) return [];
         return [{ clave, bebida, formato, ...linea }];
       }),
-    [bebidas, seleccion]
+    [bebidas]
   );
+  const lineas = useMemo(() => lineasDeSeleccion(seleccion), [lineasDeSeleccion, seleccion]);
 
   const recargoAcompanamientos = useMemo(
     () =>
@@ -522,9 +728,9 @@ export function EntregaCoversDialog({
   const adicional = adicionalManual + recargoAcompanamientos;
   const presupuesto = totalEntradas + adicional;
 
-  const faltaAcompanamiento = useMemo(
-    () =>
-      lineas.some(linea => {
+  const faltaAcompanamientoDe = useCallback(
+    (lineasActuales: LineaBebida[]) =>
+      lineasActuales.some(linea => {
         if (!requiereAcompanamiento(linea.bebida, linea.formato)) return false;
         const opciones = opcionesCoverPara(acompanamientos, linea.bebida);
         if (opciones.length === 0) return linea.formato === 'botella';
@@ -532,8 +738,9 @@ export function EntregaCoversDialog({
         const asignado = linea.reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
         return asignado !== requeridas;
       }),
-    [acompanamientos, lineas]
+    [acompanamientos]
   );
+  const faltaAcompanamiento = faltaAcompanamientoDe(lineas);
 
   const excedeTopeIndividual =
     filas.length === 1 &&
@@ -541,6 +748,75 @@ export function EntregaCoversDialog({
   const precioSeleccionado = costoDe(seleccion);
   const restante = Math.max(0, presupuestoProductos - precioSeleccionado);
   const excedePresupuesto = precioSeleccionado > presupuestoProductos;
+  const resumenIndividual = useMemo(
+    () =>
+      entregaIndividual
+        ? filasGrupo.map(fila => {
+            const borrador = borradoresIndividuales[fila.id] ?? BORRADOR_VACIO;
+            const lineasEntrada = lineasDeSeleccion(borrador.seleccion);
+            const adicionalEntrada = Math.max(0, Math.floor(Number(borrador.montoAdicional) || 0));
+            const montoEntrada = Number(fila.monto_entrada) || 0;
+            const precioEntrada = costoDe(borrador.seleccion);
+            const recargoEntrada = lineasEntrada.reduce(
+              (suma, linea) =>
+                suma +
+                recargoAcompanamientoPorUnidad({
+                  tope: topeCover,
+                  tipoVenta: 'botella',
+                  acompanamiento_botella: linea.reparto
+                }),
+              0
+            );
+            return {
+              fila,
+              borrador,
+              lineas: lineasEntrada,
+              montoEntrada,
+              adicionalManual: adicionalEntrada,
+              adicional: adicionalEntrada + recargoEntrada,
+              precio: precioEntrada,
+              unidades: unidadesDeLineas(lineasEntrada),
+              faltaAcompanamiento: faltaAcompanamientoDe(lineasEntrada),
+              excedePresupuesto: precioEntrada > montoEntrada + adicionalEntrada,
+              excedeTope: lineasEntrada.some(
+                linea => precioVisible(linea.bebida, linea.formato) > topeCover + adicionalEntrada
+              )
+            };
+          })
+        : [],
+    [
+      borradoresIndividuales,
+      costoDe,
+      entregaIndividual,
+      faltaAcompanamientoDe,
+      filasGrupo,
+      lineasDeSeleccion,
+      topeCover
+    ]
+  );
+  const productosIndividuales = resumenIndividual.reduce(
+    (total, resumen) => total + resumen.unidades.length,
+    0
+  );
+  const adicionalIndividual = resumenIndividual.reduce(
+    (total, resumen) => total + resumen.adicional,
+    0
+  );
+  const individualCompleto =
+    resumenIndividual.length === filasGrupo.length &&
+    resumenIndividual.length > 0 &&
+    resumenIndividual.every(
+      resumen =>
+        resumen.lineas.length > 0 &&
+        !resumen.faltaAcompanamiento &&
+        !resumen.excedePresupuesto &&
+        !resumen.excedeTope
+    );
+  const cantidadDeBorrador = (entradaId: string) =>
+    Object.values(borradoresIndividuales[entradaId]?.seleccion ?? {}).reduce(
+      (total, linea) => total + linea.cantidad,
+      0
+    );
 
   const consumoDe = useCallback(
     (actual: Record<string, LineaSeleccion>) => {
@@ -575,8 +851,28 @@ export function EntregaCoversDialog({
       [...consumoDe(actual)].every(([id, unidades]) => unidades <= stockDe(id) + 1e-9),
     [consumoDe, stockDe]
   );
-  const consumo = useMemo(() => consumoDe(seleccion), [consumoDe, seleccion]);
-  const excedeStock = !stockValido(seleccion);
+  const seleccionDeOtrasEntradas = useMemo(() => {
+    if (!entregaIndividual) return {};
+    return combinarSelecciones(
+      filasGrupo
+        .filter(fila => fila.id !== entradaIndividualId)
+        .map(fila => borradoresIndividuales[fila.id]?.seleccion ?? {})
+    );
+  }, [borradoresIndividuales, entradaIndividualId, entregaIndividual, filasGrupo]);
+  const stockValidoConActual = useCallback(
+    (actual: Record<string, LineaSeleccion>) =>
+      stockValido(
+        entregaIndividual ? combinarSelecciones([seleccionDeOtrasEntradas, actual]) : actual
+      ),
+    [entregaIndividual, seleccionDeOtrasEntradas, stockValido]
+  );
+  const seleccionParaStock = useMemo(
+    () =>
+      entregaIndividual ? combinarSelecciones([seleccionDeOtrasEntradas, seleccion]) : seleccion,
+    [entregaIndividual, seleccionDeOtrasEntradas, seleccion]
+  );
+  const consumo = useMemo(() => consumoDe(seleccionParaStock), [consumoDe, seleccionParaStock]);
+  const excedeStock = !stockValido(seleccionParaStock);
 
   const opcionesParaLinea = (clave: string, bebida: Bebida) => {
     const reparto = seleccion[clave]?.reparto ?? [];
@@ -622,6 +918,7 @@ export function EntregaCoversDialog({
     }
     clearErrors('montoAdicional');
     setValue('montoAdicional', limpio, { shouldValidate: true });
+    if (entregaIndividual) actualizarBorrador({ montoAdicional: limpio });
   };
 
   const agregar = useCallback(
@@ -639,7 +936,7 @@ export function EntregaCoversDialog({
             reparto: previo[clave]?.reparto ?? []
           }
         };
-        return stockValido(siguiente) ? siguiente : previo;
+        return stockValidoConActual(siguiente) ? siguiente : previo;
       });
     },
     [
@@ -648,39 +945,46 @@ export function EntregaCoversDialog({
       entregando,
       filas.length,
       presupuestoProductos,
-      stockValido,
+      setSeleccion,
+      stockValidoConActual,
       topeCover
     ]
   );
 
-  const quitar = useCallback((clave: string, unidadesPorEntrega: number) => {
-    setSeleccion(previo => {
-      const actual = previo[clave];
-      if (!actual) return previo;
-      if (actual.cantidad <= 1) {
+  const quitar = useCallback(
+    (clave: string, unidadesPorEntrega: number) => {
+      setSeleccion(previo => {
+        const actual = previo[clave];
+        if (!actual) return previo;
+        if (actual.cantidad <= 1) {
+          const resto = { ...previo };
+          delete resto[clave];
+          return resto;
+        }
+        const cantidad = actual.cantidad - 1;
+        return {
+          ...previo,
+          [clave]: {
+            cantidad,
+            reparto: recortarReparto(actual.reparto, unidadesPorEntrega * cantidad)
+          }
+        };
+      });
+    },
+    [setSeleccion]
+  );
+
+  const quitarTodas = useCallback(
+    (clave: string) => {
+      setSeleccion(previo => {
+        if (!previo[clave]) return previo;
         const resto = { ...previo };
         delete resto[clave];
         return resto;
-      }
-      const cantidad = actual.cantidad - 1;
-      return {
-        ...previo,
-        [clave]: {
-          cantidad,
-          reparto: recortarReparto(actual.reparto, unidadesPorEntrega * cantidad)
-        }
-      };
-    });
-  }, []);
-
-  const quitarTodas = useCallback((clave: string) => {
-    setSeleccion(previo => {
-      if (!previo[clave]) return previo;
-      const resto = { ...previo };
-      delete resto[clave];
-      return resto;
-    });
-  }, []);
+      });
+    },
+    [setSeleccion]
+  );
 
   const cambiarReparto = useCallback(
     (clave: string, reparto: AcompanamientoBotellaItem[]) => {
@@ -694,10 +998,10 @@ export function EntregaCoversDialog({
             (previo[clave].reparto.find(actual => actual.presentacion_id === sabor.presentacion_id)
               ?.unidades ?? 0)
         );
-        return liberaStock || stockValido(siguiente) ? siguiente : previo;
+        return liberaStock || stockValidoConActual(siguiente) ? siguiente : previo;
       });
     },
-    [entregando, stockValido]
+    [entregando, setSeleccion, stockValidoConActual]
   );
 
   const cerrar = useCallback(() => {
@@ -711,50 +1015,71 @@ export function EntregaCoversDialog({
       entregando ||
       enviando.current ||
       cargando ||
+      (entregaIndividual && (anfitrionasQuery.isLoading || habitacionesQuery.isLoading)) ||
       errorBebidas ||
       errorCover ||
       filas.length === 0
     )
       return;
-    if (lineas.length === 0) {
-      toast.error('Selecciona al menos una bebida para entregar');
+    if (entregaIndividual && errorRelaciones) {
+      toast.error('No se pudieron cargar anfitrionas o habitaciones', {
+        description: errorRelaciones
+      });
       return;
     }
-    if (faltaAcompanamiento) {
-      toast.error('Selecciona el acompañamiento de cada producto que lo incluye');
-      return;
-    }
-    if (excedePresupuesto || excedeTopeIndividual || excedeStock) {
+    if (
+      entregaIndividual
+        ? resumenIndividual.length !== filasGrupo.length ||
+          resumenIndividual.some(resumen => resumen.lineas.length === 0)
+        : lineas.length === 0
+    ) {
       toast.error(
-        excedeStock
-          ? 'La selección supera el stock disponible'
-          : 'Sube el monto adicional o quita productos para cubrir la selección'
+        entregaIndividual
+          ? 'Selecciona al menos un cover para cada entrada'
+          : 'Selecciona al menos una bebida para entregar'
       );
       return;
     }
-    const unidades: UnidadEntrega[] = lineas.flatMap(linea => {
-      const repartos = requiereAcompanamiento(linea.bebida, linea.formato)
-        ? dividirRepartoPorEntrega(
-            linea.reparto,
-            unidadesAcompanamientoFormato(linea.bebida, linea.formato),
-            linea.cantidad
-          )
-        : [];
-      return Array.from({ length: linea.cantidad }, (_, indice) => ({
-        presentacion_id: linea.bebida.presentacion_id,
-        tipo_entrega: linea.formato,
-        acompanamientos: repartos[indice]?.length
-          ? repartos[indice].map(({ presentacion_id, unidades }) => ({ presentacion_id, unidades }))
-          : null
-      }));
-    });
+    if (
+      entregaIndividual
+        ? resumenIndividual.some(resumen => resumen.faltaAcompanamiento)
+        : faltaAcompanamiento
+    ) {
+      toast.error('Selecciona el acompañamiento de cada producto que lo incluye');
+      return;
+    }
+    if (
+      (entregaIndividual
+        ? resumenIndividual.some(resumen => resumen.excedePresupuesto || resumen.excedeTope)
+        : excedePresupuesto || excedeTopeIndividual) ||
+      excedeStock
+    ) {
+      toast.error(
+        excedeStock
+          ? 'La selección supera el stock disponible'
+          : 'Sube el monto adicional o quita productos para cubrir cada entrada'
+      );
+      return;
+    }
+    const unidades = unidadesDeLineas(lineas);
+    const payload: EntregaGrupalPayload | EntregaIndividualPayload = entregaIndividual
+      ? {
+          entregas: resumenIndividual.map(resumen => ({
+            entrada_id: resumen.fila.id,
+            monto_adicional: resumen.adicional,
+            unidades: resumen.unidades,
+            anfitriona_id: resumen.borrador.anfitrionaId || null,
+            habitacion_id: resumen.borrador.habitacionId || null
+          }))
+        }
+      : {
+          entrada_ids: filas.map(fila => fila.id),
+          monto_adicional: adicional,
+          unidades
+        };
     enviando.current = true;
     try {
-      const resultado = await mutacionGrupo.mutateAsync({
-        entrada_ids: filas.map(fila => fila.id),
-        monto_adicional: adicional,
-        unidades
-      });
+      const resultado = await mutacionGrupo.mutateAsync(payload);
       if (modo === 'solicitud') {
         toast.success('Solicitud enviada al cajero', {
           description: 'La entrega quedará pendiente de autorización.'
@@ -845,7 +1170,7 @@ export function EntregaCoversDialog({
               {tipoEntrega === 'individual' ? (
                 <div className='flex flex-col gap-2'>
                   <p id='entrada-individual-label' className='text-sm text-muted-foreground'>
-                    Elige la entrada que vas a atender ahora.
+                    Configura cada entrada por separado; después confirmarás todas juntas.
                   </p>
                   <div
                     role='group'
@@ -863,10 +1188,20 @@ export function EntregaCoversDialog({
                         onClick={() => seleccionarEntradaIndividual(fila.id)}
                         className='h-auto min-h-11 justify-between gap-3 rounded-full py-2 text-left'
                       >
-                        <span>Entrada {indice + 1}</span>
-                        <span className='shrink-0 tabular-nums'>
-                          {formatCurrencyCLP(fila.monto_entrada)}
+                        <span className='flex min-w-0 flex-col items-start gap-1'>
+                          <span>Entrada {indice + 1}</span>
+                          <span className='shrink-0 tabular-nums text-xs text-muted-foreground'>
+                            {formatCurrencyCLP(fila.monto_entrada)}
+                          </span>
                         </span>
+                        <Badge
+                          variant={cantidadDeBorrador(fila.id) > 0 ? 'secondary' : 'outline'}
+                          className='shrink-0 rounded-full'
+                        >
+                          {cantidadDeBorrador(fila.id) > 0
+                            ? `${cantidadDeBorrador(fila.id)} covers`
+                            : 'Pendiente'}
+                        </Badge>
                       </Button>
                     ))}
                   </div>
@@ -875,9 +1210,62 @@ export function EntregaCoversDialog({
             </div>
           ) : null}
 
-          <div className='space-y-1'>
+          {entregaIndividual ? (
+            <div className='grid gap-3 sm:grid-cols-2'>
+              <div className='flex flex-col gap-1.5'>
+                <Label className='text-xs'>Anfitriona (opcional)</Label>
+                <IndividualHostessSelect
+                  anfitrionas={anfitrionas}
+                  value={borradorActual.anfitrionaId}
+                  onChange={anfitrionaId => actualizarBorrador({ anfitrionaId })}
+                  placeholder={
+                    anfitrionasQuery.isLoading ? 'Cargando anfitrionas…' : 'Sin anfitriona'
+                  }
+                  disabled={entregando || anfitrionasQuery.isLoading}
+                  ariaLabel='Anfitriona opcional para esta entrada'
+                />
+                {borradorActual.anfitrionaId ? (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='self-start'
+                    disabled={entregando}
+                    onClick={() => actualizarBorrador({ anfitrionaId: '' })}
+                  >
+                    Quitar anfitriona
+                  </Button>
+                ) : null}
+              </div>
+              <RoomSelect
+                habitaciones={habitaciones}
+                value={borradorActual.habitacionId}
+                onChange={habitacionId => actualizarBorrador({ habitacionId })}
+                label='Habitación (opcional)'
+                placeholder={
+                  habitacionesQuery.isLoading ? 'Cargando habitaciones…' : 'Sin habitación'
+                }
+                filterByStatus={1}
+                disabled={entregando || habitacionesQuery.isLoading}
+              />
+            </div>
+          ) : null}
+
+          {entregaIndividual && (anfitrionasQuery.error || habitacionesQuery.error) ? (
+            <Alert role='alert'>
+              <AlertDescription className='text-xs text-destructive'>
+                {anfitrionasQuery.error?.message ?? habitacionesQuery.error?.message}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className='flex flex-col gap-1'>
             <Label htmlFor='monto-adicional-grupo' className='text-xs'>
-              {filas.length === 1 ? 'Monto adicional individual' : 'Monto adicional del grupo'}
+              {entregaIndividual
+                ? 'Monto adicional de esta entrada'
+                : filas.length === 1
+                  ? 'Monto adicional individual'
+                  : 'Monto adicional del grupo'}
             </Label>
             <Input
               id='monto-adicional-grupo'
@@ -901,15 +1289,48 @@ export function EntregaCoversDialog({
           <Alert role='note' className='py-3'>
             <Info className='size-4' aria-hidden='true' />
             <AlertDescription className='text-xs text-muted-foreground'>
-              Entradas {formatCurrencyCLP(totalEntradas)}
-              {adicional > 0 ? ` + adicional ${formatCurrencyCLP(adicional)}` : ''} = presupuesto{' '}
-              {formatCurrencyCLP(presupuesto)}.{' '}
-              {filas.length === 1
+              {entregaIndividual ? (
+                <>
+                  Entrada actual {formatCurrencyCLP(totalEntradas)}
+                  {adicional > 0 ? ` + adicional ${formatCurrencyCLP(adicional)}` : ''} =
+                  presupuesto {formatCurrencyCLP(presupuesto)}. El adicional total configurado es{' '}
+                  {formatCurrencyCLP(adicionalIndividual)}.
+                </>
+              ) : (
+                <>
+                  Entradas {formatCurrencyCLP(totalEntradas)}
+                  {adicional > 0 ? ` + adicional ${formatCurrencyCLP(adicional)}` : ''} =
+                  presupuesto {formatCurrencyCLP(presupuesto)}.{' '}
+                </>
+              )}{' '}
+              {entregaIndividual || filas.length === 1
                 ? `La entrada cubre bebidas hasta ${formatCurrencyCLP(topeCover)}; el adicional amplía ese tope.`
                 : 'El grupo comparte el presupuesto de sus entradas para elegir las bebidas.'}{' '}
               El adicional se cobra completo en la barra con el método de pago de la entrada.
             </AlertDescription>
           </Alert>
+
+          {entregaIndividual ? (
+            <div className='flex flex-col gap-1 rounded-xl border border-dashed p-3 text-xs'>
+              {resumenIndividual.map((resumen, indice) => (
+                <p key={resumen.fila.id} className='flex flex-wrap justify-between gap-2'>
+                  <span>
+                    Entrada {indice + 1}:{' '}
+                    {resumen.lineas.length > 0
+                      ? resumen.lineas
+                          .map(linea => `${linea.bebida.producto_nombre} × ${linea.cantidad}`)
+                          .join(', ')
+                      : 'Sin productos'}
+                    {resumen.borrador.anfitrionaId ? ' · anfitriona asignada' : ''}
+                    {resumen.borrador.habitacionId ? ' · habitación asignada' : ''}
+                  </span>
+                  <span className='font-medium tabular-nums'>
+                    Adicional {formatCurrencyCLP(resumen.adicional)}
+                  </span>
+                </p>
+              ))}
+            </div>
+          ) : null}
 
           {cargando ? (
             <div className='flex items-center gap-2 rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
@@ -1185,9 +1606,9 @@ export function EntregaCoversDialog({
                 );
               })}
               <p className='text-xs text-muted-foreground'>
-                {totalSeleccionado} productos para {filas.length}{' '}
-                {filas.length === 1 ? 'entrada' : 'entradas'}. El grupo comparte todo el
-                presupuesto.
+                {entregaIndividual
+                  ? `${totalSeleccionado} productos para esta entrada. El stock se valida en todo el grupo.`
+                  : `${totalSeleccionado} productos para ${filas.length} ${filas.length === 1 ? 'entrada' : 'entradas'}. El grupo comparte todo el presupuesto.`}
               </p>
               <div className='rounded-xl border border-dashed p-3 text-xs'>
                 <p className='flex flex-wrap justify-between gap-2 text-muted-foreground'>
@@ -1257,10 +1678,12 @@ export function EntregaCoversDialog({
               entregando ||
               cargando ||
               Boolean(errorBebidas) ||
-              lineas.length === 0 ||
-              faltaAcompanamiento ||
-              excedePresupuesto ||
-              excedeTopeIndividual ||
+              (entregaIndividual
+                ? cargandoRelaciones || Boolean(errorRelaciones) || !individualCompleto
+                : lineas.length === 0 ||
+                  faltaAcompanamiento ||
+                  excedePresupuesto ||
+                  excedeTopeIndividual) ||
               excedeStock ||
               Boolean(errorCover) ||
               filas.length === 0
@@ -1272,9 +1695,11 @@ export function EntregaCoversDialog({
               ? totalSeleccionado > 0
                 ? `Solicitar ${totalSeleccionado} covers`
                 : 'Solicitar covers'
-              : totalSeleccionado > 0
-                ? `Entregar ${totalSeleccionado} en la barra`
-                : 'Entregar en la barra'}
+              : entregaIndividual
+                ? `Entregar ${productosIndividuales} covers (${resumenIndividual.length} entradas)`
+                : totalSeleccionado > 0
+                  ? `Entregar ${totalSeleccionado} en la barra`
+                  : 'Entregar en la barra'}
           </Button>
         </DialogFooter>
       </DialogContent>

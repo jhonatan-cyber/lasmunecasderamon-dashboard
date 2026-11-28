@@ -69,7 +69,7 @@ import { consumirCorteCoverBar, consumirProductoCoverBar } from '@/modules/inven
 import { registrarMovimientoCobro } from '@/modules/caja';
 import { ejecutarEfectosConfirmados } from '@/lib/transaction/effects';
 import { rechazarSolicitudCover } from '@/modules/entradas/covers/repositorio';
-import { entregaGrupoCoverSchema } from '@/lib/business/schemas/entrada-cover';
+import { entregaCoverSchema, entregaGrupoCoverSchema } from '@/lib/business/schemas/entrada-cover';
 
 const entrada = (id: string) => ({
   id,
@@ -157,6 +157,79 @@ describe('presupuesto compartido de covers', () => {
     expect(contexto).toEqual({ id: 'grupo-tx' });
     expect(onVenta).toHaveBeenCalledTimes(1);
     expect(registrarMovimientoCobro).not.toHaveBeenCalled();
+  });
+
+  it('guarda producto, anfitriona y habitación para cada entrada en la misma transacción', async () => {
+    const onVenta = venta();
+    const resultado = await entregarGrupoEntradas(
+      {
+        ...input,
+        unidades: [],
+        entregas: [
+          {
+            entradaId: 'e1',
+            unidades: [{ presentacion_id: 'p2', tipo_entrega: 'botella' }],
+            montoAdicional: 0,
+            anfitrionaId: 'host-1',
+            habitacionId: 'room-1'
+          },
+          {
+            entradaId: 'e2',
+            unidades: [{ presentacion_id: 'p2', tipo_entrega: 'botella' }],
+            montoAdicional: 0,
+            anfitrionaId: null,
+            habitacionId: null
+          }
+        ]
+      },
+      onVenta
+    );
+
+    expect(resultado).toMatchObject({ entradas: 2, productos: 2, montoEntrada: 20000 });
+    expect(onVenta).toHaveBeenCalledTimes(1);
+    expect(onVenta.mock.calls[0]?.[0]).toMatchObject({
+      entradaId: 'e1',
+      anfitrionas: ['host-1'],
+      habitacionId: 'room-1'
+    });
+    expect(
+      estado.writes
+        .filter(fila => fila.sql.startsWith('INSERT INTO entradas_clientes_productos'))
+        .map(fila => fila.params[0])
+    ).toEqual(['e1', 'e2']);
+    expect(estado.writes.filter(fila => fila.sql.startsWith('UPDATE entradas'))).toHaveLength(2);
+    expect(registrarMovimientoCobro).toHaveBeenCalledWith(
+      'caja',
+      { efectivo: 10000, tarjeta: 0, transferencia: 0 },
+      { id: 'grupo-tx' }
+    );
+    expect(estado.commits).toBe(1);
+  });
+
+  it('revierte las entregas individuales si falla una entrada del lote', async () => {
+    vi.mocked(consumirProductoCoverBar)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('Sin stock'));
+
+    await expect(
+      entregarGrupoEntradas({
+        ...input,
+        unidades: [],
+        entregas: ['e1', 'e2'].map(entradaId => ({
+          entradaId,
+          unidades: [{ presentacion_id: 'p2', tipo_entrega: 'botella' }],
+          montoAdicional: 0,
+          anfitrionaId: null,
+          habitacionId: null
+        }))
+      })
+    ).rejects.toThrow('Sin stock');
+
+    expect(estado.rollbacks).toBe(1);
+    expect(estado.commits).toBe(0);
+    expect(estado.writes).toEqual([]);
+    expect(registrarMovimientoCobro).not.toHaveBeenCalled();
+    expect(ejecutarEfectosConfirmados).not.toHaveBeenCalled();
   });
 
   it('no pierde el aporte aunque los productos cuesten menos que el presupuesto', async () => {
@@ -459,6 +532,23 @@ describe('presupuesto compartido de covers', () => {
       entregaGrupoCoverSchema.safeParse({
         ...payload,
         unidades: [{ presentacion_id: 'p1', tipo_entrega: 'otro' }]
+      }).success
+    ).toBe(false);
+    const individual = {
+      entregas: [
+        {
+          entrada_id: 'e1',
+          monto_adicional: 0,
+          unidades: input.unidades,
+          anfitriona_id: 'host-1',
+          habitacion_id: 'room-1'
+        }
+      ]
+    };
+    expect(entregaCoverSchema.safeParse(individual).success).toBe(true);
+    expect(
+      entregaCoverSchema.safeParse({
+        entregas: [...individual.entregas, ...individual.entregas]
       }).success
     ).toBe(false);
   });

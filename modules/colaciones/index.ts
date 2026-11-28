@@ -1,5 +1,5 @@
 import 'server-only';
-export { listarColaciones, registrarColacion } from './servicio';
+export { listarColaciones, registrarColacion, obtenerTopesColacionesPorRol } from './servicio';
 export {
   claveColacionesPorRol,
   excesoColacionesPorRol,

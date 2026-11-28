@@ -73,7 +73,7 @@ export async function listarColaciones(
  * trabajador). Fallo abierto: una config corrupta deja correr el tope vigente
  * en lugar de bloquear el módulo.
  */
-async function leerTopesColaciones() {
+export async function obtenerTopesColacionesPorRol() {
   const filas = await query<{ valor: string | null }[]>(
     'SELECT valor FROM configuraciones WHERE clave = ? LIMIT 1',
     [claveColacionesPorRol()]
@@ -121,7 +121,7 @@ export async function registrarColacion(input: {
     if (!regla) throw new ValidationError('Este rol no recibe colación');
 
     // El tope de colaciones del rol para este turno (default: 1 por trabajador).
-    const topes = await leerTopesColaciones();
+    const topes = await obtenerTopesColacionesPorRol();
 
     // El derecho del trabajador a colaciones en este turno se comprueba antes
     // que el stock: si ya alcanzó las que su rol permite, ese es el motivo por

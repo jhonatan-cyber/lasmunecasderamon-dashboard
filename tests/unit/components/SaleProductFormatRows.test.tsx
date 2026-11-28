@@ -1,10 +1,18 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render, within } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { SaleProductFormatRows } from '@/components/sales/product-modal/SaleProductFormatRows';
 import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
 vi.mock('@/components/sales/SaleFormatQuantities', () => ({
-  SaleFormatQuantities: ({ options, compact, hideLabel }: any) => (
-    <div>
+  SaleFormatQuantities: ({
+    options,
+    hideLabel,
+    optionClassName
+  }: {
+    options: Array<{ displayLabel?: string; label: string; precio: number }>;
+    hideLabel?: boolean;
+    optionClassName?: string;
+  }) => (
+    <div data-testid='format-card' className={optionClassName}>
       {!hideLabel && (options[0].displayLabel ?? options[0].label)}
       <span>{options[0].precio}</span>
     </div>
@@ -17,7 +25,12 @@ vi.mock('@/components/sales/product-modal/SaleProductMixers', () => ({
 }));
 vi.mock('@/components/sales/product-modal/SaleProductHostess', () => ({
   SaleProductHostess: ({ item }: any) => (
-    <div data-testid='hostess'>{item.otherSelected.join(', ')}</div>
+    <div data-testid='hostess'>
+      {item.otherSelected.join(', ')}
+      <button type='button' onClick={() => item.onOtherSelect(['Elegida'])}>
+        Asignar
+      </button>
+    </div>
   )
 }));
 it('mantiene formato, bebida y anfitriona dentro de la misma fila', () => {
@@ -49,7 +62,7 @@ it('mantiene formato, bebida y anfitriona dentro de la misma fila', () => {
   expect(shot).toHaveTextContent('Ana');
 });
 
-it('mantiene las columnas de tipo, bebida y anfitrionas al seleccionar varios cortos', () => {
+it('muestra un selector independiente de anfitriona por cada corto', () => {
   const item = {
     product: {
       opciones_venta: [{ tipo: 'shot', ml_acompanamiento_anfitriona: 100 }]
@@ -95,23 +108,67 @@ it('mantiene las columnas de tipo, bebida y anfitrionas al seleccionar varios co
   expect(header).toHaveTextContent('Anfitrionas');
   expect(row).toHaveClass(columns);
   const controls = Array.from(row?.children ?? []).map(child => child.textContent?.trim() ?? '');
-  expect(controls).toHaveLength(5);
+  expect(controls).toHaveLength(6);
   expect(row?.children[0]).toHaveClass('md:col-start-1');
   expect(row?.children[1]).toHaveClass('md:col-start-2');
-  expect(row?.children[2]).toHaveClass('md:col-start-1');
-  expect(row?.children[3]).toHaveClass('md:col-start-2');
-  expect(row?.children[4]).toHaveClass('md:col-start-3');
-  expect(row?.children[4]).toHaveClass('md:row-start-1');
+  expect(row?.children[2]).toHaveClass('md:col-start-3');
+  expect(row?.children[3]).toHaveClass('md:col-start-1');
+  expect(row?.children[4]).toHaveClass('md:col-start-2');
+  expect(row?.children[5]).toHaveClass('md:col-start-3');
   expect(controls[0]).toContain('Corto 1');
   expect(controls[1]).toContain('Bebida · Corto 1');
   expect(controls[1]).toContain('Cola 1');
-  expect(controls[2]).toContain('Corto 2');
-  expect(controls[3]).toContain('Bebida · Corto 2');
-  expect(controls[3]).toContain('Cola 2');
-  expect(controls[4]).toContain('Anfitrionas de los cortos');
-  expect(controls[4]).toContain('Ana, Bia');
+  expect(controls[2]).toContain('Anfitriona · Corto 1');
+  expect(controls[2]).toContain('Ana');
+  expect(controls[3]).toContain('Corto 2');
+  expect(controls[4]).toContain('Bebida · Corto 2');
+  expect(controls[4]).toContain('Cola 2');
+  expect(controls[5]).toContain('Anfitriona · Corto 2');
+  expect(controls[5]).toContain('Bia');
+  expect(getAllByTestId('format-card')[0]).toHaveClass(
+    'bg-amber-50/80',
+    'border-amber-200/70',
+    'dark:bg-amber-500/10'
+  );
+  const secondFormatCard = row?.children[3]?.lastElementChild;
+  expect(secondFormatCard).toHaveClass(
+    'bg-amber-50/80',
+    'border-amber-200/70',
+    'dark:bg-amber-500/10'
+  );
   expect(getAllByTestId('mixer')).toHaveLength(2);
-  expect(getAllByTestId('hostess')).toHaveLength(1);
+  const selectors = getAllByTestId('hostess');
+  expect(selectors).toHaveLength(2);
+  fireEvent.click(within(selectors[0]).getByRole('button', { name: 'Asignar' }));
+  fireEvent.click(within(selectors[1]).getByRole('button', { name: 'Asignar' }));
+  expect(item.hostessFormats?.[0].onChange).toHaveBeenCalledWith(['Elegida']);
+  expect(item.hostessFormats?.[1].onChange).toHaveBeenCalledWith(['Elegida']);
+});
+
+it('no aplica el tono de anfitriona a los cortos cliente', () => {
+  const item = {
+    product: { opciones_venta: [{ tipo: 'shot' }] },
+    opcionesTipo: [
+      {
+        value: 'shot',
+        label: 'Corto cliente · 20 ml',
+        cantidad: 2,
+        precio: 10000,
+        comision: 0
+      }
+    ],
+    mixers: [],
+    hostessFormats: []
+  } as unknown as SaleProductItem;
+
+  const { container, getByTestId } = render(
+    <SaleProductFormatRows item={item} availableHostesses={[]} />
+  );
+  const row = container.querySelector('[data-sale-format="shot"]');
+  const secondFormatCard = row?.children[1]?.lastElementChild;
+
+  expect(getByTestId('format-card')).not.toHaveClass('bg-amber-50/80');
+  expect(secondFormatCard).not.toHaveClass('bg-amber-50/80');
 });
 
 it.each([

@@ -308,6 +308,7 @@ export default function NewSale() {
           setOtherProductHostessSelections(prev => ({ ...prev, [id]: ids }));
         }}
         productosEnCarrito={productos}
+        productCardVariant='plain'
       />
     </>
   );
