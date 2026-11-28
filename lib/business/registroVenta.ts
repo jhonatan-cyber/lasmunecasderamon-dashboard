@@ -74,22 +74,34 @@ export function repartirDetalleVenta(
   const totalQty = Math.max(1, Number(d.cantidad || 1));
   const precioConRecargo = Number(d.precio || 0) + Number(d.recargo_acompanamiento || 0);
   const isChampagne = d.tipo_venta !== 'shot' && Boolean(d.isChampagne);
+  const comparteComision = Number.isInteger(totalQty) && hostesses.length > totalQty;
   const effectiveHostesses =
-    hostesses.length === 0 ? [null] : isChampagne ? hostesses : hostesses.slice(0, totalQty);
+    hostesses.length === 0
+      ? [null]
+      : isChampagne || comparteComision
+        ? hostesses
+        : hostesses.slice(0, totalQty);
   const hostessCount = Math.max(1, effectiveHostesses.length);
 
   const commissionByIndex: number[] = new Array(hostessCount).fill(0);
   const quantityByIndex: number[] = new Array(hostessCount).fill(0);
   const subtotalByIndex: number[] = new Array(hostessCount).fill(0);
 
-  if (isChampagne) {
+  if (isChampagne || comparteComision) {
     const commBase = Math.floor(totalComm / hostessCount);
     const remainder = totalComm % hostessCount;
+    let remainingQty = totalQty;
 
     for (let i = 0; i < hostessCount; i++) {
       commissionByIndex[i] = commBase + (i === 0 ? remainder : 0);
-      quantityByIndex[i] = i === 0 ? totalQty : 0;
-      subtotalByIndex[i] = i === 0 ? d.sub_total || precioConRecargo * totalQty : 0;
+      const qtyPart = isChampagne ? (i === 0 ? totalQty : 0) : Math.min(1, remainingQty);
+      quantityByIndex[i] = qtyPart;
+      subtotalByIndex[i] = isChampagne
+        ? i === 0
+          ? d.sub_total || precioConRecargo * totalQty
+          : 0
+        : precioConRecargo * qtyPart;
+      remainingQty -= qtyPart;
     }
   } else {
     const unitBaseCommission = Math.floor(totalComm / totalQty);

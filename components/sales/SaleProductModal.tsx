@@ -36,6 +36,7 @@ interface SaleProductModalProps {
   otherProductHostessSelections: { [key: string]: string[] };
   onOtherProductHostessChange: (productId: string, hostessIds: string[]) => void;
   productosEnCarrito: any[];
+  productCardVariant?: 'card' | 'plain';
 }
 
 /**
@@ -60,7 +61,8 @@ export default function SaleProductModal({
   onChampagneHostessChange,
   otherProductHostessSelections,
   onOtherProductHostessChange,
-  productosEnCarrito
+  productosEnCarrito,
+  productCardVariant = 'card'
 }: SaleProductModalProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleProduct = (id: string) =>
@@ -188,6 +190,7 @@ export default function SaleProductModal({
                       onToggle={toggleProduct}
                       items={modal.items}
                       availableHostesses={modal.availableHostesses}
+                      cardVariant={productCardVariant}
                     />
                   ) : (
                     <SaleProductCards
@@ -195,6 +198,7 @@ export default function SaleProductModal({
                       onToggle={toggleProduct}
                       items={modal.items}
                       availableHostesses={modal.availableHostesses}
+                      cardVariant={productCardVariant}
                     />
                   )}
                 </>

@@ -13,6 +13,10 @@ import {
   normalizarAcompanamientoBotella,
   type AcompanamientoBotellaItem
 } from '@/lib/sales/acompanamientoBotella';
+import {
+  precioUnitarioAcompanamiento,
+  recargoAcompanamientoPorUnidad
+} from '@/lib/sales/recargoAcompanamiento';
 
 export type MetodoDevolucion = 'efectivo' | 'tarjeta' | 'transferencia' | 'prepago';
 
@@ -570,7 +574,16 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
     if (!Number.isSafeInteger(presupuesto) || presupuesto > 2147483647)
       throw new ValidationError('El presupuesto supera el monto permitido');
     const topeCoverCliente = await leerTopeCoverCliente(contexto);
-    const presentacionIds = [...new Set(input.unidades.map(item => item.presentacion_id))].sort();
+    const presentacionIds = [
+      ...new Set(
+        input.unidades.flatMap(item => [
+          item.presentacion_id,
+          ...normalizarAcompanamientoBotella(item.acompanamientos).map(
+            acompanamiento => acompanamiento.presentacion_id
+          )
+        ])
+      )
+    ].sort();
     const presentaciones = await trx<
       Array<{
         id: string;
@@ -602,12 +615,6 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
           : Number(presentacion.precio_venta);
       if (!Number.isSafeInteger(precio) || precio <= 0)
         throw new ValidationError('El precio de la bebida no está configurado');
-      if (
-        entradas.length === 1 &&
-        precio > topeCoverCliente &&
-        precio - topeCoverCliente > input.montoAdicional
-      )
-        throw new ValidationError('El precio de la bebida supera el tope de cover para clientes');
       const reparto = normalizarAcompanamientoBotella(item.acompanamientos);
       const total = reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
       if (
@@ -621,8 +628,49 @@ export async function entregarGrupoEntradas(input: EntregaGrupoInput, onVenta?: 
         );
       return { item, presentacion, precio, reparto, esCorte, precioSin };
     });
+    const recargoAcompanamientos = seleccion.reduce((suma, item) => {
+      const acompanamientos = item.reparto.map(acompanamiento => {
+        const presentacionAcompanamiento = presentaciones.find(
+          fila => fila.id === acompanamiento.presentacion_id
+        );
+        if (
+          !presentacionAcompanamiento ||
+          !presentacionAcompanamiento.activa ||
+          Number(presentacionAcompanamiento.estado) !== 1
+        )
+          throw new ValidationError('El acompañamiento seleccionado no está disponible');
+        return {
+          ...acompanamiento,
+          precio: precioUnitarioAcompanamiento(presentacionAcompanamiento)
+        };
+      });
+      const recargo = item.esCorte
+        ? recargoAcompanamientoPorUnidad({
+            tope: topeCoverCliente,
+            tipoVenta: 'shot',
+            acompanamiento_corto: acompanamientos[0]
+          })
+        : recargoAcompanamientoPorUnidad({
+            tope: topeCoverCliente,
+            tipoVenta: 'botella',
+            acompanamiento_botella: acompanamientos
+          });
+      return suma + recargo;
+    }, 0);
+    if (input.montoAdicional < recargoAcompanamientos)
+      throw new ValidationError('El aporte adicional no cubre el excedente del acompañamiento');
+    const adicionalProductos = input.montoAdicional - recargoAcompanamientos;
+    const presupuestoProductos = montoEntrada + adicionalProductos;
+    if (
+      entradas.length === 1 &&
+      seleccion.some(
+        item =>
+          item.precio > topeCoverCliente && item.precio - topeCoverCliente > adicionalProductos
+      )
+    )
+      throw new ValidationError('El precio de la bebida supera el tope de cover para clientes');
     const precioProductos = seleccion.reduce((suma, item) => suma + item.precio, 0);
-    if (precioProductos > presupuesto)
+    if (precioProductos > presupuestoProductos)
       throw new ValidationError(
         'Los productos superan el presupuesto de entradas más el aporte adicional'
       );

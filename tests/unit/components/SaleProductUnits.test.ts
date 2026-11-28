@@ -24,8 +24,20 @@ it.each([0, 2000])(
         'ron:shot_anfitriona:unit:1': { presentacion_id: 'sprite', ml_por_corto: 150 }
       },
       bar: [
-        { id: 'coca', stock_bar: 2, opciones_venta: JSON.stringify([{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]) },
-        { id: 'sprite', stock_bar: 2, opciones_venta: JSON.stringify([{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }]) }
+        {
+          id: 'coca',
+          stock_bar: 2,
+          opciones_venta: JSON.stringify([
+            { tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }
+          ])
+        },
+        {
+          id: 'sprite',
+          stock_bar: 2,
+          opciones_venta: JSON.stringify([
+            { tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true }
+          ])
+        }
       ],
       onSaleTypeChange: vi.fn(),
       onCantidadChange: vi.fn(),
@@ -82,6 +94,44 @@ it.each([0, 2000])(
     expect(buildSaleProductItem(product, context).agregarDisabled).toBe(true);
   }
 );
+
+it('envía juntas las anfitrionas seleccionadas para dos botellas con máximo dos por unidad', async () => {
+  const add = vi.fn();
+  const context: SaleProductItemContext = {
+    shotMl: 50,
+    cantidades: {},
+    cantidadesPorTipo: { 'vodka:botella': 2 },
+    champagneHostessSelections: {},
+    otherProductHostessSelections: {
+      'vodka:botella': ['ana', 'bea'],
+      'vodka:botella:unit:1': ['cami', 'dani']
+    },
+    hostessSearchValues: {},
+    productosEnCarrito: [],
+    availableHostesses: [],
+    onSaleTypeChange: vi.fn(),
+    onCantidadChange: vi.fn(),
+    onChampagneHostessChange: vi.fn(),
+    onOtherProductHostessChange: vi.fn(),
+    onHostessSearchChange: vi.fn(),
+    onAgregarProducto: add
+  };
+  const product = {
+    id: 'vodka',
+    max_anfitrionas: 2,
+    stock_bar: 2,
+    opciones_venta: [{ tipo: 'botella', precio: 10000, comision: 1000 }]
+  };
+
+  const item = buildSaleProductItem(product, context);
+  expect(item.hostessFormats).toHaveLength(2);
+  await item.onAgregar();
+
+  expect(add).toHaveBeenCalledOnce();
+  expect(add).toHaveBeenCalledWith(
+    expect.objectContaining({ cantidad: 2, selectedHostesses: ['ana', 'bea', 'cami', 'dani'] })
+  );
+});
 
 it('separa botella sin comisión y corto con comisión y descarta la selección previa de la botella', async () => {
   const add = vi.fn();

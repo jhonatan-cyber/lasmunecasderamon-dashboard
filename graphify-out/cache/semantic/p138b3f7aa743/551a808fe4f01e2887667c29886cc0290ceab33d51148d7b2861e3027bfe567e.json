@@ -1,0 +1,270 @@
+{
+  "nodes": [
+    {
+      "id": "architecture_frontend_layer",
+      "label": "Frontend Layer",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L5-L14",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_api_layer",
+      "label": "API Layer",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L14-L19",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_business_layer",
+      "label": "Business Modules Layer",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L20-L24",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_transaction_layer",
+      "label": "Transaction Layer",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L26-L30",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_postgresql_database",
+      "label": "PostgreSQL Database",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L31-L33",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_unit_of_work",
+      "label": "Unit of Work Transaction Pattern",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L36-L77",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "An opaque operation context lets participating modules use their public APIs without allowing arbitrary SQL."
+    },
+    {
+      "id": "architecture_cross_module_workflows",
+      "label": "Cross-Module Business Workflows",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L80-L105",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_withroute_wrapper",
+      "label": "withRoute Request Wrapper",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L107-L142",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_zod_validation",
+      "label": "Two-Layer Zod Validation",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L144-L177",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_typed_errors",
+      "label": "Typed Business Errors",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L194-L205",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "architecture_sse_events",
+      "label": "Server-Sent Events",
+      "file_type": "concept",
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L207-L234",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "architecture_frontend_layer",
+      "target": "architecture_api_layer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L8-L19",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_api_layer",
+      "target": "architecture_business_layer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L14-L24",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_business_layer",
+      "target": "architecture_transaction_layer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L20-L30",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_transaction_layer",
+      "target": "architecture_postgresql_database",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L26-L33",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_cross_module_workflows",
+      "target": "architecture_unit_of_work",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L80-L93",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_unit_of_work",
+      "target": "architecture_postgresql_database",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L42-L63",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_cross_module_workflows",
+      "target": "architecture_sse_events",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L85-L105",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_withroute_wrapper",
+      "target": "api_route_auth_and_permissions",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L111-L142",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_withroute_wrapper",
+      "target": "api_per_ip_rate_limits",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L111-L126",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_withroute_wrapper",
+      "target": "api_request_id_tracing",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L111-L126",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_withroute_wrapper",
+      "target": "api_mutation_audit_logging",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md",
+      "source_location": "L111-L126",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "dashboard_application_layers",
+      "label": "Dashboard Application Layers",
+      "nodes": [
+        "architecture_frontend_layer",
+        "architecture_api_layer",
+        "architecture_business_layer",
+        "architecture_transaction_layer",
+        "architecture_postgresql_database"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md"
+    },
+    {
+      "id": "dashboard_route_protection_stack",
+      "label": "Shared API Route Protection Stack",
+      "nodes": [
+        "architecture_withroute_wrapper",
+        "api_route_auth_and_permissions",
+        "api_per_ip_rate_limits",
+        "api_request_id_tracing",
+        "api_mutation_audit_logging"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE.md"
+    }
+  ]
+}

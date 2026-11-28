@@ -30,6 +30,7 @@ export type OrderProducto = SaleInventoryFields & {
   generaComision?: number;
   selectedHostesses?: (string | number)[];
   isChampagne?: boolean;
+  max_anfitrionas?: number | null;
   selectedRoom?: string | null;
   requiresRoom?: boolean;
   nombre?: string;
@@ -210,8 +211,11 @@ export function useOrderForm({
           const response = await fetch(`/api/products/${encodeURIComponent(pid)}/tiers`);
           const result = await response.json();
           if (!response.ok || !result.success) throw new Error();
+          const anfitrionasPorUnidad = Math.ceil(
+            selectedHostesses.length / Math.max(1, Number(cantidad) || 1)
+          );
           const tier = (result.data || []).find(
-            (row: any) => Number(row.anfitrionas) === selectedHostesses.length
+            (row: any) => Number(row.anfitrionas) === anfitrionasPorUnidad
           );
           if (tier) {
             precio = Number(tier.precio);
@@ -363,20 +367,11 @@ export function useOrderForm({
     }
 
     for (const producto of bebidasConComision) {
-      if (producto.tipo_venta !== 'shot' && isChampagneProduct(producto)) {
-        const limit = getHostessLimit(producto);
-        if ((producto.selectedHostesses || []).length > limit) {
-          setError(
-            `La champaña "${producto.nombre || producto.name}" excede el límite de ${limit}`
-          );
-          return;
-        }
-      } else {
-        const max = Number(producto.cantidad || 1);
-        if ((producto.selectedHostesses || []).length > max) {
-          setError(`La bebida "${producto.nombre || producto.name}" puede tener máximo ${max}`);
-          return;
-        }
+      const cantidad = Math.max(1, Number(producto.cantidad) || 1);
+      const max = producto.tipo_venta === 'shot' ? cantidad : getHostessLimit(producto) * cantidad;
+      if ((producto.selectedHostesses || []).length > max) {
+        setError(`La bebida "${producto.nombre || producto.name}" puede tener máximo ${max}`);
+        return;
       }
     }
 

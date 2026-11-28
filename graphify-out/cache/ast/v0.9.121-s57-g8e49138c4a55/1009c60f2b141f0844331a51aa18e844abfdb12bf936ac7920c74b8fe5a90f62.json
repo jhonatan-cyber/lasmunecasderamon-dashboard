@@ -1,0 +1,137 @@
+{
+  "nodes": [
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_json",
+      "label": "tsconfig.typecheck.json",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L1"
+    },
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_extends",
+      "label": "extends",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L2"
+    },
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_compileroptions",
+      "label": "compilerOptions",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L3"
+    },
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_compileroptions_noimplicitany",
+      "label": "noImplicitAny",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L4"
+    },
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_compileroptions_strict",
+      "label": "strict",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L5"
+    },
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_compileroptions_strictnullchecks",
+      "label": "strictNullChecks",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L6"
+    },
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_include",
+      "label": "include",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L8"
+    },
+    {
+      "id": "$graphify-root$_tsconfig_typecheck_exclude",
+      "label": "exclude",
+      "file_type": "code",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L9"
+    }
+  ],
+  "edges": [
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_json",
+      "target": "$graphify-root$_tsconfig_typecheck_extends",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_json",
+      "target": "$graphify-root$_tsconfig_json",
+      "relation": "extends",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L2",
+      "weight": 1.0,
+      "context": "import",
+      "target_file": "$graphify-root$/tsconfig.json"
+    },
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_json",
+      "target": "$graphify-root$_tsconfig_typecheck_compileroptions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_compileroptions",
+      "target": "$graphify-root$_tsconfig_typecheck_compileroptions_noimplicitany",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_compileroptions",
+      "target": "$graphify-root$_tsconfig_typecheck_compileroptions_strict",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_compileroptions",
+      "target": "$graphify-root$_tsconfig_typecheck_compileroptions_strictnullchecks",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_json",
+      "target": "$graphify-root$_tsconfig_typecheck_include",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_tsconfig_typecheck_json",
+      "target": "$graphify-root$_tsconfig_typecheck_exclude",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tsconfig.typecheck.json",
+      "source_location": "L9",
+      "weight": 1.0
+    }
+  ],
+  "_cached_target_files": ["$graphify-root$/tsconfig.json"]
+}

@@ -1,0 +1,157 @@
+{
+  "nodes": [
+    {
+      "id": "api_request_protection_stack",
+      "label": "Cross-Cutting API Protections",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L5-L48",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_route_auth_and_permissions",
+      "label": "Route Authentication and Permissions",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L10-L15",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_per_ip_rate_limits",
+      "label": "Per-IP Rate Limits",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L22-L28",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_request_id_tracing",
+      "label": "Request ID Tracing",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L37-L42",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_mutation_audit_logging",
+      "label": "Mutation Audit Logging",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L44-L48",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_sales_endpoint",
+      "label": "Sales API Endpoint",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L51-L87",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_sale_create_schema",
+      "label": "SaleCreateSchema",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L55-L60",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_service_endpoint",
+      "label": "Services API Endpoint",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L91-L108",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_service_create_schema",
+      "label": "ServiceCreateSchema",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L93-L98",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "api_shared_validation_helpers",
+      "label": "Shared Validation Helpers",
+      "file_type": "concept",
+      "source_file": "API.md",
+      "source_location": "L401-L416",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "api_sales_endpoint",
+      "target": "api_sale_create_schema",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "API.md",
+      "source_location": "L55-L60",
+      "weight": 1.0
+    },
+    {
+      "source": "api_service_endpoint",
+      "target": "api_service_create_schema",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "API.md",
+      "source_location": "L93-L98",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_zod_validation",
+      "target": "api_shared_validation_helpers",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "API.md",
+      "source_location": "L401-L416",
+      "weight": 1.0
+    },
+    {
+      "source": "api_request_protection_stack",
+      "target": "architecture_withroute_wrapper",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "API.md",
+      "source_location": "L5-L48",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

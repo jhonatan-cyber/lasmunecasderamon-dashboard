@@ -173,6 +173,7 @@ describe('presupuesto compartido de covers', () => {
     estado.presentaciones[1].opciones_venta = [
       { tipo: 'botella', acompanamiento: { unidades: 1 } }
     ];
+    estado.presentaciones.push(producto('mix1', 5000), producto('mix2', 5000));
     await entregarGrupoEntradas({
       ...input,
       entradaIds: ['e1'],
@@ -277,6 +278,82 @@ describe('presupuesto compartido de covers', () => {
     ).rejects.toThrow(/tope.*cover/i);
     expect(consumirProductoCoverBar).not.toHaveBeenCalled();
     expect(estado.writes).toEqual([]);
+  });
+
+  it('rechaza un aporte que no cubre el excedente del acompañamiento', async () => {
+    estado.entradas = [entrada('e1')];
+    estado.presentaciones = [
+      producto('p1', 15000, [{ tipo: 'shot', precio: 4000 }]),
+      producto('p2', 25000)
+    ];
+
+    await expect(
+      entregarGrupoEntradas({
+        ...input,
+        entradaIds: ['e1'],
+        unidades: [
+          {
+            presentacion_id: 'p1',
+            tipo_entrega: 'corte',
+            acompanamientos: [{ presentacion_id: 'p2', unidades: 1 }]
+          }
+        ]
+      })
+    ).rejects.toThrow(/excedente del acompañamiento/i);
+
+    expect(consumirCorteCoverBar).not.toHaveBeenCalled();
+    expect(estado.writes).toEqual([]);
+  });
+
+  it('cobra el excedente exacto de acompañamientos de corte y botella', async () => {
+    estado.tope = 5000;
+    estado.entradas = [entrada('e1')];
+    estado.presentaciones = [
+      producto('p1', 15000, [{ tipo: 'shot', precio: 4000 }]),
+      producto('p2', 6000),
+      producto('p3', 5000, [
+        {
+          tipo: 'botella',
+          precio: 5000,
+          precio_sin_anfitriona: 5000,
+          acompanamiento: { unidades: 2 }
+        }
+      ]),
+      producto('p4', 6000),
+      producto('p5', 6000)
+    ];
+    const onVenta = venta();
+
+    await expect(
+      entregarGrupoEntradas(
+        {
+          ...input,
+          entradaIds: ['e1'],
+          montoAdicional: 3000,
+          unidades: [
+            {
+              presentacion_id: 'p1',
+              tipo_entrega: 'corte',
+              acompanamientos: [{ presentacion_id: 'p2', unidades: 1 }]
+            },
+            {
+              presentacion_id: 'p3',
+              tipo_entrega: 'botella',
+              acompanamientos: [
+                { presentacion_id: 'p4', unidades: 1 },
+                { presentacion_id: 'p5', unidades: 1 }
+              ]
+            }
+          ]
+        },
+        onVenta
+      )
+    ).resolves.toMatchObject({ montoCobrarBarra: 3000, presupuesto: 13000 });
+
+    expect(onVenta.mock.calls[0]?.[0]).toMatchObject({
+      totalVenta: 13000,
+      detalles: [{ sub_total: 8000 }, { sub_total: 5000 }]
+    });
   });
 
   it('valida el precio del corte y no consume una botella entera', async () => {

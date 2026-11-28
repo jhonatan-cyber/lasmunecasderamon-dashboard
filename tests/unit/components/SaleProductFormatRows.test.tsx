@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { SaleProductFormatRows } from '@/components/sales/product-modal/SaleProductFormatRows';
+import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
 vi.mock('@/components/sales/SaleFormatQuantities', () => ({
   SaleFormatQuantities: ({ options, compact, hideLabel }: any) => (
     <div>
@@ -10,10 +11,14 @@ vi.mock('@/components/sales/SaleFormatQuantities', () => ({
   )
 }));
 vi.mock('@/components/sales/product-modal/SaleProductMixers', () => ({
-  SaleProductMixers: ({ item }: any) => <div>{item.mixers[0].selected.nombre}</div>
+  SaleProductMixers: ({ item }: any) => (
+    <div data-testid='mixer'>{item.mixers[0].selected.nombre}</div>
+  )
 }));
 vi.mock('@/components/sales/product-modal/SaleProductHostess', () => ({
-  SaleProductHostess: ({ item }: any) => <div>{item.otherSelected.join(', ')}</div>
+  SaleProductHostess: ({ item }: any) => (
+    <div data-testid='hostess'>{item.otherSelected.join(', ')}</div>
+  )
 }));
 it('mantiene formato, bebida y anfitriona dentro de la misma fila', () => {
   const item = {
@@ -42,6 +47,71 @@ it('mantiene formato, bebida y anfitriona dentro de la misma fila', () => {
   expect(shot).toHaveTextContent('Corto anfitriona 2');
   expect(shot).toHaveTextContent('Sprite');
   expect(shot).toHaveTextContent('Ana');
+});
+
+it('mantiene las columnas de tipo, bebida y anfitrionas al seleccionar varios cortos', () => {
+  const item = {
+    product: {
+      opciones_venta: [{ tipo: 'shot', ml_acompanamiento_anfitriona: 100 }]
+    },
+    opcionesTipo: [
+      {
+        value: 'shot_anfitriona',
+        label: 'Corto anfitriona · 20 ml',
+        cantidad: 2,
+        precio: 10000,
+        comision: 1000
+      }
+    ],
+    mixers: [
+      {
+        value: 'shot_anfitriona',
+        unitIndex: 0,
+        selected: { nombre: 'Cola 1' }
+      },
+      {
+        value: 'shot_anfitriona',
+        unitIndex: 1,
+        selected: { nombre: 'Cola 2' }
+      }
+    ],
+    hostessFormats: [
+      { value: 'shot_anfitriona', unitIndex: 0, selected: ['Ana'], onChange: vi.fn() },
+      { value: 'shot_anfitriona', unitIndex: 1, selected: ['Bia'], onChange: vi.fn() }
+    ],
+    otherSelected: ['Ana', 'Bia']
+  } as unknown as SaleProductItem;
+
+  const { container, getAllByTestId } = render(
+    <SaleProductFormatRows item={item} availableHostesses={[]} />
+  );
+  const row = container.querySelector('[data-sale-format="shot_anfitriona"]');
+
+  const columns = 'md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)]';
+  const header = container.querySelector('.bg-muted');
+  expect(header).toHaveClass(columns);
+  expect(header).toHaveTextContent('Formato y cantidad');
+  expect(header).toHaveTextContent('Bebida');
+  expect(header).toHaveTextContent('Anfitrionas');
+  expect(row).toHaveClass(columns);
+  const controls = Array.from(row?.children ?? []).map(child => child.textContent?.trim() ?? '');
+  expect(controls).toHaveLength(5);
+  expect(row?.children[0]).toHaveClass('md:col-start-1');
+  expect(row?.children[1]).toHaveClass('md:col-start-2');
+  expect(row?.children[2]).toHaveClass('md:col-start-1');
+  expect(row?.children[3]).toHaveClass('md:col-start-2');
+  expect(row?.children[4]).toHaveClass('md:col-start-3');
+  expect(row?.children[4]).toHaveClass('md:row-start-1');
+  expect(controls[0]).toContain('Corto 1');
+  expect(controls[1]).toContain('Bebida · Corto 1');
+  expect(controls[1]).toContain('Cola 1');
+  expect(controls[2]).toContain('Corto 2');
+  expect(controls[3]).toContain('Bebida · Corto 2');
+  expect(controls[3]).toContain('Cola 2');
+  expect(controls[4]).toContain('Anfitrionas de los cortos');
+  expect(controls[4]).toContain('Ana, Bia');
+  expect(getAllByTestId('mixer')).toHaveLength(2);
+  expect(getAllByTestId('hostess')).toHaveLength(1);
 });
 
 it.each([

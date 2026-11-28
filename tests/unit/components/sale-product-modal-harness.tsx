@@ -137,12 +137,14 @@ export function Harness({
   productos,
   onAdd,
   onClose = vi.fn(),
-  productosEnCarrito = []
+  productosEnCarrito = [],
+  productCardVariant = 'card'
 }: {
   productos: any[];
   onAdd: (p: any) => void;
   onClose?: () => void;
   productosEnCarrito?: any[];
+  productCardVariant?: 'card' | 'plain';
 }) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   return (
@@ -163,6 +165,7 @@ export function Harness({
       otherProductHostessSelections={{}}
       onOtherProductHostessChange={vi.fn()}
       productosEnCarrito={productosEnCarrito}
+      productCardVariant={productCardVariant}
     />
   );
 }

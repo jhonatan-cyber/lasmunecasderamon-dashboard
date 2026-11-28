@@ -9,6 +9,7 @@ import {
 } from '@/lib/sales/productConfiguration';
 import { esCortoAnfitriona } from '@/lib/sales/hostessShortPrices';
 import { SaleFormatQuantities } from '@/components/sales/SaleFormatQuantities';
+import { cn } from '@/lib/utils/utils';
 import { SaleProductMixers } from './SaleProductMixers';
 import { SaleProductHostess } from './SaleProductHostess';
 import { getSaleProductFormatColumns, type SaleProductItem } from './saleProductItems';
@@ -31,6 +32,11 @@ export function SaleProductFormatRows({
         : hasHostessColumn
           ? 'md:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]'
           : '';
+  const hostessColumnClass = hasDrinkColumn
+    ? 'md:col-start-3'
+    : hasHostessColumn
+      ? 'md:col-start-2'
+      : '';
   return (
     <div className={compact ? '' : 'divide-y border-t border-border'}>
       {!compact && (
@@ -59,12 +65,8 @@ export function SaleProductFormatRows({
 
         // Detectar si esta opción tiene múltiples unidades con anfitriona
         // (cortos o botellas con anfitriona)
-        const optionHostessFormats = item.hostessFormats?.filter(
-          h => h.value === option.value
-        );
-        const multiHostess =
-          optionHostessFormats &&
-          optionHostessFormats.length > 1;
+        const optionHostessFormats = item.hostessFormats?.filter(h => h.value === option.value);
+        const multiHostess = optionHostessFormats && optionHostessFormats.length > 1;
 
         return (
           <div
@@ -128,7 +130,7 @@ export function SaleProductFormatRows({
                 return (
                   <Fragment key={unitIndex}>
                     {multipleShorts && (
-                      <div className={`min-w-0 ${compact ? '' : '[&>div]:mt-1'}`}>
+                      <div className={cn('min-w-0', !compact && '[&>div]:mt-1', 'md:col-start-1')}>
                         {!compact && (
                           <p className='text-xs text-muted-foreground'>Corto {unitIndex + 1}</p>
                         )}
@@ -164,7 +166,12 @@ export function SaleProductFormatRows({
                       </div>
                     )}
                     {hasDrinkColumn && (
-                      <div className='min-w-0'>
+                      <div className='min-w-0 md:col-start-2'>
+                        {multipleShorts && (
+                          <p className='mb-1 text-xs font-medium text-muted-foreground'>
+                            Bebida · Corto {unitIndex + 1}
+                          </p>
+                        )}
                         {unitMixer ? (
                           <SaleProductMixers item={unitItem} showLabels={false} />
                         ) : (
@@ -174,11 +181,18 @@ export function SaleProductFormatRows({
                         )}
                       </div>
                     )}
-                    {/* Cuando hay múltiples unidades con anfitriona, renderizar el hostess
-                        solo en la primera unidad para que use HostessMultiSelect unificado.
-                        Las unidades restantes no muestran columna de anfitriona. */}
                     {hasHostessColumn && !multiHostess && (
-                      <div className='min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden'>
+                      <div
+                        className={cn(
+                          'min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden',
+                          hostessColumnClass
+                        )}
+                      >
+                        {multipleShorts && (
+                          <p className='mb-1 text-xs font-medium text-muted-foreground'>
+                            Anfitriona · Corto {unitIndex + 1}
+                          </p>
+                        )}
                         {unitHostess ? (
                           <SaleProductHostess
                             item={unitItem}
@@ -191,13 +205,13 @@ export function SaleProductFormatRows({
                         )}
                       </div>
                     )}
-                    {/* Múltiples unidades con anfitriona: un solo HostessMultiSelect en la primera unidad */}
-                    {hasHostessColumn && multiHostess && unitIndex === 0 && (
+                    {/* Formatos compartidos distintos de cortos muestran su selector una vez. */}
+                    {hasHostessColumn && multiHostess && unitIndex === 0 && !multipleShorts && (
                       <div className='min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden'>
                         <SaleProductHostess
                           item={{
                             ...item,
-                            opcionesTipo: [option],
+                            opcionesTipo: [option]
                           }}
                           availableHostesses={availableHostesses}
                         />
@@ -206,6 +220,27 @@ export function SaleProductFormatRows({
                   </Fragment>
                 );
               }
+            )}
+            {/* En cortos, el selector compartido va después de los selectores de bebida. */}
+            {multipleShorts && hasHostessColumn && multiHostess && (
+              <div
+                className={cn(
+                  'min-w-0 [&_button[aria-haspopup]]:h-14 [&_button[aria-haspopup]]:min-h-14 [&_button[aria-haspopup]]:overflow-hidden [&_button[aria-haspopup]>span]:flex-nowrap [&_button[aria-haspopup]>span]:overflow-hidden',
+                  'md:row-start-1',
+                  hostessColumnClass
+                )}
+              >
+                <p className='mb-1 text-xs font-medium text-muted-foreground'>
+                  Anfitrionas de los cortos
+                </p>
+                <SaleProductHostess
+                  item={{
+                    ...item,
+                    opcionesTipo: [option]
+                  }}
+                  availableHostesses={availableHostesses}
+                />
+              </div>
             )}
           </div>
         );

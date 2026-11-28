@@ -7,10 +7,10 @@ vi.hoisted(() => {
 
 vi.mock('@/lib/api/api-response', () => ({
   ApiResponse: {
-    unauthorized: vi.fn(),
-    forbidden: vi.fn(),
-    validationError: vi.fn(),
-    error: vi.fn()
+    unauthorized: vi.fn(() => Response.json({ success: false }, { status: 401 })),
+    forbidden: vi.fn(() => Response.json({ success: false }, { status: 403 })),
+    validationError: vi.fn(() => Response.json({ success: false }, { status: 400 })),
+    error: vi.fn(() => Response.json({ success: false }, { status: 500 }))
   }
 }));
 
@@ -73,6 +73,33 @@ describe('withRoute middleware', () => {
       const wrapped = withPublicRoute(okHandler);
       const res = await wrapped(new Request('http://localhost/test'), { params: {} });
       await expect(res.json()).resolves.toEqual({ success: true });
+    });
+
+    it('reuses the incoming request ID in the response', async () => {
+      const wrapped = withPublicRoute(okHandler);
+      const res = await wrapped(
+        new Request('http://localhost/test', { headers: { 'x-request-id': 'request-123' } }),
+        { params: {} }
+      );
+
+      expect(res.headers.get('x-request-id')).toBe('request-123');
+    });
+
+    it('includes the request ID in early validation error responses', async () => {
+      const wrapped = withPublicRoute(okHandler);
+      const res = await wrapped(
+        new Request('http://localhost/test', {
+          method: 'POST',
+          headers: {
+            'content-type': 'text/plain',
+            'x-request-id': 'validation-request-123'
+          }
+        }),
+        { params: {} }
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.headers.get('x-request-id')).toBe('validation-request-123');
     });
   });
 
@@ -243,8 +270,16 @@ describe('withRoute middleware', () => {
 
     it('returns generic error for unknown errors', async () => {
       const wrapped = withRoute({}, () => Promise.reject(new Error('something broke')));
-      await wrapped(new Request('http://localhost/test'), { params: {} });
+      const res = await wrapped(
+        new Request('http://localhost/test', {
+          headers: { 'x-request-id': 'error-request-123' }
+        }),
+        { params: {} }
+      );
+
       expect(ApiResponse.error).toHaveBeenCalled();
+      expect(res.status).toBe(500);
+      expect(res.headers.get('x-request-id')).toBe('error-request-123');
     });
 
     it('logs DB connection errors without writing to ErrorLogService', async () => {

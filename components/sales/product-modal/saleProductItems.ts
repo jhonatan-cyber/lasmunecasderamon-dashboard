@@ -11,7 +11,11 @@ import {
 
 import { formatCurrencyNoDecimals } from '@/lib/utils/formatters';
 import { precioUnitarioAcompanamiento } from '@/lib/sales/recargoAcompanamiento';
-import { getChampagneHostessLimit, isChampagneProduct } from '@/components/orders';
+import {
+  getChampagneHostessLimit,
+  getExplicitMaxAnfitrionas,
+  isChampagneProduct
+} from '@/components/orders';
 import { resolverVentaEnBar, type SaleChoice } from '@/lib/sales/saleChoice';
 import { resolveShotMl, resolveShotMlAnfitriona } from '@/lib/business/shotMl';
 import type { SaleFormatQuantityOption } from '@/components/sales/SaleFormatQuantities';
@@ -118,6 +122,7 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
   const id = String(producto.id || producto.id_producto);
   const isChampagne = isChampagneProduct(producto);
   const champagneHostessLimit = getChampagneHostessLimit(producto);
+  const hostessLimitPerBottle = getExplicitMaxAnfitrionas(producto) ?? 1;
 
   const mlPorShot = resolveShotMl(producto.ml_shot, ctx.shotMl);
   const mlPorShotAnfitriona = resolveShotMlAnfitriona(producto.ml_shot_anfitriona, mlPorShot);
@@ -182,14 +187,17 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
                 ? ctx.champagneHostessSelections[id] || []
                 : (ctx.otherProductHostessSelections[key] || []).slice(
                     0,
-                    esBotella(option.value) && isChampagne ? undefined : 1
+                    esBotella(option.value) ? hostessLimitPerBottle : 1
                   ),
             onChange: (ids: string[]) =>
               esBotella(option.value) && isChampagne
-                ? ctx.onChampagneHostessChange(id, ids)
+                ? ctx.onChampagneHostessChange(
+                    id,
+                    ids.slice(0, champagneHostessLimit * option.cantidad)
+                  )
                 : ctx.onOtherProductHostessChange(
                     key,
-                    esBotella(option.value) && isChampagne ? ids : ids.slice(0, 1)
+                    ids.slice(0, esBotella(option.value) ? hostessLimitPerBottle : 1)
                   )
           };
         }
@@ -391,11 +399,19 @@ export function buildSaleProductItem(producto: any, ctx: SaleProductItemContext)
           comision: opcion.comision,
           cantidad: esBotella(opcion.value) ? opcion.cantidad : 1,
           selectedHostesses: admiteAnfitriona(opcion)
-            ? (
-                hostessFormats.find(
-                  format => format.value === opcion.value && format.unitIndex === unitIndex
-                )?.selected || []
-              ).slice(0, esBotella(opcion.value) ? undefined : opcion.cantidad)
+            ? esBotella(opcion.value)
+              ? Array.from(
+                  new Set(
+                    hostessFormats
+                      .filter(format => format.value === opcion.value)
+                      .flatMap(format => format.selected)
+                  )
+                )
+              : (
+                  hostessFormats.find(
+                    format => format.value === opcion.value && format.unitIndex === unitIndex
+                  )?.selected || []
+                ).slice(0, opcion.cantidad)
             : [],
           isChampagne
         });

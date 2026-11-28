@@ -1,18 +1,10 @@
 'use client';
 
 import { SaleProductPhoto } from './SaleProductPhoto';
-import { SaleProductCollapseButton } from './SaleProductCollapseButton';
+import { ChevronDown } from 'lucide-react';
 import type { SaleProductItem } from './saleProductItems';
 
-export function SaleProductSummary({
-  item,
-  collapsed,
-  onToggle
-}: {
-  item: SaleProductItem;
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
+export function SaleProductSummary({ item }: { item: SaleProductItem }) {
   const product = item.product;
   const category =
     product.categoria_nombre ||
@@ -28,7 +20,7 @@ export function SaleProductSummary({
           <p className='text-xs text-muted-foreground'>{product.presentacion_nombre}</p>
         )}
       </div>
-      <SaleProductCollapseButton productName={item.name} collapsed={collapsed} onClick={onToggle} />
+      <ChevronDown className='size-4 shrink-0 text-muted-foreground' aria-hidden='true' />
     </div>
   );
 }

@@ -1,0 +1,102 @@
+{
+  "nodes": [
+    {
+      "id": "readme_modular_monolith",
+      "label": "Modular Monolith Architecture",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "source_location": "L5-L25",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_quality_pipeline",
+      "label": "Dashboard Quality Pipeline",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "source_location": "L64-L73",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_cover_delivery_workflow",
+      "label": "Cover Delivery Workflow",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "source_location": "L164-L209",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_cover_stock_and_price_rules",
+      "label": "Cover Stock and Price Rules",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "source_location": "L195-L209",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_postgresql_migrations",
+      "label": "PostgreSQL Migrations",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "source_location": "L246-L251",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "readme_modular_monolith",
+      "target": "architecture_business_layer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L5-L25",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_quality_pipeline",
+      "target": "agents_ci_quality_workflow",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "README.md",
+      "source_location": "L64-L73",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_cover_delivery_workflow",
+      "target": "readme_cover_stock_and_price_rules",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L164-L209",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_postgresql_migrations",
+      "target": "architecture_postgresql_database",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L246-L251",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

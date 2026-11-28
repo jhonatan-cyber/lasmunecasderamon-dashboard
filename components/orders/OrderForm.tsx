@@ -151,6 +151,7 @@ export default function OrderForm({
         otherProductHostessSelections={otherProductHostessSelections}
         onOtherProductHostessChange={handleOtherProductHostessChange}
         productosEnCarrito={productos}
+        productCardVariant='plain'
       />
 
       <OrderFormError message={error} />
