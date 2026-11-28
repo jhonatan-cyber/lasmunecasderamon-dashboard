@@ -400,8 +400,6 @@ export function withRoute<M extends PermissionModule>(
         addServerTimingMetric(normalizada, request, 'handler', handlerDurationMs);
         addServerTimingMetric(normalizada, request, 'normalize', normalizeDurationMs);
       }
-      // Request ID en la respuesta para trazabilidad del cliente
-      normalizada.headers.set('x-request-id', requestId);
       return normalizada;
     } catch (error: unknown) {
       const url = new URL(request.url);
@@ -438,9 +436,11 @@ export function withRoute<M extends PermissionModule>(
   };
 
   return (request, context) =>
-    runWithRequestId(request.headers.get('x-request-id'), requestId =>
-      execute(request, context, requestId)
-    );
+    runWithRequestId(request.headers.get('x-request-id'), async requestId => {
+      const response = await execute(request, context, requestId);
+      response.headers.set('x-request-id', requestId);
+      return response;
+    });
 }
 
 // Re-export convenience for routes that don't need the full config object
