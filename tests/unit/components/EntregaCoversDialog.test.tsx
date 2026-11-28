@@ -15,10 +15,10 @@ vi.mock('@/components/shared/AcompanamientoDistribuidor', () => ({
     onChange,
     disabled
   }: {
-    opciones: { id: string; stock_bar: number }[];
+    opciones: { id: string; stock_bar: number; precio?: number }[];
     requeridas: number;
-    valor: { presentacion_id: string; unidades: number }[];
-    onChange: (valor: { presentacion_id: string; unidades: number }[]) => void;
+    valor: { presentacion_id: string; unidades: number; precio?: number }[];
+    onChange: (valor: { presentacion_id: string; unidades: number; precio?: number }[]) => void;
     disabled: boolean;
   }) => (
     <div>
@@ -35,7 +35,7 @@ vi.mock('@/components/shared/AcompanamientoDistribuidor', () => ({
             onClick={() =>
               onChange([
                 ...valor.filter(item => item.presentacion_id !== opcion.id),
-                { presentacion_id: opcion.id, unidades: actual + 1 }
+                { presentacion_id: opcion.id, unidades: actual + 1, precio: opcion.precio }
               ])
             }
           >
@@ -147,6 +147,47 @@ async function abrirCategoria(nombre: string) {
 }
 
 describe('EntregaCoversDialog', () => {
+  it('mantiene fijos el encabezado y el pie y oculta la barra del contenido desplazable', () => {
+    stubCatalogo([]);
+    renderDialog(1, 5000, 5000);
+
+    const dialog = screen.getByRole('dialog');
+    const contenido = within(dialog).getByRole('region', {
+      name: 'Contenido de entrega de covers'
+    });
+
+    expect(dialog).toHaveClass('flex', 'flex-col', 'overflow-hidden');
+    expect(dialog).not.toHaveClass('overflow-y-auto');
+    expect(contenido).toHaveClass(
+      'min-h-0',
+      'flex-1',
+      'overflow-y-auto',
+      '[scrollbar-width:none]',
+      '[-ms-overflow-style:none]',
+      '[&::-webkit-scrollbar]:hidden'
+    );
+    expect(contenido).not.toContainElement(
+      within(dialog).getByRole('heading', { name: 'Entregar covers' })
+    );
+    expect(contenido).not.toContainElement(
+      within(dialog).getByRole('button', { name: 'Cancelar' })
+    );
+  });
+
+  it('muestra el presupuesto y las condiciones del adicional en un notificador', () => {
+    stubCatalogo([]);
+    renderDialog(4, 10000, 10000);
+
+    const notificador = screen.getByRole('note');
+    expect(notificador).toHaveTextContent('Entradas $40.000 = presupuesto $40.000.');
+    expect(notificador).toHaveTextContent(
+      'El grupo comparte el presupuesto de sus entradas para elegir las bebidas.'
+    );
+    expect(notificador).toHaveTextContent(
+      'El adicional se cobra completo en la barra con el método de pago de la entrada.'
+    );
+  });
+
   it('no exige acompañamiento al corte cuando está deshabilitado en la configuración', async () => {
     const producto = bebida('Whisky', 'Licores', 2000);
     stubCatalogo(
@@ -261,6 +302,46 @@ describe('EntregaCoversDialog', () => {
       entrada_ids: ['t-0'],
       monto_adicional: 5000,
       unidades: [{ presentacion_id: 'p-Whisky', tipo_entrega: 'botella', acompanamientos: null }]
+    });
+  });
+
+  it('suma al adicional la diferencia del acompañamiento sobre el tope', async () => {
+    const fetchMock = stubCatalogo(
+      [bebida('Whisky', 'Licores', 4000)],
+      [
+        {
+          presentacion_id: 'cover-1',
+          producto_nombre: 'Coca-Cola',
+          presentacion_nombre: 'Lata',
+          precio_venta: 6000,
+          stock_bar: 2
+        }
+      ]
+    );
+    renderDialog(1, 5000, 5000);
+
+    await abrirCategoria('Licores');
+    fireEvent.click(await screen.findByRole('button', { name: /Whisky/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Repartir cover-1' }));
+
+    const filaRecargo = screen.getByText('Acompañamientos sobre el tope').parentElement;
+    expect(filaRecargo).not.toBeNull();
+    expect(within(filaRecargo!).getByText('$1.000')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar 1 en la barra' }));
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => url === '/api/tickets/entregar-grupo')).toBe(true)
+    );
+    const llamada = fetchMock.mock.calls.find(([url]) => url === '/api/tickets/entregar-grupo');
+    expect(JSON.parse(String(llamada?.[1]?.body))).toMatchObject({
+      monto_adicional: 1000,
+      unidades: [
+        {
+          presentacion_id: 'p-Whisky',
+          tipo_entrega: 'corte',
+          acompanamientos: [{ presentacion_id: 'cover-1', unidades: 1 }]
+        }
+      ]
     });
   });
 
@@ -454,6 +535,34 @@ describe('EntregaCoversDialog', () => {
     expect(screen.queryByRole('button', { name: /Campaña/ })).not.toBeInTheDocument();
   });
 
+  it('actualiza las categorías al aumentar el monto con el catálogo abierto', async () => {
+    stubCatalogo([bebida('Ron', 'Destilados', 6000)]);
+    renderDialog(1, 5000, 5000);
+
+    expect(await screen.findByText('No hay bebidas disponibles en el bar.')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Monto adicional individual'), {
+      target: { value: '1000' }
+    });
+
+    expect(await screen.findByRole('button', { name: /Destilados/ })).toBeInTheDocument();
+  });
+
+  it('actualiza los productos de la categoría seleccionada al aumentar el monto', async () => {
+    stubCatalogo([bebida('Whisky', 'Licores', 4000), bebida('Ron', 'Licores', 6000)]);
+    renderDialog(1, 5000, 5000);
+    await abrirCategoria('Licores');
+
+    const categoria = screen.getByRole('region', { name: 'Licores' });
+    expect(within(categoria).queryByRole('button', { name: /Ron/ })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Monto adicional individual'), {
+      target: { value: '1000' }
+    });
+
+    expect(await within(categoria).findByRole('button', { name: /Ron/ })).toBeInTheDocument();
+  });
+
   it('muestra categorías primero y respeta los formatos configurados al abrir una categoría', async () => {
     stubCatalogo([
       bebida('Whisky', 'Licores', 4000),
@@ -484,6 +593,22 @@ describe('EntregaCoversDialog', () => {
     const vino = await screen.findByRole('button', { name: /Vino/ });
     expect(within(vino).getByText('Botella sin anfitriona')).toBeInTheDocument();
     expect(within(vino).queryByText('Corte')).not.toBeInTheDocument();
+  });
+
+  it('muestra el buscador solo al ver los productos de una categoría', async () => {
+    stubCatalogo([bebida('Whisky', 'Licores', 4000)]);
+    renderDialog(1, 5000, 5000);
+
+    expect(await screen.findByRole('button', { name: /Licores/ })).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Buscar producto' })).not.toBeInTheDocument();
+
+    await abrirCategoria('Licores');
+
+    expect(screen.getByRole('textbox', { name: 'Buscar producto' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Categorías' }));
+
+    expect(screen.queryByRole('textbox', { name: 'Buscar producto' })).not.toBeInTheDocument();
   });
 
   it('limita el catálogo individual al tope y excluye productos sin stock', async () => {

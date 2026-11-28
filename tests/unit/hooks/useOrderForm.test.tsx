@@ -51,6 +51,41 @@ describe('Crear pedido con configuración de venta', () => {
     );
   });
 
+  it('acepta cuatro anfitrionas cuando el producto permite dos por cada una de dos unidades', async () => {
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ status: 400, json: async () => ({ success: false }) } as Response);
+    const product = {
+      producto_id: 'prod',
+      presentacion_id: 'pres',
+      categoria: 'Vodka',
+      max_anfitrionas: 2,
+      tipo_venta: 'botella' as const,
+      botella_anfitriona: true,
+      precio: 40000,
+      comision: 16000,
+      comisionUnitaria: 8000,
+      cantidad: 2,
+      subtotal: 80000,
+      generaComision: 1,
+      selectedHostesses: ['ana', 'bea', 'cami', 'dani']
+    };
+    const { result } = renderHook(() =>
+      useOrderForm({
+        productos: [product],
+        selectedCliente: '',
+        setSelectedCliente: vi.fn()
+      })
+    );
+    act(() => result.current.setMetodoPago('efectivo'));
+
+    await act(() => result.current.handleSubmitInternal());
+
+    expect(fetch).toHaveBeenCalledOnce();
+    const payload = JSON.parse(String(fetch.mock.calls[0][1]?.body));
+    expect(payload.detalles[0].selectedHostesses).toEqual(['ana', 'bea', 'cami', 'dani']);
+  });
+
   it.each(['botella', 'shot'] as const)(
     'limpia selecciones previas sin comisión al enviar pedido de %s',
     async tipo => {

@@ -74,6 +74,16 @@ describe('withRoute middleware', () => {
       const res = await wrapped(new Request('http://localhost/test'), { params: {} });
       await expect(res.json()).resolves.toEqual({ success: true });
     });
+
+    it('reuses the incoming request ID in the response', async () => {
+      const wrapped = withPublicRoute(okHandler);
+      const res = await wrapped(
+        new Request('http://localhost/test', { headers: { 'x-request-id': 'request-123' } }),
+        { params: {} }
+      );
+
+      expect(res.headers.get('x-request-id')).toBe('request-123');
+    });
   });
 
   describe('auth guard', () => {

@@ -31,6 +31,7 @@ function trx(
     max?: number | null;
     opciones?: unknown;
     estado?: number;
+    stockUnits?: number;
     tiers?: Array<{ producto_id: string; anfitrionas: number; precio: number; comision: number }>;
   } = {}
 ) {
@@ -46,7 +47,11 @@ function trx(
       }
       return [];
     }
-    if (sql.includes('FROM inventario_unidades')) return [{ id: 'unit', ml_restante: null }];
+    if (sql.includes('FROM inventario_unidades'))
+      return Array.from({ length: config.stockUnits ?? 1 }, (_, index) => ({
+        id: index === 0 ? 'unit' : `unit-${index}`,
+        ml_restante: null
+      }));
     // La lectura individual de una presentación (`WHERE p.id = ?`) y la
     // validación por lote (`ORDER BY id FOR UPDATE`) se distinguen por su forma.
     if (sql.includes('WHERE p.id = ?'))
@@ -59,9 +64,17 @@ function trx(
           producto_id: 'prod',
           precio_venta: 60000,
           comision: 0,
-          opciones_venta: id === 'soda'
-            ? [{ tipo: 'botella', corto_anfitriona_habilitado: true, colacion_habilitada: true, cover_habilitado: true }]
-            : config.opciones ?? options
+          opciones_venta:
+            id === 'soda'
+              ? [
+                  {
+                    tipo: 'botella',
+                    corto_anfitriona_habilitado: true,
+                    colacion_habilitada: true,
+                    cover_habilitado: true
+                  }
+                ]
+              : (config.opciones ?? options)
         }));
     if (sql.includes('FROM producto_champagne_tiers')) return config.tiers ?? [];
     if (sql.includes('FROM productos'))
@@ -206,6 +219,34 @@ describe('Configuracion del pedido verificada en servidor', () => {
         ]
       )
     ).rejects.toThrow('precio o la comision');
+  });
+  it('valida por anfitrionas por unidad y admite dos por cada una de dos botellas', async () => {
+    const request = OrderCreateSchema.parse({
+      codigo: 'pedido-test',
+      meseroId: 'mesero',
+      subtotal: 80000,
+      total: 80000,
+      metodoPago: 'efectivo',
+      detalles: [
+        {
+          ...bottle,
+          precio: 40000,
+          cantidad: 2,
+          subtotal: 80000,
+          comision: 16000,
+          generaComision: 1,
+          selectedHostesses: ['ana', 'bea', 'cami', 'dani']
+        }
+      ]
+    });
+    const config = trx({
+      categoria: 'Vodka',
+      max: 2,
+      stockUnits: 2,
+      tiers: [{ producto_id: 'prod', anfitrionas: 2, precio: 40000, comision: 8000 }]
+    });
+
+    await expect(validarConfiguracionPedido(config, request.detalles)).resolves.toBeUndefined();
   });
   it('acepta champaña SIN-only sin tiers ni máximo de anfitrionas', async () => {
     const config = trx({

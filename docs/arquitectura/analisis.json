@@ -1,8 +1,8 @@
 {
   "resumen": {
-    "commit": "1ef4de7a741d6f21e0cb3e02c231cb0ee640b909",
-    "generado": "2026-11-27T01:10:29.028Z",
-    "archivos": 2362,
+    "commit": "5f4ff9d21eb7818523850bf7b64939563c97f1c4",
+    "generado": "2026-11-28T04:08:56.684Z",
+    "archivos": 2365,
     "rutas": 247,
     "sqlFueraDeRepositorio": 0,
     "tablasConEscritoresMultiples": 0,
@@ -2850,21 +2850,19 @@
   ],
   "ciclos": [],
   "matriz": {
-    "components": {
-      "lib/otros": 413,
-      "raiz": 95,
-      "hooks": 158,
-      "lib/business": 60,
-      "lib/api": 3,
-      "modules/aplicacion": 10
+    "lib/api": {
+      "lib/otros": 9,
+      "lib/identidad": 4,
+      "modules/aplicacion": 1,
+      "lib/business": 2,
+      "lib/database": 2
     },
-    "hooks": {
-      "lib/api": 9,
-      "raiz": 41,
-      "lib/otros": 111,
-      "components": 20,
-      "lib/business": 19,
-      "modules/aplicacion": 2
+    "lib/otros": {
+      "lib/database": 3,
+      "lib/api": 2,
+      "lib/business": 7,
+      "raiz": 8,
+      "components": 3
     },
     "app/ui": {
       "hooks": 64,
@@ -2885,6 +2883,14 @@
       "lib/database": 3,
       "lib/integrations": 4
     },
+    "components": {
+      "hooks": 158,
+      "lib/otros": 417,
+      "raiz": 95,
+      "lib/business": 60,
+      "lib/api": 3,
+      "modules/aplicacion": 10
+    },
     "raiz": {
       "hooks": 6,
       "lib/otros": 13,
@@ -2892,12 +2898,13 @@
       "lib/identidad": 2,
       "modules/aplicacion": 1
     },
-    "lib/api": {
-      "lib/otros": 8,
-      "lib/identidad": 4,
-      "modules/aplicacion": 1,
-      "lib/business": 2,
-      "lib/database": 2
+    "hooks": {
+      "raiz": 41,
+      "lib/otros": 111,
+      "lib/api": 9,
+      "components": 20,
+      "lib/business": 19,
+      "modules/aplicacion": 2
     },
     "lib/identidad": {
       "lib/otros": 5
@@ -2909,13 +2916,6 @@
       "raiz": 4,
       "components": 1
     },
-    "lib/otros": {
-      "lib/database": 3,
-      "lib/api": 2,
-      "lib/business": 7,
-      "raiz": 8,
-      "components": 3
-    },
     "lib/database": {
       "lib/otros": 4,
       "lib/business": 1
@@ -2923,7 +2923,7 @@
     "lib/integrations": {},
     "modules/infraestructura": {
       "lib/database": 127,
-      "lib/otros": 172,
+      "lib/otros": 173,
       "lib/business": 76,
       "modules/aplicacion": 24,
       "lib/api": 9,

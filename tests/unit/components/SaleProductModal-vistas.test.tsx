@@ -43,6 +43,58 @@ afterEach(async () => {
  * presupuesto de 30 s por archivo (ver `DurationBudgetReporter`).
  */
 describe('vistas de productos en nueva venta', () => {
+  it.each(['tabla', 'tarjetas'] as const)(
+    'despliega el producto al hacer clic en cualquier zona de la vista de %s',
+    vista => {
+      render(<Harness productos={[product]} onAdd={vi.fn()} />);
+
+      if (vista === 'tarjetas') {
+        fireEvent.click(screen.getByRole('radio', { name: 'Ver como tarjetas' }));
+      }
+
+      const productName = screen.getByText(product.nombre);
+      const productContainer =
+        vista === 'tabla' ? screen.getByRole('row') : productName.closest('.overflow-hidden');
+
+      expect(
+        screen.getByRole('button', { name: `Mostrar detalles de ${product.nombre}` })
+      ).toHaveAttribute('aria-expanded', 'false');
+      fireEvent.click(productContainer!);
+
+      expect(
+        screen.getByRole('button', { name: `Ocultar detalles de ${product.nombre}` })
+      ).toHaveAttribute('aria-expanded', 'true');
+    }
+  );
+
+  it('mantiene la tabla habitual y permite quitar sus tarjetas en el modo plano', () => {
+    const defaultView = render(<Harness productos={[product]} onAdd={vi.fn()} />);
+    const defaultTable = screen.getByRole('table', { name: 'Productos en bar' });
+    const defaultRow = screen.getByRole('row');
+    expect(defaultTable).toHaveClass('rounded-2xl', 'border', 'overflow-hidden');
+    expect(defaultRow).toHaveClass('rounded-2xl', 'border', 'bg-card');
+    defaultView.unmount();
+
+    render(<Harness productos={[product]} onAdd={vi.fn()} productCardVariant='plain' />);
+    const plainTable = screen.getByRole('table', { name: 'Productos en bar' });
+    const plainRow = screen.getByRole('row');
+    expect(plainTable).not.toHaveClass('rounded-2xl', 'border', 'shadow-sm');
+    expect(plainRow).not.toHaveClass('rounded-2xl', 'border', 'bg-card');
+  });
+
+  it('mantiene la tarjeta habitual y permite ocultarla en el modo plano', () => {
+    const defaultView = render(<Harness productos={[product]} onAdd={vi.fn()} />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Ver como tarjetas' }));
+    const defaultContainer = screen.getByText(product.nombre).closest('.overflow-hidden')!;
+    expect(defaultContainer).toHaveClass('rounded-2xl', 'border', 'bg-card', 'shadow-xs');
+    defaultView.unmount();
+
+    render(<Harness productos={[product]} onAdd={vi.fn()} productCardVariant='plain' />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Ver como tarjetas' }));
+    const plainContainer = screen.getByText(product.nombre).closest('.overflow-hidden')!;
+    expect(plainContainer).not.toHaveClass('rounded-2xl', 'border', 'bg-card', 'shadow-xs');
+  });
+
   it('cancelar limpia cantidades y bebidas sin agregar al carrito', async () => {
     const add = vi.fn();
     const close = vi.fn();

@@ -260,7 +260,9 @@ export async function validarPreciosConfigurados(
       } else if (d.botella_anfitriona === false) {
         prices = [{ precio: Number(bottle?.precio_sin_anfitriona ?? 0), comision: 0 }];
       } else {
-        const tier = productTiers.find(t => Number(t.anfitrionas) === hosts.length);
+        const cantidad = Math.max(1, Number(d.cantidad) || 1);
+        const anfitrionasPorUnidad = Math.ceil(hosts.length / cantidad);
+        const tier = productTiers.find(t => Number(t.anfitrionas) === anfitrionasPorUnidad);
         prices = [
           tier && hosts.length
             ? tier
@@ -295,14 +297,12 @@ export async function validarPreciosConfigurados(
       faltaConfiguracionChampagne(product.max_anfitrionas, productTiers)
     )
       throw new BusinessError(MENSAJE_CHAMPAGNE_SIN_CONFIGURAR);
-    const limit =
-      d.tipo_venta === 'shot'
-        ? d.cantidad
-        : Number(product.max_anfitrionas) > 0
-          ? Number(product.max_anfitrionas)
-          : champagne
-            ? Math.max(1, ...productTiers.map(t => Number(t.anfitrionas)))
-            : Math.max(1, d.cantidad, ...productTiers.map(t => Number(t.anfitrionas)));
+    const cantidad = Math.max(1, Number(d.cantidad) || 1);
+    const limitePorUnidad =
+      Number(product.max_anfitrionas) > 0
+        ? Number(product.max_anfitrionas)
+        : Math.max(1, ...productTiers.map(t => Number(t.anfitrionas)));
+    const limit = d.tipo_venta === 'shot' ? cantidad : limitePorUnidad * cantidad;
     if (hosts.length > limit)
       throw new BusinessError('El producto excede el maximo de anfitrionas');
     for (const id of hosts) {

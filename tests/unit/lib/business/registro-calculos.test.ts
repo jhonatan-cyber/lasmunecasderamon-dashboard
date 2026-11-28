@@ -59,9 +59,7 @@ describe('reparto de ventas', () => {
             expect(partes.reduce((s, p) => s + p.commPart, 0)).toBe(Math.round(comision));
             expect(partes.reduce((s, p) => s + p.subPart, 0)).toBe(10 * cantidad);
             expect(partes.every(p => p.qtyPart >= 0)).toBe(true);
-            expect(partes).toHaveLength(
-              champagne ? Math.max(1, anfitrionas) : Math.max(1, Math.min(cantidad, anfitrionas))
-            );
+            expect(partes).toHaveLength(Math.max(1, anfitrionas));
           }
         }
       }
@@ -74,6 +72,20 @@ describe('reparto de ventas', () => {
       { hostessId: 'a', qtyPart: 1, subPart: 99, commPart: 3 },
       { hostessId: 'b', qtyPart: 0, subPart: 0, commPart: 2 },
       { hostessId: 'c', qtyPart: 0, subPart: 0, commPart: 2 }
+    ]);
+  });
+  it('conserva y reparte comisión entre más anfitrionas que unidades de botella', () => {
+    const hosts = ['a', 'b', 'c', 'd'];
+    const partes = repartirDetalleVenta(
+      detalle({ cantidad: 2, comision: 2000, sub_total: 20, hostesses: hosts }),
+      new Set(hosts)
+    );
+
+    expect(partes).toEqual([
+      { hostessId: 'a', qtyPart: 1, subPart: 10, commPart: 500 },
+      { hostessId: 'b', qtyPart: 1, subPart: 10, commPart: 500 },
+      { hostessId: 'c', qtyPart: 0, subPart: 0, commPart: 500 },
+      { hostessId: 'd', qtyPart: 0, subPart: 0, commPart: 500 }
     ]);
   });
   it('conserva el fallback de subtotal cero en champagne y la cantidad fraccionaria de botella', () => {

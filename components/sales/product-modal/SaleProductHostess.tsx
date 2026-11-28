@@ -2,8 +2,7 @@
 import { esBotella } from '@/lib/sales/saleChoice';
 
 import { permiteAnfitrionaConComision } from '@/lib/sales/hostessShortPrices';
-import { HostessMultiSelect } from '@/components/orders';
-import { getExplicitMaxAnfitrionas } from '@/components/orders';
+import { getExplicitMaxAnfitrionas, HostessMultiSelect } from '@/components/orders';
 import { isExpensiveDrink } from '@/components/orders/productModalRules';
 import { IndividualHostessSelect } from '@/components/shared/selects';
 import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
@@ -24,30 +23,32 @@ export function SaleProductHostess({
   availableHostesses: any[];
 }) {
   if (item.hostessFormats?.length) {
-    // Cuando hay múltiples unidades del mismo tipo con anfitriona (cortos o botellas),
-    // usar un solo HostessMultiSelect unificado. Si los formats tienen valores diferentes
-    // (distintos precios), mantener selects individuales.
     const formats = item.hostessFormats;
-    const mismoValor = formats.length > 1 &&
-      formats.every(f => f.value === formats[0].value);
-    if (mismoValor) {
-      const limiteTotal = formats.length;
-      // Combinar todas las selecciones de todos los formats
-      const todasSeleccionadas = formats.flatMap(f => f.selected);
+    const limitesPorFormato = formats.map(format => {
+      const unidades = Math.max(1, Math.floor(Number(format.cantidad) || 1));
+      if (!esBotella(format.value)) return unidades;
+      const limitePorUnidad = item.isChampagne
+        ? item.champagneHostessLimit
+        : (getExplicitMaxAnfitrionas(item.product ?? {}) ?? 1);
+      return limitePorUnidad * unidades;
+    });
+    const limiteTotal = limitesPorFormato.reduce((total, limite) => total + limite, 0);
+    const todasSeleccionadas = Array.from(new Set(formats.flatMap(format => format.selected)));
+    if (formats.length > 1 || limiteTotal > 1) {
       return (
         <div className='space-y-1'>
           <div className='text-xs text-gray-500'>
-            {Math.min(todasSeleccionadas.length, limiteTotal)} de {limiteTotal} seleccionadas · Una
-            anfitriona por unidad
+            {Math.min(todasSeleccionadas.length, limiteTotal)} de {limiteTotal} seleccionadas
           </div>
           <HostessMultiSelect
             anfitrionas={availableHostesses}
             value={todasSeleccionadas.slice(0, limiteTotal)}
-            onChange={(ids) => {
-              // Distribuir las anfitrionas seleccionadas a cada format
+            onChange={ids => {
+              let offset = 0;
               formats.forEach((format, index) => {
-                const hostessForThisUnit = ids[index] ? [ids[index]] : [];
-                format.onChange(hostessForThisUnit);
+                const limite = limitesPorFormato[index] ?? 0;
+                format.onChange(ids.slice(offset, offset + limite));
+                offset += limite;
               });
             }}
             searchValue={item.hostessSearch}

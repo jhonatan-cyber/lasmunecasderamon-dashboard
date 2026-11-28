@@ -5,8 +5,21 @@ import { SaleProductHostess } from '@/components/sales/product-modal/SaleProduct
 import type { SaleProductItem } from '@/components/sales/product-modal/saleProductItems';
 
 vi.mock('@/components/orders', () => ({
-  HostessMultiSelect: ({ maxSelection }: { maxSelection: number }) => (
-    <div data-testid='multiple'>{maxSelection}</div>
+  HostessMultiSelect: ({
+    maxSelection,
+    onChange
+  }: {
+    maxSelection: number;
+    onChange: (ids: string[]) => void;
+  }) => (
+    <div data-testid='multiple'>
+      {maxSelection}
+      <button
+        type='button'
+        aria-label={`Elegir ${maxSelection}`}
+        onClick={() => onChange(['ana', 'bea', 'cami', 'dani'].slice(0, maxSelection))}
+      />
+    </div>
   ),
   getExplicitMaxAnfitrionas: (product: { max_anfitrionas: number }) => product.max_anfitrionas
 }));
@@ -78,7 +91,7 @@ it.each([false, true])('permite dos anfitrionas para dos cortos (champagne: %s)'
   expect(screen.getByTestId('multiple').textContent).toBe('2');
 });
 
-it('muestra selectores independientes para cada precio de corto de anfitriona', () => {
+it('usa un selector compartido y distribuye anfitrionas entre formatos de corto', () => {
   const product = item(false);
   const first = vi.fn();
   const second = vi.fn();
@@ -105,13 +118,34 @@ it('muestra selectores independientes para cada precio de corto de anfitriona', 
     }
   ];
   render(<SaleProductHostess item={product} availableHostesses={[{ id: 'ana', nombre: 'Ana' }]} />);
-  expect(screen.getByText('Corto anfitriona · $10.000')).toBeInTheDocument();
-  expect(screen.getByText('Corto anfitriona · $20.000')).toBeInTheDocument();
-  const selects = screen.getAllByLabelText('Anfitriona');
-  expect(selects).toHaveLength(2);
-  fireEvent.change(selects[1], { target: { value: 'ana' } });
-  expect(second).toHaveBeenCalledWith(['ana']);
-  expect(first).not.toHaveBeenCalled();
+  expect(screen.getByTestId('multiple')).toHaveTextContent('2');
+  expect(screen.getAllByTestId('multiple')).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir 2' }));
+  expect(first).toHaveBeenCalledWith(['ana']);
+  expect(second).toHaveBeenCalledWith(['bea']);
+});
+
+it('multiplica el límite de champaña por la cantidad y lo mantiene en un selector', () => {
+  const product = item(true, 'botella');
+  product.product.max_anfitrionas = 2;
+  product.champagneHostessLimit = 2;
+  product.opcionesTipo[0].cantidad = 2;
+  product.hostessFormats = [
+    {
+      value: 'botella',
+      label: 'Botella',
+      cantidad: 2,
+      comision: 1000,
+      selected: [],
+      onChange: product.onChampagneSelect
+    }
+  ];
+  render(<SaleProductHostess item={product} availableHostesses={[]} />);
+
+  expect(screen.getAllByTestId('multiple')).toHaveLength(1);
+  expect(screen.getByTestId('multiple')).toHaveTextContent('4');
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir 4' }));
+  expect(product.onChampagneSelect).toHaveBeenCalledWith(['ana', 'bea', 'cami', 'dani']);
 });
 
 it('muestra la anfitriona asignada antes del selector', () => {

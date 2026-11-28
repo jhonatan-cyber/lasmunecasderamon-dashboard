@@ -5,8 +5,9 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronLeft, LoaderCircle, Minus, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, Info, LoaderCircle, Minus, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,10 @@ import {
 import { urlProductosParaVenta } from '@/lib/constants/api-endpoints';
 import type { AcompanamientoBotellaItem } from '@/lib/sales/acompanamientoBotella';
 import { dividirRepartoPorEntrega, recortarReparto } from '@/lib/sales/repartoAcompanamiento';
+import {
+  precioUnitarioAcompanamiento,
+  recargoAcompanamientoPorUnidad
+} from '@/lib/sales/recargoAcompanamiento';
 import { formatCurrencyCLP, formatNumberInputOrEmpty } from '@/lib/utils/formatters';
 import { productImageUrl } from '@/lib/utils/productImage';
 import { cn } from '@/lib/utils/utils';
@@ -60,6 +65,7 @@ type Acompanamiento = {
   id: string;
   producto_nombre: string;
   nombre: string;
+  precio: number;
   stock_bar: number;
   foto: string | null;
 };
@@ -180,6 +186,7 @@ function aAcompanamiento(valor: unknown): Acompanamiento | null {
     id,
     producto_nombre: texto(valor.producto_nombre),
     nombre: texto(valor.presentacion_nombre) || texto(valor.nombre),
+    precio: precioUnitarioAcompanamiento(valor),
     stock_bar: numero(valor.stock_bar),
     foto: typeof valor.foto === 'string' && valor.foto ? valor.foto : null
   };
@@ -357,12 +364,12 @@ export function EntregaCoversDialog({
     () => filas.reduce((suma, fila) => suma + (Number(fila.monto_entrada) || 0), 0),
     [filas]
   );
-  const adicional = Math.max(0, Math.floor(Number(montoAdicional) || 0));
-  const presupuesto = totalEntradas + adicional;
+  const adicionalManual = Math.max(0, Math.floor(Number(montoAdicional) || 0));
   const topeCover = Number.isFinite(tope) ? Math.max(0, tope) : 0;
+  const presupuestoProductos = totalEntradas + adicionalManual;
   const precioMaximo = Math.min(
-    presupuesto,
-    filas.length === 1 ? topeCover + adicional : presupuesto
+    presupuestoProductos,
+    filas.length === 1 ? topeCover + adicionalManual : presupuestoProductos
   );
 
   const limpiarSeleccionDeEntrega = () => {
@@ -498,6 +505,23 @@ export function EntregaCoversDialog({
     [bebidas, seleccion]
   );
 
+  const recargoAcompanamientos = useMemo(
+    () =>
+      lineas.reduce(
+        (suma, linea) =>
+          suma +
+          recargoAcompanamientoPorUnidad({
+            tope: topeCover,
+            tipoVenta: 'botella',
+            acompanamiento_botella: linea.reparto
+          }),
+        0
+      ),
+    [lineas, topeCover]
+  );
+  const adicional = adicionalManual + recargoAcompanamientos;
+  const presupuesto = totalEntradas + adicional;
+
   const faltaAcompanamiento = useMemo(
     () =>
       lineas.some(linea => {
@@ -513,10 +537,10 @@ export function EntregaCoversDialog({
 
   const excedeTopeIndividual =
     filas.length === 1 &&
-    lineas.some(linea => precioVisible(linea.bebida, linea.formato) > topeCover + adicional);
+    lineas.some(linea => precioVisible(linea.bebida, linea.formato) > topeCover + adicionalManual);
   const precioSeleccionado = costoDe(seleccion);
-  const restante = Math.max(0, presupuesto - precioSeleccionado);
-  const excedePresupuesto = precioSeleccionado > presupuesto;
+  const restante = Math.max(0, presupuestoProductos - precioSeleccionado);
+  const excedePresupuesto = precioSeleccionado > presupuestoProductos;
 
   const consumoDe = useCallback(
     (actual: Record<string, LineaSeleccion>) => {
@@ -573,8 +597,8 @@ export function EntregaCoversDialog({
   };
   const puedeAgregar = (bebida: Bebida, formato: Formato) =>
     !entregando &&
-    (filas.length > 1 || precioVisible(bebida, formato) <= topeCover + adicional) &&
-    precioSeleccionado + precioVisible(bebida, formato) <= presupuesto &&
+    (filas.length > 1 || precioVisible(bebida, formato) <= topeCover + adicionalManual) &&
+    precioSeleccionado + precioVisible(bebida, formato) <= presupuestoProductos &&
     (consumo.get(bebida.presentacion_id) ?? 0) + consumoProducto(bebida, formato) <=
       bebida.stock_bar + 1e-9;
 
@@ -605,9 +629,9 @@ export function EntregaCoversDialog({
       if (entregando) return;
       const clave = claveDe(bebida, formato);
       setSeleccion(previo => {
-        if (filas.length === 1 && precioVisible(bebida, formato) > topeCover + adicional)
+        if (filas.length === 1 && precioVisible(bebida, formato) > topeCover + adicionalManual)
           return previo;
-        if (costoDe(previo) + precioVisible(bebida, formato) > presupuesto) return previo;
+        if (costoDe(previo) + precioVisible(bebida, formato) > presupuestoProductos) return previo;
         const siguiente = {
           ...previo,
           [clave]: {
@@ -618,7 +642,15 @@ export function EntregaCoversDialog({
         return stockValido(siguiente) ? siguiente : previo;
       });
     },
-    [adicional, costoDe, entregando, filas.length, presupuesto, stockValido, topeCover]
+    [
+      adicionalManual,
+      costoDe,
+      entregando,
+      filas.length,
+      presupuestoProductos,
+      stockValido,
+      topeCover
+    ]
   );
 
   const quitar = useCallback((clave: string, unidadesPorEntrega: number) => {
@@ -768,8 +800,8 @@ export function EntregaCoversDialog({
         if (!open) cerrar();
       }}
     >
-      <DialogContent className='max-h-[88vh] overflow-y-auto sm:max-w-3xl'>
-        <DialogHeader>
+      <DialogContent className='flex max-h-[88dvh] flex-col overflow-hidden sm:max-w-3xl'>
+        <DialogHeader className='shrink-0'>
           <DialogTitle>
             {modo === 'solicitud' ? 'Solicitar entrega de covers' : 'Entregar covers'}
           </DialogTitle>
@@ -782,410 +814,433 @@ export function EntregaCoversDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {modo === 'entrega' && filasGrupo.length > 1 ? (
-          <div className='flex flex-col gap-2'>
-            <p id='modalidad-entrega-label' className='text-sm font-medium'>
-              Modalidad de entrega
-            </p>
-            <ToggleGroup
-              type='single'
-              value={tipoEntrega}
-              onValueChange={cambiarTipoEntrega}
-              variant='outline'
-              size='sm'
-              disabled={entregando}
-              aria-labelledby='modalidad-entrega-label'
-              className='w-full justify-start'
-            >
-              <ToggleGroupItem value='grupal' className='min-h-11 flex-1 rounded-full'>
-                Entrega grupal
-              </ToggleGroupItem>
-              <ToggleGroupItem value='individual' className='min-h-11 flex-1 rounded-full'>
-                Entrega individual
-              </ToggleGroupItem>
-            </ToggleGroup>
-            {tipoEntrega === 'individual' ? (
-              <div className='flex flex-col gap-2'>
-                <p id='entrada-individual-label' className='text-sm text-muted-foreground'>
-                  Elige la entrada que vas a atender ahora.
-                </p>
-                <div
-                  role='group'
-                  aria-labelledby='entrada-individual-label'
-                  className='grid gap-2 sm:grid-cols-2'
-                >
-                  {filasGrupo.map((fila, indice) => (
-                    <Button
-                      key={fila.id}
-                      type='button'
-                      variant={fila.id === entradaIndividualId ? 'secondary' : 'outline'}
-                      aria-pressed={fila.id === entradaIndividualId}
-                      aria-label={`Entrada ${indice + 1}, ${formatCurrencyCLP(fila.monto_entrada)}, ${fila.hora}`}
-                      disabled={entregando}
-                      onClick={() => seleccionarEntradaIndividual(fila.id)}
-                      className='h-auto min-h-11 justify-between gap-3 rounded-full py-2 text-left'
-                    >
-                      <span>Entrada {indice + 1}</span>
-                      <span className='shrink-0 tabular-nums'>
-                        {formatCurrencyCLP(fila.monto_entrada)}
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        <Input
-          value={busqueda}
-          onChange={evento => setBusqueda(evento.target.value)}
-          placeholder='Buscar producto…'
-          aria-label='Buscar producto'
-        />
-
-        <div className='space-y-1'>
-          <Label htmlFor='monto-adicional-grupo' className='text-xs'>
-            {filas.length === 1 ? 'Monto adicional individual' : 'Monto adicional del grupo'}
-          </Label>
-          <Input
-            id='monto-adicional-grupo'
-            inputMode='numeric'
-            {...register('montoAdicional')}
-            value={formatNumberInputOrEmpty(montoAdicional)}
-            disabled={entregando}
-            onChange={evento => cambiarMontoAdicional(evento.target.value)}
-            aria-invalid={Boolean(formState.errors.montoAdicional)}
-            aria-describedby='error-monto-adicional-grupo'
-            placeholder='0'
-          />
-        </div>
-
-        {formState.errors.montoAdicional ? (
-          <p id='error-monto-adicional-grupo' role='alert' className='text-xs text-destructive'>
-            {formState.errors.montoAdicional.message}
-          </p>
-        ) : null}
-
-        <p className='text-xs text-muted-foreground'>
-          Entradas {formatCurrencyCLP(totalEntradas)}
-          {adicional > 0 ? ` + adicional ${formatCurrencyCLP(adicional)}` : ''} = presupuesto{' '}
-          {formatCurrencyCLP(presupuesto)}.{' '}
-          {filas.length === 1
-            ? `La entrada cubre bebidas hasta ${formatCurrencyCLP(topeCover)}; el adicional amplía ese tope.`
-            : 'El grupo comparte el presupuesto de sus entradas para elegir las bebidas.'}{' '}
-          El adicional se cobra completo en la barra con el método de pago de la entrada.
-        </p>
-
-        {cargando ? (
-          <div className='flex items-center gap-2 rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
-            <LoaderCircle className='size-4 animate-spin' /> Cargando bebidas…
-          </div>
-        ) : errorBebidas ? (
-          <p className='rounded-xl border border-dashed p-4 text-sm text-destructive'>
-            {errorBebidas}
-          </p>
-        ) : categoriaSeleccionada === null ? (
-          categoriasVisibles.length === 0 ? (
-            <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
-              No hay bebidas disponibles en el bar.
-            </p>
-          ) : (
-            <CategoryCardList
-              categorias={categoriasVisibles}
-              countLabel={categoria =>
-                categoria.total_products === 1 ? 'presentación' : 'presentaciones'
-              }
-              paginate={false}
-              onSelect={categoria => setCategoriaSeleccionada(categoria.name ?? '')}
-            />
-          )
-        ) : (
-          <section role='region' aria-label={categoriaSeleccionada} className='space-y-3'>
-            <div className='flex items-center justify-between gap-2'>
-              <Button
-                type='button'
+        <div
+          role='region'
+          aria-label='Contenido de entrega de covers'
+          tabIndex={0}
+          className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+        >
+          {modo === 'entrega' && filasGrupo.length > 1 ? (
+            <div className='flex flex-col gap-2'>
+              <p id='modalidad-entrega-label' className='text-sm font-medium'>
+                Modalidad de entrega
+              </p>
+              <ToggleGroup
+                type='single'
+                value={tipoEntrega}
+                onValueChange={cambiarTipoEntrega}
                 variant='outline'
                 size='sm'
-                onClick={() => setCategoriaSeleccionada(null)}
-                className='rounded-full'
+                disabled={entregando}
+                aria-labelledby='modalidad-entrega-label'
+                className='w-full justify-start'
               >
-                <ChevronLeft data-icon='inline-start' />
-                Categorías
-              </Button>
-              <div className='min-w-0 text-right'>
-                <h3 className='truncate text-sm font-semibold'>{categoriaSeleccionada}</h3>
-                <span className='text-xs text-muted-foreground tabular-nums'>
-                  {itemsCategoriaSeleccionada.length}{' '}
-                  {itemsCategoriaSeleccionada.length === 1 ? 'opción' : 'opciones'}
-                </span>
-              </div>
+                <ToggleGroupItem value='grupal' className='min-h-11 flex-1 rounded-full'>
+                  Entrega grupal
+                </ToggleGroupItem>
+                <ToggleGroupItem value='individual' className='min-h-11 flex-1 rounded-full'>
+                  Entrega individual
+                </ToggleGroupItem>
+              </ToggleGroup>
+              {tipoEntrega === 'individual' ? (
+                <div className='flex flex-col gap-2'>
+                  <p id='entrada-individual-label' className='text-sm text-muted-foreground'>
+                    Elige la entrada que vas a atender ahora.
+                  </p>
+                  <div
+                    role='group'
+                    aria-labelledby='entrada-individual-label'
+                    className='grid gap-2 sm:grid-cols-2'
+                  >
+                    {filasGrupo.map((fila, indice) => (
+                      <Button
+                        key={fila.id}
+                        type='button'
+                        variant={fila.id === entradaIndividualId ? 'secondary' : 'outline'}
+                        aria-pressed={fila.id === entradaIndividualId}
+                        aria-label={`Entrada ${indice + 1}, ${formatCurrencyCLP(fila.monto_entrada)}, ${fila.hora}`}
+                        disabled={entregando}
+                        onClick={() => seleccionarEntradaIndividual(fila.id)}
+                        className='h-auto min-h-11 justify-between gap-3 rounded-full py-2 text-left'
+                      >
+                        <span>Entrada {indice + 1}</span>
+                        <span className='shrink-0 tabular-nums'>
+                          {formatCurrencyCLP(fila.monto_entrada)}
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
-            {itemsCategoriaSeleccionada.length === 0 ? (
+          ) : null}
+
+          <div className='space-y-1'>
+            <Label htmlFor='monto-adicional-grupo' className='text-xs'>
+              {filas.length === 1 ? 'Monto adicional individual' : 'Monto adicional del grupo'}
+            </Label>
+            <Input
+              id='monto-adicional-grupo'
+              inputMode='numeric'
+              {...register('montoAdicional')}
+              value={formatNumberInputOrEmpty(montoAdicional)}
+              disabled={entregando}
+              onChange={evento => cambiarMontoAdicional(evento.target.value)}
+              aria-invalid={Boolean(formState.errors.montoAdicional)}
+              aria-describedby='error-monto-adicional-grupo'
+              placeholder='0'
+            />
+          </div>
+
+          {formState.errors.montoAdicional ? (
+            <p id='error-monto-adicional-grupo' role='alert' className='text-xs text-destructive'>
+              {formState.errors.montoAdicional.message}
+            </p>
+          ) : null}
+
+          <Alert role='note' className='py-3'>
+            <Info className='size-4' aria-hidden='true' />
+            <AlertDescription className='text-xs text-muted-foreground'>
+              Entradas {formatCurrencyCLP(totalEntradas)}
+              {adicional > 0 ? ` + adicional ${formatCurrencyCLP(adicional)}` : ''} = presupuesto{' '}
+              {formatCurrencyCLP(presupuesto)}.{' '}
+              {filas.length === 1
+                ? `La entrada cubre bebidas hasta ${formatCurrencyCLP(topeCover)}; el adicional amplía ese tope.`
+                : 'El grupo comparte el presupuesto de sus entradas para elegir las bebidas.'}{' '}
+              El adicional se cobra completo en la barra con el método de pago de la entrada.
+            </AlertDescription>
+          </Alert>
+
+          {cargando ? (
+            <div className='flex items-center gap-2 rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
+              <LoaderCircle className='size-4 animate-spin' /> Cargando bebidas…
+            </div>
+          ) : errorBebidas ? (
+            <p className='rounded-xl border border-dashed p-4 text-sm text-destructive'>
+              {errorBebidas}
+            </p>
+          ) : categoriaSeleccionada === null ? (
+            categoriasVisibles.length === 0 ? (
               <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
-                {busqueda.trim()
-                  ? 'No hay bebidas de esta categoría que coincidan con la búsqueda.'
-                  : `Sin productos hasta ${formatCurrencyCLP(precioMaximo)} en esta categoría.`}
+                No hay bebidas disponibles en el bar.
               </p>
             ) : (
-              <div
-                role='group'
-                aria-label='Bebidas del bar'
-                className='grid grid-cols-2 gap-3 sm:grid-cols-3'
-              >
-                {itemsCategoriaSeleccionada.map(({ bebida, formato }) => {
-                  const clave = claveDe(bebida, formato);
-                  const cantidad = seleccion[clave]?.cantidad ?? 0;
-                  const sinStock =
-                    (consumo.get(bebida.presentacion_id) ?? 0) + consumoProducto(bebida, formato) >
-                    bebida.stock_bar + 1e-9;
-                  const precio = precioVisible(bebida, formato);
-                  const excede = precioSeleccionado + precio > presupuesto;
-                  const nombreBebida =
-                    `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim();
-                  return (
-                    <Button
-                      key={clave}
-                      type='button'
-                      variant='unstyled'
-                      disabled={!puedeAgregar(bebida, formato)}
-                      aria-pressed={cantidad > 0}
-                      onClick={() => agregar(bebida, formato)}
-                      className={cn(
-                        'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-background text-left font-normal whitespace-normal transition disabled:cursor-not-allowed disabled:opacity-40',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        cantidad > 0
-                          ? 'border-primary ring-2 ring-primary/25'
-                          : 'hover:border-primary/40 hover:bg-muted/30'
-                      )}
-                    >
-                      <span className='relative block h-20 w-full bg-muted/40'>
-                        <ProductPhoto
-                          src={productImageUrl(bebida.foto)}
-                          alt={nombreBebida}
-                          fill
-                          className='object-contain p-2'
-                        />
-                        <span
-                          className={cn(
-                            'absolute right-2 top-2 flex min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold',
-                            cantidad > 0
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-background/80 text-muted-foreground'
-                          )}
-                          aria-hidden='true'
-                        >
-                          {cantidad > 0 ? cantidad : <Plus className='size-3' />}
-                        </span>
-                      </span>
-                      <span className='flex flex-1 flex-col gap-1 border-t p-3'>
-                        <span className='line-clamp-2 text-sm font-semibold leading-snug'>
-                          {bebida.producto_nombre}
-                        </span>
-                        <span className='line-clamp-1 text-xs text-muted-foreground'>
-                          {bebida.presentacion_nombre}
-                        </span>
-                        <span className='text-sm font-medium tabular-nums text-primary'>
-                          {formatCurrencyCLP(precio)}
-                        </span>
-                        <span className='text-[11px] text-muted-foreground'>
-                          {formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'}
-                        </span>
-                        {excede && !sinStock ? (
-                          <span className='text-[11px] font-medium text-amber-600 dark:text-amber-400'>
-                            No alcanza el presupuesto
-                          </span>
-                        ) : null}
-                        <span className='mt-auto flex flex-wrap items-center gap-1.5 pt-1'>
-                          <span className='text-[11px] text-muted-foreground'>
-                            {sinStock ? 'Sin stock' : `${bebida.stock_bar} en bar`}
-                          </span>
-                          <Badge variant='secondary' className='rounded-full px-2 py-0 text-[11px]'>
-                            Cover
-                          </Badge>
-                        </span>
-                      </span>
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        )}
-
-        {lineas.length > 0 ? (
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between gap-2'>
-              <h3 className='text-sm font-semibold'>Seleccionados</h3>
-              <span className='text-xs text-muted-foreground tabular-nums'>
-                {totalSeleccionado} productos
-              </span>
-            </div>
-            {lineas.map(linea => {
-              const opciones = opcionesParaLinea(linea.clave, linea.bebida);
-              const opcionesCatalogo = opcionesCoverPara(acompanamientos, linea.bebida);
-              const necesitaCover = requiereAcompanamiento(linea.bebida, linea.formato);
-              const unidades = unidadesAcompanamientoLinea(
-                linea.bebida,
-                linea.formato,
-                linea.cantidad
-              );
-              const asignado = linea.reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
-              const falta = necesitaCover
-                ? opcionesCatalogo.length === 0
-                  ? linea.formato === 'botella'
-                  : asignado !== unidades
-                : false;
-              return (
-                <div key={linea.clave} className='rounded-xl border p-3'>
-                  <div className='flex flex-wrap items-start justify-between gap-2'>
-                    <div className='min-w-0'>
-                      <p className='text-sm font-semibold'>
-                        {linea.bebida.producto_nombre} · {linea.bebida.presentacion_nombre}
-                      </p>
-                      <p className='text-xs text-muted-foreground'>
-                        {linea.formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'} ·{' '}
-                        {formatCurrencyCLP(precioVisible(linea.bebida, linea.formato))} c/u
-                      </p>
-                    </div>
-                    <div className='flex items-center gap-1'>
-                      <Button
-                        type='button'
-                        size='icon'
-                        variant='outline'
-                        className='size-8 rounded-full'
-                        onClick={() =>
-                          quitar(
-                            linea.clave,
-                            unidadesAcompanamientoFormato(linea.bebida, linea.formato)
-                          )
-                        }
-                        aria-label='Quitar una unidad'
-                        disabled={entregando}
-                      >
-                        <Minus className='size-3.5' />
-                      </Button>
-                      <span className='w-6 text-center text-sm font-semibold tabular-nums'>
-                        {linea.cantidad}
-                      </span>
-                      <Button
-                        type='button'
-                        size='icon'
-                        variant='outline'
-                        className='size-8 rounded-full'
-                        disabled={!puedeAgregar(linea.bebida, linea.formato)}
-                        onClick={() => agregar(linea.bebida, linea.formato)}
-                        aria-label='Agregar una unidad'
-                      >
-                        <Plus className='size-3.5' />
-                      </Button>
-                      <Button
-                        type='button'
-                        size='icon'
-                        variant='ghost'
-                        className='size-8 rounded-full text-destructive'
-                        onClick={() => quitarTodas(linea.clave)}
-                        aria-label='Quitar producto'
-                        disabled={entregando}
-                      >
-                        <Trash2 className='size-3.5' />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {necesitaCover ? (
-                    <div className='mt-3 space-y-2'>
-                      <Label htmlFor={`cover-${linea.clave}`} className='text-xs'>
-                        {linea.formato === 'corte'
-                          ? linea.cantidad > 1
-                            ? 'Acompañamiento de los cortes'
-                            : 'Acompañamiento del corte'
-                          : linea.cantidad > 1
-                            ? 'Acompañamiento incluido en las botellas'
-                            : 'Acompañamiento incluido'}
-                      </Label>
-                      {opciones.length === 0 ? (
-                        <p
-                          className={cn(
-                            'rounded-lg border border-dashed p-2 text-xs',
-                            linea.formato === 'botella'
-                              ? 'text-destructive'
-                              : 'text-muted-foreground'
-                          )}
-                        >
-                          {opcionesCatalogo.length > 0
-                            ? 'El stock de acompañamientos está reservado en otros productos. Ajusta el reparto.'
-                            : linea.formato === 'botella'
-                              ? 'No hay bebidas cover con stock para esta botella.'
-                              : 'Sin bebidas cover con stock; el corte se puede entregar sin acompañamiento.'}
-                        </p>
-                      ) : (
-                        <AcompanamientoDistribuidor
-                          id={`cover-${linea.clave}`}
-                          opciones={opciones}
-                          requeridas={unidades}
-                          valor={linea.reparto}
-                          onChange={reparto => cambiarReparto(linea.clave, reparto)}
-                          repartoTotal
-                          disabled={entregando}
-                        />
-                      )}
-                      {falta && opciones.length > 0 ? (
-                        <p className='text-xs text-amber-600 dark:text-amber-400'>
-                          Reparte el cover para continuar.
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
+              <CategoryCardList
+                categorias={categoriasVisibles}
+                countLabel={categoria =>
+                  categoria.total_products === 1 ? 'presentación' : 'presentaciones'
+                }
+                paginate={false}
+                onSelect={categoria => setCategoriaSeleccionada(categoria.name ?? '')}
+              />
+            )
+          ) : (
+            <section role='region' aria-label={categoriaSeleccionada} className='space-y-3'>
+              <div className='flex items-center justify-between gap-2'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setCategoriaSeleccionada(null)}
+                  className='rounded-full'
+                >
+                  <ChevronLeft data-icon='inline-start' />
+                  Categorías
+                </Button>
+                <div className='min-w-0 text-right'>
+                  <h3 className='truncate text-sm font-semibold'>{categoriaSeleccionada}</h3>
+                  <span className='text-xs text-muted-foreground tabular-nums'>
+                    {itemsCategoriaSeleccionada.length}{' '}
+                    {itemsCategoriaSeleccionada.length === 1 ? 'opción' : 'opciones'}
+                  </span>
                 </div>
-              );
-            })}
-            <p className='text-xs text-muted-foreground'>
-              {totalSeleccionado} productos para {filas.length}{' '}
-              {filas.length === 1 ? 'entrada' : 'entradas'}. El grupo comparte todo el presupuesto.
-            </p>
-            <div className='rounded-xl border border-dashed p-3 text-xs'>
-              <p className='flex flex-wrap justify-between gap-2 text-muted-foreground'>
-                <span>Productos</span>
-                <span className='font-medium text-foreground tabular-nums'>
-                  {formatCurrencyCLP(precioSeleccionado)} de {formatCurrencyCLP(presupuesto)}
-                </span>
-              </p>
-              <p className='mt-1 flex flex-wrap justify-between gap-2 text-muted-foreground'>
-                <span>Cobro en barra</span>
-                <span className='font-medium text-foreground tabular-nums'>
-                  {formatCurrencyCLP(adicional)}
-                </span>
-              </p>
-              {excedePresupuesto ? null : (
-                <p className='mt-1 text-muted-foreground'>
-                  {restante > 0
-                    ? `Quedan ${formatCurrencyCLP(restante)} de presupuesto.`
-                    : 'Presupuesto completo.'}
+              </div>
+              <Input
+                value={busqueda}
+                onChange={evento => setBusqueda(evento.target.value)}
+                placeholder='Buscar producto…'
+                aria-label='Buscar producto'
+              />
+              {itemsCategoriaSeleccionada.length === 0 ? (
+                <p className='rounded-xl border border-dashed p-4 text-sm text-muted-foreground'>
+                  {busqueda.trim()
+                    ? 'No hay bebidas de esta categoría que coincidan con la búsqueda.'
+                    : `Sin productos hasta ${formatCurrencyCLP(precioMaximo)} en esta categoría.`}
                 </p>
+              ) : (
+                <div
+                  role='group'
+                  aria-label='Bebidas del bar'
+                  className='grid grid-cols-2 gap-3 sm:grid-cols-3'
+                >
+                  {itemsCategoriaSeleccionada.map(({ bebida, formato }) => {
+                    const clave = claveDe(bebida, formato);
+                    const cantidad = seleccion[clave]?.cantidad ?? 0;
+                    const sinStock =
+                      (consumo.get(bebida.presentacion_id) ?? 0) +
+                        consumoProducto(bebida, formato) >
+                      bebida.stock_bar + 1e-9;
+                    const precio = precioVisible(bebida, formato);
+                    const excede = precioSeleccionado + precio > presupuestoProductos;
+                    const nombreBebida =
+                      `${bebida.producto_nombre} ${bebida.presentacion_nombre}`.trim();
+                    return (
+                      <Button
+                        key={clave}
+                        type='button'
+                        variant='unstyled'
+                        disabled={!puedeAgregar(bebida, formato)}
+                        aria-pressed={cantidad > 0}
+                        onClick={() => agregar(bebida, formato)}
+                        className={cn(
+                          'flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-background text-left font-normal whitespace-normal transition disabled:cursor-not-allowed disabled:opacity-40',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                          cantidad > 0
+                            ? 'border-primary ring-2 ring-primary/25'
+                            : 'hover:border-primary/40 hover:bg-muted/30'
+                        )}
+                      >
+                        <span className='relative block h-20 w-full bg-muted/40'>
+                          <ProductPhoto
+                            src={productImageUrl(bebida.foto)}
+                            alt={nombreBebida}
+                            fill
+                            className='object-contain p-2'
+                          />
+                          <span
+                            className={cn(
+                              'absolute right-2 top-2 flex min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold',
+                              cantidad > 0
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background/80 text-muted-foreground'
+                            )}
+                            aria-hidden='true'
+                          >
+                            {cantidad > 0 ? cantidad : <Plus className='size-3' />}
+                          </span>
+                        </span>
+                        <span className='flex flex-1 flex-col gap-1 border-t p-3'>
+                          <span className='line-clamp-2 text-sm font-semibold leading-snug'>
+                            {bebida.producto_nombre}
+                          </span>
+                          <span className='line-clamp-1 text-xs text-muted-foreground'>
+                            {bebida.presentacion_nombre}
+                          </span>
+                          <span className='text-sm font-medium tabular-nums text-primary'>
+                            {formatCurrencyCLP(precio)}
+                          </span>
+                          <span className='text-[11px] text-muted-foreground'>
+                            {formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'}
+                          </span>
+                          {excede && !sinStock ? (
+                            <span className='text-[11px] font-medium text-amber-600 dark:text-amber-400'>
+                              No alcanza el presupuesto
+                            </span>
+                          ) : null}
+                          <span className='mt-auto flex flex-wrap items-center gap-1.5 pt-1'>
+                            <span className='text-[11px] text-muted-foreground'>
+                              {sinStock ? 'Sin stock' : `${bebida.stock_bar} en bar`}
+                            </span>
+                            <Badge
+                              variant='secondary'
+                              className='rounded-full px-2 py-0 text-[11px]'
+                            >
+                              Cover
+                            </Badge>
+                          </span>
+                        </span>
+                      </Button>
+                    );
+                  })}
+                </div>
               )}
-              {excedePresupuesto ? (
-                <p className='mt-2 text-amber-600 dark:text-amber-400'>
-                  Faltan {formatCurrencyCLP(precioSeleccionado - presupuesto)} de presupuesto para
-                  esta selección.
+            </section>
+          )}
+
+          {lineas.length > 0 ? (
+            <div className='space-y-3'>
+              <div className='flex items-center justify-between gap-2'>
+                <h3 className='text-sm font-semibold'>Seleccionados</h3>
+                <span className='text-xs text-muted-foreground tabular-nums'>
+                  {totalSeleccionado} productos
+                </span>
+              </div>
+              {lineas.map(linea => {
+                const opciones = opcionesParaLinea(linea.clave, linea.bebida);
+                const opcionesCatalogo = opcionesCoverPara(acompanamientos, linea.bebida);
+                const necesitaCover = requiereAcompanamiento(linea.bebida, linea.formato);
+                const unidades = unidadesAcompanamientoLinea(
+                  linea.bebida,
+                  linea.formato,
+                  linea.cantidad
+                );
+                const asignado = linea.reparto.reduce((suma, sabor) => suma + sabor.unidades, 0);
+                const falta = necesitaCover
+                  ? opcionesCatalogo.length === 0
+                    ? linea.formato === 'botella'
+                    : asignado !== unidades
+                  : false;
+                return (
+                  <div key={linea.clave} className='rounded-xl border p-3'>
+                    <div className='flex flex-wrap items-start justify-between gap-2'>
+                      <div className='min-w-0'>
+                        <p className='text-sm font-semibold'>
+                          {linea.bebida.producto_nombre} · {linea.bebida.presentacion_nombre}
+                        </p>
+                        <p className='text-xs text-muted-foreground'>
+                          {linea.formato === 'corte' ? 'Corte' : 'Botella sin anfitriona'} ·{' '}
+                          {formatCurrencyCLP(precioVisible(linea.bebida, linea.formato))} c/u
+                        </p>
+                      </div>
+                      <div className='flex items-center gap-1'>
+                        <Button
+                          type='button'
+                          size='icon'
+                          variant='outline'
+                          className='size-8 rounded-full'
+                          onClick={() =>
+                            quitar(
+                              linea.clave,
+                              unidadesAcompanamientoFormato(linea.bebida, linea.formato)
+                            )
+                          }
+                          aria-label='Quitar una unidad'
+                          disabled={entregando}
+                        >
+                          <Minus className='size-3.5' />
+                        </Button>
+                        <span className='w-6 text-center text-sm font-semibold tabular-nums'>
+                          {linea.cantidad}
+                        </span>
+                        <Button
+                          type='button'
+                          size='icon'
+                          variant='outline'
+                          className='size-8 rounded-full'
+                          disabled={!puedeAgregar(linea.bebida, linea.formato)}
+                          onClick={() => agregar(linea.bebida, linea.formato)}
+                          aria-label='Agregar una unidad'
+                        >
+                          <Plus className='size-3.5' />
+                        </Button>
+                        <Button
+                          type='button'
+                          size='icon'
+                          variant='ghost'
+                          className='size-8 rounded-full text-destructive'
+                          onClick={() => quitarTodas(linea.clave)}
+                          aria-label='Quitar producto'
+                          disabled={entregando}
+                        >
+                          <Trash2 className='size-3.5' />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {necesitaCover ? (
+                      <div className='mt-3 space-y-2'>
+                        <Label htmlFor={`cover-${linea.clave}`} className='text-xs'>
+                          {linea.formato === 'corte'
+                            ? linea.cantidad > 1
+                              ? 'Acompañamiento de los cortes'
+                              : 'Acompañamiento del corte'
+                            : linea.cantidad > 1
+                              ? 'Acompañamiento incluido en las botellas'
+                              : 'Acompañamiento incluido'}
+                        </Label>
+                        {opciones.length === 0 ? (
+                          <p
+                            className={cn(
+                              'rounded-lg border border-dashed p-2 text-xs',
+                              linea.formato === 'botella'
+                                ? 'text-destructive'
+                                : 'text-muted-foreground'
+                            )}
+                          >
+                            {opcionesCatalogo.length > 0
+                              ? 'El stock de acompañamientos está reservado en otros productos. Ajusta el reparto.'
+                              : linea.formato === 'botella'
+                                ? 'No hay bebidas cover con stock para esta botella.'
+                                : 'Sin bebidas cover con stock; el corte se puede entregar sin acompañamiento.'}
+                          </p>
+                        ) : (
+                          <AcompanamientoDistribuidor
+                            id={`cover-${linea.clave}`}
+                            opciones={opciones}
+                            requeridas={unidades}
+                            valor={linea.reparto}
+                            onChange={reparto => cambiarReparto(linea.clave, reparto)}
+                            repartoTotal
+                            disabled={entregando}
+                          />
+                        )}
+                        {falta && opciones.length > 0 ? (
+                          <p className='text-xs text-amber-600 dark:text-amber-400'>
+                            Reparte el cover para continuar.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+              <p className='text-xs text-muted-foreground'>
+                {totalSeleccionado} productos para {filas.length}{' '}
+                {filas.length === 1 ? 'entrada' : 'entradas'}. El grupo comparte todo el
+                presupuesto.
+              </p>
+              <div className='rounded-xl border border-dashed p-3 text-xs'>
+                <p className='flex flex-wrap justify-between gap-2 text-muted-foreground'>
+                  <span>Productos</span>
+                  <span className='font-medium text-foreground tabular-nums'>
+                    {formatCurrencyCLP(precioSeleccionado)} de{' '}
+                    {formatCurrencyCLP(presupuestoProductos)}
+                  </span>
                 </p>
-              ) : null}
-              {excedeStock ? (
-                <p className='mt-2 text-destructive'>
-                  La selección supera el stock disponible. Ajusta los productos o acompañamientos.
+                {recargoAcompanamientos > 0 ? (
+                  <p className='mt-1 flex flex-wrap justify-between gap-2 text-muted-foreground'>
+                    <span>Acompañamientos sobre el tope</span>
+                    <span className='font-medium text-foreground tabular-nums'>
+                      {formatCurrencyCLP(recargoAcompanamientos)}
+                    </span>
+                  </p>
+                ) : null}
+                <p className='mt-1 flex flex-wrap justify-between gap-2 text-muted-foreground'>
+                  <span>Cobro en barra</span>
+                  <span className='font-medium text-foreground tabular-nums'>
+                    {formatCurrencyCLP(adicional)}
+                  </span>
                 </p>
-              ) : null}
+                {excedePresupuesto ? null : (
+                  <p className='mt-1 text-muted-foreground'>
+                    {restante > 0
+                      ? `Quedan ${formatCurrencyCLP(restante)} de presupuesto.`
+                      : 'Presupuesto completo.'}
+                  </p>
+                )}
+                {excedePresupuesto ? (
+                  <p className='mt-2 text-amber-600 dark:text-amber-400'>
+                    Faltan {formatCurrencyCLP(precioSeleccionado - presupuestoProductos)} de
+                    presupuesto para esta selección.
+                  </p>
+                ) : null}
+                {excedeStock ? (
+                  <p className='mt-2 text-destructive'>
+                    La selección supera el stock disponible. Ajusta los productos o acompañamientos.
+                  </p>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {errorCover ? (
-          <p className='text-xs text-destructive' role='alert'>
-            {errorCover}
-          </p>
-        ) : null}
+          {errorCover ? (
+            <p className='text-xs text-destructive' role='alert'>
+              {errorCover}
+            </p>
+          ) : null}
+        </div>
 
-        <DialogFooter className='gap-2'>
+        <DialogFooter className='shrink-0 gap-2'>
           <Button
             type='button'
             variant='outline'

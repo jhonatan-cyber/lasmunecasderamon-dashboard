@@ -9,7 +9,8 @@ import { ApiResponse } from './api-response';
 import { normalizeJsonResponseDates } from './date-response';
 import { instantaneaPerfil, perfilActivo, reiniciarPerfil } from '@/lib/database/perfilConsultas';
 import { sendNotificationToAll } from './sseService';
-import logger, { setRequestId, getRequestId, clearRequestId } from '@/lib/utils/logger';
+import logger from '@/lib/utils/logger';
+import { runWithRequestId } from './request-id-context';
 import { withRateLimit, rateLimiters } from './rateLimit';
 import { sanitizeBody, scanForSQLInjection } from './sanitize';
 import { addServerTimingMetric } from './server-timing';
@@ -150,7 +151,11 @@ export function withRoute<M extends PermissionModule>(
       ? { module: config.module, action: config.action as string }
       : null;
 
-  return async (request: Request, context: { params: any }): Promise<Response> => {
+  const execute = async (
+    request: Request,
+    context: { params: any },
+    requestId: string
+  ): Promise<Response> => {
     const profileStages =
       process.env.NODE_ENV !== 'production' && request.headers.get('x-lmr-profile') === '1';
     let authDurationMs = 0;
@@ -158,12 +163,6 @@ export function withRoute<M extends PermissionModule>(
     let normalizeDurationMs = 0;
     let authTimings: Awaited<ReturnType<typeof getAuthWithTimings>>['timings'] | undefined;
     let authDatabaseProfile: ReturnType<typeof instantaneaPerfil> | undefined;
-
-    // ─── Request ID: trazabilidad en todos los logs ───────────────────
-    // Reutiliza el ID si el cliente lo envía (ej: desde el app), o genera uno.
-    const incomingRequestId = request.headers.get('x-request-id');
-    setRequestId(incomingRequestId || null);
-    const requestId = getRequestId();
 
     try {
       let user: AuthenticatedUser | undefined;
@@ -403,7 +402,6 @@ export function withRoute<M extends PermissionModule>(
       }
       // Request ID en la respuesta para trazabilidad del cliente
       normalizada.headers.set('x-request-id', requestId);
-      clearRequestId();
       return normalizada;
     } catch (error: unknown) {
       const url = new URL(request.url);
@@ -436,10 +434,13 @@ export function withRoute<M extends PermissionModule>(
       }
 
       return ApiResponse.error(error);
-    } finally {
-      clearRequestId();
     }
   };
+
+  return (request, context) =>
+    runWithRequestId(request.headers.get('x-request-id'), requestId =>
+      execute(request, context, requestId)
+    );
 }
 
 // Re-export convenience for routes that don't need the full config object

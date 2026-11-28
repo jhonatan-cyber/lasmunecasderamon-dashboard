@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "monitoring_sentry_integration_guide",
+      "label": "Sentry Integration Guide",
+      "file_type": "document",
+      "source_file": "MONITORING.md",
+      "source_location": "L1-L6",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "monitoring_sentry_error_and_performance_capture",
+      "label": "Sentry Error and Performance Capture",
+      "file_type": "concept",
+      "source_file": "MONITORING.md",
+      "source_location": "L14-L39",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "monitoring_sentry_integration_guide",
+      "target": "monitoring_sentry_error_and_performance_capture",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "MONITORING.md",
+      "source_location": "L1-L39",
+      "weight": 1.0
+    },
+    {
+      "source": "monitoring_sentry_error_and_performance_capture",
+      "target": "api_request_id_tracing",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "MONITORING.md",
+      "source_location": "L29-L35",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": []
+}

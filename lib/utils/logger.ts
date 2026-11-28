@@ -1,4 +1,9 @@
 import { getNowInBusinessTimezone } from '@/lib/business/timezoneService';
+import {
+  createRequestId,
+  getRequestIdFromContext,
+  setRequestIdInContext
+} from './request-id-context';
 
 type AuditDetails = Record<string, unknown>;
 
@@ -12,40 +17,32 @@ interface LogEntry {
 
 // ─── Request ID Context ─────────────────────────────────────────────────
 // Permite rastrear una request a través de todos los logs generados durante
-// su procesamiento. Usa AsyncLocalStorage para propagar el ID de forma
-// automática sin tener que pasarlo manualmente en cada llamada.
+// su procesamiento. El middleware establece el contexto asíncrono por request.
 
 let requestIdStore: string | null = null;
-
-/**
- * Genera un ID único para la request actual.
- * Usa crypto si está disponible, de lo contrario un fallback simple.
- */
-function generateRequestId(): string {
-  if (typeof window === 'undefined') {
-    try {
-      const { randomBytes } = require('crypto');
-      return `req_${randomBytes(8).toString('hex')}`;
-    } catch {
-      return `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    }
-  }
-  return `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-}
 
 /**
  * Establece el request ID para el contexto actual.
  */
 export function setRequestId(id: string | null) {
-  requestIdStore = id || generateRequestId();
+  const requestId = id || createRequestId();
+  if (!setRequestIdInContext(requestId)) requestIdStore = requestId;
 }
 
 /**
  * Obtiene el request ID actual, generando uno si no existe.
  */
 export function getRequestId(): string {
+  const contextualRequestId = getRequestIdFromContext();
+  if (contextualRequestId) return contextualRequestId;
+  if (contextualRequestId === null) {
+    const requestId = createRequestId();
+    setRequestIdInContext(requestId);
+    return requestId;
+  }
+
   if (!requestIdStore) {
-    requestIdStore = generateRequestId();
+    requestIdStore = createRequestId();
   }
   return requestIdStore;
 }
@@ -54,7 +51,7 @@ export function getRequestId(): string {
  * Limpia el request ID después de procesar la request.
  */
 export function clearRequestId() {
-  requestIdStore = null;
+  if (!setRequestIdInContext(null)) requestIdStore = null;
 }
 
 const formatPayload = (payload: unknown): Record<string, unknown> | undefined => {
@@ -227,19 +224,19 @@ const getLogger = () => {
 export const logger = {
   info: (msg: string, meta?: unknown) => {
     const requestId = getRequestId();
-    getLogger().info(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+    getLogger().info(msg, { requestId, ...((meta as Record<string, unknown>) || {}) });
   },
   warn: (msg: string, meta?: unknown) => {
     const requestId = getRequestId();
-    getLogger().warn(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+    getLogger().warn(msg, { requestId, ...((meta as Record<string, unknown>) || {}) });
   },
   error: (msg: string, meta?: unknown) => {
     const requestId = getRequestId();
-    getLogger().error(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+    getLogger().error(msg, { requestId, ...((meta as Record<string, unknown>) || {}) });
   },
   debug: (msg: string, meta?: unknown) => {
     const requestId = getRequestId();
-    getLogger().debug(msg, { requestId, ...(meta as Record<string, unknown> || {}) });
+    getLogger().debug(msg, { requestId, ...((meta as Record<string, unknown>) || {}) });
   },
 
   captureException: (error: unknown, meta?: Record<string, unknown>) => {
